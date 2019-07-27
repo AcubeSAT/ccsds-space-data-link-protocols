@@ -15,8 +15,9 @@ add_custom_target(check
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/ci")
 
 # Specify the .cpp files common across all targets
-#add_library(common OBJECT
-#        )
+add_library(common OBJECT
+        src/TransferFrame.cpp
+        )
 
 # Specify the .cpp files for the executables
 #file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
