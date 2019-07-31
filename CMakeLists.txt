@@ -24,7 +24,7 @@ add_library(common OBJECT
 #file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
 add_executable(ccsds_tm_packets
         src/main.cpp
-#        $<TARGET_OBJECTS:common>
+        $<TARGET_OBJECTS:common>
 #        ${x86_main_SRC}
         )
 
