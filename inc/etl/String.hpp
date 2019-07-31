@@ -32,7 +32,7 @@ public:
 	 *
 	 * @param data The array of uint8_t data
 	 */
-	String(const uint8_t* data) // NOLINTNEXTLINE(google-explicit-constructor)
+	explicit String(const uint8_t* data) // NOLINTNEXTLINE(google-explicit-constructor)
 	    : etl::string<MAX_SIZE>(reinterpret_cast<const char*>(data), MAX_SIZE) {}
 
 	/**
@@ -59,7 +59,7 @@ public:
 	 * @param text The pointer to a null terminated string
 	 *
 	 */
-	String(const char* text) // NOLINTNEXTLINE(google-explicit-constructor)
+	explicit String(const char* text) // NOLINTNEXTLINE(google-explicit-constructor)
 	    : etl::string<MAX_SIZE>(text) {}
 };
 
