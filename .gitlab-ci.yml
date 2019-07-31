@@ -42,7 +42,8 @@ tests:
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
-    - cmake .
+    - mkdir build && cd build
+    - cmake ..
     - make tests -j4
     - ./tests --use-colour yes  # Run the tests
   after_script:
