@@ -42,9 +42,10 @@ else
     # Coverage generation using lcov
     # Generate coverage baseline
     lcov -q --capture --initial --directory . -o coverage_base
+    ./tests --use-colour yes #  Run the tests to generate coverage notes
 
     # In the event of test failure, generate only the documentation
-    if ./tests --use-colour yes # Run the tests to generate coverage notes
+    if [[ $? -ne 0 ]];
     then
         echo -e "\e[1;5;91mTests failed, only documentation will be generated.\e[0m"
     else
