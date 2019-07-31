@@ -4,8 +4,13 @@
 #include "CCSDS_Definitions.hpp"
 #include "etl/String.hpp"
 
-
 class CCSDSTransferFrame {
+private:
+	/**
+	 * @note As per CCSDS 132.0-B-2 recommendation, the transfer frame version number is `00`
+	 */
+	void createPrimaryHeader(uint8_t virtChannelID, bool secondaryHeaderPresent, bool ocfFlag);
+
 protected:
 	// Field information containers
 	/**
@@ -16,7 +21,9 @@ protected:
 	/**
 	 * Store the transfer frame secondary header
 	 */
-	String<SECONDARY_HEADER_MAX_SIZE> secondaryHeader;
+#if SECONDARY_HEADER_SIZE > 0U
+	String<SECONDARY_HEADER_SIZE> secondaryHeader;
+#endif
 
 	/**
 	 *
@@ -44,35 +51,60 @@ protected:
 	 */
 	uint8_t dataFieldSize;
 
-
-
 public:
 	/**
 	 *
-	 * @param secHeaderSize
+	 *
 	 * @param datFieldSize
 	 * @param virtChannelID
+	 * @param secHeaderSize
 	 */
-	CCSDSTransferFrame(uint8_t secHeaderSize, uint8_t datFieldSize,
-	                   uint8_t vChannelID) : secondaryHeaderSize(secHeaderSize),
-	                                            dataFieldSize(datFieldSize),
-	                                            primaryHeader(0, PRIMARY_HEADER_SIZE),
-	                                            secondaryHeader(0, SECONDARY_HEADER_MAX_SIZE),
-	                                            dataField(0, FRAME_DATA_FIELD_MAX_SIZE),
-	                                            operationalControlField(0, 4),
-	                                            errorControlField(0, 4),
-	                                            masterChannelFrameCount(0),
-	                                            virtualChannelFrameCount(0), virtualChannelID(vChannelID) {}
-
-    /**
-     *
-     */
-    uint16_t masterChannelID();
+	CCSDSTransferFrame(uint8_t datFieldSize, uint8_t vChannelID, uint8_t secHeaderSize = 0)
+	    : secondaryHeaderSize(secHeaderSize), dataFieldSize(datFieldSize), primaryHeader(),
+#if SECONDARY_HEADER_SIZE > 0U
+	      secondaryHeader(),
+#endif
+	      dataField(), operationalControlField(), errorControlField(), masterChannelFrameCount(0),
+	      virtualChannelFrameCount(0), virtualChannelID(vChannelID) {
+		createPrimaryHeader(vChannelID, secHeaderSize > 0U, not operationalControlField.empty());
+	}
 
 	/**
-	*
-	*/
+	 *
+	 */
+	uint16_t masterChannelID();
+
+	/**
+	 *
+	 */
 	uint8_t ocfFlag();
+
+	/**
+	 *
+	 */
+	void increaseMasterChannelFrameCount(){};
+
+	/**
+	 *
+	 */
+	void decreaseMasterChannelFrameCount(){};
+
+	/**
+	 *
+	 */
+	void increaseVirtualChannelFrameCount(){};
+
+	/**
+	 *
+	 */
+	void decreaseVirtualChannelFrameCount(){};
+
+	/**
+	 *
+	 */
+	String<PRIMARY_HEADER_SIZE> getPrimaryHeader() {
+		return primaryHeader;
+	};
 
 	/**
 	 *
@@ -90,5 +122,4 @@ public:
 	uint8_t virtualChannelID;
 };
 
-
-#endif //CCSDS_TM_PACKETS_CCSDSTRANSFERFRAME_HPP
+#endif // CCSDS_TM_PACKETS_CCSDSTRANSFERFRAME_HPP
