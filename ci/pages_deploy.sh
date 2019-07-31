@@ -35,7 +35,7 @@ mkdir build && cd build
 cmake .. -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make all -j4
 
 # If the command above returned something different than zero, generate only the docs
-if [[ $? -ne 0 ]]];
+if [[ $? -ne 0 ]];
 then
     echo -e "\e[1;5;91mProgram build failed, only the documentation will be generated.\e[0m"
 else
@@ -44,7 +44,7 @@ else
     lcov -q --capture --initial --directory . -o coverage_base
 
     # In the event of test failure, generate only the documentation
-    if ./tests --use-colour yes; # Run the tests to generate coverage notes
+    if ./tests --use-colour yes # Run the tests to generate coverage notes
     then
         echo -e "\e[1;5;91mTests failed, only documentation will be generated.\e[0m"
     else
