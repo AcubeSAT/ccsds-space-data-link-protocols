@@ -5,7 +5,6 @@
 #include "etl/String.hpp"
 
 #define SECONDARY_HEADER_PRESENT 1
-#define SECONDARY_HEADER_SIZE 64 // The size of the secondary header in octets, if present
 
 #define OPERATIONAL_CONTROL_FIELD 0 // The presence of the Operational Control Field in the Transfer Frame trailer
 
@@ -42,5 +41,4 @@ public:
 	String<TRANSFER_FRAME_SIZE> generateTransferFrame();
 };
 
-
-#endif //CCSDS_TM_PACKETS_CCSDSTRANSFERFRAMEENCODER_HPP
+#endif // CCSDS_TM_PACKETS_CCSDSTRANSFERFRAMEENCODER_HPP
