@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e # Exit on any error
+
 # Bash color ouput
 # https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
@@ -29,9 +31,11 @@ rm -rf public/"${DOCUMENT_PATH}"/*
 # Create the necessary directories
 mkdir -p public/"${DOCUMENT_PATH}"
 
+mkdir build && cd build
+cmake .. -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make all -j4
 
 # If the command above returned something different than zero, generate only the docs
-if cmake . -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make all -j4;
+if [[ $? -ne 0 ]]];
 then
     echo -e "\e[1;5;91mProgram build failed, only the documentation will be generated.\e[0m"
 else
@@ -45,8 +49,8 @@ else
         echo -e "\e[1;5;91mTests failed, only documentation will be generated.\e[0m"
     else
         # Empty the contents from the stored cache, if any, and create the necessary directories
-        rm -rf public/"${COVERAGE_PATH}"/*
-        mkdir -p public/"${COVERAGE_PATH}" "public/${COVERAGE_PATH}/gcovr"
+        rm -rf ../public/"${COVERAGE_PATH}"/*
+        mkdir -p ../public/"${COVERAGE_PATH}" "../public/${COVERAGE_PATH}/gcovr"
 
         # Generate the tracefile for the coverage reports
         lcov -q --capture --directory . -o coverage_tests
@@ -58,25 +62,25 @@ else
 
         # Coverage generation using gcovr. Also generates the html page with the results
         # Output a summary (-s), sort by ascending percentage (-p), exclude files (-e)
-        gcovr -s -p -e "${EXCLUDED_FILES}" --html --html-details --html-title "${HTML_TITLE}" -o "public/${COVERAGE_PATH}/gcovr/gcovr.html"
+        gcovr -s -p -e "${EXCLUDED_FILES}" --html --html-details --html-title "${HTML_TITLE}" -o "../public/${COVERAGE_PATH}/gcovr/gcovr.html"
         gcovr -e "^.*(test|lib|main.cpp|CMakeFiles)"  # Generate coverage report for the CI
 
         # Render the html page for the lcov results
-        genhtml --demangle-cpp -t "${PAGE_TITLE}" --html-epilog ci/page_style/epilog.html -o "public/${COVERAGE_PATH}" coverage_total_filtered
-        cp ci/page_style/custom_format.css ci/page_style/epilog.html "public/${COVERAGE_PATH}"
+        genhtml --demangle-cpp -t "${PAGE_TITLE}" --html-epilog ../ci/page_style/epilog.html -o "../public/${COVERAGE_PATH}" coverage_total_filtered
+        cp ../ci/page_style/custom_format.css ../ci/page_style/epilog.html "../public/${COVERAGE_PATH}"
 
         echo \
         "
         .title:after {
             content: \" for the ${CI_COMMIT_REF_NAME} branch\";
         }
-        " >> "public/${COVERAGE_PATH}/custom_format.css"
+        " >> "../public/${COVERAGE_PATH}/custom_format.css"
     fi  # Test failure check
 fi  # Build failure check
 
 
 # Documentation generation
-doxygen doxygen.conf
+cd .. && doxygen doxygen.conf
 mv docs/html/* "public/${DOCUMENT_PATH}"
 
 # Expired branch deletion
