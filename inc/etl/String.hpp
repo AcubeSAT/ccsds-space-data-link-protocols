@@ -33,7 +33,12 @@ public:
 	 * @param data The array of uint8_t data
 	 */
 	String(const uint8_t* data) // NOLINTNEXTLINE(google-explicit-constructor)
-		: etl::string<MAX_SIZE>(reinterpret_cast<const char*>(data), MAX_SIZE) {}
+	    : etl::string<MAX_SIZE>(reinterpret_cast<const char*>(data), MAX_SIZE) {}
+
+	/**
+	 * An empty string constructor. An empty etl::string is allocated.
+	 */
+	String() : etl::string<MAX_SIZE>() {}
 
 	/**
 	 * String constructor from a uint8_t array
@@ -55,7 +60,7 @@ public:
 	 *
 	 */
 	String(const char* text) // NOLINTNEXTLINE(google-explicit-constructor)
-		: etl::string<MAX_SIZE>(text) {}
+	    : etl::string<MAX_SIZE>(text) {}
 };
 
-#endif //CCSDS_TM_PACKETS_STRING_HPP
+#endif // CCSDS_TM_PACKETS_STRING_HPP
