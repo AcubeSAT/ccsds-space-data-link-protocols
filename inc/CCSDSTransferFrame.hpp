@@ -86,7 +86,8 @@ private:
     /**
      * @brief Internal function to create the packet's primary header upon the packet creation.
      * @details This particular function is called inside the constructor to generate the primary header of the packet.
-     * The primary header is saved as the `String<PRIMARY_HEADER_SIZE>` attribute in this class and can be accessed publicly.
+     * The primary header is saved as the `String<PRIMARY_HEADER_SIZE>` attribute in this class and can be accessed
+     * publicly.
      *
      * @note As per CCSDS 132.0-B-2 recommendation, the transfer frame version number is `00`
      * @attention The synchronization flag and the packet order flag of the data field status, in the primary header,

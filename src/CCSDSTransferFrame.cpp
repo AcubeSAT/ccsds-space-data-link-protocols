@@ -27,7 +27,7 @@ void CCSDSTransferFrame::increaseMasterChannelFrameCount() {
     auto currentCount = static_cast<uint8_t >(primaryHeader.at(2)); // Get the running count
 
     // Overflow check
-    if ((currentCount % 256) && (currentCount <= 255)) {
+    if ((currentCount % 256U) && (currentCount <= 255U)) {
         currentCount++;
     } else {
         masterChannelOverflowFlag = true;
@@ -40,7 +40,7 @@ void CCSDSTransferFrame::increaseVirtualChannelFrameCount() {
     auto currentCount = static_cast<uint8_t >(primaryHeader.at(3)); // Get the running count
 
     // Overflow check
-    if ((currentCount % 256) && (currentCount <= 255)) {
+    if ((currentCount % 256U) && (currentCount <= 255U)) {
         currentCount++;
     } else {
         virtualChannelOverflowFlag = true;
