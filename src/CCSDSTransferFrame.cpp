@@ -12,7 +12,7 @@ void CCSDSTransferFrame::createPrimaryHeader(uint8_t virtChannelID, bool seconda
 	primaryHeader.push_back((idOctets & 0xFF00U) >> 8U);
 	primaryHeader.push_back(idOctets & 0x00FFU);
 
-	primaryHeader.append(2, '\0');
+	primaryHeader.append(2, '\0'); // Set the master and virtual channel frame count to zero
 
 	dataFieldStatus |= (static_cast<uint16_t>(secondaryHeaderPresent) & 0x0001U)
 	                   << 15U; // Synch. flag and packet order flag are assumed zero
@@ -21,4 +21,30 @@ void CCSDSTransferFrame::createPrimaryHeader(uint8_t virtChannelID, bool seconda
 	// Assign the data field status to the primary header
 	primaryHeader.push_back((dataFieldStatus & 0xFF00U) >> 8U);
 	primaryHeader.push_back(dataFieldStatus & 0x00FFU);
+}
+
+void CCSDSTransferFrame::increaseMasterChannelFrameCount() {
+    auto currentCount = static_cast<uint8_t >(primaryHeader.at(2)); // Get the running count
+
+    // Overflow check
+    if ((currentCount % 256) && (currentCount <= 255)) {
+        currentCount++;
+    } else {
+        masterChannelOverflowFlag = true;
+        currentCount = 0;
+    }
+    primaryHeader.insert(2, 1, static_cast<char >(currentCount)); // Append the updated value
+}
+
+void CCSDSTransferFrame::increaseVirtualChannelFrameCount() {
+    auto currentCount = static_cast<uint8_t >(primaryHeader.at(3)); // Get the running count
+
+    // Overflow check
+    if ((currentCount % 256) && (currentCount <= 255)) {
+        currentCount++;
+    } else {
+        virtualChannelOverflowFlag = true;
+        currentCount = 0;
+    }
+    primaryHeader.insert(3, 1, static_cast<char >(currentCount)); // Append the updated value
 }
