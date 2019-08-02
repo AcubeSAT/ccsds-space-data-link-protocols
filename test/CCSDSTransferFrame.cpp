@@ -2,7 +2,7 @@
 #include <CCSDSTransferFrame.hpp>
 
 TEST_CASE("CCSDS Transfer Frame") {
-	CCSDSTransferFrame transferFrame = CCSDSTransferFrame(5, 4);
+	CCSDSTransferFrame transferFrame = CCSDSTransferFrame(4);
 
 	String<PRIMARY_HEADER_SIZE> primHeader = transferFrame.getPrimaryHeader();
 
@@ -16,10 +16,10 @@ TEST_CASE("CCSDS Transfer Frame") {
 	CHECK(primHeader.at(5) == 0x00U);
 
 	// Check individual attributes
-	CHECK(transferFrame.secondaryHeaderExists() == false);
+	CHECK(not transferFrame.secondaryHeaderExists());
 	CHECK(transferFrame.masterChannelID() == (SPACECRAFT_IDENTIFIER & 0x03FFU));
 	CHECK(transferFrame.masterChannelFrameCount() == 0); // Master channel frame count
 	CHECK(transferFrame.virtualChannelFrameCount() == 0);
 	CHECK(transferFrame.virtualChannelID() == 4);
-	CHECK(transferFrame.ocfFlag() == false);
+	CHECK(not transferFrame.ocfFlag());
 }

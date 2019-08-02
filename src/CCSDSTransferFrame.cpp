@@ -62,19 +62,36 @@ String<TRANSFER_FRAME_SIZE> CCSDSTransferFrame::transferFrame() {
     }
 #endif
 
-    for (auto octet : dataField) {
+    for (auto const octet : dataField) {
         completeFrame.push_back(octet);
     }
 
+    // Fill the rest of empty bits of the data field with zeros to maintain the length
+    if (dataField.size() < FRAME_DATA_FIELD_MAX_SIZE) {
+        completeFrame.append(FRAME_DATA_FIELD_MAX_SIZE - dataField.size(), '\0');
+    }
+
     if (not operationalControlField.empty()) {
-        for (auto octet : operationalControlField) {
+        for (auto const octet : operationalControlField) {
             completeFrame.push_back(octet);
         }
     }
 
     if (not errorControlField.empty()) {
-        for (auto octet : errorControlField) {
+        for (auto const octet : errorControlField) {
             completeFrame.push_back(octet);
         }
     }
+
+    return completeFrame;
+}
+
+uint16_t CCSDSTransferFrame::getTransferFrameSize() {
+    uint16_t tempSize = primaryHeader.size() + dataField.size() + operationalControlField.size();
+
+#if SECONDARY_HEADER_SIZE > 0U
+    tempSize += secondaryHeader.size()
+#endif
+
+    return tempSize;
 }

@@ -54,13 +54,6 @@ protected:
 #endif
 
     /**
-     * @brief Hold the data field octets
-     * @details The length of this field is variable and it is determined by the mission requirements for the
-     * total packet length.
-     */
-    String<FRAME_DATA_FIELD_MAX_SIZE> dataField;
-
-    /**
      * @brief Store the operational control field octets
      *
      * @attention For the moment the operational control field is not implemented and the usage is TBD
@@ -75,11 +68,13 @@ protected:
      */
     String<2> errorControlField;
 
-    // Counters and single variables
+public:
     /**
-     * @brief Hold the data field total size
+     * @brief Hold the data field octets
+     * @details The length of this field is variable and it is determined by the mission requirements for the
+     * total packet length.
      */
-    uint8_t dataFieldSize;
+    String<FRAME_DATA_FIELD_MAX_SIZE> dataField;
 
     // Class function declarations
 private:
@@ -111,8 +106,8 @@ public:
      * @param datFieldSize Provide the total length in octets of the data field
      * @param virtChannelID Provide the virtual channel ID, if used, otherwise it is zero by default
      */
-    explicit CCSDSTransferFrame(uint8_t datFieldSize, uint8_t vChannelID = 0)
-            : dataFieldSize(datFieldSize), primaryHeader(),
+    explicit CCSDSTransferFrame(uint8_t vChannelID = 0)
+            : primaryHeader(),
 #if SECONDARY_HEADER_SIZE > 0U
             secondaryHeader(),
 #endif
@@ -221,6 +216,11 @@ public:
      *
      */
     String<TRANSFER_FRAME_SIZE> transferFrame();
+
+    /**
+     *
+     */
+    uint16_t getTransferFrameSize();
 };
 
 #endif // CCSDS_TM_PACKETS_CCSDSTRANSFERFRAME_HPP
