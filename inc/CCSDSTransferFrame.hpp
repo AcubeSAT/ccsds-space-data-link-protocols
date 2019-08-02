@@ -93,7 +93,7 @@ private:
      * @attention The synchronization flag and the packet order flag of the data field status, in the primary header,
      * are assumed to be `0` in this implementation, thus requiring that the segment length ID is `11`.
      */
-    void createPrimaryHeader(uint8_t virtChannelID, bool secondaryHeaderPresent, bool ocfFlag);
+    void createPrimaryHeader(bool secondaryHeaderPresent, bool ocfFlag);
 
     /**
      * @brief Generates the transfer frame secondary header
@@ -118,8 +118,7 @@ public:
 #endif
               dataField(), operationalControlField(), errorControlField(), mChannelFrameCount(0), vChannelFrameCount(0),
               virtChannelID(vChannelID), masterChannelOverflowFlag(false), virtualChannelOverflowFlag(false) {
-        createPrimaryHeader(vChannelID, SECONDARY_HEADER_SIZE > 0U,
-                            not operationalControlField.empty());
+        createPrimaryHeader(SECONDARY_HEADER_SIZE > 0U, not operationalControlField.empty());
     }
 
     /**
@@ -217,6 +216,11 @@ public:
      * @brief Get the virtual channel ID contained in the packet
      */
     uint8_t virtualChannelID() { return virtChannelID; };
+
+    /**
+     *
+     */
+    String<TRANSFER_FRAME_SIZE> transferFrame();
 };
 
 #endif // CCSDS_TM_PACKETS_CCSDSTRANSFERFRAME_HPP

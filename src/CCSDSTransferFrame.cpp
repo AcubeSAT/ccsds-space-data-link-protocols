@@ -1,6 +1,6 @@
 #include "CCSDSTransferFrame.hpp"
 
-void CCSDSTransferFrame::createPrimaryHeader(uint8_t virtChannelID, bool secondaryHeaderPresent, bool ocfFlag) {
+void CCSDSTransferFrame::createPrimaryHeader(bool secondaryHeaderPresent, bool ocfFlag) {
 	uint16_t idOctets = 0; // The first two octets of the Primary header
 	uint16_t dataFieldStatus = 0; // Hold the data field status
 
@@ -47,4 +47,34 @@ void CCSDSTransferFrame::increaseVirtualChannelFrameCount() {
         currentCount = 0;
     }
     primaryHeader.insert(3, 1, static_cast<char >(currentCount)); // Append the updated value
+}
+
+String<TRANSFER_FRAME_SIZE> CCSDSTransferFrame::transferFrame() {
+    String<TRANSFER_FRAME_SIZE> completeFrame;
+
+    for (auto octet : primaryHeader) {
+        completeFrame.push_back(octet);
+    }
+
+#if SECONDARY_HEADER_SIZE > 0U
+    for (auto octet: secondaryHeader) {
+        completeFrame.push_back(octet);
+    }
+#endif
+
+    for (auto octet : dataField) {
+        completeFrame.push_back(octet);
+    }
+
+    if (not operationalControlField.empty()) {
+        for (auto octet : operationalControlField) {
+            completeFrame.push_back(octet);
+        }
+    }
+
+    if (not errorControlField.empty()) {
+        for (auto octet : errorControlField) {
+            completeFrame.push_back(octet);
+        }
+    }
 }
