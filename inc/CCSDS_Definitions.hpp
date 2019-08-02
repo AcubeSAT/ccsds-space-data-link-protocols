@@ -10,6 +10,6 @@
 #define PRIMARY_HEADER_SIZE 6U
 
 #define SECONDARY_HEADER_SIZE 0U // Size set to zero if the secondary header is not used
-#define FRAME_DATA_FIELD_MAX_SIZE 64U
+#define FRAME_DATA_FIELD_MAX_SIZE 118U
 
 #endif // CCSDS_TM_PACKETS_CCSDS_DEFINITIONS_HPP
