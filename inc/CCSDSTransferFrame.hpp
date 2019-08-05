@@ -1,5 +1,5 @@
-#ifndef CCSDS_TM_PACKETS_CCSDSTRANSFERFRAME_HPP
-#define CCSDS_TM_PACKETS_CCSDSTRANSFERFRAME_HPP
+#ifndef CCSDS_TM_PACKETS_TRANSFERFRAME_HPP
+#define CCSDS_TM_PACKETS_TRANSFERFRAME_HPP
 
 #include "CCSDS_Definitions.hpp"
 #include "etl/String.hpp"
@@ -106,7 +106,7 @@ public:
      * @param datFieldSize Provide the total length in octets of the data field
      * @param virtChannelID Provide the virtual channel ID, if used, otherwise it is zero by default
      */
-    explicit CCSDSTransferFrame(uint8_t vChannelID = 0)
+    explicit CCSDSTransferFrame(uint8_t vChannelID = 0) // Ignore-MISRA
             : primaryHeader(),
 #if SECONDARY_HEADER_SIZE > 0U
             secondaryHeader(),
