@@ -9,21 +9,21 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 	SECTION("Large data") {
 		String<MAX_PACKET_SIZE> encodedPacket;
 		String<31232> data = String<31232>("AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()9" \
-		                                   "82934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934" \
-		                                   "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJK" \
-		                                   "AFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ" \
-		                                   "()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJ" \
-		                                   "LVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYV" \
-		                                   "BJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAF" \
-		                                   "GDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJV" \
-		                                   "JHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLV" \
-		                                   "UYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()9" \
-		                                   "82934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934" \
-		                                   "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJK" \
-		                                   "G7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ" \
-		                                   "()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982" \
-		                                   "934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYV" \
-		                                   "BJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJND");
+                                           "82934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934" \
+                                           "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJK" \
+                                           "AFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ" \
+                                           "()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJ" \
+                                           "LVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYV" \
+                                           "BJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAF" \
+                                           "GDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJV" \
+                                           "JHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLV" \
+                                           "UYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()9" \
+                                           "82934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934" \
+                                           "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJK" \
+                                           "G7894HJNDAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ" \
+                                           "()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982" \
+                                           "934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYV" \
+                                           "BJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJND");
 
 		packet.encodeFrame(transferFrame, data);
 		encodedPacket.append(packet.getEncodedPacket());
@@ -34,18 +34,22 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 		 * Validate the primary headers in the packet
 		 * If the secondary header, or any other field is added do not forget to add it to the testing
 		 */
-		for (size_t i = 0; i < encodedPacket.size(); i += TRANSFER_FRAME_SIZE) {
+		for (size_t i = 0, j = 0; i < encodedPacket.size(); i += TRANSFER_FRAME_SIZE, j++) {
 			CHECK(encodedPacket.at(i) == 0x23U);
 			CHECK(encodedPacket.at(i + 1) == 0x78U);
 
 			CHECK(encodedPacket.at(i + 4) == 0x18U);
 			CHECK(encodedPacket.at(i + 5) == 0x00U);
 
+
 			// Check the data field contents
-			CHECK(encodedPacket.substr(i + 6, FRAME_DATA_FIELD_MAX_SIZE).compare("AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()" \
-                                                                                 "982934HJVJHJLVUYVBJKAFGDJ()982934H" \
-                                                                                 "JVJHJLVUYVBJKAFGDJ()982934HJVJHJLV" \
-                                                                                 "UYVBJKG7894HJND"));
+			if (i == 8 * TRANSFER_FRAME_SIZE) {
+				// Final data length
+				CHECK(encodedPacket.substr(i + 6, 77).compare(data.substr(5 * j, 77)) == 0);
+			} else {
+				CHECK(encodedPacket.substr(i + 6, FRAME_DATA_FIELD_MAX_SIZE).compare(
+					data.substr(5 * j, FRAME_DATA_FIELD_MAX_SIZE)) == 0);
+			}
 		}
 	}
 
