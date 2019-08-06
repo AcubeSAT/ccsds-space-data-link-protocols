@@ -74,7 +74,7 @@ public:
      * @details The length of this field is variable and it is determined by the mission requirements for the
      * total packet length.
      */
-    String<FRAME_DATA_FIELD_MAX_SIZE> dataField;
+    String<FRAME_DATA_FIELD_SIZE> dataField;
 
     // Class function declarations
 private:

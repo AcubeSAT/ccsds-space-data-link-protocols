@@ -7,8 +7,8 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 
 	SECTION("Large data") {
 		String<MAX_PACKET_SIZE> encodedPacket;
-		String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_MAX_SIZE> data =
-			String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_MAX_SIZE>(
+		String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_SIZE> data =
+			String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_SIZE>(
 				"AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()9" \
                                            "82934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934" \
                                            "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJK" \
@@ -49,16 +49,16 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 				// Final data length
 				CHECK(encodedPacket.substr(i + 6, 77).compare(data.substr(5 * j, 77)) == 0);
 			} else {
-				CHECK(encodedPacket.substr(i + 6, FRAME_DATA_FIELD_MAX_SIZE).compare(
-					data.substr(5 * j, FRAME_DATA_FIELD_MAX_SIZE)) == 0);
+				CHECK(encodedPacket.substr(i + 6, FRAME_DATA_FIELD_SIZE).compare(
+					data.substr(5 * j, FRAME_DATA_FIELD_SIZE)) == 0);
 			}
 		}
 	}
 
 	SECTION("Not so many data") {
 		String<MAX_PACKET_SIZE> encodedPacket;
-		String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_MAX_SIZE> data =
-			String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_MAX_SIZE>(
+		String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_SIZE> data =
+			String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_SIZE>(
 				"AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934" \
                                            "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJND");
 
@@ -79,7 +79,7 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 		CHECK(encodedPacket.at(5) == 0x00U);
 
 		// Check the data field contents
-		CHECK(encodedPacket.substr(6, FRAME_DATA_FIELD_MAX_SIZE).compare("AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJ" \
+		CHECK(encodedPacket.substr(6, FRAME_DATA_FIELD_SIZE).compare("AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJ" \
                                                                          "VJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFG" \
                                                                          "DJ()982934HJVJHJLVUYVBJKG7894HJND"));
 	}

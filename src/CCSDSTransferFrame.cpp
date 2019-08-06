@@ -12,7 +12,7 @@ void CCSDSTransferFrame::createPrimaryHeader(bool secondaryHeaderPresent, bool o
 	primaryHeader.push_back((idOctets & 0xFF00U) >> 8U);
 	primaryHeader.push_back(idOctets & 0x00FFU);
 
-	primaryHeader.append(2, '\0'); // Set the master and virtual channel frame count to zero
+	primaryHeader.append(2, char(0)); // Set the master and virtual channel frame count to zero
 
 	dataFieldStatus |= (static_cast<uint16_t>(secondaryHeaderPresent) & 0x0001U)
 	                   << 15U; // Synch. flag and packet order flag are assumed zero
@@ -67,8 +67,8 @@ String<TRANSFER_FRAME_SIZE> CCSDSTransferFrame::transferFrame() {
     }
 
     // Fill the rest of empty bits of the data field with zeros to maintain the length
-    if (dataField.size() < FRAME_DATA_FIELD_MAX_SIZE) {
-        completeFrame.append(FRAME_DATA_FIELD_MAX_SIZE - dataField.size(), '\0');
+    if (dataField.size() < FRAME_DATA_FIELD_SIZE) {
+        completeFrame.append(FRAME_DATA_FIELD_SIZE - dataField.size(), 0);
     }
 
     if (not operationalControlField.empty()) {

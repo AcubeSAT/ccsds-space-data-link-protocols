@@ -18,7 +18,7 @@ public:
 	 *
 	 */
 	void encodeFrame(CCSDSTransferFrame& transferFrame,
-	                 String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_MAX_SIZE>& data);
+	                 String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_SIZE>& data);
 
 	/**
 	 *
