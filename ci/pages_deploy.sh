@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e # Exit on any error
+#set -e # Exit on any error
 
 # Bash color ouput
 # https://misc.flogisoft.com/bash/tip_colors_and_formatting
