@@ -95,3 +95,7 @@ uint16_t CCSDSTransferFrame::getTransferFrameSize() {
 
     return tempSize;
 }
+
+void CCSDSTransferFrame::serFirstHeaderPointer(uint16_t firstHeaderPtr) {
+
+}
