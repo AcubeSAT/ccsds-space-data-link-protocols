@@ -27,26 +27,26 @@ void CCSDSTransferFrame::increaseMasterChannelFrameCount() {
     auto currentCount = static_cast<uint8_t >(primaryHeader.at(2)); // Get the running count
 
     // Overflow check
-    if (((currentCount % 256U) == 0U) && (currentCount <= 255U)) {
+    if ((currentCount <= 255U)) {
         currentCount++;
     } else {
         masterChannelOverflowFlag = true;
         currentCount = 0;
     }
-    primaryHeader.insert(2, 1, static_cast<char >(currentCount)); // Append the updated value
+    primaryHeader.replace(2, 1, 1, static_cast<char >(currentCount)); // Append the updated value
 }
 
 void CCSDSTransferFrame::increaseVirtualChannelFrameCount() {
     auto currentCount = static_cast<uint8_t >(primaryHeader.at(3)); // Get the running count
 
     // Overflow check
-    if (((currentCount % 256U) == 0U) && (currentCount <= 255U)) {
+    if ((currentCount <= 255U)) {
         currentCount++;
     } else {
         virtualChannelOverflowFlag = true;
         currentCount = 0;
     }
-    primaryHeader.insert(3, 1, static_cast<char >(currentCount)); // Append the updated value
+    primaryHeader.replace(3, 1, 1, static_cast<char >(currentCount)); // Append the updated value
 }
 
 String<TRANSFER_FRAME_SIZE> CCSDSTransferFrame::transferFrame() {

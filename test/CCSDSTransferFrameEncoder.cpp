@@ -37,6 +37,7 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 		for (size_t i = 0, j = 0; i < encodedPacket.size(); i += TRANSFER_FRAME_SIZE, j++) {
 			CHECK(encodedPacket.at(i) == 0x23U);
 			CHECK(encodedPacket.at(i + 1) == 0x78U);
+			CHECK(encodedPacket.at(i + 2) == j);
 
 			CHECK(encodedPacket.at(i + 4) == 0x18U);
 			CHECK(encodedPacket.at(i + 5) == 0x00U);
@@ -69,6 +70,7 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 		 */
 		CHECK(encodedPacket.at(0) == 0x23U);
 		CHECK(encodedPacket.at(1) == 0x78U);
+		CHECK(encodedPacket.at(2) == 0U);
 
 		CHECK(encodedPacket.at(4) == 0x18U);
 		CHECK(encodedPacket.at(5) == 0x00U);
