@@ -6,8 +6,8 @@ int main() {
 	CCSDSTransferFrameEncoder packet = CCSDSTransferFrameEncoder();
 
 	String<MAX_PACKET_SIZE> encodedPacket;
-	String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_SIZE> data =
-		String<(MAX_PACKET_SIZE / TRANSFER_FRAME_SIZE) * FRAME_DATA_FIELD_SIZE>(
+	String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE> data =
+		String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE>(
 			"AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()9" \
                                            "82934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934" \
                                            "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJK" \
@@ -36,7 +36,7 @@ int main() {
 
 	std::cout << "Encoded frame data: ";
 	for (auto const octet : encodedPacket) {
-		std::cout << std::hex << std::showbase << unsigned(octet) << " ";
+		std::cout << std::hex << std::showbase << unsigned(static_cast<uint8_t>(octet)) << " ";
 	}
 	std::cout << std::endl;
 
