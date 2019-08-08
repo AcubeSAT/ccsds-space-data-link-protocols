@@ -126,6 +126,11 @@ public:
     void increaseMasterChannelFrameCount();
 
     /**
+     *
+     */
+    void resetMasterChannelFrameCount() {mChannelFrameCount = 0U;};
+
+    /**
      * @brief Increase the virtual channel frame count
      * @details The virtual channel frame count field provides the individual accountability for each virtual channel,
      * to enable systematic packet extraction from the transfer frame data field. Same as the master count, re-setting
@@ -133,13 +138,18 @@ public:
      */
     void increaseVirtualChannelFrameCount();
 
+	/**
+	 *
+	 */
+	void resetVirtualChannelFrameCount() {vChannelFrameCount = 0U;};
+
     /**
      * @brief Set the 11-bit first header pointer in the data field status of the primary header
      * @details
      *
      * @param firstHeaderPtr
      */
-    void serFirstHeaderPointer(uint16_t firstHeaderPtr);
+    void setFirstHeaderPointer(uint16_t firstHeaderPtr);
 
     /**
      * @brief Get the first header pointer from the data field status
@@ -213,12 +223,12 @@ public:
     uint8_t virtualChannelID() { return virtChannelID; };
 
     /**
-     *
+     * @brief Get the generated transfer frame
      */
     String<TRANSFER_FRAME_SIZE> transferFrame();
 
     /**
-     *
+     * @brief The total size of the transfer frame
      */
     uint16_t getTransferFrameSize();
 };
