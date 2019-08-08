@@ -51,13 +51,13 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 			CHECK(static_cast<uint8_t>(encodedPacket.at(i + 9)) == 0x78U);
 			CHECK(static_cast<uint8_t>(encodedPacket.at(i + 10)) == j);
 
-			CHECK(static_cast<uint8_t>(encodedPacket.at(i + 12)) == 0x18U);
-			CHECK(static_cast<uint8_t>(encodedPacket.at(i + 13)) == 0x00U);
-
 			// Check the data field contents
 			if (i == 8 * (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) {
 				// Final data length
 				CHECK(encodedPacket.substr(i + 14, 77).compare(data.substr(5 * j, 77)) == 0);
+
+				CHECK(static_cast<uint8_t>(encodedPacket.at(i + 12)) == 0x1FU);
+				CHECK(static_cast<uint8_t>(encodedPacket.at(i + 13)) == 0xFEU);
 			} else {
 				CHECK(encodedPacket.substr(i + 14, FRAME_DATA_FIELD_SIZE).compare(
 					data.substr(5 * j, FRAME_DATA_FIELD_SIZE)) == 0);
@@ -93,8 +93,8 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 		CHECK(static_cast<uint8_t>(encodedPacket.at(9)) == 0x78U);
 		CHECK(static_cast<uint8_t>(encodedPacket.at(10)) == 0x00U);
 
-		CHECK(static_cast<uint8_t>(encodedPacket.at(12)) == 0x18U);
-		CHECK(static_cast<uint8_t>(encodedPacket.at(13)) == 0x00U);
+		CHECK(static_cast<uint8_t>(encodedPacket.at(12)) == 0x1FU);
+		CHECK(static_cast<uint8_t>(encodedPacket.at(13)) == 0xFEU);
 
 		// Check the data field contents
 		CHECK(encodedPacket.substr(14, FRAME_DATA_FIELD_SIZE).compare("AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJ" \
