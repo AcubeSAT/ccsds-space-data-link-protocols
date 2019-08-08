@@ -61,6 +61,9 @@ TEST_CASE("CCSDS Transfer Frame Encoder") {
 			} else {
 				CHECK(encodedPacket.substr(i + 14, FRAME_DATA_FIELD_SIZE).compare(
 					data.substr(5 * j, FRAME_DATA_FIELD_SIZE)) == 0);
+
+				CHECK(static_cast<uint8_t>(encodedPacket.at(i + 12)) == 0x1FU);
+				CHECK(static_cast<uint8_t>(encodedPacket.at(i + 13)) == 0xFFU);
 			}
 		}
 	}

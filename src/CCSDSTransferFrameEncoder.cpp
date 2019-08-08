@@ -7,6 +7,7 @@ void CCSDSTransferFrameEncoder::encodeFrame(CCSDSTransferFrame& transferFrame,
 	transferFrame.resetMasterChannelFrameCount();
 	for (auto const field : data) {
 		if (transferFrame.dataField.size() == FRAME_DATA_FIELD_SIZE) {
+			transferFrame.setFirstHeaderPointer(0x07FFU); // No new packet is starting in frame
 			encodedFrame.append(transferFrame.transferFrame()); // Save the transfer frames in the packet
 			transferFrame.increaseMasterChannelFrameCount(); // Increase the frame count
 			appendSynchBits();
