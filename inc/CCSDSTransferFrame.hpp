@@ -126,7 +126,7 @@ public:
     void increaseMasterChannelFrameCount();
 
     /**
-     *
+     * @brief Rest the running count for the master channel
      */
     void resetMasterChannelFrameCount() {mChannelFrameCount = 0U;};
 
@@ -139,8 +139,8 @@ public:
     void increaseVirtualChannelFrameCount();
 
 	/**
-	 *
-	 */
+     * @brief Rest the running count for the virtual channel this frame contains
+     */
 	void resetVirtualChannelFrameCount() {vChannelFrameCount = 0U;};
 
     /**

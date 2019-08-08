@@ -100,6 +100,7 @@ void CCSDSTransferFrame::setFirstHeaderPointer(uint16_t firstHeaderPtr) {
 	uint8_t pointerElements[2] = {static_cast<uint8_t>((firstHeaderPtr & 0x0700U) >> 8U),
 	                              static_cast<uint8_t>(firstHeaderPtr & 0x00FFU)};
 	primaryHeader.replace(4, 1, 1,
-	                      static_cast<char>((unsigned(primaryHeader.at(4)) & 0xF8U) | pointerElements[0]));
+	                      static_cast<char>(
+		                      (static_cast<uint8_t>(primaryHeader.at(4)) & 0xF8U) | pointerElements[0]));
 	primaryHeader.replace(5, 1, 1, static_cast<char>(pointerElements[1]));
 }
