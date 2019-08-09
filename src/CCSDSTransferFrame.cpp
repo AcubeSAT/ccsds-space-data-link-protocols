@@ -15,7 +15,7 @@ void CCSDSTransferFrame::createPrimaryHeader(bool secondaryHeaderPresent, bool o
 	primaryHeader.append(2, char(0)); // Set the master and virtual channel frame count to zero
 
 	dataFieldStatus |= (static_cast<uint16_t>(secondaryHeaderPresent) & 0x0001U)
-		<< 15U; // Synch. flag and packet order flag are assumed zero
+	                   << 15U; // Synch. flag and packet order flag are assumed zero
 	dataFieldStatus |= 0x0003U << 11U; // Set the segment length ID to 11, as the standard recommends
 
 	// Assign the data field status to the primary header
@@ -24,7 +24,7 @@ void CCSDSTransferFrame::createPrimaryHeader(bool secondaryHeaderPresent, bool o
 }
 
 void CCSDSTransferFrame::increaseMasterChannelFrameCount() {
-	auto currentCount = static_cast<uint8_t >(primaryHeader.at(2)); // Get the running count
+	auto currentCount = static_cast<uint8_t>(primaryHeader.at(2)); // Get the running count
 
 	// Overflow check
 	if ((currentCount <= 255U)) {
@@ -33,11 +33,11 @@ void CCSDSTransferFrame::increaseMasterChannelFrameCount() {
 		masterChannelOverflowFlag = true;
 		currentCount = 0;
 	}
-	primaryHeader.replace(2, 1, 1, static_cast<char >(currentCount)); // Append the updated value
+	primaryHeader.replace(2, 1, 1, static_cast<char>(currentCount)); // Append the updated value
 }
 
 void CCSDSTransferFrame::increaseVirtualChannelFrameCount() {
-	auto currentCount = static_cast<uint8_t >(primaryHeader.at(3)); // Get the running count
+	auto currentCount = static_cast<uint8_t>(primaryHeader.at(3)); // Get the running count
 
 	// Overflow check
 	if ((currentCount <= 255U)) {
@@ -46,7 +46,7 @@ void CCSDSTransferFrame::increaseVirtualChannelFrameCount() {
 		virtualChannelOverflowFlag = true;
 		currentCount = 0;
 	}
-	primaryHeader.replace(3, 1, 1, static_cast<char >(currentCount)); // Append the updated value
+	primaryHeader.replace(3, 1, 1, static_cast<char>(currentCount)); // Append the updated value
 }
 
 String<TRANSFER_FRAME_SIZE> CCSDSTransferFrame::transferFrame() {
@@ -57,7 +57,7 @@ String<TRANSFER_FRAME_SIZE> CCSDSTransferFrame::transferFrame() {
 	}
 
 #if SECONDARY_HEADER_SIZE > 0U
-	for (auto octet: secondaryHeader) {
+	for (auto octet : secondaryHeader) {
 		completeFrame.push_back(octet);
 	}
 #endif
@@ -93,14 +93,13 @@ uint16_t CCSDSTransferFrame::getTransferFrameSize() {
 	tempSize += secondaryHeader.size()
 #endif
 
-	return tempSize;
+	                return tempSize;
 }
 
 void CCSDSTransferFrame::setFirstHeaderPointer(uint16_t firstHeaderPtr) {
 	uint8_t pointerElements[2] = {static_cast<uint8_t>((firstHeaderPtr & 0x0700U) >> 8U),
 	                              static_cast<uint8_t>(firstHeaderPtr & 0x00FFU)};
 	primaryHeader.replace(4, 1, 1,
-	                      static_cast<char>(
-		                      (static_cast<uint8_t>(primaryHeader.at(4)) & 0xF8U) | pointerElements[0]));
+	                      static_cast<char>((static_cast<uint8_t>(primaryHeader.at(4)) & 0xF8U) | pointerElements[0]));
 	primaryHeader.replace(5, 1, 1, static_cast<char>(pointerElements[1]));
 }

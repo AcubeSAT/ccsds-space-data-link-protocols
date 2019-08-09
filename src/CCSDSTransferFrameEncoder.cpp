@@ -1,17 +1,18 @@
 #include "CCSDSTransferFrameEncoder.hpp"
 
-void CCSDSTransferFrameEncoder::encodeFrame(CCSDSTransferFrame& transferFrame,
-                                            String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) *
-                                                   FRAME_DATA_FIELD_SIZE>& data, const uint32_t* packetSizes) {
+void CCSDSTransferFrameEncoder::encodeFrame(
+    CCSDSTransferFrame& transferFrame,
+    String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE>& data,
+    const uint32_t* packetSizes) {
 	appendSynchBits();
 	transferFrame.resetMasterChannelFrameCount();
 	uint32_t count = 0;
 	uint32_t index = 0;
 	for (size_t i = 0; i < data.size(); i++) {
-		if (packetSizes) {
+		if (packetSizes != nullptr) {
 			if (count++ == packetSizes[index]) {
-				transferFrame.setFirstHeaderPointer(static_cast<uint16_t>((transferFrame.dataField.size() + 1)
-				                                                          & 0x07FFU));
+				transferFrame.setFirstHeaderPointer(
+				    static_cast<uint16_t>((transferFrame.dataField.size() + 1) & 0x07FFU));
 				index++;
 				count = 0;
 			}

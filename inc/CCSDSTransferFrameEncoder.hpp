@@ -15,7 +15,6 @@ private:
 	 */
 	String<MAX_PACKET_SIZE> encodedFrame;
 
-
 public:
 	/**
 	 * @brief Generate a transfer frame sequence with the data provided
@@ -32,8 +31,9 @@ public:
 	/**
 	 * @brief Get the encoded transfer frame sequence
 	 */
-	String<MAX_PACKET_SIZE> getEncodedPacket() { return encodedFrame; }
-
+	String<MAX_PACKET_SIZE> getEncodedPacket() {
+		return encodedFrame;
+	}
 };
 
 #endif // CCSDS_TM_PACKETS_CCSDSTRANSFERFRAMEENCODER_HPP
