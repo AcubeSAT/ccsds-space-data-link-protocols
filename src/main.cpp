@@ -24,8 +24,9 @@ int main() {
                                            "()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982" \
                                            "934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYV" \
                                            "BJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJND");
+	uint32_t packetSizes[7] = {351, 117, 117, 117, 127, 105, 119};
 
-	packet.encodeFrame(transferFrame, data);
+	packet.encodeFrame(transferFrame, data, packetSizes);
 	encodedPacket.append(packet.getEncodedPacket());
 
 	std::cout << "Data to append: " << data.c_str() << "\n\n";

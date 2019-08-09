@@ -21,7 +21,8 @@ public:
 	 * @brief Generate a transfer frame sequence with the data provided
 	 */
 	void encodeFrame(CCSDSTransferFrame& transferFrame,
-	                 String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE>& data);
+	                 String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE>& data,
+	                 const uint32_t* packetSizes = nullptr);
 
 	/**
 	 * @brief When called it appends the ASM synchronization bits to the `encodedFrame` string
