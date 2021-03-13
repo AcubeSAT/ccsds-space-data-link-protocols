@@ -17,7 +17,9 @@ add_custom_target(check
 # Specify the .cpp files common across all targets
 add_library(common OBJECT
         src/CCSDSTransferFrame.cpp
+        src/CCSDSTransferFrameTM.cpp
         src/CCSDSTransferFrameEncoder.cpp
+        src/CCSDSTransferFrameEncoderTM.cpp
         )
 
 # Specify the .cpp files for the executables

@@ -1,8 +1,8 @@
 #include <catch2/catch.hpp>
-#include <CCSDSTransferFrame.hpp>
+#include <CCSDSTransferFrameTM.hpp>
 
-TEST_CASE("CCSDS Transfer Frame") {
-	CCSDSTransferFrame transferFrame = CCSDSTransferFrame(4);
+TEST_CASE("CCSDS TM Transfer Frame") {
+	CCSDSTransferFrameTM transferFrame = CCSDSTransferFrameTM(4);
 
 	String<PRIMARY_HEADER_SIZE> primHeader = transferFrame.getPrimaryHeader();
 	transferFrame.setFirstHeaderPointer(0x07FFU);

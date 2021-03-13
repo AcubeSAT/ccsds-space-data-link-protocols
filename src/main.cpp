@@ -1,9 +1,9 @@
 #include <iostream>
-#include <CCSDSTransferFrameEncoder.hpp>
+#include <CCSDSTransferFrameEncoderTM.hpp>
 
 int main() {
-	CCSDSTransferFrame transferFrame = CCSDSTransferFrame(4);
-	CCSDSTransferFrameEncoder packet = CCSDSTransferFrameEncoder();
+	CCSDSTransferFrameTM transferFrame = CCSDSTransferFrameTM(4);
+	CCSDSTransferFrameEncoderTM packet = CCSDSTransferFrameEncoderTM();
 
 	String<MAX_PACKET_SIZE> encodedPacket;
 	String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE))* FRAME_DATA_FIELD_SIZE> data =

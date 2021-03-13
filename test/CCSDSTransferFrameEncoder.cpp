@@ -1,9 +1,9 @@
 #include <catch2/catch.hpp>
-#include <CCSDSTransferFrameEncoder.hpp>
+#include <CCSDSTransferFrameEncoderTM.hpp>
 
-TEST_CASE("CCSDS Transfer Frame Encoder") {
-	CCSDSTransferFrame transferFrame = CCSDSTransferFrame(4);
-	CCSDSTransferFrameEncoder packet = CCSDSTransferFrameEncoder();
+TEST_CASE("CCSDS TMTransfer Frame Encoder") {
+	CCSDSTransferFrameTM transferFrame = CCSDSTransferFrameTM(4);
+	CCSDSTransferFrameEncoderTM packet = CCSDSTransferFrameEncoderTM();
 
 	SECTION("Large data") {
 		String<MAX_PACKET_SIZE> encodedPacket;
