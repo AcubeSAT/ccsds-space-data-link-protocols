@@ -1,5 +1,5 @@
-#ifndef CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
-#define CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
+#ifndef CCSDS_PACKETS_TRANSFERFRAMETM_HPP
+#define CCSDS_PACKETS_TRANSFERFRAMETM_HPP
 
 #include "CCSDS_Definitions.hpp"
 #include "CCSDSTransferFrame.hpp"
@@ -10,11 +10,12 @@
  *
  * @todo Define if the Operational Control Field and the Secondary header are required for our project
  */
-class CCSDSTransferFrameTM: public CCSDSTransferFrame {
+class CCSDSTransferFrameTM: private CCSDSTransferFrame {
 	// Class variable declarations
 private:
 	/**
 	 * @brief Hold the running count of the master channel frame count
+	 * @todo Decide on how master channels will be handled
 	 */
 	uint8_t mChannelFrameCount;
 
@@ -38,22 +39,12 @@ private:
 	 */
 	bool virtualChannelOverflowFlag;
 
+	/**
+	 * @brief Defines whether secondary header is present
+	 */
+    bool secondaryHeaderPresent;
+
 protected:
-	// Field information containers
-	/**
-	 * @brief Store the transfer frame primary header generated from the `createPrimaryHeader` function
-	 */
-	String<PRIMARY_HEADER_SIZE> primaryHeader;
-
-	/**
-	 * @brief Store the transfer frame secondary header generated from the `createSecondaryHeader` function
-	 *
-	 * @attention At the moment the secondary header part is not implemented, since it is not required.
-	 */
-#if SECONDARY_HEADER_SIZE > 0U
-	String<SECONDARY_HEADER_SIZE> secondaryHeader;
-#endif
-
 	/**
 	 * @brief Store the operational control field octets
 	 *
@@ -61,6 +52,7 @@ protected:
 	 */
 	String<4> operationalControlField;
 
+#if TM_ERROR_CONTROL_FIELD_EXISTS
 	/**
 	 * @brief Store the result of the CRC generation for the packet as the standard recommends
 	 *
@@ -68,6 +60,21 @@ protected:
 	 * will be implemented
 	 */
 	String<2> errorControlField;
+#endif
+
+    /**
+     * @brief Store the transfer frame primary header generated from the `createPrimaryHeader` function
+     */
+    String<TM_PRIMARY_HEADER_SIZE> primaryHeader;
+
+    /**
+     * @brief Store the transfer frame secondary header generated from the `createSecondaryHeader` function
+     *
+     * @attention At the moment the secondary header part is not implemented, since it is not required.
+     */
+#if TM_SECONDARY_HEADER_SIZE > 0U
+    String<TM_SECONDARY_HEADER_SIZE> secondaryHeader;
+#endif
 
 public:
 	/**
@@ -75,29 +82,28 @@ public:
 	 * @details The length of this field is variable and it is determined by the mission requirements for the
 	 * total packet length.
 	 */
-	String<FRAME_DATA_FIELD_SIZE> dataField;
+	String<TM_FRAME_DATA_FIELD_SIZE> dataField;
 
-	// Class function declarations
 private:
 	/**
 	 * @brief Internal function to create the packet's primary header upon the packet creation.
 	 * @details This particular function is called inside the constructor to generate the primary header of the packet.
-	 * The primary header is saved as the `String<PRIMARY_HEADER_SIZE>` attribute in this class and can be accessed
+	 * The primary header is saved as the `String<TM_PRIMARY_HEADER_SIZE>` attribute in this class and can be accessed
 	 * publicly.
 	 *
 	 * @note As per CCSDS 132.0-B-2 recommendation, the transfer frame version number is `00`
 	 * @attention The synchronization flag and the packet order flag of the data field status, in the primary header,
 	 * are assumed to be `0` in this implementation, thus requiring that the segment length ID is `11`.
 	 */
-	void createPrimaryHeader(bool secondaryHeaderPresent, bool ocfFlag);
+	void createPrimaryHeader() override;
 
 	/**
 	 * @brief Generates the transfer frame secondary header
 	 *
 	 * @attention At the moment the secondary header part is not implemented, since it is not required.
 	 */
-#if SECONDARY_HEADER_SIZE > 0U
-	void createSecondaryHeader(String<SECONDARY_HEADER_SIZE - 1>& dataField);
+#if TM_SECONDARY_HEADER_SIZE > 0U
+	void createSecondaryHeader(String<TM_SECONDARY_HEADER_SIZE - 1>& dataField) override;
 #endif
 
 public:
@@ -109,12 +115,16 @@ public:
 	 */
 	explicit CCSDSTransferFrameTM(uint8_t vChannelID = 0) // Ignore-MISRA
 	    : primaryHeader(),
-#if SECONDARY_HEADER_SIZE > 0U
+#if TM_SECONDARY_HEADER_SIZE > 0U
 	      secondaryHeader(),
 #endif
-	      dataField(), operationalControlField(), errorControlField(), mChannelFrameCount(0), vChannelFrameCount(0),
-	      virtChannelID(vChannelID), masterChannelOverflowFlag(false), virtualChannelOverflowFlag(false) {
-		createPrimaryHeader(SECONDARY_HEADER_SIZE > 0U, not operationalControlField.empty());
+          secondaryHeaderPresent(TM_SECONDARY_HEADER_SIZE > 0), dataField(), operationalControlField(),
+#if TM_ERROR_CONTROL_FIELD_EXISTS
+          errorControlField(),
+#endif
+    mChannelFrameCount(0), vChannelFrameCount(0), virtChannelID(vChannelID),
+          masterChannelOverflowFlag(false), virtualChannelOverflowFlag(false){
+		    createPrimaryHeader();
 	}
 
 	/**
@@ -169,7 +179,7 @@ public:
 	 * @brief Access the primary header
 	 * @details Access functions are used to avoid accidental misconfiguration of the returned object/value
 	 */
-	String<PRIMARY_HEADER_SIZE> getPrimaryHeader() {
+	String<TM_PRIMARY_HEADER_SIZE> getPrimaryHeader() {
 		return primaryHeader;
 	}
 
@@ -178,8 +188,8 @@ public:
 	 *
 	 * @attention At the moment the secondary header part is not implemented, since it is not required.
 	 */
-#if SECONDARY_HEADER_SIZE > 0U
-	String<SECONDARY_HEADER_SIZE> getSecondaryHeader() {
+#if TM_SECONDARY_HEADER_SIZE > 0U
+	String<TM_SECONDARY_HEADER_SIZE> getSecondaryHeader() {
 		return secondaryHeader;
 	};
 #endif
@@ -188,7 +198,7 @@ public:
 	 * @brief Get if there is a secondary header in the packet
 	 */
 	bool secondaryHeaderExists() {
-		return SECONDARY_HEADER_SIZE > 0U;
+		return TM_SECONDARY_HEADER_SIZE > 0U;
 	}
 
 	/**
@@ -247,12 +257,12 @@ public:
 	/**
 	 * @brief Get the generated transfer frame
 	 */
-	String<TRANSFER_FRAME_SIZE> transferFrame();
+	String<TM_TRANSFER_FRAME_SIZE> transferFrame();
 
 	/**
 	 * @brief The total size of the transfer frame
 	 */
-	uint16_t getTransferFrameSize();
+	uint16_t getTransferFrameSize() override;
 };
 
-#endif // CCSDS_TM_PACKETS_CCSDSTRANSFERFRAMETC_HPP
+#endif // CCSDS_PACKETS_TRANSFERFRAMETM_HPP

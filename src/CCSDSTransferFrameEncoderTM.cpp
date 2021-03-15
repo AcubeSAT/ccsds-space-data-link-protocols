@@ -2,7 +2,7 @@
 
 void CCSDSTransferFrameEncoderTM::encodeFrame(
     CCSDSTransferFrameTM& transferFrame,
-    String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE>& data,
+    String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE>& data,
     const uint32_t* packetSizes) {
 	appendSynchBits();
 	transferFrame.resetMasterChannelFrameCount();
@@ -18,7 +18,7 @@ void CCSDSTransferFrameEncoderTM::encodeFrame(
 			}
 		}
 
-		if (transferFrame.dataField.size() == FRAME_DATA_FIELD_SIZE) {
+		if (transferFrame.dataField.size() == TM_FRAME_DATA_FIELD_SIZE) {
 			if (static_cast<uint8_t>(transferFrame.getPrimaryHeader().at(5)) == 0x00U) {
 				transferFrame.setFirstHeaderPointer(0x07FFU); // No new packet is starting in frame
 			}
@@ -32,8 +32,8 @@ void CCSDSTransferFrameEncoderTM::encodeFrame(
 	}
 
 	// If the data field size is not full, make it
-	if (transferFrame.dataField.size() < FRAME_DATA_FIELD_SIZE) {
-		transferFrame.dataField.append(FRAME_DATA_FIELD_SIZE - transferFrame.dataField.size(), 0);
+	if (transferFrame.dataField.size() < TM_FRAME_DATA_FIELD_SIZE) {
+		transferFrame.dataField.append(TM_FRAME_DATA_FIELD_SIZE - transferFrame.dataField.size(), 0);
 		transferFrame.setFirstHeaderPointer(0x07FEU); // Idle data contained
 		encodedFrame.append(transferFrame.transferFrame()); // Save the transfer frames in the packet
 		transferFrame.increaseMasterChannelFrameCount(); // Increase the frame count

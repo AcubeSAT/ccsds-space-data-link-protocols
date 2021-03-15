@@ -1,15 +1,44 @@
 #include <catch2/catch.hpp>
 #include <CCSDSTransferFrameTM.hpp>
+#include <CCSDSTransferFrameTC.hpp>
+
+TEST_CASE("CCSDS TC Transfer Frame") {
+    CCSDSTransferFrameTC transferFrame = CCSDSTransferFrameTC(33, 1022);
+
+    String<TC_PRIMARY_HEADER_SIZE> primHeader = transferFrame.getPrimaryHeader();
+
+    String<TC_MAX_TRANSFER_FRAME_SIZE> frame = transferFrame.transferFrame();
+
+    CHECK(primHeader.size() == TC_PRIMARY_HEADER_SIZE); // Check the size of the primary header
+
+    CHECK(primHeader.at(0) == 0x02U);
+    CHECK(primHeader.at(1) == 0x37U);
+    // CHECK(primHeader.at(2) == 0x87U);
+    // CHECK(primHeader.at(3) == 0xFEU);
+    CHECK(primHeader.at(4) == 0x00U);
+
+    transferFrame.setFrameSequenceCount(0xA1U);
+    transferFrame.incrementFrameSequenceCount();
+
+    primHeader = transferFrame.getPrimaryHeader();
+    //CHECK(primHeader.at(4) == 0xA2U);
+
+    CHECK(frame.at(0) == 0x02U);
+    CHECK(frame.at(1) == 0x37U);
+    // CHECK(frame.at(2) == 0x87U);
+    // CHECK(frame.at(3) == 0xFEU);
+    CHECK(frame.at(4) == 0x00U);
+}
 
 TEST_CASE("CCSDS TM Transfer Frame") {
 	CCSDSTransferFrameTM transferFrame = CCSDSTransferFrameTM(4);
 
-	String<PRIMARY_HEADER_SIZE> primHeader = transferFrame.getPrimaryHeader();
+	String<TM_PRIMARY_HEADER_SIZE> primHeader = transferFrame.getPrimaryHeader();
 	transferFrame.setFirstHeaderPointer(0x07FFU);
 
-	String<TRANSFER_FRAME_SIZE> frame = transferFrame.transferFrame();
+	String<TM_TRANSFER_FRAME_SIZE> frame = transferFrame.transferFrame();
 
-	CHECK(primHeader.size() == PRIMARY_HEADER_SIZE); // Check the size of the primary header
+	CHECK(primHeader.size() == TM_PRIMARY_HEADER_SIZE); // Check the size of the primary header
 
 	// Validate the contents of the primary header String. Created from constructor
 	CHECK(primHeader.at(0) == 0x23U);

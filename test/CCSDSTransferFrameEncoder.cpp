@@ -6,9 +6,9 @@ TEST_CASE("CCSDS TMTransfer Frame Encoder") {
 	CCSDSTransferFrameEncoderTM packet = CCSDSTransferFrameEncoderTM();
 
 	SECTION("Large data") {
-		String<MAX_PACKET_SIZE> encodedPacket;
-		String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE))* FRAME_DATA_FIELD_SIZE> data =
-		    String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE>(
+		String<TM_MAX_PACKET_SIZE> encodedPacket;
+		String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE> data =
+		    String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE>(
 		        "AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()9"
 		        "82934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJNDAFGDJ()982934"
 		        "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJK"
@@ -28,18 +28,18 @@ TEST_CASE("CCSDS TMTransfer Frame Encoder") {
 		uint32_t packetSizes[7] = {351, 117, 117, 117, 127, 105, 119};
 		uint16_t pointerHeader = 0;
 		uint16_t tempSum = packetSizes[0];
-		uint16_t division = packetSizes[0] / FRAME_DATA_FIELD_SIZE;
+		uint16_t division = packetSizes[0] / TM_FRAME_DATA_FIELD_SIZE;
 
 		packet.encodeFrame(transferFrame, data, packetSizes);
 		encodedPacket.append(packet.getEncodedPacket());
 
-		CHECK(encodedPacket.size() == 9 * TRANSFER_FRAME_SIZE + 9 * SYNCH_BITS_SIZE);
+		CHECK(encodedPacket.size() == 9 * TM_TRANSFER_FRAME_SIZE + 9 * SYNCH_BITS_SIZE);
 
 		/*
 		 * Validate the primary headers in the packet
 		 * If the secondary header, or any other field is added do not forget to add it to the testing
 		 */
-		for (size_t i = 0, j = 0, k = 0; i < encodedPacket.size(); i += TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE, j++) {
+		for (size_t i = 0, j = 0, k = 0; i < encodedPacket.size(); i += TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE, j++) {
 			CHECK(static_cast<uint8_t>(encodedPacket.at(i)) == 0x03U);
 			CHECK(static_cast<uint8_t>(encodedPacket.at(i + 1)) == 0x47U);
 			CHECK(static_cast<uint8_t>(encodedPacket.at(i + 2)) == 0x76U);
@@ -54,22 +54,22 @@ TEST_CASE("CCSDS TMTransfer Frame Encoder") {
 			CHECK(static_cast<uint8_t>(encodedPacket.at(i + 10)) == j);
 
 			// Check the data field contents
-			if (i == 8 * (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) {
+			if (i == 8 * (TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) {
 				// Final data length
 				CHECK(encodedPacket.substr(i + 14, 77).compare(data.substr(5 * j, 77)) == 0);
 
 				CHECK(static_cast<uint8_t>(encodedPacket.at(i + 12)) == 0x1FU);
 				CHECK(static_cast<uint8_t>(encodedPacket.at(i + 13)) == 0xFEU);
 			} else {
-				CHECK(encodedPacket.substr(i + 14, FRAME_DATA_FIELD_SIZE)
-				          .compare(data.substr(5 * j, FRAME_DATA_FIELD_SIZE)) == 0);
+				CHECK(encodedPacket.substr(i + 14, TM_FRAME_DATA_FIELD_SIZE)
+				          .compare(data.substr(5 * j, TM_FRAME_DATA_FIELD_SIZE)) == 0);
 
-				if ((division-- > 0) && (packetSizes[k] > TRANSFER_FRAME_SIZE)) {
+				if ((division-- > 0) && (packetSizes[k] > TM_TRANSFER_FRAME_SIZE)) {
 					CHECK(static_cast<uint8_t>(encodedPacket.at(i + 12)) == 0x1FU);
 					CHECK(static_cast<uint8_t>(encodedPacket.at(i + 13)) == 0xFFU);
 				} else {
-					pointerHeader = FRAME_DATA_FIELD_SIZE - ((j + 1U) * FRAME_DATA_FIELD_SIZE - tempSum) + 1U;
-					division = packetSizes[++k] / FRAME_DATA_FIELD_SIZE;
+					pointerHeader = TM_FRAME_DATA_FIELD_SIZE - ((j + 1U) * TM_FRAME_DATA_FIELD_SIZE - tempSum) + 1U;
+					division = packetSizes[++k] / TM_FRAME_DATA_FIELD_SIZE;
 					tempSum += packetSizes[k] + 1;
 
 					// Check the first header pointer for each packet
@@ -84,16 +84,16 @@ TEST_CASE("CCSDS TMTransfer Frame Encoder") {
 	}
 
 	SECTION("Not so many data") {
-		String<MAX_PACKET_SIZE> encodedPacket;
-		String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE))* FRAME_DATA_FIELD_SIZE> data =
-		    String<(MAX_PACKET_SIZE / (TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * FRAME_DATA_FIELD_SIZE>(
+		String<TM_MAX_PACKET_SIZE> encodedPacket;
+		String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE> data =
+		    String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE>(
 		        "AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934"
 		        "HJVJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKG7894HJND");
 
 		packet.encodeFrame(transferFrame, data);
 		encodedPacket.append(packet.getEncodedPacket());
 
-		CHECK(encodedPacket.size() == TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE); // Check that the size is the expected one
+		CHECK(encodedPacket.size() == TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE); // Check that the size is the expected one
 
 		CHECK(static_cast<uint8_t>(encodedPacket.at(0)) == 0x03U);
 		CHECK(static_cast<uint8_t>(encodedPacket.at(1)) == 0x47U);
@@ -115,7 +115,7 @@ TEST_CASE("CCSDS TMTransfer Frame Encoder") {
 		CHECK(static_cast<uint8_t>(encodedPacket.at(13)) == 0xFEU);
 
 		// Check the data field contents
-		CHECK(encodedPacket.substr(14, FRAME_DATA_FIELD_SIZE)
+		CHECK(encodedPacket.substr(14, TM_FRAME_DATA_FIELD_SIZE)
 		          .compare("AFGDJ()982934HJVJHJLVUYVBJKAFGDJ()982934HJ"
 		                   "VJHJLVUYVBJKAFGDJ()982934HJVJHJLVUYVBJKAFG"
 		                   "DJ()982934HJVJHJLVUYVBJKG7894HJND"));
