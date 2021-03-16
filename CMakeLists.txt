@@ -22,6 +22,7 @@ add_library(common OBJECT
         src/CCSDSTransferFrameEncoder.cpp
         src/CCSDSTransferFrameEncoderTM.cpp
         src/CCSDSTransferFrameEncoderTC.cpp
+        src/services/MAPP.cpp
         )
 
 # Specify the .cpp files for the executables

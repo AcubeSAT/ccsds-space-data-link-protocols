@@ -2,7 +2,7 @@
 
 void CCSDSTransferFrameEncoderTM::encodeFrame(
     CCSDSTransferFrameTM& transferFrame,
-    String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE>& data,
+    String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + TC_SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE>& data,
     const uint32_t* packetSizes) {
 	appendSynchBits();
 	transferFrame.resetMasterChannelFrameCount();
@@ -42,7 +42,7 @@ void CCSDSTransferFrameEncoderTM::encodeFrame(
 	}
 }
 
-void CCSDSTransferFrameEncoderTM::appendSynchBits() {
+void CCSDSTransferFrameEncoderTM::appendSynchBits(){
 	encodedFrame.push_back(0x03U);
 	encodedFrame.push_back(0x47U);
 	encodedFrame.push_back(0x76U);

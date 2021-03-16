@@ -12,6 +12,8 @@
 #define TM_PRIMARY_HEADER_SIZE 6U
 #define TM_SECONDARY_HEADER_SIZE 0U // Size set to zero if the secondary header is not used
 
+#define TC_SYNCH_BITS_SIZE 8U
+
 #define TM_OPERATIONAL_CONTROL_FIELD_EXISTS 0
 #define TM_ERROR_CONTROL_FIELD_EXISTS 0
 
@@ -40,5 +42,7 @@
 #else
 #define TC_MAX_DATA_FIELD_SIZE 1019
 #endif
+
+#define MCID SPACECRAFT_IDENTIFIER
 
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP
