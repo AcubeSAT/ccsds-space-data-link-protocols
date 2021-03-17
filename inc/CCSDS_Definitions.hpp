@@ -45,4 +45,7 @@
 
 #define MCID SPACECRAFT_IDENTIFIER
 
+// TODO No idea what this should be
+#define RECEIVED_TC_BUFFER_MAX_SIZE 16384U
+
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP

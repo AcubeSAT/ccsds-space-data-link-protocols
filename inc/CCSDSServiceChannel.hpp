@@ -1,5 +1,5 @@
 #ifndef CCSDS_SERVICECHANNEL_HPP
-#define CCSDS_SERVICECHANNEL_HPP
+#define  CCSDS_SERVICECHANNEL_HPP
 
 #include <MAPP.hpp>
 #include <CCSDSChannel.hpp>
@@ -21,10 +21,31 @@ private:
     std::unique_ptr<MasterChannel> masterChannel;
 
     /**
-     * @brief
+     * @brief The buffer used to store incoming packets
      */
+     etl::circular_buffer<uint8_t, RECEIVED_TC_BUFFER_MAX_SIZE * sizeof(uint8_t)>;
 
 public:
+    // Public methods that are called by the scheduler
+    
+    /**
+     * @brief Stores an incoming packet in the ring buffer
+     */
+    void store();
 
+    /**
+     * @brief Processes all packets that are currently stored in memory
+     */
+    void process_all();
+
+    /**
+     * @brief Processes the packet at the head of the buffer
+     */
+    void process();
+
+    /**
+     * @brief Processes the first n packets at the head of the buffer
+     */
+    void process(uint8_t n);
 };
 #endif //CCSDS_CCSDSSERVICECHANNEL_HPP
