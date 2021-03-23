@@ -8,7 +8,7 @@
 #include <etl/intrusive_list.h>
 
 #include "CCSDS_Definitions.hpp"
-#include <TransferFrame.hpp>
+#include <Packet.hpp>
 
 class TransferFrameTC;
 

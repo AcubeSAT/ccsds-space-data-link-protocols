@@ -1,5 +1,5 @@
 #include <CCSDSServiceChannel.hpp>
-#include <TransferFrame.hpp>
+#include <Packet.hpp>
 #include <etl/iterator.h>
 
 void ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,

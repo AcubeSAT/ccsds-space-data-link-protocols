@@ -6,7 +6,7 @@
 #include <etl/circular_buffer.h>
 
 #include <CCSDSTransferFrameTC.hpp>
-#include <TransferFrame.hpp>
+#include <Packet.hpp>
 #include <utility>
 /**
  * @brief This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a

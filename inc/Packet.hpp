@@ -1,5 +1,5 @@
-#ifndef CCSDS_TRANSFERFRAME_H
-#define CCSDS_TRANSFERFRAME_H
+#ifndef CCSDS_PACKET_H
+#define CCSDS_PACKET_H
 
 #include <CCSDS_Definitions.hpp>
 
@@ -22,4 +22,4 @@ struct Packet{
 };
 
 
-#endif //CCSDS_TRANSFERFRAME_H
+#endif //CCSDS_PACKET_H

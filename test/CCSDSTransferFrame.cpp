@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include <CCSDSTransferFrameTM.hpp>
 #include <CCSDSTransferFrameTC.hpp>
-#include <TransferFrame.hpp>
+#include <Packet.hpp>
 
 TEST_CASE("CCSDS TC Transfer Frame") {
     CCSDSTransferFrameTC transferFrame = CCSDSTransferFrameTC(33, 1022);
