@@ -12,11 +12,10 @@ void MAPChannel::store(Packet packet){
 
 // Virtual Channel
 
-
 // @todo rename to something that makes more sense
 void VirtualChannel::store_unprocessed(Packet packet){
     // Limit the amount of packets that can be stored at any given time
-    if (packetList.full()){
+    if (unprocessedPacketList.full()){
         // Log that buffer is full
         return;
     }
