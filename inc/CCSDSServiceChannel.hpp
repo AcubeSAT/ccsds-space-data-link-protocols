@@ -43,13 +43,21 @@ public:
                bool service_type);
 
     /**
-     * Requests to process the last packet stored in the buffer (possible more if blocking is enabled)
+     * @brief Requests to process the last packet stored in the buffer of the specific MAPP channel
+     * (possible more if blocking is enabled). The packets are segmented or blocked together
+     * and then transferred to the buffer of the virtual channel
      */
     void mapp_request(uint8_t vid, uint8_t mapid);
 
+#if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
     /**
-     *
+     * @brief  Requests to process the last packet stored in the buffer of the specific virtual channel
+     * (possible more if blocking is enabled). The packets are segmented or blocked together
+     * and then stored in the buffer of the virtual channel
      */
+    void vcpp_request(uint8_t vid);
+#endif
+
     void vc_generation_request(uint8_t vid);
 
     /**

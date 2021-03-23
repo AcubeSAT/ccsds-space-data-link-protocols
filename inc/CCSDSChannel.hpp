@@ -159,11 +159,18 @@ struct VirtualChannel{
 
     void store(Packet packet);
 
+    void store_unprocessed(Packet packet);
+
 private:
     /**
-     * Buffer to store incoming packets
+     * @brief Buffer to store incoming packets
      */
     etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_VIRT_BUFFER> packetList;
+
+    /**
+     * @brief Buffer to store unprocessed packets
+     */
+     etl::circular_buffer<Packet, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
 
 };
 

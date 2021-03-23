@@ -49,11 +49,14 @@
 #define RECEIVED_TC_BUFFER_MAX_SIZE 16384U
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
-#define MAX_RECEIVED_TC_IN_MAP_BUFFER 5
-#define MAX_RECEIVED_TC_IN_VIRT_BUFFER 10
-#define MAX_RECEIVED_TC_IN_MASTER_BUFFER 100
+#define MAX_RECEIVED_TC_IN_MAP_BUFFER 5U
+#define MAX_RECEIVED_TC_IN_VIRT_BUFFER 10U
+#define MAX_RECEIVED_TC_IN_MASTER_BUFFER 100U
 
-#define MAX_VIRTUAL_CHANNELS 10
-#define MAX_MAP_CHANNELS 3
+#define MAX_VIRTUAL_CHANNELS 10U
+#define MAX_MAP_CHANNELS 3U
+
+// Raw packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
+#define MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER 5U
 
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP
