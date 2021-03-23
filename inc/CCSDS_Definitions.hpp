@@ -48,4 +48,12 @@
 // TODO No idea what this should be
 #define RECEIVED_TC_BUFFER_MAX_SIZE 16384U
 
+// @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
+#define MAX_RECEIVED_TC_IN_MAP_BUFFER 5
+#define MAX_RECEIVED_TC_IN_VIRT_BUFFER 10
+#define MAX_RECEIVED_TC_IN_MASTER_BUFFER 100
+
+#define MAX_VIRTUAL_CHANNELS 10
+#define MAX_MAP_CHANNELS 3
+
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP
