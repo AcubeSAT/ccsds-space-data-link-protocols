@@ -64,4 +64,6 @@
 // Raw packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
 #define MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER 5U
 
+#define FIELD_STATUS 2U
+
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP
