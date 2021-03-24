@@ -50,7 +50,12 @@
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
 #define MAX_RECEIVED_TC_IN_MAP_BUFFER 5U
-#define MAX_RECEIVED_TC_IN_VIRT_BUFFER 10U
+
+// Maximum received TCs in wait queue (before COP checks).
+#define MAX_RECEIVED_TC_IN_WAIT_QUEUE 10U
+// Maximum received TCs in sent queue (following COP checks).
+#define MAX_RECEIVED_TC_IN_SENT_QUEUE 10U
+
 #define MAX_RECEIVED_TC_IN_MASTER_BUFFER 100U
 
 #define MAX_VIRTUAL_CHANNELS 10U

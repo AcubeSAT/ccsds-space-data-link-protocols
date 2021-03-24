@@ -24,11 +24,11 @@ void VirtualChannel::store_unprocessed(Packet packet){
 
 void VirtualChannel::store(Packet packet){
     // Limit the amount of packets that can be stored at any given time
-    if (packetList.full()){
+    if (waitQueue.full()){
         // Log that buffer is full
         return;
     }
-    packetList.push(packet);
+    waitQueue.push(packet);
 }
 
 // Master Channel

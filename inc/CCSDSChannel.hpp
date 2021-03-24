@@ -8,9 +8,11 @@
 #include <etl/intrusive_list.h>
 
 #include "CCSDS_Definitions.hpp"
+#include <FrameOperationProcedure.h>
 #include <Packet.hpp>
 
 class TransferFrameTC;
+class FrameOperationProcedure;
 
 enum DataFieldContent{
     PACKET = 0,
@@ -92,6 +94,8 @@ protected:
 
 struct VirtualChannel{
     friend class ServiceChannel;
+    friend class FrameOperationProcedure;
+
     /**
      * @brief Virtual Channel Identifier
      */
@@ -136,7 +140,7 @@ struct VirtualChannel{
      * @brief Returns available space in the buffer
      */
     const uint16_t available() const{
-        return packetList.available();
+        return waitQueue.available();
     }
 
     /**
@@ -152,7 +156,7 @@ struct VirtualChannel{
             VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
             maxFrameLength(max_frame_length), clcwRate(clcw_rate), blocking(blocking),
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
-            packetList()
+            waitQueue()
     {
         mapChannels = map_chan;
     }
@@ -163,12 +167,17 @@ struct VirtualChannel{
 
 private:
     /**
-     * @brief Buffer to store incoming packets
+     * @brief Buffer to store incoming packets before being processed by COP
      */
-    etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_VIRT_BUFFER> packetList;
+    etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> waitQueue;
 
     /**
-     * @brief Buffer to store unprocessed packets
+     * @brief Buffer to store incoming packets before being processed by COP
+     */
+    etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> sentQueue;
+
+    /**
+     * @brief Buffer to store unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
      etl::circular_buffer<Packet, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
 

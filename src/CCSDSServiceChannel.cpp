@@ -27,7 +27,7 @@ void ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
         return;
     }
 
-    if (virt_channel->packetList.size()){
+    if (virt_channel->waitQueue.size()){
         // Log that there's no space for any packets to be stored in the virtual channel buffer
         return;
     }
@@ -44,7 +44,7 @@ void ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
             // Check if there is enough space in the buffer of the virtual channel to store all the segments
             uint8_t tf_n = (packet.packetLength / max_packet_length) +  (packet.packetLength % max_packet_length != 0);
 
-            if (virt_channel->packetList.capacity() >= tf_n){
+            if (virt_channel->waitQueue.capacity() >= tf_n){
                 // Break up packet
                 map_channel->packetList.pop();
 
@@ -107,7 +107,7 @@ void ServiceChannel::vcpp_request(uint8_t vid){
         return;
     }
 
-    if (virt_channel->packetList.size()){
+    if (virt_channel->waitQueue.size()){
         // Log that there's no space for any packets to be stored in the virtual channel buffer
         return;
     }
@@ -124,7 +124,7 @@ void ServiceChannel::vcpp_request(uint8_t vid){
             // Check if there is enough space in the buffer of the virtual channel to store all the segments
             uint8_t tf_n = (packet.packetLength / max_packet_length) +  (packet.packetLength % max_packet_length != 0);
 
-            if (virt_channel->packetList.capacity() >= tf_n){
+            if (virt_channel->waitQueue.capacity() >= tf_n){
                 // Break up packet
                 virt_channel->unprocessedPacketList.pop();
 
@@ -171,7 +171,7 @@ void ServiceChannel::vcpp_request(uint8_t vid){
 
 void ServiceChannel::vc_generation_request(uint8_t vid){
     VirtualChannel virt_channel = std::move(masterChannel.virtChannels.at(vid));
-    if (virt_channel.packetList.empty()){
+    if (virt_channel.waitQueue.empty()){
         // There's no packets to process
            return;
     }
