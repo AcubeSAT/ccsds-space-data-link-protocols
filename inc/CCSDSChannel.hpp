@@ -3,9 +3,7 @@
 
 #include <cstdint>
 #include <etl/map.h>
-#include <memory>
-#include <etl/circular_buffer.h>
-#include <etl/intrusive_list.h>
+#include <etl/list.h>
 
 #include "CCSDS_Definitions.hpp"
 #include <FrameOperationProcedure.h>
@@ -89,12 +87,11 @@ protected:
      * Buffer to save TC packets that are saved in the buffer
      */
 
-    etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_MAP_BUFFER> packetList;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_MAP_BUFFER> packetList;
 };
 
 struct VirtualChannel{
     friend class ServiceChannel;
-    friend class FrameOperationProcedure;
 
     /**
      * @brief Virtual Channel Identifier
@@ -156,7 +153,7 @@ struct VirtualChannel{
             VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
             maxFrameLength(max_frame_length), clcwRate(clcw_rate), blocking(blocking),
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
-            waitQueue()
+            waitQueue(), sentQueue(), fop(FrameOperationProcedure(&waitQueue, &sentQueue, repetition_cop_ctrl))
     {
         mapChannels = map_chan;
     }
@@ -169,18 +166,22 @@ private:
     /**
      * @brief Buffer to store incoming packets before being processed by COP
      */
-    etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> waitQueue;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> waitQueue;
 
     /**
      * @brief Buffer to store incoming packets before being processed by COP
      */
-    etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> sentQueue;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> sentQueue;
 
     /**
      * @brief Buffer to store unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
-     etl::circular_buffer<Packet, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
+     etl::list<Packet, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
 
+     /**
+      * @brief Holds the FOP state of the virtual channel
+      */
+     FrameOperationProcedure fop;
 };
 
 
@@ -202,7 +203,7 @@ struct MasterChannel {
     void store(Packet packet);
 
 private:
-    etl::circular_buffer<Packet, MAX_RECEIVED_TC_IN_MASTER_BUFFER> framesList;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_MASTER_BUFFER> framesList;
 };
 
 

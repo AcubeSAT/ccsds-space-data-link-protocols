@@ -7,7 +7,7 @@ void MAPChannel::store(Packet packet){
         // Log that buffer is full
         return;
     }
-    packetList.push(packet);
+    packetList.push_back(packet);
 }
 
 // Virtual Channel
@@ -19,7 +19,7 @@ void VirtualChannel::store_unprocessed(Packet packet){
         // Log that buffer is full
         return;
     }
-    unprocessedPacketList.push(packet);
+    unprocessedPacketList.push_back(packet);
 }
 
 void VirtualChannel::store(Packet packet){
@@ -28,7 +28,7 @@ void VirtualChannel::store(Packet packet){
         // Log that buffer is full
         return;
     }
-    waitQueue.push(packet);
+    waitQueue.push_back(packet);
 }
 
 // Master Channel
@@ -41,5 +41,5 @@ void MasterChannel::store(Packet packet){
         // Log that buffer is full
         return;
     }
-    framesList.push(packet);
+    framesList.push_back(packet);
 }

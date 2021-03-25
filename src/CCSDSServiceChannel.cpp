@@ -2,8 +2,9 @@
 #include <Packet.hpp>
 #include <etl/iterator.h>
 
+
 void ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-                           bool service_type){
+                           ServiceType service_type){
 
     uint8_t vid = gvcid & 0x3F;
     MAPChannel *map_channel = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid));
@@ -14,7 +15,7 @@ void ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvci
     }
 
     Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type);
-    masterChannel.virtChannels.at(vid).mapChannels.at(mapid).packetList.push(packet_s);
+    masterChannel.virtChannels.at(vid).mapChannels.at(mapid).packetList.push_back(packet_s);
 
 }
 
@@ -46,7 +47,7 @@ void ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
 
             if (virt_channel->waitQueue.capacity() >= tf_n){
                 // Break up packet
-                map_channel->packetList.pop();
+                map_channel->packetList.pop_front();
 
                 // First portion
                 uint16_t seg_header = mapid || 0x40;
@@ -75,7 +76,7 @@ void ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
     } else{
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
         // the buffer.
-        map_channel->packetList.pop();
+        map_channel->packetList.pop_front();
 
         if (blocking_enabled){
             // See if we can block it with other packets
@@ -126,7 +127,7 @@ void ServiceChannel::vcpp_request(uint8_t vid){
 
             if (virt_channel->waitQueue.capacity() >= tf_n){
                 // Break up packet
-                virt_channel->unprocessedPacketList.pop();
+                virt_channel->unprocessedPacketList.pop_front();
 
                 // First portion
                 uint16_t seg_header = 0x40;
@@ -155,7 +156,7 @@ void ServiceChannel::vcpp_request(uint8_t vid){
     } else{
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
         // the buffer.
-        virt_channel->unprocessedPacketList.pop();
+        virt_channel->unprocessedPacketList.pop_front();
 
         if (blocking_enabled){
             virt_channel->store(packet);

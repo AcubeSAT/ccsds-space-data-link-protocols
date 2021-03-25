@@ -1,7 +1,9 @@
 #ifndef CCSDS_FOP_H
 #define CCSDS_FOP_H
 
-#include <CCSDSChannel.hpp>
+#include <cstdint>
+#include <Packet.hpp>
+#include <etl/list.h>
 
 enum FOPState{
     ACTIVE = 1,
@@ -12,11 +14,18 @@ enum FOPState{
     INITIAL = 6
 };
 
-class FrameOperationProcedure{
+enum FlagState{
+    NOT_READY = 0,
+    READY = 1
+};
+
+class FrameOperationProcedure {
 private:
+    etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue;
+
     FOPState state;
     uint8_t transmitterFrameSeqNumber;
-    bool toBeRetransmitted;
     bool adOut;
     bool bdOut;
     bool bcOut;
@@ -25,8 +34,72 @@ private:
     uint16_t transmissionLimit;
     uint16_t transmissionCount;
     uint8_t fopSlidingWindow;
-    uint8_t timeoutState;
+    bool timeoutType;
     uint8_t suspendState;
 
+protected:
+    /**
+     * @brief Purge the sent queue of the virtual channel and generate a response
+     */
+    void purge_sent_queue();
+
+    /**
+     * @brief Purge the wait queue of the virtual channel and generate a response
+     */
+    void purge_wait_queue();
+
+    /**
+     * @brief Prepares a Type-AD Frame for transmission
+     */
+    void transmit_ad_frame();
+
+    /**
+     * @brief Prepares a Type-BC Frame for transmission
+     */
+    void transmit_bc_frame();
+
+    /**
+     * @brief Prepares a Type-BD Frame for transmission
+     */
+    void transmit_bd_frame();
+
+    /**
+     * @brief Marks AD Frames stored in the sent queue to be retransmitted
+     */
+     void initiate_ad_retransmission();
+
+    /**
+    * @brief Marks BC Frames stored in the sent queue to be retransmitted
+    */
+    void initiate_bc_retransmission();
+
+    /**
+     * @brief Remove acknowledged frames from sent queue
+     */
+     void remove_acknowledged_frames();
+
+     /**
+      * @brief Search for directives in the sent queue and transmit any eligible frames
+      */
+     void look_for_directive();
+
+     /**
+      * @brief Search for a FDU that can be transmitted in the sent_queueu. If none are found also search in
+      * the wait_queueu
+      */
+     void look_for_fdu();
+
+     void initialize();
+
+     void alert();
+
+public:
+    FrameOperationProcedure(etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue,
+                            etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue,
+                            const uint8_t repetition_cop_ctrl):
+            waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
+            adOut(0), bdOut(0), bcOut(0), expectedAcknowledgementSeqNumber(0),
+            tiInitial(FOP_TIMER_INITIAL), transmissionLimit(repetition_cop_ctrl), transmissionCount(1),
+            fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL), timeoutType(0), suspendState(0){};
 };
 #endif //CCSDS_FOP_H

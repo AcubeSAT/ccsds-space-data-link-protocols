@@ -23,7 +23,8 @@ add_library(common OBJECT
         src/CCSDSTransferFrameEncoderTM.cpp
         src/CCSDSTransferFrameEncoderTC.cpp
         src/CCSDSServiceChannel.cpp
-        src/CCSDSChannel.cpp)
+        src/CCSDSChannel.cpp
+        src/FrameOperationProcedure.cpp)
 
 # Specify the .cpp files for the executables
 #file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")

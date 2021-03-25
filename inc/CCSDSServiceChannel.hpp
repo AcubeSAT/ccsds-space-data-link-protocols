@@ -14,17 +14,17 @@
  */
 
 // Currently there is just a very vague outline of the interface of the class
-class ServiceChannel{
+class ServiceChannel {
 
 private:
     /**
      * @brief The Master Channel essentially stores the configuration of your channel. It partitions the physical channel
      * into virtual channels, each of which has different parameters in order to easily manage incoming traffic
      */
-     MasterChannel masterChannel;
+    MasterChannel masterChannel;
 
-     // @todo Think about whether we need to keep the size of the packets in a queue. Technically, we can determine this
-     // from the header of the frame. Not sure what makes more sense
+    // @todo Think about whether we need to keep the size of the packets in a queue. Technically, we can determine this
+    // from the header of the frame. Not sure what makes more sense
 
 public:
     // Public methods that are called by the scheduler
@@ -37,10 +37,10 @@ public:
      * @param gvcid Global Virtual Channel ID
      * @param mapid MAP ID
      * @param sduid SDU ID
-     * @param service_type Service Type - either 0 (Type-A) or 1 (Type-B)
+     * @param service_type Service Type - Type-A or Type-B
      */
-    void store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-               bool service_type);
+    void store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+               ServiceType service_type);
 
     /**
      * @brief Requests to process the last packet stored in the buffer of the specific MAPP channel
@@ -50,12 +50,14 @@ public:
     void mapp_request(uint8_t vid, uint8_t mapid);
 
 #if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
+
     /**
      * @brief  Requests to process the last packet stored in the buffer of the specific virtual channel
      * (possible more if blocking is enabled). The packets are segmented or blocked together
      * and then stored in the buffer of the virtual channel
      */
     void vcpp_request(uint8_t vid);
+
 #endif
 
     void vc_generation_request(uint8_t vid);
@@ -73,14 +75,14 @@ public:
     /**
      * @brief Available space in master channel buffer
      */
-     const uint16_t available() const{
-         return masterChannel.framesList.available();
-     }
+    const uint16_t available() const {
+        return masterChannel.framesList.available();
+    }
 
     /**
     * @brief Available space in virtual channel buffer
     */
-    const uint16_t available(const uint8_t vid) const{
+    const uint16_t available(const uint8_t vid) const {
         masterChannel.virtChannels.at(vid).available();
     }
 
@@ -91,8 +93,9 @@ public:
         return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).available();
     }
 
-    ServiceChannel(MasterChannel master_channel):
-        masterChannel(master_channel){
+    ServiceChannel(MasterChannel master_channel) :
+            masterChannel(master_channel) {
     }
 };
+
 #endif //CCSDS_CCSDSSERVICECHANNEL_HPP

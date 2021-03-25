@@ -50,7 +50,7 @@ TEST_CASE("MAPP blocking") {
 
     uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
-    serv_channel.store(data, 11, 3, 2, 10, 0);
+    serv_channel.store(data, 11, 3, 2, 10, ServiceType::TYPE_A);
     CHECK(serv_channel.available(3, 2) == MAX_RECEIVED_TC_IN_MAP_BUFFER - 1);
 
     serv_channel.mapp_request(3, 2);
