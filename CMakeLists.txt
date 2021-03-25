@@ -30,7 +30,7 @@ add_library(common OBJECT
 add_executable(ccsds_tm_packets
         src/main.cpp
         $<TARGET_OBJECTS:common>
-#        ${x86_main_SRC}
+        #        ${x86_main_SRC}
         )
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")

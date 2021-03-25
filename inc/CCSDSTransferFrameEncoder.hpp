@@ -8,8 +8,7 @@
 class CCSDSTransferFrameEncoder : public CCSDSTransferFrame {
 
 public:
-    virtual void appendSynchBits(){};
-
+    virtual void appendSynchBits() {};
 };
 
 #endif // CCSDS_CCSDSTRANSFERFRAMEENCODER_HPP

@@ -10,23 +10,24 @@
 class CCSDSTransferFrameEncoderTM : public CCSDSTransferFrameTM, CCSDSTransferFrameEncoder {
 
 private:
-	/**
-	 * @brief Store the encoded sequence of transfer frames.
-	 * @details The ASM synchronization bits are also included in the sequence
-	 */
-	String<TM_MAX_PACKET_SIZE> encodedFrame;
+    /**
+     * @brief Store the encoded sequence of transfer frames.
+     * @details The ASM synchronization bits are also included in the sequence
+     */
+    String<TM_MAX_PACKET_SIZE> encodedFrame;
 
 public:
-	/**
-	 * @brief Generate a transfer frame sequence with the data provided
-	 */
-	void encodeFrame(CCSDSTransferFrameTM& transferFrame,
-	                 String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + TC_SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE>& data,
-	                 const uint32_t* packetSizes = nullptr);
+    /**
+     * @brief Generate a transfer frame sequence with the data provided
+     */
+    void encodeFrame(CCSDSTransferFrameTM &transferFrame,
+                     String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + TC_SYNCH_BITS_SIZE)) *
+                            TM_FRAME_DATA_FIELD_SIZE> &data,
+                     const uint32_t *packetSizes = nullptr);
 
-   /**
-    * @brief Get the encoded transfer frame sequence
-    */
+    /**
+     * @brief Get the encoded transfer frame sequence
+     */
     String<TM_MAX_PACKET_SIZE> getEncodedPacket() {
         return encodedFrame;
     }

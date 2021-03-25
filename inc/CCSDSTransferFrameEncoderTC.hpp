@@ -20,9 +20,10 @@ public:
     /**
      * @brief Generate a transfer frame sequence with the data provided
      */
-    void encodeFrame(CCSDSTransferFrameTC& transferFrame,
-                     String<(TC_MAX_TRANSFER_FRAME_SIZE / (TM_TRANSFER_FRAME_SIZE + TC_SYNCH_BITS_SIZE)) * TM_FRAME_DATA_FIELD_SIZE>& data,
-                     const uint32_t* packetSizes = nullptr);
+    void encodeFrame(CCSDSTransferFrameTC &transferFrame,
+                     String<(TC_MAX_TRANSFER_FRAME_SIZE / (TM_TRANSFER_FRAME_SIZE + TC_SYNCH_BITS_SIZE)) *
+                            TM_FRAME_DATA_FIELD_SIZE> &data,
+                     const uint32_t *packetSizes = nullptr);
 
     /**
      * @brief Get the encoded transfer frame sequence

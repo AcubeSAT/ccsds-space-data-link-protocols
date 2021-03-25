@@ -54,7 +54,7 @@ class Summarizer(object):
                 file_name = line_contents[0]  # first part is the filename (index 0)
                 violation = (line_contents[1], line_contents[2].strip(
                     '\n'))  # index 1 is the line number, index 2 is the number of violated rule (both are strings)
-                
+
                 with open(os.path.abspath(file_name)) as code_file:
                     code_lines = code_file.readlines()  # Read the source code file
                     line_of_interest = code_lines[int(violation[0]) - 1]  # Get the desired violation line
@@ -77,7 +77,6 @@ class Summarizer(object):
         self.violations_map = {k: v for (k, v) in self.violations_map.items() if len(v) != 0}
         # "delete" all keys whose lists are empty
 
-
     def pretty_print_violations(self):
         """
         Just a pretty printing function, no fancy logic here.
@@ -87,10 +86,9 @@ class Summarizer(object):
         for file_name in self.violations_map:
             print("")
             for violation in sorted(self.violations_map[file_name], key=lambda x: int(x[0])):
-                
                 name_string = f"{self.bold}{self.red}File {self.yellow}{file_name}{self.red}"
                 rule_violated_string = f"violates rule {self.yellow}#{violation[1]}{self.red} " \
-                    f"of the MISRA C 2012 standard"
+                                       f"of the MISRA C 2012 standard"
                 line_number_string = f"at line {self.yellow}{violation[0]}{self.end}"
 
                 print(f"{name_string.ljust(75)} {rule_violated_string} {line_number_string}")

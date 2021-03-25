@@ -6,7 +6,7 @@
 
 class CCSDSTransferFrame {
 private:
-    virtual void createPrimaryHeader(){};
+    virtual void createPrimaryHeader() {};
 
     /**
      * @brief Generates the transfer frame secondary header
@@ -18,10 +18,10 @@ private:
 #endif
 
 protected:
-    virtual ~CCSDSTransferFrame(){ };
+    virtual ~CCSDSTransferFrame() {};
 
 public:
-    virtual uint16_t getTransferFrameSize(){};
+    virtual uint16_t getTransferFrameSize() {};
 };
 
 #endif // CCSDS_TRANSFERFRAME_HPP

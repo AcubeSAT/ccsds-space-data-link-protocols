@@ -8,7 +8,7 @@
 /**
  * @brief Define a CCSDS telecommand packet with the required attributes
 */
-class CCSDSTransferFrameTC: private CCSDSTransferFrame {
+class CCSDSTransferFrameTC : private CCSDSTransferFrame {
 
 private:
     /**
@@ -57,11 +57,11 @@ private:
 protected:
 #if TC_ERROR_CONTROL_FIELD_EXISTS
     /**
-	 * @brief Store the result of the CRC generation for the packet as the standard recommends
-	 *
-	 * @attention This will probably not be implemented for our mission, since other error correcting and detection
+     * @brief Store the result of the CRC generation for the packet as the standard recommends
+     *
+     * @attention This will probably not be implemented for our mission, since other error correcting and detection
      * techniques will be implemented
-	 */
+     */
     String<2> errorControlField;
 #endif
 
@@ -73,13 +73,13 @@ protected:
 public:
 
     explicit CCSDSTransferFrameTC(uint8_t vChannelID = 0, uint16_t frameLen = TC_MAX_TRANSFER_FRAME_SIZE,
-            bool bypassFlag = false, bool ctrlCmdFlag = false)
-    : primaryHeader(),
+                                  bool bypassFlag = false, bool ctrlCmdFlag = false)
+            : primaryHeader(),
 #if TC_ERROR_CONTROL_FIELD_EXISTS
-    errorControlField(),
+            errorControlField(),
 #endif
-    frameLength(frameLen), frameSeqCount(0), virtChannelID(vChannelID), bypassFlag(bypassFlag),
-    ctrlCmdFlag(ctrlCmdFlag) {
+              frameLength(frameLen), frameSeqCount(0), virtChannelID(vChannelID), bypassFlag(bypassFlag),
+              ctrlCmdFlag(ctrlCmdFlag) {
         createPrimaryHeader();
     }
 

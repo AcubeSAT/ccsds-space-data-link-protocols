@@ -22,7 +22,7 @@ void CCSDSTransferFrameTC::createPrimaryHeader() {
     primaryHeader.push_back(frameSeqCount); // Append Frame Sequence Counter
 }
 
-String<TC_MAX_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTC::transferFrame(){
+String<TC_MAX_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTC::transferFrame() {
     String<TC_MAX_TRANSFER_FRAME_SIZE> completeFrame;
 
     for (uint8_t const octet : primaryHeader) {
@@ -32,7 +32,7 @@ String<TC_MAX_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTC::transferFrame(){
     uint8_t i = 0;
     for (uint8_t const octet:dataField) {
         completeFrame.push_back(octet);
-        if (i++ == frameLength - 5 - 2*TC_ERROR_CONTROL_FIELD_EXISTS){
+        if (i++ == frameLength - 5 - 2 * TC_ERROR_CONTROL_FIELD_EXISTS) {
             break;
         }
     }
@@ -40,17 +40,16 @@ String<TC_MAX_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTC::transferFrame(){
     return completeFrame;
 }
 
-void CCSDSTransferFrameTC::incrementFrameSequenceCount(){
-    if(frameSeqCount == 0xFF){
+void CCSDSTransferFrameTC::incrementFrameSequenceCount() {
+    if (frameSeqCount == 0xFF) {
         frameSeqCount = 0;
-    }
-    else{
+    } else {
         frameSeqCount++;
     }
     primaryHeader.replace(4, 1, 1, frameSeqCount);
 }
 
-void CCSDSTransferFrameTC::setFrameSequenceCount(uint8_t count){
+void CCSDSTransferFrameTC::setFrameSequenceCount(uint8_t count) {
     frameSeqCount = count;
 
     primaryHeader.replace(4, 1, 1, frameSeqCount);
