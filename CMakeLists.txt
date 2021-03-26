@@ -32,7 +32,7 @@ add_executable(ccsds_tm_packets
         src/main.cpp
         $<TARGET_OBJECTS:common>
         #        ${x86_main_SRC}
-        )
+        inc/Alert.hpp)
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     # Gather all the .cpp files corresponding to tests

@@ -23,8 +23,8 @@ void FrameOperationProcedure::transmit_ad_frame(){
     sentQueue->push_back(ad_frame);
     adOut = false;
 
-    // @todo start the timer
-    // @todo generate a 'Transmit AD Frame' request
+    // TODO start the timer
+    // TODO generate a 'Transmit AD Frame' request
 }
 
 void FrameOperationProcedure::transmit_bc_frame(){
@@ -33,8 +33,8 @@ void FrameOperationProcedure::transmit_bc_frame(){
     bc_frame.mark_for_retransmission(0);
     transmissionCount = 1;
 
-    // @todo start the timer
-    // @todo generate a 'Transmit BC Frame' request
+    // TODO start the timer
+    // TODO generate a 'Transmit BC Frame' request
 }
 
 void FrameOperationProcedure::transmit_bd_frame(){
@@ -42,13 +42,13 @@ void FrameOperationProcedure::transmit_bd_frame(){
     Packet bd_frame = waitQueue->front();
     waitQueue->pop_front();
 
-    // @todo generate a 'Transmit BD Frame' request
+    // TODO generate a 'Transmit BD Frame' request
 }
 
 void FrameOperationProcedure::initiate_ad_retransmission() {
-    // @todo generate an `abort` request to lower procedures
+    // TODO generate an `abort` request to lower procedures
     transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
-    // @todo start the timer
+    // TODO start the timer
 
     for (Packet frame:*sentQueue){
 
@@ -59,9 +59,9 @@ void FrameOperationProcedure::initiate_ad_retransmission() {
 }
 
 void FrameOperationProcedure::initiate_bc_retransmission() {
-    // @todo generate an `abort` request to lower procedures
+    // TODO generate an `abort` request to lower procedures
     transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
-    // @todo start the timer
+    // TODO start the timer
 
     for (Packet frame:*sentQueue){
         if (frame.serviceType == ServiceType::TYPE_B) {
@@ -75,7 +75,7 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
 
     while (cur_frame != sentQueue->end()){
         if (cur_frame->acknowledged) {
-            // @todo Generate a ‘Positive Confirm Response to Request to Transfer FDU’ response
+            // TODO Generate a ‘Positive Confirm Response to Request to Transfer FDU’ response
             expectedAcknowledgementSeqNumber = cur_frame->transferFrameSeqNumber;
             sentQueue->erase(cur_frame++);
         } else{
@@ -91,12 +91,12 @@ void FrameOperationProcedure::look_for_directive() {
             if (frame.serviceType == ServiceType::TYPE_B && frame.to_be_retransmitted()) {
                 bcOut == FlagState::NOT_READY;
                 frame.mark_for_retransmission(0);
-                // @todo Generate ‘Transmit Request for (BC) Frame’ request for this frame
+                // TODO Generate ‘Transmit Request for (BC) Frame’ request for this frame
             }
             transmit_bc_frame();
         }
     } else{
-        // @todo? call look_for_fdu once bcOut is set to ready
+        // @TODO? call look_for_fdu once bcOut is set to ready
     }
 }
 
@@ -106,7 +106,7 @@ void FrameOperationProcedure::look_for_fdu() {
             if (frame.serviceType == ServiceType::TYPE_A){
                 adOut = FlagState::NOT_READY;
                 frame.mark_for_retransmission(0);
-                // @todo Generate ‘Transmit Request for (AD) Frame’ request for this frame
+                // TODO Generate ‘Transmit Request for (AD) Frame’ request for this frame
                 break;
             }
 
@@ -118,24 +118,31 @@ void FrameOperationProcedure::look_for_fdu() {
                     etl::ilist<Packet>::iterator cur_frame = waitQueue->begin();
                     while (cur_frame != waitQueue->end()) {
                         if (cur_frame->serviceType == ServiceType::TYPE_A){
-                            // @todo Generate ‘Accept Response to Request to Transfer FDU’
+                            // TODO Generate ‘Accept Response to Request to Transfer FDU’
                             sentQueue->push_front(*cur_frame);
                             waitQueue->erase(cur_frame);
                         }
                     }
                 }
             }
-
             transmit_ad_frame();
         }
     } else{
-        // @todo? I think that look_for_fdu has to be automatically sent once adOut is set to ready
+        // TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
     }
 }
 
 void FrameOperationProcedure::initialize() {
-        purge_sent_queue();
-        purge_wait_queue();
-        transmissionCount = 1;
-        suspendState = 0;
+    purge_sent_queue();
+    purge_wait_queue();
+    transmissionCount = 1;
+    suspendState = 0;
+}
+
+void FrameOperationProcedure::alert(AlertEvent event){
+    // TODO: cancel the timer
+    purge_sent_queue();
+    purge_wait_queue();
+    // TODO: Generate a ‘Negative Confirm Response to Directive’ for any ongoing 'Initiate AD Service' request
+    // TODO: Generate Alert notification (also the reason for the alert needs to be passed here)
 }

@@ -19,6 +19,17 @@ enum FlagState{
     READY = 1
 };
 
+enum Event{
+    VALID_CLCW_RECEIVED = 0,
+    INVALID_CLCW_RECEIVED = 1,
+};
+
+enum AlertEvent{
+    SYNCH = 0,
+    //CLCW = 1,
+    LIMIT = 2,
+};
+
 class FrameOperationProcedure {
 private:
     etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
@@ -37,7 +48,7 @@ private:
     bool timeoutType;
     uint8_t suspendState;
 
-protected:
+
     /**
      * @brief Purge the sent queue of the virtual channel and generate a response
      */
@@ -85,13 +96,24 @@ protected:
 
      /**
       * @brief Search for a FDU that can be transmitted in the sent_queueu. If none are found also search in
-      * the wait_queueu
+      * the wait_queue
       */
      void look_for_fdu();
 
      void initialize();
 
-     void alert();
+     void alert(AlertEvent event);
+
+     /**
+      * @brief Process event where a valid CLCW arrives
+      */
+      void event_valid_clcw();
+
+protected:
+     /**
+      * @brief Process events, take the corresponding actions and change the state of the State Machine
+      */
+      void process_event(Event event);
 
 public:
     FrameOperationProcedure(etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue,

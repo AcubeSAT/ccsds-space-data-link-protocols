@@ -2,7 +2,7 @@
 #define  CCSDS_SERVICECHANNEL_HPP
 
 #include <CCSDSChannel.hpp>
-#include <memory>
+#include <Alert.hpp>
 #include <etl/circular_buffer.h>
 
 #include <CCSDSTransferFrameTC.hpp>
@@ -39,7 +39,7 @@ public:
      * @param sduid SDU ID
      * @param service_type Service Type - Type-A or Type-B
      */
-    void store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+    ServiceChannelAlert store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
                ServiceType service_type);
 
     /**
@@ -47,7 +47,7 @@ public:
      * (possible more if blocking is enabled). The packets are segmented or blocked together
      * and then transferred to the buffer of the virtual channel
      */
-    void mapp_request(uint8_t vid, uint8_t mapid);
+    ServiceChannelAlert mapp_request(uint8_t vid, uint8_t mapid);
 
 #if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
 
@@ -56,21 +56,16 @@ public:
      * (possible more if blocking is enabled). The packets are segmented or blocked together
      * and then stored in the buffer of the virtual channel
      */
-    void vcpp_request(uint8_t vid);
+    ServiceChannelAlert vcpp_request(uint8_t vid);
 
 #endif
 
-    void vc_generation_request(uint8_t vid);
+    ServiceChannelAlert vc_generation_request(uint8_t vid);
 
     /**
      * @brief Processes the packet at the head of the buffer
      */
     void process();
-
-    /**
-     * @brief Processes the first n packets at the head of the buffer
-     */
-    void process(uint8_t n);
 
     /**
      * @brief Available space in master channel buffer

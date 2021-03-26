@@ -1,37 +1,35 @@
 #include <CCSDSServiceChannel.hpp>
 #include <Packet.hpp>
 #include <etl/iterator.h>
+#include <Alert.hpp>
 
 
-void ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+ServiceChannelAlert ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
                            ServiceType service_type){
-
     uint8_t vid = gvcid & 0x3F;
     MAPChannel *map_channel = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid));
 
-    if (masterChannel.virtChannels.at(vid).mapChannels.at(mapid).packetList.full()){
-       // Send indication that buffer is full
-       return;
+    if (map_channel->packetList.full()){
+       return ServiceChannelAlert::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type);
-    masterChannel.virtChannels.at(vid).mapChannels.at(mapid).packetList.push_back(packet_s);
-
+    map_channel->packetList.push_back(packet_s);
+    return ServiceChannelAlert::NO_EVENT;
 }
 
-void ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
+ServiceChannelAlert ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(virt_channel->mapChannels.at(mapid));
 
     if (map_channel->packetList.empty()){
-        // There's no packets to process
-        return;
+        return ServiceChannelAlert::NO_PACKETS_TO_PROCESS;
     }
 
-    if (virt_channel->waitQueue.size()){
-        // Log that there's no space for any packets to be stored in the virtual channel buffer
-        return;
+    if (virt_channel->waitQueue.full()){
+        return ServiceChannelAlert::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;
     }
+
     Packet packet = map_channel->packetList.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
@@ -70,8 +68,7 @@ void ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
                 virt_channel->store(t_packet);
             }
         } else{
-            // Raise error that packet exceeds maximum size
-            return;
+            return ServiceChannelAlert::PACKET_EXCEEDS_MAX_SIZE;
         }
     } else{
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
@@ -97,20 +94,19 @@ void ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
             virt_channel->store(packet);
         }
     }
+    return ServiceChannelAlert::NO_EVENT;
 }
 
 #if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
-void ServiceChannel::vcpp_request(uint8_t vid){
+ServiceChannelAlert ServiceChannel::vcpp_request(uint8_t vid){
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
 
     if (virt_channel->unprocessedPacketList.empty()){
-        // There's no packets to process
-        return;
+        return ServiceChannelAlert::NO_PACKETS_TO_PROCESS;
     }
 
-    if (virt_channel->waitQueue.size()){
-        // Log that there's no space for any packets to be stored in the virtual channel buffer
-        return;
+    if (virt_channel->waitQueue.full()){
+        return ServiceChannelAlert::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;;
     }
     Packet packet = virt_channel->unprocessedPacketList.front();
 
@@ -150,8 +146,7 @@ void ServiceChannel::vcpp_request(uint8_t vid){
                 virt_channel->store(t_packet);
             }
         } else{
-            // Raise error that packet exceeds maximum size
-            return;
+            return ServiceChannelAlert::PACKET_EXCEEDS_MAX_SIZE;
         }
     } else{
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
@@ -167,19 +162,18 @@ void ServiceChannel::vcpp_request(uint8_t vid){
             virt_channel->store(packet);
         }
     }
+    return ServiceChannelAlert::NO_EVENT;
 }
 #endif
 
-void ServiceChannel::vc_generation_request(uint8_t vid){
+ServiceChannelAlert ServiceChannel::vc_generation_request(uint8_t vid){
     VirtualChannel virt_channel = std::move(masterChannel.virtChannels.at(vid));
     if (virt_channel.waitQueue.empty()){
-        // There's no packets to process
-           return;
+           return ServiceChannelAlert::NO_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.framesList.empty()){
-        // Log that there's no space for any packets to be stored in the virtual channel buffer
-        return;
+    if (masterChannel.framesList.full()){
+        return ServiceChannelAlert::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
     // Perform COP and stuff
 }
