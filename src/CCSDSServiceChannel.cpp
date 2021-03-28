@@ -4,30 +4,30 @@
 #include <Alert.hpp>
 
 
-ServiceChannelAlert ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-                           ServiceType service_type){
+ServiceChannelNotif ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+                                          ServiceType service_type){
     uint8_t vid = gvcid & 0x3F;
     MAPChannel *map_channel = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid));
 
     if (map_channel->packetList.full()){
-       return ServiceChannelAlert::MAP_CHANNEL_FRAME_BUFFER_FULL;
+       return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type);
     map_channel->packetList.push_back(packet_s);
-    return ServiceChannelAlert::NO_EVENT;
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-ServiceChannelAlert ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
+ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(virt_channel->mapChannels.at(mapid));
 
     if (map_channel->packetList.empty()){
-        return ServiceChannelAlert::NO_PACKETS_TO_PROCESS;
+        return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
     if (virt_channel->waitQueue.full()){
-        return ServiceChannelAlert::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;
+        return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     Packet packet = map_channel->packetList.front();
@@ -68,7 +68,7 @@ ServiceChannelAlert ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
                 virt_channel->store(t_packet);
             }
         } else{
-            return ServiceChannelAlert::PACKET_EXCEEDS_MAX_SIZE;
+            return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
         }
     } else{
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
@@ -94,19 +94,19 @@ ServiceChannelAlert ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
             virt_channel->store(packet);
         }
     }
-    return ServiceChannelAlert::NO_EVENT;
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
 #if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
-ServiceChannelAlert ServiceChannel::vcpp_request(uint8_t vid){
+ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid){
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
 
     if (virt_channel->unprocessedPacketList.empty()){
-        return ServiceChannelAlert::NO_PACKETS_TO_PROCESS;
+        return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
     if (virt_channel->waitQueue.full()){
-        return ServiceChannelAlert::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;;
+        return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;;
     }
     Packet packet = virt_channel->unprocessedPacketList.front();
 
@@ -146,7 +146,7 @@ ServiceChannelAlert ServiceChannel::vcpp_request(uint8_t vid){
                 virt_channel->store(t_packet);
             }
         } else{
-            return ServiceChannelAlert::PACKET_EXCEEDS_MAX_SIZE;
+            return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
         }
     } else{
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
@@ -162,18 +162,20 @@ ServiceChannelAlert ServiceChannel::vcpp_request(uint8_t vid){
             virt_channel->store(packet);
         }
     }
-    return ServiceChannelAlert::NO_EVENT;
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 #endif
 
-ServiceChannelAlert ServiceChannel::vc_generation_request(uint8_t vid){
+ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid){
     VirtualChannel virt_channel = std::move(masterChannel.virtChannels.at(vid));
     if (virt_channel.waitQueue.empty()){
-           return ServiceChannelAlert::NO_PACKETS_TO_PROCESS;
+           return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
     if (masterChannel.framesList.full()){
-        return ServiceChannelAlert::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
     // Perform COP and stuff
+
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
 }

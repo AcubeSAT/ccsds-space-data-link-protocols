@@ -2,17 +2,22 @@
 #define CCSDS_PACKET_H
 
 #include <CCSDS_Definitions.hpp>
-
 #include <algorithm>
 #include <cstring>
 
-enum ServiceType{
-        TYPE_A = 0,
-        TYPE_B = 1
+enum ServiceType {
+    TYPE_A = 0,
+    TYPE_B = 1
+};
+
+enum FDURequestType{
+    REQUEST_PENDING = 0,
+    REQUEST_CONFIRMED = 1,
+    REQUEST_DENIED = 2,
 };
 
 struct Packet {
-    // @todo those fieldss shouldn't be public
+    // @todo those fields shouldn't be public
     uint8_t *packet;
     uint16_t packetLength;
     uint8_t segHdr;
@@ -23,14 +28,19 @@ struct Packet {
     uint8_t transferFrameSeqNumber;
     bool acknowledged;
 
+    void setConfSignal(FDURequestType reqSignal){
+        confSignal = reqSignal;
+        // TODO Maybe signal the higher procedures here instead of having them manually take care of them
+    }
+
     /**
      * @brief Determines whether the packet is marked for retransmission while in the sent queue
      */
-    const bool to_be_retransmitted() const{
+    const bool to_be_retransmitted() const {
         return toBeRetransmitted;
     }
 
-    void mark_for_retransmission(bool f){toBeRetransmitted = f;}
+    void mark_for_retransmission(bool f) { toBeRetransmitted = f; }
 
     Packet(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
            ServiceType service_type) :
@@ -39,6 +49,8 @@ struct Packet {
 
 private:
     bool toBeRetransmitted;
+    // This is used by COP to signal the higher procedures
+    FDURequestType confSignal;
 };
 
 class CLCW {

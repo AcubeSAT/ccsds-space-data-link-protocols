@@ -1,22 +1,40 @@
 #include <FrameOperationProcedure.h>
 
-void FrameOperationProcedure::purge_sent_queue(){
-    // TODO: Generate a a ‘Negative Confirm Response to Request to Transfer FDU’ for each stored frame
-    sentQueue->clear();
+FOPNotif FrameOperationProcedure::purge_sent_queue(){
+    etl::ilist<Packet>::iterator cur_frame = sentQueue->begin();
+
+    while (cur_frame != sentQueue->end()){
+        cur_frame->setConfSignal(FDURequestType::REQUEST_DENIED);
+        sentQueue->erase(cur_frame++);
+    }
+
+    return FOPNotif::NO_FOP_EVENT;
 }
 
-void FrameOperationProcedure::purge_wait_queue(){
-    // TODO: Generate a a ‘Negative Confirm Response to Request to Transfer FDU’ for each stored frame
-    waitQueue->clear();
+FOPNotif FrameOperationProcedure::purge_wait_queue(){
+    etl::ilist<Packet>::iterator cur_frame = waitQueue->begin();
+
+    while (cur_frame != waitQueue->end()){
+        cur_frame->setConfSignal(FDURequestType::REQUEST_DENIED);
+        waitQueue->erase(cur_frame++);
+    }
+
+    return FOPNotif::NO_FOP_EVENT;
 }
 
-void FrameOperationProcedure::transmit_ad_frame(){
-    Packet ad_frame = waitQueue->front();
-    ad_frame.transferFrameSeqNumber = transmitterFrameSeqNumber;
+FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet ad_frame){
+
+    if (sentQueue->full()){
+        return FOPNotif::SENT_QUEUE_FULL;
+    }
 
     if (sentQueue->empty()){
         transmissionCount = 1;
     }
+
+    sentQueue->push_back(ad_frame);
+    ad_frame.transferFrameSeqNumber = transmitterFrameSeqNumber;
+
     ad_frame.mark_for_retransmission(0);
 
     waitQueue->pop_front();
@@ -24,25 +42,25 @@ void FrameOperationProcedure::transmit_ad_frame(){
     adOut = false;
 
     // TODO start the timer
-    // TODO generate a 'Transmit AD Frame' request
+    // TODO generate a 'Transmit AD Frame' request to lower procedures
+    return FOPNotif::NO_FOP_EVENT;
 }
 
-void FrameOperationProcedure::transmit_bc_frame(){
-    Packet bc_frame = waitQueue->front();
+FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet bc_frame){
 
     bc_frame.mark_for_retransmission(0);
     transmissionCount = 1;
 
     // TODO start the timer
     // TODO generate a 'Transmit BC Frame' request
+    return FOPNotif::NO_FOP_EVENT;
 }
 
-void FrameOperationProcedure::transmit_bd_frame(){
+FOPNotif FrameOperationProcedure::transmit_bd_frame(Packet bd_frame){
     bdOut = NOT_READY;
-    Packet bd_frame = waitQueue->front();
-    waitQueue->pop_front();
 
     // TODO generate a 'Transmit BD Frame' request
+    return FOPNotif::NO_FOP_EVENT;
 }
 
 void FrameOperationProcedure::initiate_ad_retransmission() {
@@ -75,7 +93,7 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
 
     while (cur_frame != sentQueue->end()){
         if (cur_frame->acknowledged) {
-            // TODO Generate a ‘Positive Confirm Response to Request to Transfer FDU’ response
+            cur_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
             expectedAcknowledgementSeqNumber = cur_frame->transferFrameSeqNumber;
             sentQueue->erase(cur_frame++);
         } else{
@@ -91,9 +109,8 @@ void FrameOperationProcedure::look_for_directive() {
             if (frame.serviceType == ServiceType::TYPE_B && frame.to_be_retransmitted()) {
                 bcOut == FlagState::NOT_READY;
                 frame.mark_for_retransmission(0);
-                // TODO Generate ‘Transmit Request for (BC) Frame’ request for this frame
             }
-            transmit_bc_frame();
+            //transmit_bc_frame();
         }
     } else{
         // @TODO? call look_for_fdu once bcOut is set to ready
@@ -125,7 +142,7 @@ void FrameOperationProcedure::look_for_fdu() {
                     }
                 }
             }
-            transmit_ad_frame();
+            //transmit_ad_frame();
         }
     } else{
         // TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
@@ -145,4 +162,152 @@ void FrameOperationProcedure::alert(AlertEvent event){
     purge_wait_queue();
     // TODO: Generate a ‘Negative Confirm Response to Directive’ for any ongoing 'Initiate AD Service' request
     // TODO: Generate Alert notification (also the reason for the alert needs to be passed here)
+}
+
+FOPDirectiveResponse FrameOperationProcedure::initiate_ad_no_clcw(Packet *ad_frame) {
+    // E23
+    if (state == FOPState::INITIAL){
+        initialize();
+        ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+        state = FOPState::ACTIVE;
+        return FOPDirectiveResponse::ACCEPT;
+    }
+    return FOPDirectiveResponse::REJECT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::initiate_ad_clcw(Packet *ad_frame) {
+    // E24
+    if (state == FOPState::INITIAL){
+        initialize();
+        // @todo start timer
+        state = FOPState::ACTIVE;
+        return FOPDirectiveResponse::ACCEPT;
+    }
+    return FOPDirectiveResponse::REJECT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::initiate_ad_unlock(Packet *ad_frame) {
+    if (state == FOPState::INITIAL && bcOut == FlagState::READY){
+        // E25
+        initialize();
+        // @todo transmit unlock frame
+        return FOPDirectiveResponse::ACCEPT;
+    }
+    // E26
+    return FOPDirectiveResponse::REJECT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::initiate_ad_vr(Packet *ad_frame) {
+    if (state == FOPState::INITIAL && bcOut == FlagState::READY){
+        // E27
+        initialize();
+        transmitterFrameSeqNumber = ad_frame->transferFrameSeqNumber;
+        expectedAcknowledgementSeqNumber = ad_frame->transferFrameSeqNumber;
+        // @todo transmit Set V(R) frame
+        state = FOPState::INITIALIZING_WITH_BC_FRAME;
+        return FOPDirectiveResponse::ACCEPT;
+    }
+    // E28
+    return FOPDirectiveResponse::REJECT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::terminate_ad_service(Packet *ad_frame) {
+    // E29
+    if (state != FOPState::INITIAL) {
+        alert(AlertEvent::ALRT_TERM);
+    }
+    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    return FOPDirectiveResponse::ACCEPT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::resume_ad_service(Packet *ad_frame) {
+    switch(suspendState){
+        case 0:
+            // E30
+            return FOPDirectiveResponse::REJECT;
+        case 1:
+            // E31
+            if (state==FOPState::INITIAL){
+                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+                // @todo resume
+                state = FOPState::ACTIVE;
+                return FOPDirectiveResponse::ACCEPT;
+            }
+            else{
+                // Not applicable. Should not get here, maybe raise an error?
+                return FOPDirectiveResponse::REJECT;
+            }
+        case 2:
+            // E32
+            if (state==FOPState::INITIAL){
+                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+                // @todo resume
+                state = FOPState::RETRANSMIT_WITHOUT_WAIT;
+                return FOPDirectiveResponse::ACCEPT;
+            } else{
+                // Not applicable
+                return FOPDirectiveResponse::REJECT;
+            }
+        case 3:
+            // E33
+            if (state==FOPState::INITIAL){
+                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+                // @todo resume
+                state = FOPState::RETRANSMIT_WITH_WAIT;
+                return FOPDirectiveResponse::ACCEPT;
+            } else{
+                // Not applicable
+                return FOPDirectiveResponse::REJECT;
+            }
+        case 4:
+            // E34
+            if (state==FOPState::INITIAL){
+                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+                // @todo resume
+                state = FOPState::INITIALIZING_WITHOUT_BC_FRAME;
+                return FOPDirectiveResponse::ACCEPT;
+            } else{
+                // Not applicable
+                return FOPDirectiveResponse::REJECT;
+            }
+    }
+}
+
+FOPDirectiveResponse FrameOperationProcedure::set_vs(Packet *ad_frame) {
+    if (state == FOPState::INITIAL && suspendState == 0) {
+        transmitterFrameSeqNumber = ad_frame->transferFrameSeqNumber;
+        expectedAcknowledgementSeqNumber = ad_frame->transferFrameSeqNumber;
+        return FOPDirectiveResponse::ACCEPT;
+    }
+    else {
+        return FOPDirectiveResponse::REJECT;
+    }
+}
+
+FOPDirectiveResponse FrameOperationProcedure::set_fop_width(Packet *ad_frame, uint8_t vr){
+    fopSlidingWindow = vr;
+    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    return FOPDirectiveResponse::ACCEPT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::set_t1_initial(Packet *ad_frame) {
+    set_t1_initial(ad_frame);
+    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    return FOPDirectiveResponse::ACCEPT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::set_timeout_type(Packet *ad_frame, bool vr) {
+    timeoutType = vr;
+    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    return FOPDirectiveResponse::ACCEPT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::set_transmission_limit(Packet *ad_frame, uint8_t vr){
+    transmissionLimit = vr;
+    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    return FOPDirectiveResponse::ACCEPT;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::invalid_directive(Packet *ad_frame){
+    return FOPDirectiveResponse::REJECT;
 }
