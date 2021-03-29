@@ -274,6 +274,7 @@ FOPDirectiveResponse FrameOperationProcedure::resume_ad_service(Packet *ad_frame
 }
 
 FOPDirectiveResponse FrameOperationProcedure::set_vs(Packet *ad_frame) {
+    // E35
     if (state == FOPState::INITIAL && suspendState == 0) {
         transmitterFrameSeqNumber = ad_frame->transferFrameSeqNumber;
         expectedAcknowledgementSeqNumber = ad_frame->transferFrameSeqNumber;
@@ -285,29 +286,72 @@ FOPDirectiveResponse FrameOperationProcedure::set_vs(Packet *ad_frame) {
 }
 
 FOPDirectiveResponse FrameOperationProcedure::set_fop_width(Packet *ad_frame, uint8_t vr){
+    // E36
     fopSlidingWindow = vr;
     ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
     return FOPDirectiveResponse::ACCEPT;
 }
 
 FOPDirectiveResponse FrameOperationProcedure::set_t1_initial(Packet *ad_frame) {
+    // E37
     set_t1_initial(ad_frame);
     ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
     return FOPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_timeout_type(Packet *ad_frame, bool vr) {
-    timeoutType = vr;
-    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
-    return FOPDirectiveResponse::ACCEPT;
-}
-
 FOPDirectiveResponse FrameOperationProcedure::set_transmission_limit(Packet *ad_frame, uint8_t vr){
+    // E38
     transmissionLimit = vr;
     ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
     return FOPDirectiveResponse::ACCEPT;
 }
 
+FOPDirectiveResponse FrameOperationProcedure::set_timeout_type(Packet *ad_frame, bool vr) {
+    // E39
+    timeoutType = vr;
+    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    return FOPDirectiveResponse::ACCEPT;
+}
+
+
 FOPDirectiveResponse FrameOperationProcedure::invalid_directive(Packet *ad_frame){
+    // E40
     return FOPDirectiveResponse::REJECT;
+}
+
+void FrameOperationProcedure::ad_accept(Packet *ad_frame) {
+    // E41
+    adOut = FlagState::READY;
+    if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT){
+        look_for_fdu();
+    }
+}
+
+void FrameOperationProcedure::ad_reject(Packet *ad_frame) {
+    // E42
+    alert(AlertEvent::ALRT_LLIF);
+    state = FOPState::INITIAL;
+}
+
+void FrameOperationProcedure::bc_accept(Packet *ad_frame) {
+    // E43
+    bcOut = FlagState::READY;
+    if (state == FOPState::INITIALIZING_WITH_BC_FRAME){
+        look_for_directive();
+    }
+}
+
+void FrameOperationProcedure::bc_reject(Packet *ad_frame) {
+    alert(AlertEvent::ALRT_LLIF);
+    state = FOPState::INITIAL;
+}
+
+FOPDirectiveResponse FrameOperationProcedure::bd_accept(Packet *ad_frame) {
+    bdOut = FlagState::READY;
+    return FOPDirectiveResponse::ACCEPT;
+}
+
+void FrameOperationProcedure::bd_reject(Packet *ad_frame) {
+    alert(AlertEvent::ALRT_LLIF);
+    state = FOPState::INITIAL;
 }

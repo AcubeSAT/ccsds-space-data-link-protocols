@@ -32,6 +32,7 @@ enum AlertEvent {
     ALRT_CLCW = 1,
     ALRT_LIMIT = 2,
     ALRT_TERM = 3,
+    ALRT_LLIF = 4,
 };
 
 class VirtualChannel;
@@ -141,6 +142,18 @@ private:
     FOPDirectiveResponse set_timeout_type(Packet *ad_frame, bool vr);
 
     FOPDirectiveResponse invalid_directive(Packet *ad_frame);
+
+    void ad_accept(Packet *ad_frame);
+
+    void ad_reject(Packet *ad_frame);
+
+    void bc_accept(Packet *ad_frame);
+
+    void bc_reject(Packet *ad_frame);
+
+    FOPDirectiveResponse bd_accept(Packet *ad_frame);
+
+    void bd_reject(Packet *ad_frame);
 
 protected:
     /**
