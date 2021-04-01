@@ -33,15 +33,18 @@ enum AlertEvent {
     ALRT_LIMIT = 2,
     ALRT_TERM = 3,
     ALRT_LLIF = 4,
+    ALRT_NNR = 5,
+    ALRT_LOCKOUT = 6,
 };
 
 class VirtualChannel;
+
 class MAPChannel;
 
 class FrameOperationProcedure {
 private:
-     etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
-     etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue;
     VirtualChannel *vchan;
 
     FOPState state;
@@ -113,10 +116,17 @@ private:
 
     void alert(AlertEvent event);
 
+    /* CLCW arrival*/
+
     /**
      * @brief Process event where a valid CLCW arrives
      */
-    void event_valid_clcw();
+    void valid_clcw_arrival(CLCW *clcw);
+
+    /**
+     * @brief Process invalid CLCW arrival
+     */
+    void invalid_clcw_arrival();
 
     /* Directives */
     FOPDirectiveResponse initiate_ad_no_clcw(Packet *ad_frame);
@@ -143,6 +153,7 @@ private:
 
     FOPDirectiveResponse invalid_directive(Packet *ad_frame);
 
+    /* Response from lower procedures*/
     void ad_accept(Packet *ad_frame);
 
     void ad_reject(Packet *ad_frame);
@@ -163,9 +174,9 @@ protected:
 
 public:
     FrameOperationProcedure(VirtualChannel *vchan,
-            etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue,
-            etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue,
-            const uint8_t repetition_cop_ctrl) :
+                            etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue,
+                            etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue,
+                            const uint8_t repetition_cop_ctrl) :
             waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
             adOut(0), bdOut(0), bcOut(0), expectedAcknowledgementSeqNumber(0),
             tiInitial(FOP_TIMER_INITIAL), transmissionLimit(repetition_cop_ctrl), transmissionCount(1),

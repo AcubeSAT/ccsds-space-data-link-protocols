@@ -10,7 +10,7 @@ enum ServiceType {
     TYPE_B = 1
 };
 
-enum FDURequestType{
+enum FDURequestType {
     REQUEST_PENDING = 0,
     REQUEST_CONFIRMED = 1,
     REQUEST_DENIED = 2,
@@ -28,7 +28,7 @@ struct Packet {
     uint8_t transferFrameSeqNumber;
     bool acknowledged;
 
-    void setConfSignal(FDURequestType reqSignal){
+    void setConfSignal(FDURequestType reqSignal) {
         confSignal = reqSignal;
         // TODO Maybe signal the higher procedures here instead of having them manually take care of them
     }
@@ -55,7 +55,12 @@ private:
 
 class CLCW {
 public:
-    /**
+    void setConfSignal(FDURequestType reqSignal) {
+        confSignal = reqSignal;
+        // TODO Maybe signal the higher procedures here instead of having them manually take care of them
+    }
+
+    /**-+
      * @brief Field status is mission-specific and not used in the CCSDS data link protocol
      */
     const uint8_t field_status() const {
@@ -154,6 +159,8 @@ public:
 
 private:
     uint8_t clcw_data[4];
+    // This is used by COP to signal the higher procedures
+    FDURequestType confSignal;
 };
 
 #endif //CCSDS_PACKET_H

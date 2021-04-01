@@ -2,8 +2,8 @@
 
 // MAP Channel
 
-void MAPChannel::store(Packet packet){
-    if (packetList.full()){
+void MAPChannel::store(Packet packet) {
+    if (packetList.full()) {
         // Log that buffer is full
         return;
     }
@@ -13,18 +13,18 @@ void MAPChannel::store(Packet packet){
 // Virtual Channel
 
 // @todo rename to something that makes more sense
-void VirtualChannel::store_unprocessed(Packet packet){
+void VirtualChannel::store_unprocessed(Packet packet) {
     // Limit the amount of packets that can be stored at any given time
-    if (unprocessedPacketList.full()){
+    if (unprocessedPacketList.full()) {
         // Log that buffer is full
         return;
     }
     unprocessedPacketList.push_back(packet);
 }
 
-void VirtualChannel::store(Packet packet){
+void VirtualChannel::store(Packet packet) {
     // Limit the amount of packets that can be stored at any given time
-    if (waitQueue.full()){
+    if (waitQueue.full()) {
         // Log that buffer is full
         return;
     }
@@ -36,8 +36,8 @@ void VirtualChannel::store(Packet packet){
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-void MasterChannel::store(Packet packet){
-    if (framesList.full()){
+void MasterChannel::store(Packet packet) {
+    if (framesList.full()) {
         // Log that buffer is full
         return;
     }

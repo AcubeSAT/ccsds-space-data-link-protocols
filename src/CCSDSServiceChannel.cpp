@@ -4,13 +4,14 @@
 #include <Alert.hpp>
 
 
-ServiceChannelNotif ServiceChannel::store(uint8_t* packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-                                          ServiceType service_type){
+ServiceChannelNotif
+ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+                      ServiceType service_type) {
     uint8_t vid = gvcid & 0x3F;
     MAPChannel *map_channel = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid));
 
-    if (map_channel->packetList.full()){
-       return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
+    if (map_channel->packetList.full()) {
+        return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type);
@@ -18,15 +19,15 @@ ServiceChannelNotif ServiceChannel::store(uint8_t* packet, uint16_t packet_lengt
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
+ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(virt_channel->mapChannels.at(mapid));
 
-    if (map_channel->packetList.empty()){
+    if (map_channel->packetList.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
-    if (virt_channel->waitQueue.full()){
+    if (virt_channel->waitQueue.full()) {
         return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;
     }
 
@@ -36,46 +37,47 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
     bool blocking_enabled = virt_channel->blocking;
 
-    const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled*1U);
+    const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled * 1U);
 
-    if (packet.packetLength > max_packet_length){
-        if (segmentation_enabled){
+    if (packet.packetLength > max_packet_length) {
+        if (segmentation_enabled) {
             // Check if there is enough space in the buffer of the virtual channel to store all the segments
-            uint8_t tf_n = (packet.packetLength / max_packet_length) +  (packet.packetLength % max_packet_length != 0);
+            uint8_t tf_n = (packet.packetLength / max_packet_length) + (packet.packetLength % max_packet_length != 0);
 
-            if (virt_channel->waitQueue.capacity() >= tf_n){
+            if (virt_channel->waitQueue.capacity() >= tf_n) {
                 // Break up packet
                 map_channel->packetList.pop_front();
 
                 // First portion
                 uint16_t seg_header = mapid || 0x40;
 
-                Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid, packet.sduid,
-                        packet.serviceType);
+                Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid,
+                                         packet.sduid,
+                                         packet.serviceType);
                 virt_channel->store(t_packet);
 
                 // Middle portion
-                t_packet.segHdr =  mapid || 0x00;
-                for (uint8_t i = 1; i < (tf_n - 1); i++){
-                    t_packet.packet = &packet.packet[i*max_packet_length];
+                t_packet.segHdr = mapid || 0x00;
+                for (uint8_t i = 1; i < (tf_n - 1); i++) {
+                    t_packet.packet = &packet.packet[i * max_packet_length];
                     virt_channel->store(t_packet);
                 }
 
                 // Last portion
-                t_packet.segHdr =  mapid || 0x80;
+                t_packet.segHdr = mapid || 0x80;
                 t_packet.packet = &packet.packet[(tf_n - 1) * max_packet_length];
                 t_packet.packetLength = packet.packetLength % max_packet_length;
                 virt_channel->store(t_packet);
             }
-        } else{
+        } else {
             return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
         }
-    } else{
+    } else {
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
         // the buffer.
         map_channel->packetList.pop_front();
 
-        if (blocking_enabled){
+        if (blocking_enabled) {
             // See if we can block it with other packets
             // @todo There are a few things I'm unsure about regarding blocking:
             // - You need to block neighbouring packets because otherwise there's a significant increase in complexity
@@ -87,10 +89,10 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
 
             // for now just send packet as-is
             virt_channel->store(packet);
-        } else{
-            if (segmentation_enabled){
-                    packet.segHdr = (0xc0) || (mapid && 0x3F);
-                }
+        } else {
+            if (segmentation_enabled) {
+                packet.segHdr = (0xc0) || (mapid && 0x3F);
+            }
             virt_channel->store(packet);
         }
     }
@@ -98,14 +100,15 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid){
 }
 
 #if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
-ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid){
+
+ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
 
-    if (virt_channel->unprocessedPacketList.empty()){
+    if (virt_channel->unprocessedPacketList.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
-    if (virt_channel->waitQueue.full()){
+    if (virt_channel->waitQueue.full()) {
         return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;;
     }
     Packet packet = virt_channel->unprocessedPacketList.front();
@@ -114,28 +117,29 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid){
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
     bool blocking_enabled = virt_channel->blocking;
 
-    const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled*1U);
+    const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled * 1U);
 
-    if (packet.packetLength > max_packet_length){
-        if (segmentation_enabled){
+    if (packet.packetLength > max_packet_length) {
+        if (segmentation_enabled) {
             // Check if there is enough space in the buffer of the virtual channel to store all the segments
-            uint8_t tf_n = (packet.packetLength / max_packet_length) +  (packet.packetLength % max_packet_length != 0);
+            uint8_t tf_n = (packet.packetLength / max_packet_length) + (packet.packetLength % max_packet_length != 0);
 
-            if (virt_channel->waitQueue.capacity() >= tf_n){
+            if (virt_channel->waitQueue.capacity() >= tf_n) {
                 // Break up packet
                 virt_channel->unprocessedPacketList.pop_front();
 
                 // First portion
                 uint16_t seg_header = 0x40;
 
-                Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid, packet.sduid,
+                Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid,
+                                         packet.sduid,
                                          packet.serviceType);
                 virt_channel->store(t_packet);
 
                 // Middle portion
                 t_packet.segHdr = 0x00;
-                for (uint8_t i = 1; i < (tf_n - 1); i++){
-                    t_packet.packet = &packet.packet[i*max_packet_length];
+                for (uint8_t i = 1; i < (tf_n - 1); i++) {
+                    t_packet.packet = &packet.packet[i * max_packet_length];
                     virt_channel->store(t_packet);
                 }
 
@@ -145,18 +149,18 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid){
                 t_packet.packetLength = packet.packetLength % max_packet_length;
                 virt_channel->store(t_packet);
             }
-        } else{
+        } else {
             return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
         }
-    } else{
+    } else {
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
         // the buffer.
         virt_channel->unprocessedPacketList.pop_front();
 
-        if (blocking_enabled){
+        if (blocking_enabled) {
             virt_channel->store(packet);
-        } else{
-            if (segmentation_enabled){
+        } else {
+            if (segmentation_enabled) {
                 packet.segHdr = 0xc0;
             }
             virt_channel->store(packet);
@@ -164,15 +168,16 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid){
     }
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
+
 #endif
 
-ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid){
+ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
     VirtualChannel virt_channel = std::move(masterChannel.virtChannels.at(vid));
-    if (virt_channel.waitQueue.empty()){
-           return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
+    if (virt_channel.waitQueue.empty()) {
+        return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.framesList.full()){
+    if (masterChannel.framesList.full()) {
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
     // Perform COP and stuff
