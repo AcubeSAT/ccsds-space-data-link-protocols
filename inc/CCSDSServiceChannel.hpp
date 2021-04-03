@@ -44,7 +44,7 @@ public:
                               ServiceType service_type);
 
     /**
-     * @brief Requests to proce ss the last packet stored in the buffer of the specific MAPP channel
+     * @brief Requests to process the last packet stored in the buffer of the specific MAPP channel
      * (possible more if blocking is enabled). The packets are segmented or blocked together
      * and then transferred to the buffer of the virtual channel
      */

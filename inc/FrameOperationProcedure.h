@@ -42,6 +42,8 @@ class VirtualChannel;
 class MAPChannel;
 
 class FrameOperationProcedure {
+    friend class ServiceChannel;
+
 private:
     etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
     etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue;

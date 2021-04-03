@@ -8,6 +8,7 @@ typedef enum ServiceChannelNotif {
     MASTER_CHANNEL_FRAME_BUFFER_FULL = 3,
     NO_PACKETS_TO_PROCESS = 4,
     PACKET_EXCEEDS_MAX_SIZE = 5,
+    FOP_SENT_QUEUE_FULL = 6,
 };
 
 typedef enum FOPNotif {

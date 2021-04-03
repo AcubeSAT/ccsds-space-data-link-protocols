@@ -180,7 +180,19 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
     if (masterChannel.framesList.full()) {
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
-    // Perform COP and stuff
+
+    Packet packet = virt_channel.waitQueue.front();
+    FOPNotif err;
+
+    if (packet.serviceType == ServiceType::TYPE_A) {
+        err = virt_channel.fop.transmit_ad_frame(packet);
+    } else{
+        err = virt_channel.fop.transmit_bc_frame(packet);
+    }
+
+    if (err == FOPNotif::SENT_QUEUE_FULL){
+        return ServiceChannelNotif::FOP_SENT_QUEUE_FULL;
+    }
 
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
