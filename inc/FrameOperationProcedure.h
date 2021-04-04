@@ -50,6 +50,8 @@ private:
     VirtualChannel *vchan;
 
     FOPState state;
+    FOPState suspendState;
+
     uint8_t transmitterFrameSeqNumber;
     bool adOut;
     bool bdOut;
@@ -60,7 +62,6 @@ private:
     uint16_t transmissionCount;
     uint8_t fopSlidingWindow;
     bool timeoutType;
-    uint8_t suspendState;
 
 
     /**
@@ -131,17 +132,17 @@ private:
     void invalid_clcw_arrival();
 
     /* Directives */
-    FOPDirectiveResponse initiate_ad_no_clcw(Packet *ad_frame);
+    FDURequestType initiate_ad_no_clcw();
 
-    FOPDirectiveResponse initiate_ad_clcw(Packet *ad_frame);
+    FDURequestType initiate_ad_clcw();
 
-    FOPDirectiveResponse initiate_ad_unlock(Packet *ad_frame);
+    FDURequestType initiate_ad_unlock();
 
-    FOPDirectiveResponse initiate_ad_vr(Packet *ad_frame);
+    FDURequestType initiate_ad_vr(uint8_t vr);
 
-    FOPDirectiveResponse terminate_ad_service(Packet *ad_frame);
+    FDURequestType terminate_ad_service();
 
-    FOPDirectiveResponse resume_ad_service(Packet *ad_frame);
+    FDURequestType resume_ad_service();
 
     FOPDirectiveResponse set_vs(Packet *ad_frame);
 
@@ -182,7 +183,7 @@ public:
             waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
             adOut(0), bdOut(0), bcOut(0), expectedAcknowledgementSeqNumber(0),
             tiInitial(FOP_TIMER_INITIAL), transmissionLimit(repetition_cop_ctrl), transmissionCount(1),
-            fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL), timeoutType(0), suspendState(0) {};
+            fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL), timeoutType(0), suspendState(FOPState::INITIAL) {};
 };
 
 #endif //CCSDS_FOP_H

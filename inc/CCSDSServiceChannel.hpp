@@ -63,6 +63,39 @@ public:
 
     ServiceChannelNotif vc_generation_request(uint8_t vid);
 
+    // COP Directives
+    // TODO: Properly handle Notifications
+
+    void initiate_ad_no_clcw(uint8_t vid);
+
+    void initiate_ad_clcw(uint8_t vid);
+
+    void initiate_ad_unlock(uint8_t vid);
+
+    void initiate_ad_vr(uint8_t vid, uint8_t vr);
+
+    void terminate_ad_service(uint8_t vid);
+
+    void resume_ad_service(uint8_t vid);
+
+    /**
+     * @brief Get FOP State of the virtual channel
+     */
+    const FOPState fop_state(uint8_t vid) const;
+
+    /**
+     * @brief Returns the last frame sequence number, V(S), that will be placed in the header of the next transferred packet
+     * @param vid Virtual Channel ID
+     */
+    const uint8_t transmitter_frame_seq_number(uint8_t vid) const;
+
+    /**
+    * @brief Returns the expected acknowledgement frame sequence number, NN(R). This is essentially the frame sequence
+    * number of the oldest unacknowledged frame
+    * @param vid Virtual Channel ID
+   */
+    const uint8_t expected_frame_seq_number(uint8_t vid) const;
+
     /**
      * @brief Processes the packet at the head of the buffer
      */

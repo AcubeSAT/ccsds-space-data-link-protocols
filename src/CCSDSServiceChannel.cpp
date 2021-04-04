@@ -196,3 +196,51 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
 
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
+
+void ServiceChannel::initiate_ad_no_clcw(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    FDURequestType req;
+    req = virt_channel->fop.initiate_ad_no_clcw();
+}
+
+void ServiceChannel::initiate_ad_clcw(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    FDURequestType req;
+    req = virt_channel->fop.initiate_ad_clcw();
+}
+
+void ServiceChannel::initiate_ad_unlock(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    FDURequestType req;
+    req = virt_channel->fop.initiate_ad_unlock();
+}
+
+void ServiceChannel::initiate_ad_vr(uint8_t vid, uint8_t vr){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    FDURequestType req;
+    req = virt_channel->fop.initiate_ad_vr(vr);
+}
+
+void ServiceChannel::terminate_ad_service(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    FDURequestType req;
+    req = virt_channel->fop.terminate_ad_service();
+}
+
+void ServiceChannel::resume_ad_service(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    FDURequestType req;
+    req = virt_channel->fop.resume_ad_service();
+}
+
+const FOPState ServiceChannel::fop_state(uint8_t vid) const{
+    return masterChannel.virtChannels.at(vid).fop.state;
+}
+
+const uint8_t ServiceChannel::transmitter_frame_seq_number(uint8_t vid) const{
+    return masterChannel.virtChannels.at(vid).fop.transmitterFrameSeqNumber;
+}
+
+const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const{
+    return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
+}

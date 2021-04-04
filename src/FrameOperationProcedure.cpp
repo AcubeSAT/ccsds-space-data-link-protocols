@@ -4,7 +4,7 @@ FOPNotif FrameOperationProcedure::purge_sent_queue() {
     etl::ilist<Packet>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
-        cur_frame->setConfSignal(FDURequestType::REQUEST_DENIED);
+        cur_frame->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
         sentQueue->erase(cur_frame++);
     }
 
@@ -15,7 +15,7 @@ FOPNotif FrameOperationProcedure::purge_wait_queue() {
     etl::ilist<Packet>::iterator cur_frame = waitQueue->begin();
 
     while (cur_frame != waitQueue->end()) {
-        cur_frame->setConfSignal(FDURequestType::REQUEST_DENIED);
+        cur_frame->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
         waitQueue->erase(cur_frame++);
     }
 
@@ -93,7 +93,7 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
 
     while (cur_frame != sentQueue->end()) {
         if (cur_frame->acknowledged) {
-            cur_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+            cur_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
             expectedAcknowledgementSeqNumber = cur_frame->transferFrameSeqNumber;
             sentQueue->erase(cur_frame++);
         } else {
@@ -153,7 +153,7 @@ void FrameOperationProcedure::initialize() {
     purge_sent_queue();
     purge_wait_queue();
     transmissionCount = 1;
-    suspendState = 0;
+    suspendState = FOPState::INITIAL;
 }
 
 void FrameOperationProcedure::alert(AlertEvent event) {
@@ -185,12 +185,12 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                                 state = FOPState::INITIAL;
                                 break;
                             case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                clcw->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+                                clcw->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
                                 state = FOPState::ACTIVE;
                                 // cancel timer
                                 break;
                             case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                clcw->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+                                clcw->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
                                 //bc_accept()??
                                 // cancel timer
                                 state = FOPState::ACTIVE;
@@ -639,112 +639,60 @@ void FrameOperationProcedure::invalid_clcw_arrival() {
     }
 }
 
-FOPDirectiveResponse FrameOperationProcedure::initiate_ad_no_clcw(Packet *ad_frame) {
+FDURequestType FrameOperationProcedure::initiate_ad_no_clcw() {
     // E23
     if (state == FOPState::INITIAL) {
         initialize();
-        ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
         state = FOPState::ACTIVE;
-        return FOPDirectiveResponse::ACCEPT;
     }
-    return FOPDirectiveResponse::REJECT;
+    return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::initiate_ad_clcw(Packet *ad_frame) {
+FDURequestType FrameOperationProcedure::initiate_ad_clcw() {
     // E24
     if (state == FOPState::INITIAL) {
         initialize();
-        // @todo start timer
         state = FOPState::ACTIVE;
-        return FOPDirectiveResponse::ACCEPT;
     }
-    return FOPDirectiveResponse::REJECT;
+    return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::initiate_ad_unlock(Packet *ad_frame) {
+FDURequestType FrameOperationProcedure::initiate_ad_unlock() {
     if (state == FOPState::INITIAL && bcOut == FlagState::READY) {
         // E25
         initialize();
+        state = FOPState::INITIALIZING_WITH_BC_FRAME;
         // @todo transmit unlock frame
-        return FOPDirectiveResponse::ACCEPT;
     }
     // E26
-    return FOPDirectiveResponse::REJECT;
+    return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::initiate_ad_vr(Packet *ad_frame) {
+FDURequestType FrameOperationProcedure::initiate_ad_vr(uint8_t vr) {
     if (state == FOPState::INITIAL && bcOut == FlagState::READY) {
         // E27
         initialize();
-        transmitterFrameSeqNumber = ad_frame->transferFrameSeqNumber;
-        expectedAcknowledgementSeqNumber = ad_frame->transferFrameSeqNumber;
+        transmitterFrameSeqNumber = vr;
+        expectedAcknowledgementSeqNumber = vr;
         // @todo transmit Set V(R) frame
         state = FOPState::INITIALIZING_WITH_BC_FRAME;
-        return FOPDirectiveResponse::ACCEPT;
     }
     // E28
-    return FOPDirectiveResponse::REJECT;
+    return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::terminate_ad_service(Packet *ad_frame) {
+FDURequestType FrameOperationProcedure::terminate_ad_service() {
     // E29
     if (state != FOPState::INITIAL) {
         alert(AlertEvent::ALRT_TERM);
+        state = FOPState::INITIAL;
     }
-    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
-    return FOPDirectiveResponse::ACCEPT;
+    return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::resume_ad_service(Packet *ad_frame) {
-    switch (suspendState) {
-        case 0:
-            // E30
-            return FOPDirectiveResponse::REJECT;
-        case 1:
-            // E31
-            if (state == FOPState::INITIAL) {
-                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
-                // @todo resume
-                state = FOPState::ACTIVE;
-                return FOPDirectiveResponse::ACCEPT;
-            } else {
-                // Not applicable. Should not get here, maybe raise an error?
-                return FOPDirectiveResponse::REJECT;
-            }
-        case 2:
-            // E32
-            if (state == FOPState::INITIAL) {
-                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
-                // @todo resume
-                state = FOPState::RETRANSMIT_WITHOUT_WAIT;
-                return FOPDirectiveResponse::ACCEPT;
-            } else {
-                // Not applicable
-                return FOPDirectiveResponse::REJECT;
-            }
-        case 3:
-            // E33
-            if (state == FOPState::INITIAL) {
-                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
-                // @todo resume
-                state = FOPState::RETRANSMIT_WITH_WAIT;
-                return FOPDirectiveResponse::ACCEPT;
-            } else {
-                // Not applicable
-                return FOPDirectiveResponse::REJECT;
-            }
-        case 4:
-            // E34
-            if (state == FOPState::INITIAL) {
-                ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
-                // @todo resume
-                state = FOPState::INITIALIZING_WITHOUT_BC_FRAME;
-                return FOPDirectiveResponse::ACCEPT;
-            } else {
-                // Not applicable
-                return FOPDirectiveResponse::REJECT;
-            }
-    }
+FDURequestType FrameOperationProcedure::resume_ad_service() {
+    state = suspendState;
+    return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
 FOPDirectiveResponse FrameOperationProcedure::set_vs(Packet *ad_frame) {
@@ -761,28 +709,28 @@ FOPDirectiveResponse FrameOperationProcedure::set_vs(Packet *ad_frame) {
 FOPDirectiveResponse FrameOperationProcedure::set_fop_width(Packet *ad_frame, uint8_t vr) {
     // E36
     fopSlidingWindow = vr;
-    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
     return FOPDirectiveResponse::ACCEPT;
 }
 
 FOPDirectiveResponse FrameOperationProcedure::set_t1_initial(Packet *ad_frame) {
     // E37
     set_t1_initial(ad_frame);
-    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
     return FOPDirectiveResponse::ACCEPT;
 }
 
 FOPDirectiveResponse FrameOperationProcedure::set_transmission_limit(Packet *ad_frame, uint8_t vr) {
     // E38
     transmissionLimit = vr;
-    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
     return FOPDirectiveResponse::ACCEPT;
 }
 
 FOPDirectiveResponse FrameOperationProcedure::set_timeout_type(Packet *ad_frame, bool vr) {
     // E39
     timeoutType = vr;
-    ad_frame->setConfSignal(FDURequestType::REQUEST_CONFIRMED);
+    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
     return FOPDirectiveResponse::ACCEPT;
 }
 

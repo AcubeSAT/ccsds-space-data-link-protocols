@@ -12,8 +12,8 @@ enum ServiceType {
 
 enum FDURequestType {
     REQUEST_PENDING = 0,
-    REQUEST_CONFIRMED = 1,
-    REQUEST_DENIED = 2,
+    REQUEST_POSITIVE_CONFIRM = 1,
+    REQUEST_NEGATIVE_CONFIRM = 2,
 };
 
 struct Packet {
