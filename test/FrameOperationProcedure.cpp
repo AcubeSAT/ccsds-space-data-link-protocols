@@ -41,4 +41,21 @@ TEST_CASE("Initiate FOP Directives") {
     serv_channel_fop.initiate_ad_vr(3, 2);
     CHECK(serv_channel_fop.fop_state(3) == FOPState::INITIAL); // todo set bcOut
 
+    CHECK(serv_channel_fop.expected_frame_seq_number(3) == 0);
+    CHECK(serv_channel_fop.transmitter_frame_seq_number(3) == 0);
+    serv_channel_fop.set_vs(3, 6);
+    CHECK(serv_channel_fop.expected_frame_seq_number(3) == 6);
+    CHECK(serv_channel_fop.transmitter_frame_seq_number(3) == 6);
+
+    CHECK(serv_channel_fop.timeout_type(3) == 0);
+    serv_channel_fop.set_timeout_type(3, 1);
+    CHECK(serv_channel_fop.timeout_type(3) == 1);
+
+    CHECK(serv_channel_fop.t1_timer(3) == FOP_TIMER_INITIAL);
+    serv_channel_fop.set_t1_initial(3, 55);
+    CHECK(serv_channel_fop.t1_timer(3) == 55);
+
+    CHECK(serv_channel_fop.fop_sliding_window_width(3) == FOP_SLIDING_WINDOW_INITIAL);
+    serv_channel_fop.set_fop_width(3, 100);
+    CHECK(serv_channel_fop.fop_sliding_window_width(3) == 100);
 }

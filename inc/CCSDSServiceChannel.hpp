@@ -78,10 +78,41 @@ public:
 
     void resume_ad_service(uint8_t vid);
 
+    void set_vs(uint8_t vid, uint8_t vs);
+
+    void set_fop_width(uint8_t vid, uint8_t width);
+
+    void set_t1_initial(uint8_t vid, uint16_t t1_init);
+
+    void set_transmission_limit(uint8_t vid, uint8_t vr);
+
+    void set_timeout_type(uint8_t vid, bool vr);
+
+    void invalid_directive(uint8_t vid);
+
     /**
      * @brief Get FOP State of the virtual channel
      */
     const FOPState fop_state(uint8_t vid) const;
+
+    /**
+     * @brief Returns the value of the timer that is used to determine the time frame for acknowledging transferred
+     * frames
+     */
+     const uint16_t t1_timer(uint8_t vid) const;
+
+    /**
+     * @brief Indicates the width of the sliding window which is used to proceed to the lockout state in case the
+     * transfer frame number of the received packet deviates too much from the expected one.
+     */
+    const uint8_t fop_sliding_window_width(uint8_t vid) const;
+
+    /**
+     * @brief Returns the timeout action which is to be performed once the maximum transmission limit is reached and
+     * the timer has expired.
+     */
+     const bool timeout_type(uint8_t vid) const;
+
 
     /**
      * @brief Returns the last frame sequence number, V(S), that will be placed in the header of the next transferred packet

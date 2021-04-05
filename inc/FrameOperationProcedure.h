@@ -144,17 +144,17 @@ private:
 
     FDURequestType resume_ad_service();
 
-    FOPDirectiveResponse set_vs(Packet *ad_frame);
+    FOPDirectiveResponse set_vs(uint8_t vs);
 
-    FOPDirectiveResponse set_fop_width(Packet *ad_frame, uint8_t vr);
+    FOPDirectiveResponse set_fop_width(uint8_t width);
 
-    FOPDirectiveResponse set_t1_initial(Packet *ad_frame);
+    FOPDirectiveResponse set_t1_initial(uint16_t t1_init);
 
-    FOPDirectiveResponse set_transmission_limit(Packet *ad_frame, uint8_t vr);
+    FOPDirectiveResponse set_transmission_limit(uint8_t vr);
 
-    FOPDirectiveResponse set_timeout_type(Packet *ad_frame, bool vr);
+    FOPDirectiveResponse set_timeout_type(bool vr);
 
-    FOPDirectiveResponse invalid_directive(Packet *ad_frame);
+    FOPDirectiveResponse invalid_directive();
 
     /* Response from lower procedures*/
     void ad_accept(Packet *ad_frame);

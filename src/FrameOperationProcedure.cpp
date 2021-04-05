@@ -695,47 +695,43 @@ FDURequestType FrameOperationProcedure::resume_ad_service() {
     return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_vs(Packet *ad_frame) {
+FOPDirectiveResponse FrameOperationProcedure::set_vs(uint8_t vs) {
     // E35
-    if (state == FOPState::INITIAL && suspendState == 0) {
-        transmitterFrameSeqNumber = ad_frame->transferFrameSeqNumber;
-        expectedAcknowledgementSeqNumber = ad_frame->transferFrameSeqNumber;
+    if (state == FOPState::INITIAL && suspendState == FOPState::INITIAL) {
+        transmitterFrameSeqNumber = vs;
+        expectedAcknowledgementSeqNumber = vs;
         return FOPDirectiveResponse::ACCEPT;
     } else {
         return FOPDirectiveResponse::REJECT;
     }
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_fop_width(Packet *ad_frame, uint8_t vr) {
+FOPDirectiveResponse FrameOperationProcedure::set_fop_width(uint8_t vr) {
     // E36
     fopSlidingWindow = vr;
-    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
     return FOPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_t1_initial(Packet *ad_frame) {
+FOPDirectiveResponse FrameOperationProcedure::set_t1_initial(uint16_t t1_init) {
     // E37
-    set_t1_initial(ad_frame);
-    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
+    tiInitial = t1_init;
     return FOPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_transmission_limit(Packet *ad_frame, uint8_t vr) {
+FOPDirectiveResponse FrameOperationProcedure::set_transmission_limit(uint8_t vr) {
     // E38
     transmissionLimit = vr;
-    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
     return FOPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_timeout_type(Packet *ad_frame, bool vr) {
+FOPDirectiveResponse FrameOperationProcedure::set_timeout_type(bool vr) {
     // E39
     timeoutType = vr;
-    ad_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
     return FOPDirectiveResponse::ACCEPT;
 }
 
 
-FOPDirectiveResponse FrameOperationProcedure::invalid_directive(Packet *ad_frame) {
+FOPDirectiveResponse FrameOperationProcedure::invalid_directive() {
     // E40
     return FOPDirectiveResponse::REJECT;
 }

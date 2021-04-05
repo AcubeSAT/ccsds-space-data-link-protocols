@@ -233,8 +233,51 @@ void ServiceChannel::resume_ad_service(uint8_t vid){
     req = virt_channel->fop.resume_ad_service();
 }
 
+void ServiceChannel::set_vs(uint8_t vid, uint8_t vs){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.set_vs(vs);
+}
+
+void ServiceChannel::set_fop_width(uint8_t vid, uint8_t width){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.set_fop_width(width);
+}
+
+void ServiceChannel::set_t1_initial(uint8_t vid, uint16_t t1_init){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.set_t1_initial(t1_init);
+}
+
+void ServiceChannel::set_transmission_limit(uint8_t vid, uint8_t vr){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.set_transmission_limit(vr);
+}
+
+void ServiceChannel::set_timeout_type(uint8_t vid, bool vr){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.set_timeout_type(vr);
+}
+
+//todo: this may not be needed since it doesn't affect lower procedures and doesn't change the state in any way
+void ServiceChannel::invalid_directive(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.invalid_directive();
+}
+
 const FOPState ServiceChannel::fop_state(uint8_t vid) const{
     return masterChannel.virtChannels.at(vid).fop.state;
+}
+
+const uint16_t ServiceChannel::t1_timer(uint8_t vid) const{
+    return masterChannel.virtChannels.at(vid).fop.tiInitial;
+}
+
+const uint8_t ServiceChannel::fop_sliding_window_width(uint8_t vid) const{
+    return masterChannel.virtChannels.at(vid).fop.fopSlidingWindow;
+}
+
+const bool ServiceChannel::timeout_type(uint8_t vid) const {
+    return masterChannel.virtChannels.at(vid).fop.timeoutType;
 }
 
 const uint8_t ServiceChannel::transmitter_frame_seq_number(uint8_t vid) const{
