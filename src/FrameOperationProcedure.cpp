@@ -772,3 +772,7 @@ void FrameOperationProcedure::bd_reject(Packet *ad_frame) {
     alert(AlertEvent::ALRT_LLIF);
     state = FOPState::INITIAL;
 }
+
+void FrameOperationProcedure::transfer_fdu(Packet *frame){
+}
+

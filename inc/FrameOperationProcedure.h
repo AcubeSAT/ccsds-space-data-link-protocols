@@ -169,11 +169,7 @@ private:
 
     void bd_reject(Packet *ad_frame);
 
-protected:
-    /**
-     * @brief Process events, take the corresponding actions and change the state of the State Machine
-     */
-    void process_event(Event event);
+    void transfer_fdu(Packet *frame);
 
 public:
     FrameOperationProcedure(VirtualChannel *vchan,
