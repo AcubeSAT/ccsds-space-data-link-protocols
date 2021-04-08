@@ -54,20 +54,20 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
                 Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid,
                                          packet.sduid,
                                          packet.serviceType);
-                virt_channel->store(t_packet);
+                virt_channel->store(&t_packet);
 
                 // Middle portion
                 t_packet.segHdr = mapid || 0x00;
                 for (uint8_t i = 1; i < (tf_n - 1); i++) {
                     t_packet.packet = &packet.packet[i * max_packet_length];
-                    virt_channel->store(t_packet);
+                    virt_channel->store(&t_packet);
                 }
 
                 // Last portion
                 t_packet.segHdr = mapid || 0x80;
                 t_packet.packet = &packet.packet[(tf_n - 1) * max_packet_length];
                 t_packet.packetLength = packet.packetLength % max_packet_length;
-                virt_channel->store(t_packet);
+                virt_channel->store(&t_packet);
             }
         } else {
             return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
@@ -88,12 +88,12 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
             // contiguous memory but I'm also against that)
 
             // for now just send packet as-is
-            virt_channel->store(packet);
+            virt_channel->store(&packet);
         } else {
             if (segmentation_enabled) {
                 packet.segHdr = (0xc0) || (mapid && 0x3F);
             }
-            virt_channel->store(packet);
+            virt_channel->store(&packet);
         }
     }
     return ServiceChannelNotif::NO_SERVICE_EVENT;
@@ -134,20 +134,20 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
                 Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid,
                                          packet.sduid,
                                          packet.serviceType);
-                virt_channel->store(t_packet);
+                virt_channel->store(&t_packet);
 
                 // Middle portion
                 t_packet.segHdr = 0x00;
                 for (uint8_t i = 1; i < (tf_n - 1); i++) {
                     t_packet.packet = &packet.packet[i * max_packet_length];
-                    virt_channel->store(t_packet);
+                    virt_channel->store(&t_packet);
                 }
 
                 // Last portion
                 t_packet.segHdr = 0x80;
                 t_packet.packet = &packet.packet[(tf_n - 1) * max_packet_length];
                 t_packet.packetLength = packet.packetLength % max_packet_length;
-                virt_channel->store(t_packet);
+                virt_channel->store(&t_packet);
             }
         } else {
             return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
@@ -158,12 +158,12 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
         virt_channel->unprocessedPacketList.pop_front();
 
         if (blocking_enabled) {
-            virt_channel->store(packet);
+            virt_channel->store(&packet);
         } else {
             if (segmentation_enabled) {
                 packet.segHdr = 0xc0;
             }
-            virt_channel->store(packet);
+            virt_channel->store(&packet);
         }
     }
     return ServiceChannelNotif::NO_SERVICE_EVENT;
@@ -181,10 +181,10 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet packet = virt_channel.waitQueue.front();
+    Packet* packet = virt_channel.waitQueue.front();
     FOPNotif err;
 
-    if (packet.serviceType == ServiceType::TYPE_A) {
+    if (packet->serviceType == ServiceType::TYPE_A) {
         err = virt_channel.fop.transmit_ad_frame(packet);
     } else{
         err = virt_channel.fop.transmit_bc_frame(packet);

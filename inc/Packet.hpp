@@ -99,6 +99,11 @@ private:
     FDURequestType confSignal;
 };
 
+// We discard the headers and simply check for the contents of the packets
+inline bool operator==(const Packet& packet_1, const Packet& packet_2) {
+    return &(packet_1.packet) == &(packet_2.packet);
+}
+
 class CLCW {
 public:
     void setConfSignal(FDURequestType reqSignal) {

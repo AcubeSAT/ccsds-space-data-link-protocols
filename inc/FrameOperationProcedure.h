@@ -45,8 +45,8 @@ class FrameOperationProcedure {
     friend class ServiceChannel;
 
 private:
-    etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
-    etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue;
+    etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
+    etl::list<Packet*, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue;
     VirtualChannel *vchan;
 
     FOPState state;
@@ -77,17 +77,17 @@ private:
     /**
      * @brief Prepares a Type-AD Frame for transmission
      */
-    FOPNotif transmit_ad_frame(Packet ad_frame);
+    FOPNotif transmit_ad_frame(Packet *ad_frame);
 
     /**
      * @brief Prepares a Type-BC Frame for transmission
      */
-    FOPNotif transmit_bc_frame(Packet bc_frame);
+    FOPNotif transmit_bc_frame(Packet *bc_frame);
 
     /**
      * @brief Prepares a Type-BD Frame for transmission
      */
-    FOPNotif transmit_bd_frame(Packet bd_frame);
+    FOPNotif transmit_bd_frame(Packet *bd_frame);
 
     /**
      * @brief Marks AD Frames stored in the sent queue to be retransmitted
@@ -169,12 +169,12 @@ private:
 
     void bd_reject(Packet *ad_frame);
 
-    void transfer_fdu(Packet *frame);
+    FOPDirectiveResponse transfer_fdu(Packet *frame);
 
 public:
     FrameOperationProcedure(VirtualChannel *vchan,
-                            etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue,
-                            etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue,
+                            etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue,
+                            etl::list<Packet*, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue,
                             const uint8_t repetition_cop_ctrl) :
             waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
             adOut(0), bdOut(0), bcOut(0), expectedAcknowledgementSeqNumber(0),

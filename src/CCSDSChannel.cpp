@@ -22,7 +22,7 @@ void VirtualChannel::store_unprocessed(Packet packet) {
     unprocessedPacketList.push_back(packet);
 }
 
-void VirtualChannel::store(Packet packet) {
+void VirtualChannel::store(Packet* packet) {
     // Limit the amount of packets that can be stored at any given time
     if (waitQueue.full()) {
         // Log that buffer is full

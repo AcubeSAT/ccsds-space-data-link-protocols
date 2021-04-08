@@ -1,10 +1,10 @@
 #include <FrameOperationProcedure.h>
 
 FOPNotif FrameOperationProcedure::purge_sent_queue() {
-    etl::ilist<Packet>::iterator cur_frame = sentQueue->begin();
+    etl::ilist<Packet*>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
-        cur_frame->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
+        (*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
         sentQueue->erase(cur_frame++);
     }
 
@@ -12,17 +12,17 @@ FOPNotif FrameOperationProcedure::purge_sent_queue() {
 }
 
 FOPNotif FrameOperationProcedure::purge_wait_queue() {
-    etl::ilist<Packet>::iterator cur_frame = waitQueue->begin();
+    etl::ilist<Packet*>::iterator cur_frame = waitQueue->begin();
 
     while (cur_frame != waitQueue->end()) {
-        cur_frame->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
+        (*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
         waitQueue->erase(cur_frame++);
     }
 
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet ad_frame) {
+FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet *ad_frame) {
 
     if (sentQueue->full()) {
         return FOPNotif::SENT_QUEUE_FULL;
@@ -33,9 +33,9 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet ad_frame) {
     }
 
     sentQueue->push_back(ad_frame);
-    ad_frame.transferFrameSeqNumber = transmitterFrameSeqNumber;
+    ad_frame->transferFrameSeqNumber = transmitterFrameSeqNumber;
 
-    ad_frame.mark_for_retransmission(0);
+    ad_frame->mark_for_retransmission(0);
 
     waitQueue->pop_front();
     sentQueue->push_back(ad_frame);
@@ -46,9 +46,9 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet ad_frame) {
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet bc_frame) {
+FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet *bc_frame) {
 
-    bc_frame.mark_for_retransmission(0);
+    bc_frame->mark_for_retransmission(0);
     transmissionCount = 1;
 
     // TODO start the timer
@@ -56,7 +56,7 @@ FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet bc_frame) {
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bd_frame(Packet bd_frame) {
+FOPNotif FrameOperationProcedure::transmit_bd_frame(Packet *bd_frame) {
     bdOut = NOT_READY;
 
     // TODO generate a 'Transmit BD Frame' request
@@ -68,10 +68,9 @@ void FrameOperationProcedure::initiate_ad_retransmission() {
     transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
     // TODO start the timer
 
-    for (Packet frame:*sentQueue) {
-
-        if (frame.serviceType == ServiceType::TYPE_A) {
-            frame.mark_for_retransmission(1);
+    for (Packet* frame:*sentQueue) {
+        if (frame->serviceType == ServiceType::TYPE_A) {
+            frame->mark_for_retransmission(1);
         }
     }
 }
@@ -81,20 +80,20 @@ void FrameOperationProcedure::initiate_bc_retransmission() {
     transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
     // TODO start the timer
 
-    for (Packet frame:*sentQueue) {
-        if (frame.serviceType == ServiceType::TYPE_B) {
-            frame.mark_for_retransmission(1);
+    for (Packet* frame:*sentQueue) {
+        if (frame->serviceType == ServiceType::TYPE_B) {
+            frame->mark_for_retransmission(1);
         }
     }
 }
 
 void FrameOperationProcedure::remove_acknowledged_frames() {
-    etl::ilist<Packet>::iterator cur_frame = sentQueue->begin();
+    etl::ilist<Packet*>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
-        if (cur_frame->acknowledged) {
-            cur_frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
-            expectedAcknowledgementSeqNumber = cur_frame->transferFrameSeqNumber;
+        if ((*cur_frame)->acknowledged) {
+            (*cur_frame)->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
+            expectedAcknowledgementSeqNumber = (*cur_frame)->transferFrameSeqNumber;
             sentQueue->erase(cur_frame++);
         } else {
             ++cur_frame;
@@ -105,10 +104,10 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
 
 void FrameOperationProcedure::look_for_directive() {
     if (bcOut == FlagState::READY) {
-        for (Packet frame : *sentQueue) {
-            if (frame.serviceType == ServiceType::TYPE_B && frame.to_be_retransmitted()) {
+        for (Packet* frame : *sentQueue) {
+            if (frame->serviceType == ServiceType::TYPE_B && frame->to_be_retransmitted()) {
                 bcOut == FlagState::NOT_READY;
-                frame.mark_for_retransmission(0);
+                frame->mark_for_retransmission(0);
             }
             //transmit_bc_frame();
         }
@@ -119,10 +118,10 @@ void FrameOperationProcedure::look_for_directive() {
 
 void FrameOperationProcedure::look_for_fdu() {
     if (adOut == FlagState::READY) {
-        for (Packet frame : *sentQueue) {
-            if (frame.serviceType == ServiceType::TYPE_A) {
+        for (Packet* frame : *sentQueue) {
+            if (frame->serviceType == ServiceType::TYPE_A) {
                 adOut = FlagState::NOT_READY;
-                frame.mark_for_retransmission(0);
+                frame->mark_for_retransmission(0);
                 // TODO Generate ‘Transmit Request for (AD) Frame’ request for this frame
                 break;
             }
@@ -132,9 +131,9 @@ void FrameOperationProcedure::look_for_fdu() {
                 // Search the wait queue for a suitable FDU
                 // The wait queue is supposed to have a maximum capacity of one but anyway
                 if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
-                    etl::ilist<Packet>::iterator cur_frame = waitQueue->begin();
+                    etl::ilist<Packet*>::iterator cur_frame = waitQueue->begin();
                     while (cur_frame != waitQueue->end()) {
-                        if (cur_frame->serviceType == ServiceType::TYPE_A) {
+                        if ((*cur_frame)->serviceType == ServiceType::TYPE_A) {
                             // TODO Generate ‘Accept Response to Request to Transfer FDU’
                             sentQueue->push_front(*cur_frame);
                             waitQueue->erase(cur_frame);
@@ -773,6 +772,38 @@ void FrameOperationProcedure::bd_reject(Packet *ad_frame) {
     state = FOPState::INITIAL;
 }
 
-void FrameOperationProcedure::transfer_fdu(Packet *frame){
+FOPDirectiveResponse FrameOperationProcedure::transfer_fdu(Packet *frame){
+    if (frame->hdr.bypass_flag() == 0){
+        if (frame->serviceType == ServiceType::TYPE_A){
+            if (!waitQueue->full()){
+                // E19
+                if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT){
+                    waitQueue->push_back(frame);
+                    look_for_fdu();
+                } else if (state == FOPState::RETRANSMIT_WITH_WAIT){
+                    waitQueue->push_back(frame);
+                }
+                else {
+                    return FOPDirectiveResponse::REJECT;
+                }
+                return FOPDirectiveResponse::ACCEPT;
+            } else {
+                // E20
+                return FOPDirectiveResponse::REJECT;
+            }
+        } else if (frame->serviceType == ServiceType::TYPE_B){
+            if (bdOut == FlagState::READY) {
+                // E21
+                transmit_bc_frame(frame);
+                return FOPDirectiveResponse::ACCEPT;
+            } else{
+                // E22
+                return FOPDirectiveResponse::REJECT;
+            }
+        }
+    } else{
+        // todo transfer to lower procedures
+    }
 }
+
 

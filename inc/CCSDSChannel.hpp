@@ -157,7 +157,7 @@ struct VirtualChannel {
         mapChannels = map_chan;
     }
 
-    void store(Packet packet);
+    void store(Packet* packet);
 
     void store_unprocessed(Packet packet);
 
@@ -165,12 +165,12 @@ private:
     /**
      * @brief Buffer to store incoming packets before being processed by COP
      */
-    etl::list<Packet, MAX_RECEIVED_TC_IN_WAIT_QUEUE> waitQueue;
+    etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> waitQueue;
 
     /**
-     * @brief Buffer to store incoming packets before being processed by COP
+     * @brief Buffer to store outcoming packets after being processed by COP
      */
-    etl::list<Packet, MAX_RECEIVED_TC_IN_SENT_QUEUE> sentQueue;
+    etl::list<Packet*, MAX_RECEIVED_TC_IN_SENT_QUEUE> sentQueue;
 
     /**
      * @brief Buffer to store unprocessed packets that are directly processed in the virtual instead of MAP channel
