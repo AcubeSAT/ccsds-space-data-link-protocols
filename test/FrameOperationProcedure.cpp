@@ -19,7 +19,7 @@ TEST_CASE("Initiate FOP Directives") {
     };
 
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-    MasterChannel master_channel_fop = MasterChannel(virt_channels_fop);
+    MasterChannel master_channel_fop = MasterChannel(virt_channels_fop, true);
 
     ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop);
 

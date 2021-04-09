@@ -11,6 +11,8 @@
 #include <FrameOperationProcedure.h>
 #include <Packet.hpp>
 
+class MasterChannel;
+
 enum DataFieldContent {
     PACKET = 0,
     VCA_SDU = 1 // Not currently supported
@@ -92,6 +94,7 @@ protected:
 
 struct VirtualChannel {
     friend class ServiceChannel;
+    friend class MasterChannel;
 
     /**
      * @brief Virtual Channel Identifier
@@ -153,8 +156,8 @@ struct VirtualChannel {
             VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
             maxFrameLength(max_frame_length), clcwRate(clcw_rate), blocking(blocking),
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
-            waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)) {
-        mapChannels = map_chan;
+            waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)){
+                mapChannels = map_chan;
     }
 
     void store(Packet* packet);
@@ -181,6 +184,15 @@ private:
      * @brief Holds the FOP state of the virtual channel
      */
     FrameOperationProcedure fop;
+
+    /**
+     * @brief Pointer to the Master Channel the Virtual Channel belongs in
+     */
+    const MasterChannel* masterChannel;
+
+    void set_master_channel(const MasterChannel* master_channel){
+        masterChannel = master_channel;
+    }
 };
 
 
@@ -191,18 +203,24 @@ struct MasterChannel {
      */
     // TODO: Type aliases because this is getting out of hand
     etl::map<uint8_t, VirtualChannel, MAX_VIRTUAL_CHANNELS> virtChannels;
+    bool errorCtrlField;
 
     MasterChannel(
-            etl::map<uint8_t, VirtualChannel, MAX_VIRTUAL_CHANNELS> virt_chan)
+            etl::map<uint8_t, VirtualChannel, MAX_VIRTUAL_CHANNELS> virt_chan,
+            bool errorCtrlField)
             :
-            framesList() {
-        virtChannels = virt_chan;
-    }
+            outFramesList(), errorCtrlField(errorCtrlField) {
 
-    void store(Packet packet);
+        virtChannels = virt_chan;
+        for (auto virt_channel : virtChannels){
+            virt_channel.second.set_master_channel(this);
+        }
+    }
+    void store(Packet* packet);
 
 private:
-    etl::list<Packet, MAX_RECEIVED_TC_IN_MASTER_BUFFER> framesList;
+    // Packets stored in frames list, before being processed by the all frames generation service
+    etl::list<Packet*, MAX_RECEIVED_TC_IN_MASTER_BUFFER> outFramesList;
 };
 
 

@@ -36,10 +36,10 @@ void VirtualChannel::store(Packet* packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-void MasterChannel::store(Packet packet) {
-    if (framesList.full()) {
+void MasterChannel::store(Packet* packet) {
+    if (outFramesList.full()) {
         // Log that buffer is full
         return;
     }
-    framesList.push_back(packet);
+    outFramesList.push_back(packet);
 }

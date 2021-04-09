@@ -63,6 +63,8 @@ public:
 
     ServiceChannelNotif vc_generation_request(uint8_t vid);
 
+    ServiceChannelNotif all_frames_gen();
+
     // COP Directives
     // TODO: Properly handle Notifications
 
@@ -136,7 +138,7 @@ public:
      * @brief Available space in master channel buffer
      */
     const uint16_t available() const {
-        return masterChannel.framesList.available();
+        return masterChannel.outFramesList.available();
     }
 
     /**

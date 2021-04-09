@@ -802,7 +802,7 @@ FOPDirectiveResponse FrameOperationProcedure::transfer_fdu(Packet *frame){
             }
         }
     } else{
-        // todo transfer to lower procedures
+        // transfer directly to lower procedures
     }
 }
 

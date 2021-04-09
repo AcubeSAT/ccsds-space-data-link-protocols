@@ -177,7 +177,7 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.framesList.full()) {
+    if (masterChannel.outFramesList.full()) {
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
@@ -194,6 +194,20 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::FOP_SENT_QUEUE_FULL;
     }
 
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotif ServiceChannel::all_frames_gen(){
+    if (masterChannel.outFramesList.empty()) {
+        return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
+    }
+
+    Packet* packet = masterChannel.outFramesList.front();
+
+    if (masterChannel.errorCtrlField){
+        uint16_t frame_length = packet->packetLength;
+
+    }
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
