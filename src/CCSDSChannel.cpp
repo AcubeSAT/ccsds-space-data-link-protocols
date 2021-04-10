@@ -13,22 +13,22 @@ void MAPChannel::store(Packet packet) {
 // Virtual Channel
 
 // @todo rename to something that makes more sense
-void VirtualChannel::store_unprocessed(Packet packet) {
+VirtualChannelAlert VirtualChannel::store_unprocessed(Packet packet) {
     // Limit the amount of packets that can be stored at any given time
     if (unprocessedPacketList.full()) {
-        // Log that buffer is full
-        return;
+        return VirtualChannelAlert::UNPROCESSED_PACKET_LIST_FULL;
     }
     unprocessedPacketList.push_back(packet);
+    return VirtualChannelAlert::NO_VC_ALERT;
 }
 
-void VirtualChannel::store(Packet* packet) {
+VirtualChannelAlert VirtualChannel::store(Packet* packet) {
     // Limit the amount of packets that can be stored at any given time
     if (waitQueue.full()) {
-        // Log that buffer is full
-        return;
+        return VirtualChannelAlert::WAIT_QUEUE_FULL;
     }
     waitQueue.push_back(packet);
+    return VirtualChannelAlert::NO_VC_ALERT;
 }
 
 // Master Channel
@@ -36,10 +36,11 @@ void VirtualChannel::store(Packet* packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-void MasterChannel::store(Packet* packet) {
+MasterChannelAlert MasterChannel::store_out(Packet* packet) {
     if (outFramesList.full()) {
         // Log that buffer is full
-        return;
+        return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
     outFramesList.push_back(packet);
+    return MasterChannelAlert::NO_MC_ALERT;
 }

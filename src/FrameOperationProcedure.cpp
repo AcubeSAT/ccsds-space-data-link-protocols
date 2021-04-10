@@ -1,4 +1,5 @@
 #include <FrameOperationProcedure.h>
+#include <CCSDSChannel.hpp>
 
 FOPNotif FrameOperationProcedure::purge_sent_queue() {
     etl::ilist<Packet*>::iterator cur_frame = sentQueue->begin();
@@ -42,7 +43,8 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet *ad_frame) {
     adOut = false;
 
     // TODO start the timer
-    // TODO generate a 'Transmit AD Frame' request to lower procedures
+    // generate a 'Transmit AD Frame' request to lower procedures
+    vchan->master_channel()->store_out(ad_frame);
     return FOPNotif::NO_FOP_EVENT;
 }
 
@@ -52,7 +54,7 @@ FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet *bc_frame) {
     transmissionCount = 1;
 
     // TODO start the timer
-    // TODO generate a 'Transmit BC Frame' request
+    vchan->master_channel()->store_out(bc_frame);
     return FOPNotif::NO_FOP_EVENT;
 }
 
@@ -798,11 +800,12 @@ FOPDirectiveResponse FrameOperationProcedure::transfer_fdu(Packet *frame){
                 return FOPDirectiveResponse::ACCEPT;
             } else{
                 // E22
-                return FOPDirectiveResponse::REJECT;
+                FOPDirectiveResponse::REJECT;
             }
         }
     } else{
-        // transfer directly to lower procedures
+        // transfer directly to lower procedure
+        vchan->master_channel()->store_out(frame);
     }
 }
 

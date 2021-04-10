@@ -26,4 +26,16 @@ typedef enum FOPConfirmResponse {
     NEGATIVE = 1,
 };
 
+enum VirtualChannelAlert{
+    NO_VC_ALERT = 0,
+    UNPROCESSED_PACKET_LIST_FULL = 1,
+    WAIT_QUEUE_FULL = 2,
+};
+
+enum MasterChannelAlert{
+    NO_MC_ALERT = 0,
+    OUT_FRAMES_LIST_FULL = 1
+};
+
+
 #endif //CCSDS_ALERT_HPP

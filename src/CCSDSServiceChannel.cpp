@@ -41,7 +41,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 
     if (packet.packetLength > max_packet_length) {
         if (segmentation_enabled) {
-            // Check if there is enough space in the buffer of the virtual channel to store all the segments
+            // Check if there is enough space in the buffer of the virtual channel to store_out all the segments
             uint8_t tf_n = (packet.packetLength / max_packet_length) + (packet.packetLength % max_packet_length != 0);
 
             if (virt_channel->waitQueue.capacity() >= tf_n) {
@@ -121,7 +121,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
     if (packet.packetLength > max_packet_length) {
         if (segmentation_enabled) {
-            // Check if there is enough space in the buffer of the virtual channel to store all the segments
+            // Check if there is enough space in the buffer of the virtual channel to store_out all the segments
             uint8_t tf_n = (packet.packetLength / max_packet_length) + (packet.packetLength % max_packet_length != 0);
 
             if (virt_channel->waitQueue.capacity() >= tf_n) {

@@ -26,7 +26,7 @@ TEST_CASE("CCSDS TC Channel Model") {
     CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
     ServiceChannel serv_channel = ServiceChannel(master_channel);
 
-    // serv_channel.store(data, 11, 3, 2, 10, 0);
+    // serv_channel.store_out(data, 11, 3, 2, 10, 0);
    // serv_channel.mapp_request(3, 2);
 }
 

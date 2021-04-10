@@ -160,23 +160,27 @@ struct VirtualChannel {
                 mapChannels = map_chan;
     }
 
-    void store(Packet* packet);
+    VirtualChannelAlert store(Packet* packet);
 
-    void store_unprocessed(Packet packet);
+    VirtualChannelAlert store_unprocessed(Packet packet);
+
+    MasterChannel* master_channel(){
+        return masterChannel;
+    }
 
 private:
     /**
-     * @brief Buffer to store incoming packets before being processed by COP
+     * @brief Buffer to store_out incoming packets before being processed by COP
      */
     etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> waitQueue;
 
     /**
-     * @brief Buffer to store outcoming packets after being processed by COP
+     * @brief Buffer to store_out outcoming packets after being processed by COP
      */
     etl::list<Packet*, MAX_RECEIVED_TC_IN_SENT_QUEUE> sentQueue;
 
     /**
-     * @brief Buffer to store unprocessed packets that are directly processed in the virtual instead of MAP channel
+     * @brief Buffer to store_out unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
     etl::list<Packet, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
 
@@ -188,9 +192,9 @@ private:
     /**
      * @brief Pointer to the Master Channel the Virtual Channel belongs in
      */
-    const MasterChannel* masterChannel;
+    MasterChannel* masterChannel;
 
-    void set_master_channel(const MasterChannel* master_channel){
+    void set_master_channel(MasterChannel* master_channel){
         masterChannel = master_channel;
     }
 };
@@ -198,6 +202,7 @@ private:
 
 struct MasterChannel {
     friend class ServiceChannel;
+
     /**
      * @brief Virtual channels of the master channel
      */
@@ -216,7 +221,7 @@ struct MasterChannel {
             virt_channel.second.set_master_channel(this);
         }
     }
-    void store(Packet* packet);
+    MasterChannelAlert store_out(Packet* packet);
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
