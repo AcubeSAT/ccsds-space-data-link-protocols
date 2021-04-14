@@ -63,7 +63,7 @@ public:
 
     ServiceChannelNotif vc_generation_request(uint8_t vid);
 
-    ServiceChannelNotif all_frames_gen();
+    ServiceChannelNotif all_frames_generation_request();
 
     // COP Directives
     // TODO: Properly handle Notifications

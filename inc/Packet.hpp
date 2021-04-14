@@ -4,6 +4,7 @@
 #include <CCSDS_Definitions.hpp>
 #include <algorithm>
 #include <cstring>
+#include <cstdint>
 
 enum ServiceType {
     TYPE_A = 0,
@@ -78,6 +79,12 @@ struct Packet {
         confSignal = reqSignal;
         // TODO Maybe signal the higher procedures here instead of having them manually take care of them
     }
+
+    /**
+     * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
+     * virtual channel)
+     */
+    void append_crc();
 
     /**
      * @brief Determines whether the packet is marked for retransmission while in the sent queue

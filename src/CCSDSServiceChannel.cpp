@@ -197,7 +197,7 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::all_frames_gen(){
+ServiceChannelNotif ServiceChannel::all_frames_generation_request(){
     if (masterChannel.outFramesList.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
