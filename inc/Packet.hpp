@@ -74,17 +74,26 @@ struct Packet {
     ServiceType serviceType;
     uint8_t transferFrameSeqNumber;
     bool acknowledged;
+    uint8_t repetitions;
 
     void setConfSignal(FDURequestType reqSignal) {
         confSignal = reqSignal;
         // TODO Maybe signal the higher procedures here instead of having them manually take care of them
     }
 
+
     /**
      * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
      * virtual channel)
      */
     void append_crc();
+
+    /**
+     * @brief Set the number of repetitions that is determined by the virtual channel
+     */
+     void set_repetitions(const uint8_t reps){
+         repetitions = reps;
+     }
 
     /**
      * @brief Determines whether the packet is marked for retransmission while in the sent queue

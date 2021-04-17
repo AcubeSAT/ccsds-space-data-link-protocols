@@ -8,13 +8,21 @@ ServiceChannelNotif
 ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
                       ServiceType service_type) {
     uint8_t vid = gvcid & 0x3F;
-    MAPChannel *map_channel = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid));
+    VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
+    MAPChannel *map_channel = &(vchan->mapChannels.at(mapid));
 
     if (map_channel->packetList.full()) {
         return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type);
+
+    if (service_type == ServiceType::TYPE_A){
+        packet_s.set_repetitions(vchan->repetitionTypeAFrame);
+    } else if (service_type == ServiceType::TYPE_B){
+        packet_s.set_repetitions(vchan->repetitionCOPCtrl);
+    }
+
     map_channel->packetList.push_back(packet_s);
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
@@ -205,9 +213,10 @@ ServiceChannelNotif ServiceChannel::all_frames_generation_request(){
     Packet* packet = masterChannel.outFramesList.front();
 
     if (masterChannel.errorCtrlField){
-        uint16_t frame_length = packet->packetLength;
-
+        packet->append_crc();
     }
+
+
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
