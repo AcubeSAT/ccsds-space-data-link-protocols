@@ -81,6 +81,14 @@ struct Packet {
         // TODO Maybe signal the higher procedures here instead of having them manually take care of them
     }
 
+    // This only compares the frame sequence number of two packets both as a way to save time when comparing the
+    // data fields and because this is handy when getting rid of duplicate packets. However this could result in
+    // undesired behavior if we're to delete different packets that share a frame sequence number for some reason. This
+    // is normally not allowed but we have to cross-check if it is compatible with FARM checks
+
+    friend bool operator==(const Packet& pack1, const Packet& pack2){
+        pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber;
+    }
 
     /**
      * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
@@ -114,11 +122,6 @@ private:
     // This is used by COP to signal the higher procedures
     FDURequestType confSignal;
 };
-
-// We discard the headers and simply check for the contents of the packets
-inline bool operator==(const Packet& packet_1, const Packet& packet_2) {
-    return &(packet_1.packet) == &(packet_2.packet);
-}
 
 class CLCW {
 public:
