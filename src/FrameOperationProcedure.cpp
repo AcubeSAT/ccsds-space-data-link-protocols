@@ -178,9 +178,6 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                             case FOPState::ACTIVE:
                                 break;
                             case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                alert(AlertEvent::ALRT_SYNCH);
-                                state = FOPState::INITIAL;
-                                break;
                             case FOPState::RETRANSMIT_WITH_WAIT:
                                 alert(AlertEvent::ALRT_SYNCH);
                                 state = FOPState::INITIAL;
@@ -204,28 +201,15 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                         // E2
                         switch (state) {
                             case FOPState::ACTIVE:
-                                remove_acknowledged_frames();
-                                // cancel timer
-                                look_for_fdu();
-                                break;
                             case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                remove_acknowledged_frames();
-                                // cancel timer
-                                look_for_fdu();
-                                state = FOPState::ACTIVE;
-                                break;
                             case FOPState::RETRANSMIT_WITH_WAIT:
                                 remove_acknowledged_frames();
                                 // cancel timer
                                 look_for_fdu();
                                 state = FOPState::ACTIVE;
                                 break;
-                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                // N/A
-                                break;
-                            case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                // N/A
-                                break;
+                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                            case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                             case FOPState::INITIAL:
                                 break;
                         }
@@ -234,21 +218,9 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                     // E3
                     switch (state) {
                         case FOPState::ACTIVE:
-                            alert(AlertEvent::ALRT_CLCW);
-                            state = FOPState::INITIAL;
-                            break;
                         case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                            alert(AlertEvent::ALRT_CLCW);
-                            state = FOPState::INITIAL;
-                            break;
                         case FOPState::RETRANSMIT_WITH_WAIT:
-                            alert(AlertEvent::ALRT_CLCW);
-                            state = FOPState::INITIAL;
-                            break;
                         case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                            alert(AlertEvent::ALRT_CLCW);
-                            state = FOPState::INITIAL;
-                            break;
                         case FOPState::INITIALIZING_WITH_BC_FRAME:
                             alert(AlertEvent::ALRT_CLCW);
                             state = FOPState::INITIAL;
@@ -261,23 +233,13 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                 // E4
                 switch (state) {
                     case FOPState::ACTIVE:
-                        alert(AlertEvent::ALRT_SYNCH);
-                        state = FOPState::INITIAL;
-                        break;
                     case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                        alert(AlertEvent::ALRT_SYNCH);
-                        state = FOPState::INITIAL;
-                        break;
                     case FOPState::RETRANSMIT_WITH_WAIT:
-                        alert(AlertEvent::ALRT_SYNCH);
-                        state = FOPState::INITIAL;
-                        break;
                     case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                         alert(AlertEvent::ALRT_SYNCH);
                         state = FOPState::INITIAL;
                         break;
                     case FOPState::INITIALIZING_WITH_BC_FRAME:
-                        break;
                     case FOPState::INITIAL:
                         break;
                 }
@@ -292,19 +254,12 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                             case FOPState::ACTIVE:
                                 break;
                             case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                alert(AlertEvent::ALRT_SYNCH);
-                                state = FOPState::INITIAL;
-                                break;
                             case FOPState::RETRANSMIT_WITH_WAIT:
                                 alert(AlertEvent::ALRT_SYNCH);
                                 state = FOPState::INITIAL;
                                 break;
-                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                // N/A
-                                break;
-                            case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                // N/A
-                                break;
+                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                            case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                             case FOPState::INITIAL:
                                 break;
                         }
@@ -312,25 +267,14 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                         // E6
                         switch (state) {
                             case FOPState::ACTIVE:
-                                remove_acknowledged_frames();
-                                look_for_fdu();
-                                break;
                             case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                remove_acknowledged_frames();
-                                look_for_fdu();
-                                state = FOPState::ACTIVE;
-                                break;
                             case FOPState::RETRANSMIT_WITH_WAIT:
                                 remove_acknowledged_frames();
                                 look_for_fdu();
                                 state = FOPState::ACTIVE;
                                 break;
-                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                // N/A
-                                break;
-                            case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                // N/A
-                                break;
+                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                            case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                             case FOPState::INITIAL:
                                 break;
                         }
@@ -339,23 +283,13 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                     // E7
                     switch (state) {
                         case FOPState::ACTIVE:
-                            alert(AlertEvent::ALRT_CLCW);
-                            state = FOPState::INITIAL;
-                            break;
                         case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                            alert(AlertEvent::ALRT_CLCW);
-                            state = FOPState::INITIAL;
-                            break;
                         case FOPState::RETRANSMIT_WITH_WAIT:
                             alert(AlertEvent::ALRT_CLCW);
                             state = FOPState::INITIAL;
                             break;
-                        case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                            // N/A
-                            break;
-                        case FOPState::INITIALIZING_WITH_BC_FRAME:
-                            // N/A
-                            break;
+                        case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                        case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                         case FOPState::INITIAL:
                             break;
                     }
@@ -366,26 +300,14 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                         // E101
                         switch (state) {
                             case FOPState::ACTIVE:
-                                remove_acknowledged_frames();
-                                alert(AlertEvent::ALRT_LIMIT);
-                                state = FOPState::INITIAL;
-                                break;
                             case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                remove_acknowledged_frames();
-                                alert(AlertEvent::ALRT_LIMIT);
-                                state = FOPState::INITIAL;
-                                break;
                             case FOPState::RETRANSMIT_WITH_WAIT:
                                 remove_acknowledged_frames();
                                 alert(AlertEvent::ALRT_LIMIT);
                                 state = FOPState::INITIAL;
                                 break;
-                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                // N/A
-                                break;
-                            case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                // N/A
-                                break;
+                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                            case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                             case FOPState::INITIAL:
                                 break;
                         }
@@ -393,23 +315,13 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                         // E102
                         switch (state) {
                             case FOPState::ACTIVE:
-                                alert(AlertEvent::ALRT_LIMIT);
-                                state = FOPState::INITIAL;
-                                break;
                             case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                alert(AlertEvent::ALRT_LIMIT);
-                                state = FOPState::INITIAL;
-                                break;
                             case FOPState::RETRANSMIT_WITH_WAIT:
                                 alert(AlertEvent::ALRT_LIMIT);
                                 state = FOPState::INITIAL;
                                 break;
-                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                // N/A
-                                break;
-                            case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                // N/A
-                                break;
+                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                            case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                             case FOPState::INITIAL:
                                 break;
                         }
@@ -420,28 +332,15 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                             // E8
                             switch (state) {
                                 case FOPState::ACTIVE:
-                                    remove_acknowledged_frames();
-                                    initiate_ad_retransmission();
-                                    look_for_fdu();
-                                    state = FOPState::RETRANSMIT_WITHOUT_WAIT;
-                                    break;
                                 case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                    remove_acknowledged_frames();
-                                    initiate_ad_retransmission();
-                                    look_for_fdu();
-                                    break;
                                 case FOPState::RETRANSMIT_WITH_WAIT:
                                     remove_acknowledged_frames();
                                     initiate_ad_retransmission();
                                     look_for_fdu();
                                     state = FOPState::RETRANSMIT_WITHOUT_WAIT;
                                     break;
-                                case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                    // N/A
-                                    break;
-                                case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                    // N/A
-                                    break;
+                                case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                                case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                                 case FOPState::INITIAL:
                                     break;
                             }
@@ -449,22 +348,13 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                             // E9
                             switch (state) {
                                 case FOPState::ACTIVE:
-                                    remove_acknowledged_frames();
-                                    state = FOPState::RETRANSMIT_WITH_WAIT;
-                                    break;
                                 case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                    remove_acknowledged_frames();
-                                    state = FOPState::RETRANSMIT_WITH_WAIT;
-                                    break;
                                 case FOPState::RETRANSMIT_WITH_WAIT:
                                     remove_acknowledged_frames();
+                                    state = FOPState::RETRANSMIT_WITH_WAIT;
                                     break;
-                                case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                    // N/A
-                                    break;
-                                case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                    // N/A
-                                    break;
+                                case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                                case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                                 case FOPState::INITIAL:
                                     break;
                             }
@@ -475,23 +365,14 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                                 //  E10
                                 switch (state) {
                                     case FOPState::ACTIVE:
-                                        initiate_ad_retransmission();
-                                        look_for_fdu();
-                                        state = FOPState::RETRANSMIT_WITHOUT_WAIT;
-                                        break;
-                                    case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                        break;
                                     case FOPState::RETRANSMIT_WITH_WAIT:
                                         initiate_ad_retransmission();
                                         look_for_fdu();
                                         state = FOPState::RETRANSMIT_WITHOUT_WAIT;
                                         break;
-                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                        // N/A
-                                        break;
-                                    case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                        // N/A
-                                        break;
+                                    case FOPState::RETRANSMIT_WITHOUT_WAIT:
+                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                                    case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                                     case FOPState::INITIAL:
                                         break;
                                 }
@@ -499,19 +380,12 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                                 // E11
                                 switch (state) {
                                     case FOPState::ACTIVE:
-                                        state = FOPState::RETRANSMIT_WITH_WAIT;
-                                        break;
                                     case FOPState::RETRANSMIT_WITHOUT_WAIT:
                                         state = FOPState::RETRANSMIT_WITH_WAIT;
                                         break;
                                     case FOPState::RETRANSMIT_WITH_WAIT:
-                                        break;
-                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                        // N/A
-                                        break;
-                                    case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                        // N/A
-                                        break;
+                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                                    case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                                     case FOPState::INITIAL:
                                         break;
                                 }
@@ -521,19 +395,12 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                                 // E12
                                 switch (state) {
                                     case FOPState::ACTIVE:
-                                        state = FOPState::RETRANSMIT_WITHOUT_WAIT;
-                                        break;
-                                    case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                                        break;
                                     case FOPState::RETRANSMIT_WITH_WAIT:
                                         state = FOPState::RETRANSMIT_WITHOUT_WAIT;
                                         break;
-                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                        // N/A
-                                        break;
-                                    case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                        // N/A
-                                        break;
+                                    case FOPState::RETRANSMIT_WITHOUT_WAIT:
+                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                                    case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                                     case FOPState::INITIAL:
                                         break;
                                 }
@@ -541,19 +408,12 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                                 // E103
                                 switch (state) {
                                     case FOPState::ACTIVE:
-                                        state = FOPState::RETRANSMIT_WITH_WAIT;
-                                        break;
                                     case FOPState::RETRANSMIT_WITHOUT_WAIT:
                                         state = FOPState::RETRANSMIT_WITH_WAIT;
                                         break;
                                     case FOPState::RETRANSMIT_WITH_WAIT:
-                                        break;
-                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                        // N/A
-                                        break;
-                                    case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                        // N/A
-                                        break;
+                                    case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
+                                    case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
                                     case FOPState::INITIAL:
                                         break;
                                 }
@@ -566,23 +426,13 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
             // E13
             switch (state) {
                 case FOPState::ACTIVE:
-                    alert(AlertEvent::ALRT_NNR);
-                    state = FOPState::INITIAL;
-                    break;
                 case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                    alert(AlertEvent::ALRT_NNR);
-                    state = FOPState::INITIAL;
-                    break;
                 case FOPState::RETRANSMIT_WITH_WAIT:
-                    alert(AlertEvent::ALRT_NNR);
-                    state = FOPState::INITIAL;
-                    break;
                 case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                     alert(AlertEvent::ALRT_NNR);
                     state = FOPState::INITIAL;
                     break;
                 case FOPState::INITIALIZING_WITH_BC_FRAME:
-                    break;
                 case FOPState::INITIAL:
                     break;
             }
@@ -590,23 +440,13 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
     } else {
         switch (state) {
             case FOPState::ACTIVE:
-                alert(AlertEvent::ALRT_LOCKOUT);
-                state = FOPState::INITIAL;
-                break;
             case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                alert(AlertEvent::ALRT_LOCKOUT);
-                state = FOPState::INITIAL;
-                break;
             case FOPState::RETRANSMIT_WITH_WAIT:
-                alert(AlertEvent::ALRT_LOCKOUT);
-                state = FOPState::INITIAL;
-                break;
             case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                 alert(AlertEvent::ALRT_LOCKOUT);
                 state = FOPState::INITIAL;
                 break;
             case FOPState::INITIALIZING_WITH_BC_FRAME:
-                break;
             case FOPState::INITIAL:
                 break;
         }
@@ -616,21 +456,9 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
 void FrameOperationProcedure::invalid_clcw_arrival() {
     switch (state) {
         case FOPState::ACTIVE:
-            alert(AlertEvent::ALRT_CLCW);
-            state = FOPState::INITIAL;
-            break;
         case FOPState::RETRANSMIT_WITHOUT_WAIT:
-            alert(AlertEvent::ALRT_CLCW);
-            state = FOPState::INITIAL;
-            break;
         case FOPState::RETRANSMIT_WITH_WAIT:
-            alert(AlertEvent::ALRT_CLCW);
-            state = FOPState::INITIAL;
-            break;
         case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-            alert(AlertEvent::ALRT_CLCW);
-            state = FOPState::INITIAL;
-            break;
         case FOPState::INITIALIZING_WITH_BC_FRAME:
             alert(AlertEvent::ALRT_CLCW);
             state = FOPState::INITIAL;
