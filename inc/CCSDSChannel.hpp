@@ -75,21 +75,20 @@ struct MAPChannel {
      * @brief Returns available space in the buffer
      */
     const uint16_t available() const {
-        return packetList.available();
+        return unprocessedPacketList.available();
     }
 
     MAPChannel(const uint8_t mapid, const DataFieldContent data_field_content) :
             MAPID(mapid), dataFieldContent(data_field_content) {
-        uint8_t d = packetList.size();
-        packetList.full();
+        uint8_t d = unprocessedPacketList.size();
+        unprocessedPacketList.full();
     };
 
 protected:
     /**
-     * Buffer to save TC packets that are saved in the buffer
+     * Store unprocessed received TCs
      */
-
-    etl::list<Packet, MAX_RECEIVED_TC_IN_MAP_BUFFER> packetList;
+    etl::list<Packet, MAX_RECEIVED_TC_IN_MAP_BUFFER> unprocessedPacketList;
 };
 
 struct VirtualChannel {
@@ -222,10 +221,14 @@ struct MasterChannel {
         }
     }
     MasterChannelAlert store_out(Packet* packet);
+    MasterChannelAlert store_transmitted_out(Packet* packet);
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
     etl::list<Packet*, MAX_RECEIVED_TC_IN_MASTER_BUFFER> outFramesList;
+
+    // Packets ready to be transmitted having passed thorugh the all frames generation service
+    etl::list<Packet*, MAX_RECEIVED_TC_OUT_IN_MASTER_BUFFER> toBeTransmittedFramesList;
 };
 
 

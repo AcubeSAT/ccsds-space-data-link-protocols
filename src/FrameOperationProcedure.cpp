@@ -43,7 +43,7 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet *ad_frame) {
     adOut = false;
 
     // TODO start the timer
-    // generate a 'Transmit AD Frame' request to lower procedures
+    // pass the frame into the all frames generation service
     vchan->master_channel()->store_out(ad_frame);
     return FOPNotif::NO_FOP_EVENT;
 }

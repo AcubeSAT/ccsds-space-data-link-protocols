@@ -55,11 +55,15 @@
 #define MAX_RECEIVED_TC_IN_WAIT_QUEUE 10U
 // Maximum received TCs in sent queue (following COP checks).
 #define MAX_RECEIVED_TC_IN_SENT_QUEUE 10U
-
+// Maximum received TC in the master buffer, before being passed to the all frames generation service
 #define MAX_RECEIVED_TC_IN_MASTER_BUFFER 100U
+// Maximum received TC in the master buffer, ready to be transmitted to the lower procedures (doesn't include
+// repetitions)
+#define MAX_RECEIVED_TC_OUT_IN_MASTER_BUFFER 100U
 
 #define MAX_VIRTUAL_CHANNELS 10U
 #define MAX_MAP_CHANNELS 3U
+
 
 // Raw packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
 #define MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER 5U

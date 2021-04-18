@@ -9,6 +9,7 @@ typedef enum ServiceChannelNotif {
     NO_PACKETS_TO_PROCESS = 4,
     PACKET_EXCEEDS_MAX_SIZE = 5,
     FOP_SENT_QUEUE_FULL = 6,
+    TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY = 7
 };
 
 typedef enum FOPNotif {
@@ -34,7 +35,8 @@ enum VirtualChannelAlert{
 
 enum MasterChannelAlert{
     NO_MC_ALERT = 0,
-    OUT_FRAMES_LIST_FULL = 1
+    OUT_FRAMES_LIST_FULL = 1,
+    TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 2
 };
 
 

@@ -3,11 +3,11 @@
 // MAP Channel
 
 void MAPChannel::store(Packet packet) {
-    if (packetList.full()) {
+    if (unprocessedPacketList.full()) {
         // Log that buffer is full
         return;
     }
-    packetList.push_back(packet);
+    unprocessedPacketList.push_back(packet);
 }
 
 // Virtual Channel
@@ -42,5 +42,13 @@ MasterChannelAlert MasterChannel::store_out(Packet* packet) {
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
     outFramesList.push_back(packet);
+    return MasterChannelAlert::NO_MC_ALERT;
+}
+
+MasterChannelAlert MasterChannel::store_transmitted_out(Packet* packet){
+    if (toBeTransmittedFramesList.full()){
+        return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
+    }
+    toBeTransmittedFramesList.push_back(packet);
     return MasterChannelAlert::NO_MC_ALERT;
 }

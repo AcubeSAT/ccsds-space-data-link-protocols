@@ -65,6 +65,8 @@ public:
 
     ServiceChannelNotif all_frames_generation_request();
 
+    ServiceChannelNotif transmit_frame(uint8_t *pack);
+
     // COP Directives
     // TODO: Properly handle Notifications
 

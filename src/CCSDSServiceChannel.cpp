@@ -11,7 +11,7 @@ ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, ui
     VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(vchan->mapChannels.at(mapid));
 
-    if (map_channel->packetList.full()) {
+    if (map_channel->unprocessedPacketList.full()) {
         return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
@@ -23,7 +23,7 @@ ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, ui
         packet_s.set_repetitions(vchan->repetitionCOPCtrl);
     }
 
-    map_channel->packetList.push_back(packet_s);
+    map_channel->unprocessedPacketList.push_back(packet_s);
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
@@ -31,7 +31,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(virt_channel->mapChannels.at(mapid));
 
-    if (map_channel->packetList.empty()) {
+    if (map_channel->unprocessedPacketList.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
@@ -39,7 +39,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
         return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet packet = map_channel->packetList.front();
+    Packet packet = map_channel->unprocessedPacketList.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
@@ -54,7 +54,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 
             if (virt_channel->waitQueue.capacity() >= tf_n) {
                 // Break up packet
-                map_channel->packetList.pop_front();
+                map_channel->unprocessedPacketList.pop_front();
 
                 // First portion
                 uint16_t seg_header = mapid || 0x40;
@@ -83,7 +83,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
     } else {
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
         // the buffer.
-        map_channel->packetList.pop_front();
+        map_channel->unprocessedPacketList.pop_front();
 
         if (blocking_enabled) {
             // See if we can block it with other packets
@@ -216,7 +216,21 @@ ServiceChannelNotif ServiceChannel::all_frames_generation_request(){
         packet->append_crc();
     }
 
+    masterChannel.store_transmitted_out(packet);
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
+}
 
+ServiceChannelNotif ServiceChannel::transmit_frame(uint8_t *pack){
+    if (masterChannel.toBeTransmittedFramesList.empty()){
+        return ServiceChannelNotif::TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY;
+    }
+
+    Packet* packet = masterChannel.toBeTransmittedFramesList.front();
+    packet->repetitions -= 1;
+    if (packet->repetitions == 0){
+        masterChannel.toBeTransmittedFramesList.pop_front();
+    }
+    memcpy(pack, packet, packet->packetLength);
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
