@@ -42,7 +42,7 @@ TEST_CASE("Service Channel") {
 
     const Packet* rd_packet = serv_channel.packet(0, 0).second;
     CHECK((rd_packet->packetLength == 9));
-    //CHECK((rd_packet->serviceType == ServiceType::TYPE_A));
+    CHECK((rd_packet->serviceType == ServiceType::TYPE_A));
 
     ServiceChannelNotif err;
     err = serv_channel.mapp_request(0, 0);
@@ -50,7 +50,7 @@ TEST_CASE("Service Channel") {
     CHECK(serv_channel.available(0, 0) == MAX_RECEIVED_TC_IN_MAP_BUFFER - 1);
     const Packet* rd_packet1 = serv_channel.packet(0, 0).second;
     CHECK((rd_packet1->packetLength == 10));
-    //CHECK((rd_packet1->serviceType == TYPE_B));
+    CHECK((rd_packet1->serviceType == TYPE_B));
 
     err = serv_channel.mapp_request(0, 0);
     serv_channel.mapp_request(0, 0);

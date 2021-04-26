@@ -24,7 +24,8 @@ ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, ui
         packet_s.set_repetitions(vchan->repetitionCOPCtrl);
     }
 
-    map_channel->unprocessedPacketList.push_back(packet_s);
+    masterChannel.masterCopy.push_back(packet_s);
+    map_channel->unprocessedPacketList.push_back(&(masterChannel.masterCopy.back()));
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
@@ -40,7 +41,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
         return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet packet = map_channel->unprocessedPacketList.front();
+    Packet* packet = map_channel->unprocessedPacketList.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
@@ -48,10 +49,10 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 
     const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled * 1U);
 
-    if (packet.packetLength > max_packet_length) {
+    if (packet->packetLength > max_packet_length) {
         if (segmentation_enabled) {
             // Check if there is enough space in the buffer of the virtual channel to store_out all the segments
-            uint8_t tf_n = (packet.packetLength / max_packet_length) + (packet.packetLength % max_packet_length != 0);
+            uint8_t tf_n = (packet->packetLength / max_packet_length) + (packet->packetLength % max_packet_length != 0);
 
             if (virt_channel->waitQueue.capacity() >= tf_n) {
                 // Break up packet
@@ -60,22 +61,22 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
                 // First portion
                 uint16_t seg_header = mapid || 0x40;
 
-                Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid,
-                                         packet.sduid,
-                                         packet.serviceType);
+                Packet t_packet = Packet(packet->packet, max_packet_length, seg_header, packet->gvcid, packet->mapid,
+                                         packet->sduid,
+                                         packet->serviceType);
                 virt_channel->store(&t_packet);
 
                 // Middle portion
                 t_packet.segHdr = mapid || 0x00;
                 for (uint8_t i = 1; i < (tf_n - 1); i++) {
-                    t_packet.packet = &packet.packet[i * max_packet_length];
+                    t_packet.packet = &packet->packet[i * max_packet_length];
                     virt_channel->store(&t_packet);
                 }
 
                 // Last portion
                 t_packet.segHdr = mapid || 0x80;
-                t_packet.packet = &packet.packet[(tf_n - 1) * max_packet_length];
-                t_packet.packetLength = packet.packetLength % max_packet_length;
+                t_packet.packet = &packet->packet[(tf_n - 1) * max_packet_length];
+                t_packet.packetLength = packet->packetLength % max_packet_length;
                 virt_channel->store(&t_packet);
             }
         } else {
@@ -97,12 +98,12 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
             // contiguous memory but I'm also against that)
 
             // for now just send packet as-is
-            virt_channel->store(&packet);
+            virt_channel->store(packet);
         } else {
             if (segmentation_enabled) {
-                packet.segHdr = (0xc0) || (mapid && 0x3F);
+                packet->segHdr = (0xc0) || (mapid && 0x3F);
             }
-            virt_channel->store(&packet);
+            virt_channel->store(packet);
         }
     }
     return ServiceChannelNotif::NO_SERVICE_EVENT;

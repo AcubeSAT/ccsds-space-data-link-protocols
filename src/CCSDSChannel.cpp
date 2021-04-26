@@ -1,14 +1,5 @@
 #include <CCSDSChannel.hpp>
 
-// MAP Channel
-
-void MAPChannel::store(Packet packet) {
-    if (unprocessedPacketList.full()) {
-        // Log that buffer is full
-        return;
-    }
-    unprocessedPacketList.push_back(packet);
-}
 
 // Virtual Channel
 

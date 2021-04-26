@@ -169,12 +169,12 @@ public:
      */
 
     etl::pair<ServiceChannelNotif, const Packet*> packet(const uint8_t vid, const uint8_t mapid) const{
-        const etl::list<Packet, MAX_RECEIVED_TC_IN_MAP_BUFFER> mc = masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList;
+        const etl::list<Packet*, MAX_RECEIVED_TC_IN_MAP_BUFFER> mc = masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList;
         if(mc.empty()){
-            return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+            return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, mc.front());
         }
 
-        return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(mc.front()));
+        return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc.front());
     }
 
     ServiceChannel(MasterChannel master_channel) :

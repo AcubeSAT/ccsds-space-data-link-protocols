@@ -88,7 +88,7 @@ protected:
     /**
      * Store unprocessed received TCs
      */
-    etl::list<Packet, MAX_RECEIVED_TC_IN_MAP_BUFFER> unprocessedPacketList;
+    etl::list<Packet*, MAX_RECEIVED_TC_IN_MAP_BUFFER> unprocessedPacketList;
 };
 
 struct VirtualChannel {
@@ -229,6 +229,11 @@ private:
 
     // Packets ready to be transmitted having passed thorugh the all frames generation service
     etl::list<Packet*, MAX_RECEIVED_TC_OUT_IN_MASTER_BUFFER> toBeTransmittedFramesList;
+
+    /**
+     * @brief Buffer holding the master copy of the packets that are currently being processed
+     */
+    etl::list<Packet, MAX_RECEIVED_TC_IN_MASTER_BUFFER> masterCopy;
 };
 
 
