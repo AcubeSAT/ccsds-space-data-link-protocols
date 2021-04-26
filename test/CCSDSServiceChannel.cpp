@@ -36,21 +36,24 @@ TEST_CASE("Service Channel") {
     CHECK(serv_channel.available(0, 1) == MAX_RECEIVED_TC_IN_MAP_BUFFER);
     CHECK(serv_channel.available(0, 2) == MAX_RECEIVED_TC_IN_MAP_BUFFER);
     serv_channel.store(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
+    const Packet* packet_a = serv_channel.packet().second;
+    CHECK(packet_a->packetLength == 9);
+    CHECK(packet_a->serviceType == ServiceType::TYPE_A);
+
     CHECK(serv_channel.available(0, 0) == MAX_RECEIVED_TC_IN_MAP_BUFFER - 1);
     serv_channel.store(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
     CHECK(serv_channel.available(0, 0) == MAX_RECEIVED_TC_IN_MAP_BUFFER - 2);
-
-    const Packet* rd_packet = serv_channel.packet(0, 0).second;
-    CHECK((rd_packet->packetLength == 9));
-    CHECK((rd_packet->serviceType == ServiceType::TYPE_A));
+    CHECK((serv_channel.packet(0, 0).second == packet_a));
 
     ServiceChannelNotif err;
     err = serv_channel.mapp_request(0, 0);
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
     CHECK(serv_channel.available(0, 0) == MAX_RECEIVED_TC_IN_MAP_BUFFER - 1);
-    const Packet* rd_packet1 = serv_channel.packet(0, 0).second;
-    CHECK((rd_packet1->packetLength == 10));
-    CHECK((rd_packet1->serviceType == TYPE_B));
+
+    const Packet* packet_b = serv_channel.packet().second;
+    CHECK(packet_b->packetLength == 10);
+    CHECK(packet_b->serviceType == ServiceType::TYPE_B);
+    CHECK((serv_channel.packet(0, 0).second == packet_b));
 
     err = serv_channel.mapp_request(0, 0);
     serv_channel.mapp_request(0, 0);
@@ -58,4 +61,20 @@ TEST_CASE("Service Channel") {
     CHECK(serv_channel.available(0, 0) == MAX_RECEIVED_TC_IN_MAP_BUFFER);
 
     CHECK(serv_channel.mapp_request(0, 0) == ServiceChannelNotif::NO_PACKETS_TO_PROCESS);
+
+    // VC Generation Service
+    CHECK(serv_channel.packet(0).second == packet_a);
+    CHECK(serv_channel.available(0) == MAX_RECEIVED_TC_IN_WAIT_QUEUE - 2);
+
+    err = serv_channel.vc_generation_request(0);
+    // Deny request since service hasn't been initialized
+    CHECK(err == ServiceChannelNotif::FOP_REQUEST_REJECTED);
+    CHECK(serv_channel.packet(0).second == packet_a);
+
+    // Initialize service
+    serv_channel.initiate_ad_no_clcw(0);
+    err = serv_channel.vc_generation_request(0);
+    CHECK(serv_channel.available(0) == MAX_RECEIVED_TC_IN_WAIT_QUEUE - 1);
+    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
+    CHECK(serv_channel.packet(0).second == packet_b);
 }

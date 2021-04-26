@@ -121,7 +121,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
     if (virt_channel->waitQueue.full()) {
         return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;;
     }
-    Packet packet = virt_channel->unprocessedPacketList.front();
+    Packet *packet = virt_channel->unprocessedPacketList.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
@@ -129,10 +129,10 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
     const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled * 1U);
 
-    if (packet.packetLength > max_packet_length) {
+    if (packet->packetLength > max_packet_length) {
         if (segmentation_enabled) {
             // Check if there is enough space in the buffer of the virtual channel to store_out all the segments
-            uint8_t tf_n = (packet.packetLength / max_packet_length) + (packet.packetLength % max_packet_length != 0);
+            uint8_t tf_n = (packet->packetLength / max_packet_length) + (packet->packetLength % max_packet_length != 0);
 
             if (virt_channel->waitQueue.capacity() >= tf_n) {
                 // Break up packet
@@ -141,22 +141,22 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
                 // First portion
                 uint16_t seg_header = 0x40;
 
-                Packet t_packet = Packet(packet.packet, max_packet_length, seg_header, packet.gvcid, packet.mapid,
-                                         packet.sduid,
-                                         packet.serviceType);
+                Packet t_packet = Packet(packet->packet, max_packet_length, seg_header, packet->gvcid, packet->mapid,
+                                         packet->sduid,
+                                         packet->serviceType);
                 virt_channel->store(&t_packet);
 
                 // Middle portion
                 t_packet.segHdr = 0x00;
                 for (uint8_t i = 1; i < (tf_n - 1); i++) {
-                    t_packet.packet = &packet.packet[i * max_packet_length];
+                    t_packet.packet = &packet->packet[i * max_packet_length];
                     virt_channel->store(&t_packet);
                 }
 
                 // Last portion
                 t_packet.segHdr = 0x80;
-                t_packet.packet = &packet.packet[(tf_n - 1) * max_packet_length];
-                t_packet.packetLength = packet.packetLength % max_packet_length;
+                t_packet.packet = &packet->packet[(tf_n - 1) * max_packet_length];
+                t_packet.packetLength = packet->packetLength % max_packet_length;
                 virt_channel->store(&t_packet);
             }
         } else {
@@ -168,12 +168,12 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
         virt_channel->unprocessedPacketList.pop_front();
 
         if (blocking_enabled) {
-            virt_channel->store(&packet);
+            virt_channel->store(packet);
         } else {
             if (segmentation_enabled) {
-                packet.segHdr = 0xc0;
+                packet->segHdr = 0xc0;
             }
-            virt_channel->store(&packet);
+            virt_channel->store(packet);
         }
     }
     return ServiceChannelNotif::NO_SERVICE_EVENT;
@@ -182,8 +182,8 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 #endif
 
 ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
-    VirtualChannel virt_channel = std::move(masterChannel.virtChannels.at(vid));
-    if (virt_channel.waitQueue.empty()) {
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    if (virt_channel->waitQueue.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
@@ -191,19 +191,20 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet* packet = virt_channel.waitQueue.front();
-    FOPNotif err;
+    Packet* packet = virt_channel->waitQueue.front();
+    FOPDirectiveResponse err;
 
     if (packet->serviceType == ServiceType::TYPE_A) {
-        err = virt_channel.fop.transmit_ad_frame(packet);
+        err = virt_channel->fop.transfer_fdu(packet);
     } else{
-        err = virt_channel.fop.transmit_bc_frame(packet);
+        err = virt_channel->fop.transfer_fdu(packet);
     }
 
-    if (err == FOPNotif::SENT_QUEUE_FULL){
-        return ServiceChannelNotif::FOP_SENT_QUEUE_FULL;
+    if (err == FOPDirectiveResponse::REJECT){
+        return ServiceChannelNotif::FOP_REQUEST_REJECTED;
     }
 
+    virt_channel->waitQueue.pop_front();
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
@@ -325,4 +326,29 @@ const uint8_t ServiceChannel::transmitter_frame_seq_number(uint8_t vid) const{
 
 const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const{
     return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
+}
+
+etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8_t vid, const uint8_t mapid) const{
+    const etl::list<Packet*, MAX_RECEIVED_TC_IN_MAP_BUFFER> *mc = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList);
+    if(mc->empty()){
+        return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+    }
+
+    return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc->front());
+}
+
+etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8_t vid) const{
+    const etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *vc = &(masterChannel.virtChannels.at(vid).waitQueue);
+    if(vc->empty()){
+        return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+    }
+
+    return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
+}
+
+etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet() const{
+    if(masterChannel.masterCopy.empty()){
+        return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+    }
+    return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.masterCopy.back()));
 }

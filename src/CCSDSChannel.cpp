@@ -3,16 +3,6 @@
 
 // Virtual Channel
 
-// @todo rename to something that makes more sense
-VirtualChannelAlert VirtualChannel::store_unprocessed(Packet packet) {
-    // Limit the amount of packets that can be stored at any given time
-    if (unprocessedPacketList.full()) {
-        return VirtualChannelAlert::UNPROCESSED_PACKET_LIST_FULL;
-    }
-    unprocessedPacketList.push_back(packet);
-    return VirtualChannelAlert::NO_VC_ALERT;
-}
-
 VirtualChannelAlert VirtualChannel::store(Packet* packet) {
     // Limit the amount of packets that can be stored at any given time
     if (waitQueue.full()) {

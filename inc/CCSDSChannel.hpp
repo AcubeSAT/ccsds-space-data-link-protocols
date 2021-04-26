@@ -161,8 +161,6 @@ struct VirtualChannel {
 
     VirtualChannelAlert store(Packet* packet);
 
-    VirtualChannelAlert store_unprocessed(Packet packet);
-
     MasterChannel* master_channel(){
         return masterChannel;
     }
@@ -181,7 +179,7 @@ private:
     /**
      * @brief Buffer to store_out unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
-    etl::list<Packet, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
+    etl::list<Packet*, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
 
     /**
      * @brief Holds the FOP state of the virtual channel

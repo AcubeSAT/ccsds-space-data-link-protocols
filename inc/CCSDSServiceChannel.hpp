@@ -167,16 +167,19 @@ public:
     /**
      * @brief Read first packet of the MAP channel buffer
      */
+    etl::pair<ServiceChannelNotif, const Packet*> packet(const uint8_t vid, const uint8_t mapid) const;
 
-    etl::pair<ServiceChannelNotif, const Packet*> packet(const uint8_t vid, const uint8_t mapid) const{
-        const etl::list<Packet*, MAX_RECEIVED_TC_IN_MAP_BUFFER> mc = masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList;
-        if(mc.empty()){
-            return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, mc.front());
-        }
+    /**
+    * @brief Read first packet of the virtual channel buffer
+    */
+    etl::pair<ServiceChannelNotif, const Packet*> packet(const uint8_t vid) const;
 
-        return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc.front());
-    }
+    /**
+    * @brief Return the last stored packet
+    */
 
+    etl::pair<ServiceChannelNotif, const Packet*> packet() const;
+    // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) :
             masterChannel(master_channel) {
     }
