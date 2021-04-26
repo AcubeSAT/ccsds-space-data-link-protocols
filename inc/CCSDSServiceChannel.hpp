@@ -137,10 +137,17 @@ public:
     void process();
 
     /**
-     * @brief Available space in master channel buffer
+     * @brief Available number of incoming frames in master channel buffer
      */
-    const uint16_t available() const {
+    const uint16_t in_available() const {
         return masterChannel.outFramesList.available();
+    }
+
+    /**
+     * @brief Available number of outcoming frames in master channel buffer
+     */
+    const uint16_t out_available() const {
+        return masterChannel.toBeTransmittedFramesList.available();
     }
 
     /**
@@ -155,6 +162,19 @@ public:
     */
     const uint16_t available(const uint8_t vid, const uint8_t mapid) const {
         return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).available();
+    }
+
+    /**
+     * @brief Read first packet of the MAP channel buffer
+     */
+
+    etl::pair<ServiceChannelNotif, const Packet*> packet(const uint8_t vid, const uint8_t mapid) const{
+        const etl::list<Packet, MAX_RECEIVED_TC_IN_MAP_BUFFER> mc = masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList;
+        if(mc.empty()){
+            return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+        }
+
+        return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(mc.front()));
     }
 
     ServiceChannel(MasterChannel master_channel) :

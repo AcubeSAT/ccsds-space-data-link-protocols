@@ -19,7 +19,8 @@ ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, ui
 
     if (service_type == ServiceType::TYPE_A){
         packet_s.set_repetitions(vchan->repetitionTypeAFrame);
-    } else if (service_type == ServiceType::TYPE_B){
+    } else if
+    (service_type == ServiceType::TYPE_B){
         packet_s.set_repetitions(vchan->repetitionCOPCtrl);
     }
 

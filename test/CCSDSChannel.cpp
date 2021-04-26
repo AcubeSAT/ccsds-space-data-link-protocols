@@ -56,6 +56,10 @@ TEST_CASE("MAPP blocking") {
     CHECK(serv_channel.available(3, 2) == MAX_RECEIVED_TC_IN_MAP_BUFFER);
 }
 
+TEST_CASE("Virtual Channel Generation"){
+
+}
+
 TEST_CASE("CLCW parsing"){
     // Parse CLCW from raw data
     uint8_t clcw_data[] = {0x09, 0xA8, 0xAA, 0x52};
