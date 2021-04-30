@@ -66,7 +66,7 @@
 
 
 // Raw packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
-#define MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER 5U
+#define MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER 6U
 #define MAX_RECEIVED_TC_IN_CHANNEL 1000U
 #define FIELD_STATUS 2U
 

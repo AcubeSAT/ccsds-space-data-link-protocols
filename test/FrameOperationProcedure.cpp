@@ -19,7 +19,7 @@ TEST_CASE("Initiate FOP Directives") {
     };
 
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-    MasterChannel master_channel_fop = MasterChannel(virt_channels_fop, true);
+    MasterChannel master_channel_fop = MasterChannel(std::move(virt_channels_fop), true);
 
     ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop);
 
@@ -35,17 +35,11 @@ TEST_CASE("Initiate FOP Directives") {
     serv_channel_fop.initiate_ad_no_clcw(3);
     CHECK(serv_channel_fop.fop_state(3) == FOPState::ACTIVE);
     serv_channel_fop.terminate_ad_service(3);
-    CHECK(serv_channel_fop.fop_state(3) == FOPState::INITIAL);
-    serv_channel_fop.initiate_ad_unlock(3);
-    CHECK(serv_channel_fop.fop_state(3) == FOPState::INITIAL); // todo set bcOut
-    serv_channel_fop.initiate_ad_vr(3, 2);
-    CHECK(serv_channel_fop.fop_state(3) == FOPState::INITIAL); // todo set bcOut
-
-    CHECK(serv_channel_fop.expected_frame_seq_number(3) == 0);
-    CHECK(serv_channel_fop.transmitter_frame_seq_number(3) == 0);
     serv_channel_fop.set_vs(3, 6);
     CHECK(serv_channel_fop.expected_frame_seq_number(3) == 6);
     CHECK(serv_channel_fop.transmitter_frame_seq_number(3) == 6);
+    CHECK(serv_channel_fop.fop_state(3) == FOPState::INITIAL);
+    serv_channel_fop.initiate_ad_unlock(3);
 
     CHECK(serv_channel_fop.timeout_type(3) == 0);
     serv_channel_fop.set_timeout_type(3, 1);

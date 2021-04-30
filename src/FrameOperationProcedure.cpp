@@ -23,8 +23,7 @@ FOPNotif FrameOperationProcedure::purge_wait_queue() {
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet *ad_frame) {
-
+FOPNotif FrameOperationProcedure::transmit_ad_frame() {
     if (sentQueue->full()) {
         return FOPNotif::SENT_QUEUE_FULL;
     }
@@ -33,35 +32,42 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame(Packet *ad_frame) {
         transmissionCount = 1;
     }
 
+    Packet* ad_frame = waitQueue->front();
+
     sentQueue->push_back(ad_frame);
     ad_frame->transferFrameSeqNumber = transmitterFrameSeqNumber;
 
     ad_frame->mark_for_retransmission(0);
 
-    waitQueue->pop_front();
     sentQueue->push_back(ad_frame);
     adOut = false;
 
     // TODO start the timer
     // pass the frame into the all frames generation service
     vchan->master_channel()->store_out(ad_frame);
+    waitQueue->pop_front();
+
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet *bc_frame) {
+FOPNotif FrameOperationProcedure::transmit_bc_frame() {
+    Packet* bc_frame = waitQueue->front();
 
     bc_frame->mark_for_retransmission(0);
     transmissionCount = 1;
 
     // TODO start the timer
     vchan->master_channel()->store_out(bc_frame);
+    waitQueue->pop_front();
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bd_frame(Packet *bd_frame) {
+FOPNotif FrameOperationProcedure::transmit_bd_frame() {
     bdOut = NOT_READY;
-
-    // TODO generate a 'Transmit BD Frame' request
+    // Pass frame to all frames generation service
+    Packet* bd_frame = waitQueue->front();
+    vchan->master_channel()->store_out(bd_frame);
+    waitQueue->pop_front();
     return FOPNotif::NO_FOP_EVENT;
 }
 
@@ -118,14 +124,14 @@ void FrameOperationProcedure::look_for_directive() {
     }
 }
 
-void FrameOperationProcedure::look_for_fdu() {
+FOPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
     if (adOut == FlagState::READY) {
         for (Packet* frame : *sentQueue) {
             if (frame->serviceType == ServiceType::TYPE_A) {
                 adOut = FlagState::NOT_READY;
                 frame->mark_for_retransmission(0);
-                // TODO Generate ‘Transmit Request for (AD) Frame’ request for this frame
-                break;
+                transmit_ad_frame();
+                return FOPDirectiveResponse::ACCEPT;
             }
 
             // Check if no Type-A transfer frames have been found in the sent queue
@@ -136,17 +142,17 @@ void FrameOperationProcedure::look_for_fdu() {
                     etl::ilist<Packet*>::iterator cur_frame = waitQueue->begin();
                     while (cur_frame != waitQueue->end()) {
                         if ((*cur_frame)->serviceType == ServiceType::TYPE_A) {
-                            // TODO Generate ‘Accept Response to Request to Transfer FDU’
                             sentQueue->push_front(*cur_frame);
                             waitQueue->erase(cur_frame);
+                            return FOPDirectiveResponse::ACCEPT;
                         }
                     }
                 }
             }
-            //transmit_ad_frame();
         }
     } else {
         // TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
+        return FOPDirectiveResponse::REJECT;
     }
 }
 
@@ -565,7 +571,7 @@ FOPDirectiveResponse FrameOperationProcedure::invalid_directive() {
     return FOPDirectiveResponse::REJECT;
 }
 
-void FrameOperationProcedure::ad_accept(Packet *ad_frame) {
+void FrameOperationProcedure::ad_accept() {
     // E41
     adOut = FlagState::READY;
     if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT) {
@@ -573,13 +579,13 @@ void FrameOperationProcedure::ad_accept(Packet *ad_frame) {
     }
 }
 
-void FrameOperationProcedure::ad_reject(Packet *ad_frame) {
+void FrameOperationProcedure::ad_reject() {
     // E42
     alert(AlertEvent::ALRT_LLIF);
     state = FOPState::INITIAL;
 }
 
-void FrameOperationProcedure::bc_accept(Packet *ad_frame) {
+void FrameOperationProcedure::bc_accept() {
     // E43
     bcOut = FlagState::READY;
     if (state == FOPState::INITIALIZING_WITH_BC_FRAME) {
@@ -587,22 +593,23 @@ void FrameOperationProcedure::bc_accept(Packet *ad_frame) {
     }
 }
 
-void FrameOperationProcedure::bc_reject(Packet *ad_frame) {
+void FrameOperationProcedure::bc_reject() {
     alert(AlertEvent::ALRT_LLIF);
     state = FOPState::INITIAL;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::bd_accept(Packet *ad_frame) {
+FOPDirectiveResponse FrameOperationProcedure::bd_accept() {
     bdOut = FlagState::READY;
     return FOPDirectiveResponse::ACCEPT;
 }
 
-void FrameOperationProcedure::bd_reject(Packet *ad_frame) {
+void FrameOperationProcedure::bd_reject() {
     alert(AlertEvent::ALRT_LLIF);
     state = FOPState::INITIAL;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::transfer_fdu(Packet *frame){
+FOPDirectiveResponse FrameOperationProcedure::transfer_fdu(){
+    Packet* frame = vchan->unprocessedPacketList.front();
     if (frame->hdr.bypass_flag() == 0){
         if (frame->serviceType == ServiceType::TYPE_A){
             if (!waitQueue->full()){
@@ -624,7 +631,7 @@ FOPDirectiveResponse FrameOperationProcedure::transfer_fdu(Packet *frame){
         } else if (frame->serviceType == ServiceType::TYPE_B){
             if (bdOut == FlagState::READY) {
                 // E21
-                transmit_bc_frame(frame);
+                transmit_bc_frame();
                 return FOPDirectiveResponse::ACCEPT;
             } else{
                 // E22

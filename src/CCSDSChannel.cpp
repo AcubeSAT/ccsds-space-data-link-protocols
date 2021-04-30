@@ -5,10 +5,10 @@
 
 VirtualChannelAlert VirtualChannel::store(Packet* packet) {
     // Limit the amount of packets that can be stored at any given time
-    if (waitQueue.full()) {
+    if (unprocessedPacketList.full()) {
         return VirtualChannelAlert::WAIT_QUEUE_FULL;
     }
-    waitQueue.push_back(packet);
+    unprocessedPacketList.push_back(packet);
     return VirtualChannelAlert::NO_VC_ALERT;
 }
 

@@ -1,7 +1,7 @@
 #ifndef CCSDS_ALERT_HPP
 #define CCSDS_ALERT_HPP
 
-typedef enum ServiceChannelNotif {
+enum ServiceChannelNotif {
     NO_SERVICE_EVENT = 0,
     MAP_CHANNEL_FRAME_BUFFER_FULL = 1,
     VIRTUAL_CHANNEL_FRAME_BUFFER_FULL = 2,
@@ -13,17 +13,17 @@ typedef enum ServiceChannelNotif {
     FOP_REQUEST_REJECTED
 };
 
-typedef enum FOPNotif {
+enum FOPNotif {
     NO_FOP_EVENT = 0,
     SENT_QUEUE_FULL = 1,
 };
 
-typedef enum FOPDirectiveResponse {
+enum FOPDirectiveResponse {
     ACCEPT = 0,
     REJECT = 1,
 };
 
-typedef enum FOPConfirmResponse {
+enum FOPConfirmResponse {
     POSITIVE = 0,
     NEGATIVE = 1,
 };

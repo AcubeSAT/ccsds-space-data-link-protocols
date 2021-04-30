@@ -45,10 +45,12 @@ class FrameOperationProcedure {
     friend class ServiceChannel;
 
 private:
+public:
     etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue;
     etl::list<Packet*, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue;
     VirtualChannel *vchan;
 
+private:
     FOPState state;
     FOPState suspendState;
 
@@ -77,17 +79,17 @@ private:
     /**
      * @brief Prepares a Type-AD Frame for transmission
      */
-    FOPNotif transmit_ad_frame(Packet *ad_frame);
+    FOPNotif transmit_ad_frame();
 
     /**
      * @brief Prepares a Type-BC Frame for transmission
      */
-    FOPNotif transmit_bc_frame(Packet *bc_frame);
+    FOPNotif transmit_bc_frame();
 
     /**
      * @brief Prepares a Type-BD Frame for transmission
      */
-    FOPNotif transmit_bd_frame(Packet *bd_frame);
+    FOPNotif transmit_bd_frame();
 
     /**
      * @brief Marks AD Frames stored in the sent queue to be retransmitted
@@ -113,7 +115,7 @@ private:
      * @brief Search for a FDU that can be transmitted in the sent_queueu. If none are found also search in
      * the wait_queue
      */
-    void look_for_fdu();
+    FOPDirectiveResponse look_for_fdu();
 
     void initialize();
 
@@ -157,29 +159,30 @@ private:
     FOPDirectiveResponse invalid_directive();
 
     /* Response from lower procedures*/
-    void ad_accept(Packet *ad_frame);
+    void ad_accept();
 
-    void ad_reject(Packet *ad_frame);
+    void ad_reject();
 
-    void bc_accept(Packet *ad_frame);
+    void bc_accept();
 
-    void bc_reject(Packet *ad_frame);
+    void bc_reject();
 
-    FOPDirectiveResponse bd_accept(Packet *ad_frame);
+    FOPDirectiveResponse bd_accept();
 
-    void bd_reject(Packet *ad_frame);
+    void bd_reject();
 
-    FOPDirectiveResponse transfer_fdu(Packet *frame);
+    FOPDirectiveResponse transfer_fdu();
 
 public:
     FrameOperationProcedure(VirtualChannel *vchan,
                             etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *waitQueue,
                             etl::list<Packet*, MAX_RECEIVED_TC_IN_SENT_QUEUE> *sentQueue,
                             const uint8_t repetition_cop_ctrl) :
-            waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
-            adOut(0), bdOut(0), bcOut(0), expectedAcknowledgementSeqNumber(0),
+            waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0), vchan(vchan),
+            adOut(FlagState::READY), bdOut(FlagState::READY), bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0),
             tiInitial(FOP_TIMER_INITIAL), transmissionLimit(repetition_cop_ctrl), transmissionCount(1),
-            fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL), timeoutType(0), suspendState(FOPState::INITIAL) {};
+            fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL), timeoutType(0), suspendState(FOPState::INITIAL) {
+    };
 };
 
 #endif //CCSDS_FOP_H

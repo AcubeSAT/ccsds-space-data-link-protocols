@@ -94,6 +94,7 @@ protected:
 struct VirtualChannel {
     friend class ServiceChannel;
     friend class MasterChannel;
+    friend class FrameOperationProcedure;
 
     /**
      * @brief Virtual Channel Identifier
@@ -139,7 +140,7 @@ struct VirtualChannel {
      * @brief Returns available space in the buffer
      */
     const uint16_t available() const {
-        return waitQueue.available();
+        return unprocessedPacketList.available();
     }
 
     /**
@@ -157,6 +158,18 @@ struct VirtualChannel {
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
             waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)){
                 mapChannels = map_chan;
+    }
+
+    VirtualChannel(const VirtualChannel &v) :
+        VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
+        maxFrameLength(v.maxFrameLength), clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
+        repetitionCOPCtrl(v.repetitionCOPCtrl), waitQueue(v.waitQueue), sentQueue(v.sentQueue),
+        unprocessedPacketList(v.unprocessedPacketList), fop(v.fop), masterChannel(v.masterChannel),
+        blocking(v.blocking), mapChannels(v.mapChannels)
+    {
+        fop.vchan = this;
+        fop.sentQueue = &sentQueue;
+        fop.waitQueue = &waitQueue;
     }
 
     VirtualChannelAlert store(Packet* packet);
@@ -214,7 +227,7 @@ struct MasterChannel {
             outFramesList(), errorCtrlField(errorCtrlField) {
 
         virtChannels = virt_chan;
-        for (auto virt_channel : virtChannels){
+        for (auto & virt_channel : virtChannels){
             virt_channel.second.set_master_channel(this);
         }
     }

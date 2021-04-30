@@ -52,7 +52,7 @@ TEST_CASE("MAPP blocking") {
 
     serv_channel.mapp_request(3, 2);
 
-    CHECK(serv_channel.available(3) == MAX_RECEIVED_TC_IN_WAIT_QUEUE - 6);
+    CHECK(serv_channel.available(3) == MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER - 6);
     CHECK(serv_channel.available(3, 2) == MAX_RECEIVED_TC_IN_MAP_BUFFER);
 }
 

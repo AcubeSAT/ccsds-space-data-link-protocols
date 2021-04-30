@@ -183,7 +183,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
 ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
-    if (virt_channel->waitQueue.empty()) {
+    if (virt_channel->unprocessedPacketList.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
@@ -191,20 +191,13 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet* packet = virt_channel->waitQueue.front();
-    FOPDirectiveResponse err;
+    FOPDirectiveResponse err = virt_channel->fop.transfer_fdu();
 
-    if (packet->serviceType == ServiceType::TYPE_A) {
-        err = virt_channel->fop.transfer_fdu(packet);
-    } else{
-        err = virt_channel->fop.transfer_fdu(packet);
-    }
-
-    if (err == FOPDirectiveResponse::REJECT){
+    if (err ==  FOPDirectiveResponse ::REJECT) {
         return ServiceChannelNotif::FOP_REQUEST_REJECTED;
     }
 
-    virt_channel->waitQueue.pop_front();
+    virt_channel->unprocessedPacketList.pop_front();
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
@@ -338,7 +331,7 @@ etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8
 }
 
 etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8_t vid) const{
-    const etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> *vc = &(masterChannel.virtChannels.at(vid).waitQueue);
+    const etl::list<Packet*, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> *vc = &(masterChannel.virtChannels.at(vid).unprocessedPacketList);
     if(vc->empty()){
         return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
