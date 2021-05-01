@@ -84,12 +84,12 @@ private:
     /**
      * @brief Prepares a Type-BC Frame for transmission
      */
-    FOPNotif transmit_bc_frame();
+    FOPNotif transmit_bc_frame(Packet* bc_frame);
 
     /**
      * @brief Prepares a Type-BD Frame for transmission
      */
-    FOPNotif transmit_bd_frame();
+    FOPNotif transmit_bd_frame(Packet* bd_frame);
 
     /**
      * @brief Marks AD Frames stored in the sent queue to be retransmitted

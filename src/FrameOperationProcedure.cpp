@@ -50,24 +50,19 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bc_frame() {
-    Packet* bc_frame = waitQueue->front();
-
+FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet* bc_frame) {
     bc_frame->mark_for_retransmission(0);
     transmissionCount = 1;
 
     // TODO start the timer
     vchan->master_channel()->store_out(bc_frame);
-    waitQueue->pop_front();
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bd_frame() {
+FOPNotif FrameOperationProcedure::transmit_bd_frame(Packet* bd_frame) {
     bdOut = NOT_READY;
     // Pass frame to all frames generation service
-    Packet* bd_frame = waitQueue->front();
     vchan->master_channel()->store_out(bd_frame);
-    waitQueue->pop_front();
     return FOPNotif::NO_FOP_EVENT;
 }
 
@@ -128,26 +123,20 @@ FOPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
     if (adOut == FlagState::READY) {
         for (Packet* frame : *sentQueue) {
             if (frame->serviceType == ServiceType::TYPE_A) {
-                adOut = FlagState::NOT_READY;
+                // adOut = FlagState::NOT_READY;
                 frame->mark_for_retransmission(0);
-                transmit_ad_frame();
+                FOPNotif resp = transmit_ad_frame();
                 return FOPDirectiveResponse::ACCEPT;
             }
-
-            // Check if no Type-A transfer frames have been found in the sent queue
-            if (adOut == FlagState::READY) {
-                // Search the wait queue for a suitable FDU
-                // The wait queue is supposed to have a maximum capacity of one but anyway
-                if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
-                    etl::ilist<Packet*>::iterator cur_frame = waitQueue->begin();
-                    while (cur_frame != waitQueue->end()) {
-                        if ((*cur_frame)->serviceType == ServiceType::TYPE_A) {
-                            sentQueue->push_front(*cur_frame);
-                            waitQueue->erase(cur_frame);
-                            return FOPDirectiveResponse::ACCEPT;
-                        }
-                    }
-                }
+        }
+        // Search the wait queue for a suitable FDU
+        // The wait queue is supposed to have a maximum capacity of one
+        if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
+            Packet* frame = waitQueue->front();
+            if (frame->serviceType == ServiceType::TYPE_A){
+                sentQueue->push_front(frame);
+                waitQueue->pop_front();
+                return FOPDirectiveResponse::ACCEPT;
             }
         }
     } else {
@@ -631,7 +620,7 @@ FOPDirectiveResponse FrameOperationProcedure::transfer_fdu(){
         } else if (frame->serviceType == ServiceType::TYPE_B){
             if (bdOut == FlagState::READY) {
                 // E21
-                transmit_bc_frame();
+                transmit_bc_frame(frame);
                 return FOPDirectiveResponse::ACCEPT;
             } else{
                 // E22

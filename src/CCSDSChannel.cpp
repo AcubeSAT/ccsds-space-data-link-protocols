@@ -23,6 +23,9 @@ MasterChannelAlert MasterChannel::store_out(Packet* packet) {
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
     outFramesList.push_back(packet);
+    uint8_t vid = packet->gvcid;
+    // virtChannels.at(0).fop.
+
     return MasterChannelAlert::NO_MC_ALERT;
 }
 
