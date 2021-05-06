@@ -88,12 +88,14 @@ protected:
     /**
      * Store unprocessed received TCs
      */
-    etl::list<Packet*, max_received_tc_in_map_channel> unprocessedPacketList;
+    etl::list<Packet *, max_received_tc_in_map_channel> unprocessedPacketList;
 };
 
 struct VirtualChannel {
     friend class ServiceChannel;
+
     friend class MasterChannel;
+
     friend class FrameOperationProcedure;
 
     /**
@@ -156,25 +158,24 @@ struct VirtualChannel {
             VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
             maxFrameLength(max_frame_length), clcwRate(clcw_rate), blocking(blocking),
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
-            waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)){
-                mapChannels = map_chan;
+            waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)) {
+        mapChannels = map_chan;
     }
 
     VirtualChannel(const VirtualChannel &v) :
-        VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
-        maxFrameLength(v.maxFrameLength), clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
-        repetitionCOPCtrl(v.repetitionCOPCtrl), waitQueue(v.waitQueue), sentQueue(v.sentQueue),
-        unprocessedPacketList(v.unprocessedPacketList), fop(v.fop), masterChannel(v.masterChannel),
-        blocking(v.blocking), mapChannels(v.mapChannels)
-    {
+            VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
+            maxFrameLength(v.maxFrameLength), clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
+            repetitionCOPCtrl(v.repetitionCOPCtrl), waitQueue(v.waitQueue), sentQueue(v.sentQueue),
+            unprocessedPacketList(v.unprocessedPacketList), fop(v.fop), masterChannel(v.masterChannel),
+            blocking(v.blocking), mapChannels(v.mapChannels) {
         fop.vchan = this;
         fop.sentQueue = &sentQueue;
         fop.waitQueue = &waitQueue;
     }
 
-    VirtualChannelAlert store(Packet* packet);
+    VirtualChannelAlert store(Packet *packet);
 
-    MasterChannel* master_channel(){
+    MasterChannel *master_channel() {
         return masterChannel;
     }
 
@@ -182,17 +183,17 @@ private:
     /**
      * @brief Buffer to store_out incoming packets before being processed by COP
      */
-    etl::list<Packet*, max_received_tc_in_wait_queue> waitQueue;
+    etl::list<Packet *, max_received_tc_in_wait_queue> waitQueue;
 
     /**
      * @brief Buffer to store_out outcoming packets after being processed by COP
      */
-    etl::list<Packet*, max_received_tc_in_sent_queue> sentQueue;
+    etl::list<Packet *, max_received_tc_in_sent_queue> sentQueue;
 
     /**
      * @brief Buffer to store_out unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
-    etl::list<Packet*, max_received_unprocessed_tc_in_virt_buffer> unprocessedPacketList;
+    etl::list<Packet *, max_received_unprocessed_tc_in_virt_buffer> unprocessedPacketList;
 
     /**
      * @brief Holds the FOP state of the virtual channel
@@ -202,9 +203,9 @@ private:
     /**
      * @brief Pointer to the Master Channel the Virtual Channel belongs in
      */
-    MasterChannel* masterChannel;
+    MasterChannel *masterChannel;
 
-    void set_master_channel(MasterChannel* master_channel){
+    void set_master_channel(MasterChannel *master_channel) {
         masterChannel = master_channel;
     }
 };
@@ -227,19 +228,21 @@ struct MasterChannel {
             outFramesList(), errorCtrlField(errorCtrlField) {
 
         virtChannels = virt_chan;
-        for (auto & virt_channel : virtChannels){
+        for (auto &virt_channel : virtChannels) {
             virt_channel.second.set_master_channel(this);
         }
     }
-    MasterChannelAlert store_out(Packet* packet);
-    MasterChannelAlert store_transmitted_out(Packet* packet);
+
+    MasterChannelAlert store_out(Packet *packet);
+
+    MasterChannelAlert store_transmitted_out(Packet *packet);
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<Packet*, max_received_tc_in_master_buffer> outFramesList;
+    etl::list<Packet *, max_received_tc_in_master_buffer> outFramesList;
 
     // Packets ready to be transmitted having passed thorugh the all frames generation service
-    etl::list<Packet*, max_received_tc_out_in_master_buffer> toBeTransmittedFramesList;
+    etl::list<Packet *, max_received_tc_out_in_master_buffer> toBeTransmittedFramesList;
 
     /**
      * @brief Buffer holding the master copy of the packets that are currently being processed

@@ -17,10 +17,10 @@ ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, ui
 
     Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type);
 
-    if (service_type == ServiceType::TYPE_A){
+    if (service_type == ServiceType::TYPE_A) {
         packet_s.set_repetitions(vchan->repetitionTypeAFrame);
     } else if
-    (service_type == ServiceType::TYPE_B){
+            (service_type == ServiceType::TYPE_B) {
         packet_s.set_repetitions(vchan->repetitionCOPCtrl);
     }
 
@@ -41,7 +41,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
         return ServiceChannelNotif::VIRTUAL_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet* packet = map_channel->unprocessedPacketList.front();
+    Packet *packet = map_channel->unprocessedPacketList.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
@@ -193,7 +193,7 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
 
     FOPDirectiveResponse err = virt_channel->fop.transfer_fdu();
 
-    if (err ==  FOPDirectiveResponse ::REJECT) {
+    if (err == FOPDirectiveResponse::REJECT) {
         return ServiceChannelNotif::FOP_REQUEST_REJECTED;
     }
 
@@ -201,14 +201,14 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::all_frames_generation_request(){
+ServiceChannelNotif ServiceChannel::all_frames_generation_request() {
     if (masterChannel.outFramesList.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
-    Packet* packet = masterChannel.outFramesList.front();
+    Packet *packet = masterChannel.outFramesList.front();
 
-    if (masterChannel.errorCtrlField){
+    if (masterChannel.errorCtrlField) {
         packet->append_crc();
     }
 
@@ -216,96 +216,96 @@ ServiceChannelNotif ServiceChannel::all_frames_generation_request(){
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::transmit_frame(uint8_t *pack){
-    if (masterChannel.toBeTransmittedFramesList.empty()){
+ServiceChannelNotif ServiceChannel::transmit_frame(uint8_t *pack) {
+    if (masterChannel.toBeTransmittedFramesList.empty()) {
         return ServiceChannelNotif::TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY;
     }
 
-    Packet* packet = masterChannel.toBeTransmittedFramesList.front();
+    Packet *packet = masterChannel.toBeTransmittedFramesList.front();
     packet->repetitions -= 1;
-    if (packet->repetitions == 0){
+    if (packet->repetitions == 0) {
         masterChannel.toBeTransmittedFramesList.pop_front();
     }
     memcpy(pack, packet, packet->packetLength);
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-void ServiceChannel::initiate_ad_no_clcw(uint8_t vid){
+void ServiceChannel::initiate_ad_no_clcw(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     FDURequestType req;
     req = virt_channel->fop.initiate_ad_no_clcw();
 }
 
-void ServiceChannel::initiate_ad_clcw(uint8_t vid){
+void ServiceChannel::initiate_ad_clcw(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     FDURequestType req;
     req = virt_channel->fop.initiate_ad_clcw();
 }
 
-void ServiceChannel::initiate_ad_unlock(uint8_t vid){
+void ServiceChannel::initiate_ad_unlock(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     FDURequestType req;
     req = virt_channel->fop.initiate_ad_unlock();
 }
 
-void ServiceChannel::initiate_ad_vr(uint8_t vid, uint8_t vr){
+void ServiceChannel::initiate_ad_vr(uint8_t vid, uint8_t vr) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     FDURequestType req;
     req = virt_channel->fop.initiate_ad_vr(vr);
 }
 
-void ServiceChannel::terminate_ad_service(uint8_t vid){
+void ServiceChannel::terminate_ad_service(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     FDURequestType req;
     req = virt_channel->fop.terminate_ad_service();
 }
 
-void ServiceChannel::resume_ad_service(uint8_t vid){
+void ServiceChannel::resume_ad_service(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     FDURequestType req;
     req = virt_channel->fop.resume_ad_service();
 }
 
-void ServiceChannel::set_vs(uint8_t vid, uint8_t vs){
+void ServiceChannel::set_vs(uint8_t vid, uint8_t vs) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     virt_channel->fop.set_vs(vs);
 }
 
-void ServiceChannel::set_fop_width(uint8_t vid, uint8_t width){
+void ServiceChannel::set_fop_width(uint8_t vid, uint8_t width) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     virt_channel->fop.set_fop_width(width);
 }
 
-void ServiceChannel::set_t1_initial(uint8_t vid, uint16_t t1_init){
+void ServiceChannel::set_t1_initial(uint8_t vid, uint16_t t1_init) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     virt_channel->fop.set_t1_initial(t1_init);
 }
 
-void ServiceChannel::set_transmission_limit(uint8_t vid, uint8_t vr){
+void ServiceChannel::set_transmission_limit(uint8_t vid, uint8_t vr) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     virt_channel->fop.set_transmission_limit(vr);
 }
 
-void ServiceChannel::set_timeout_type(uint8_t vid, bool vr){
+void ServiceChannel::set_timeout_type(uint8_t vid, bool vr) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     virt_channel->fop.set_timeout_type(vr);
 }
 
 //todo: this may not be needed since it doesn't affect lower procedures and doesn't change the state in any way
-void ServiceChannel::invalid_directive(uint8_t vid){
+void ServiceChannel::invalid_directive(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     virt_channel->fop.invalid_directive();
 }
 
-const FOPState ServiceChannel::fop_state(uint8_t vid) const{
+const FOPState ServiceChannel::fop_state(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.state;
 }
 
-const uint16_t ServiceChannel::t1_timer(uint8_t vid) const{
+const uint16_t ServiceChannel::t1_timer(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.tiInitial;
 }
 
-const uint8_t ServiceChannel::fop_sliding_window_width(uint8_t vid) const{
+const uint8_t ServiceChannel::fop_sliding_window_width(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.fopSlidingWindow;
 }
 
@@ -313,34 +313,36 @@ const bool ServiceChannel::timeout_type(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.timeoutType;
 }
 
-const uint8_t ServiceChannel::transmitter_frame_seq_number(uint8_t vid) const{
+const uint8_t ServiceChannel::transmitter_frame_seq_number(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.transmitterFrameSeqNumber;
 }
 
-const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const{
+const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
 }
 
-etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8_t vid, const uint8_t mapid) const{
-    const etl::list<Packet*, max_received_tc_in_map_channel> *mc = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList);
-    if(mc->empty()){
+etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet(const uint8_t vid, const uint8_t mapid) const {
+    const etl::list<Packet *, max_received_tc_in_map_channel> *mc = &(masterChannel.virtChannels.at(vid).mapChannels.at(
+            mapid).unprocessedPacketList);
+    if (mc->empty()) {
         return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
 
     return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc->front());
 }
 
-etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8_t vid) const{
-    const etl::list<Packet*, max_received_unprocessed_tc_in_virt_buffer> *vc = &(masterChannel.virtChannels.at(vid).unprocessedPacketList);
-    if(vc->empty()){
+etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet(const uint8_t vid) const {
+    const etl::list<Packet *, max_received_unprocessed_tc_in_virt_buffer> *vc = &(masterChannel.virtChannels.at(
+            vid).unprocessedPacketList);
+    if (vc->empty()) {
         return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
 
     return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
 }
 
-etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet() const{
-    if(masterChannel.masterCopy.empty()){
+etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet() const {
+    if (masterChannel.masterCopy.empty()) {
         return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
     return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.masterCopy.back()));

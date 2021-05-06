@@ -28,13 +28,13 @@ enum FOPConfirmResponse {
     NEGATIVE = 1,
 };
 
-enum VirtualChannelAlert{
+enum VirtualChannelAlert {
     NO_VC_ALERT = 0,
     UNPROCESSED_PACKET_LIST_FULL = 1,
     WAIT_QUEUE_FULL = 2,
 };
 
-enum MasterChannelAlert{
+enum MasterChannelAlert {
     NO_MC_ALERT = 0,
     OUT_FRAMES_LIST_FULL = 1,
     TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 2

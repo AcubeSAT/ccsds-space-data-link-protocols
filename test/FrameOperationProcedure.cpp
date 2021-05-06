@@ -5,7 +5,7 @@
 
 TEST_CASE("Initiate FOP Directives") {
     PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12,
-                                                  1024, 220000, 20);
+                                                      1024, 220000, 20);
 
     etl::map<uint8_t, MAPChannel, max_map_channels> map_channels_fop = {
             {2, MAPChannel(2, DataFieldContent::PACKET)},

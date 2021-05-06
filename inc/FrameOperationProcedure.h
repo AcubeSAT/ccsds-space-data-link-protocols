@@ -46,8 +46,8 @@ class FrameOperationProcedure {
 
 private:
 public:
-    etl::list<Packet*, max_received_tc_in_wait_queue> *waitQueue;
-    etl::list<Packet*, max_received_tc_in_sent_queue> *sentQueue;
+    etl::list<Packet *, max_received_tc_in_wait_queue> *waitQueue;
+    etl::list<Packet *, max_received_tc_in_sent_queue> *sentQueue;
     VirtualChannel *vchan;
 
 private:
@@ -84,12 +84,12 @@ private:
     /**
      * @brief Prepares a Type-BC Frame for transmission
      */
-    FOPNotif transmit_bc_frame(Packet* bc_frame);
+    FOPNotif transmit_bc_frame(Packet *bc_frame);
 
     /**
      * @brief Prepares a Type-BD Frame for transmission
      */
-    FOPNotif transmit_bd_frame(Packet* bd_frame);
+    FOPNotif transmit_bd_frame(Packet *bd_frame);
 
     /**
      * @brief Marks AD Frames stored in the sent queue to be retransmitted
@@ -175,11 +175,13 @@ private:
 
 public:
     FrameOperationProcedure(VirtualChannel *vchan,
-                            etl::list<Packet*, max_received_tc_in_wait_queue> *waitQueue,
-                            etl::list<Packet*, max_received_tc_in_sent_queue> *sentQueue,
+                            etl::list<Packet *, max_received_tc_in_wait_queue> *waitQueue,
+                            etl::list<Packet *, max_received_tc_in_sent_queue> *sentQueue,
                             const uint8_t repetition_cop_ctrl) :
-            waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0), vchan(vchan),
-            adOut(FlagState::READY), bdOut(FlagState::READY), bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0),
+            waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
+            vchan(vchan),
+            adOut(FlagState::READY), bdOut(FlagState::READY), bcOut(FlagState::READY),
+            expectedAcknowledgementSeqNumber(0),
             tiInitial(fop_timer_initial), transmissionLimit(repetition_cop_ctrl), transmissionCount(1),
             fopSlidingWindow(fop_sliding_window_initial), timeoutType(0), suspendState(FOPState::INITIAL) {
     };

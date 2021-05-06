@@ -24,12 +24,12 @@ static uint16_t crc_16_ccitt_table[]{
 };
 
 
-void Packet::append_crc(){
+void Packet::append_crc() {
     uint16_t len = hdr.transfer_frame_length() - 2;
     uint16_t crc = 0xFFFF;
 
     // calculate remainder of binary polynomial division
-    for (uint16_t i = 0; i < len; i++){
+    for (uint16_t i = 0; i < len; i++) {
         crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
     }
 

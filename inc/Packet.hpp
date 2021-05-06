@@ -17,11 +17,11 @@ enum FDURequestType {
     REQUEST_NEGATIVE_CONFIRM = 2,
 };
 
-struct TransferFrameHeader{
+struct TransferFrameHeader {
     /**
      * @brief The bypass Flag determines whether the packet will bypass FARM checks
      */
-    const bool bypass_flag() const{
+    const bool bypass_flag() const {
         return (packet_header[0] >> 5U) & 0x01;
     }
 
@@ -29,37 +29,37 @@ struct TransferFrameHeader{
      * @brief The control and command Flag determines whether the packet carries control commands (Type-C) or
      * data (Type-D)
      */
-    const bool ctrl_and_cmd_flag() const{
+    const bool ctrl_and_cmd_flag() const {
         return (packet_header[0] >> 4U) & 0x01;
     }
 
     /**
      * @brief The virtual channel ID this channel is transferred in
      */
-    const uint8_t vcid() const{
+    const uint8_t vcid() const {
         return (packet_header[2] >> 2U) & 0x3F;
     }
 
     /**
      * @brief The length of the transfer frame
      */
-    const uint16_t transfer_frame_length() const{
+    const uint16_t transfer_frame_length() const {
         return (static_cast<uint16_t>(packet_header[2]) << 8U) | (static_cast<uint16_t>(packet_header[3])) & 0x3FF;
     }
 
     /**
      * @brief The ID of the spacecraft
      */
-    const uint16_t spacecraft_id() const{
+    const uint16_t spacecraft_id() const {
         return (static_cast<uint16_t>(packet_header[2]) << 8U) | (static_cast<uint16_t>(packet_header[2])) & 0x3FF;
     }
 
-    TransferFrameHeader(uint8_t* pckt){
-        packet_header= pckt;
+    TransferFrameHeader(uint8_t *pckt) {
+        packet_header = pckt;
     }
 
 private:
-    uint8_t* packet_header;
+    uint8_t *packet_header;
 };
 
 struct Packet {
@@ -86,7 +86,7 @@ struct Packet {
     // undesired behavior if we're to delete different packets that share a frame sequence number for some reason. This
     // is normally not allowed but we have to cross-check if it is compatible with FARM checks
 
-    friend bool operator==(const Packet& pack1, const Packet& pack2){
+    friend bool operator==(const Packet &pack1, const Packet &pack2) {
         pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber;
     }
 
@@ -99,9 +99,9 @@ struct Packet {
     /**
      * @brief Set the number of repetitions that is determined by the virtual channel
      */
-     void set_repetitions(const uint8_t reps){
-         repetitions = reps;
-     }
+    void set_repetitions(const uint8_t reps) {
+        repetitions = reps;
+    }
 
     /**
      * @brief Determines whether the packet is marked for retransmission while in the sent queue
@@ -114,7 +114,8 @@ struct Packet {
 
     Packet(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
            ServiceType service_type) :
-            packet(packet), hdr(packet), packetLength(packet_length), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid), sduid(sduid),
+            packet(packet), hdr(packet), packetLength(packet_length), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid),
+            sduid(sduid),
             serviceType(service_type), transferFrameSeqNumber(0), acknowledged(0), toBeRetransmitted(0) {}
 
 private:

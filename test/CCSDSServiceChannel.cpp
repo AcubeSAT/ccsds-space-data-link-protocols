@@ -44,20 +44,20 @@ TEST_CASE("Service Channel") {
 
     serv_channel.store(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 1);
-    const Packet* packet_a = serv_channel.packet().second;
+    const Packet *packet_a = serv_channel.packet().second;
     CHECK(packet_a->packetLength == 9);
     CHECK(packet_a->serviceType == ServiceType::TYPE_A);
     CHECK((serv_channel.packet(0, 0).second == packet_a));
 
     serv_channel.store(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
     CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 2);
-    const Packet* packet_b = serv_channel.packet().second;
+    const Packet *packet_b = serv_channel.packet().second;
     CHECK(packet_b->packetLength == 10);
     CHECK(packet_b->serviceType == ServiceType::TYPE_B);
 
     serv_channel.store(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 3);
-    const Packet* packet_c = serv_channel.packet().second;
+    const Packet *packet_c = serv_channel.packet().second;
     CHECK(packet_c->packetLength == 3);
     CHECK(packet_c->serviceType == ServiceType::TYPE_A);
     CHECK((serv_channel.packet(0, 0).second == packet_a));

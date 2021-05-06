@@ -103,7 +103,7 @@ public:
      * @brief Returns the value of the timer that is used to determine the time frame for acknowledging transferred
      * frames
      */
-     const uint16_t t1_timer(uint8_t vid) const;
+    const uint16_t t1_timer(uint8_t vid) const;
 
     /**
      * @brief Indicates the width of the sliding window which is used to proceed to the lockout state in case the
@@ -115,7 +115,7 @@ public:
      * @brief Returns the timeout action which is to be performed once the maximum transmission limit is reached and
      * the timer has expired.
      */
-     const bool timeout_type(uint8_t vid) const;
+    const bool timeout_type(uint8_t vid) const;
 
 
     /**
@@ -167,18 +167,19 @@ public:
     /**
      * @brief Read first packet of the MAP channel buffer
      */
-    etl::pair<ServiceChannelNotif, const Packet*> packet(const uint8_t vid, const uint8_t mapid) const;
+    etl::pair<ServiceChannelNotif, const Packet *> packet(const uint8_t vid, const uint8_t mapid) const;
 
     /**
     * @brief Read first packet of the virtual channel buffer
     */
-    etl::pair<ServiceChannelNotif, const Packet*> packet(const uint8_t vid) const;
+    etl::pair<ServiceChannelNotif, const Packet *> packet(const uint8_t vid) const;
 
     /**
     * @brief Return the last stored packet
     */
 
-    etl::pair<ServiceChannelNotif, const Packet*> packet() const;
+    etl::pair<ServiceChannelNotif, const Packet *> packet() const;
+
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) :
             masterChannel(master_channel) {

@@ -23,7 +23,7 @@ void CCSDSTransferFrameTC::createPrimaryHeader() {
 }
 
 String<tc_max_header_size> CCSDSTransferFrameTC::transferFrame() {
-    String<tc_max_header_size> completeFrame;
+    String <tc_max_header_size> completeFrame;
 
     for (uint8_t const octet : primaryHeader) {
         completeFrame.push_back(octet);

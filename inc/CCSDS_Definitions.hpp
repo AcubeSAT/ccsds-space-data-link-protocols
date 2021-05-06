@@ -33,7 +33,7 @@ const uint16_t tm_frame_data_field_size = (tm_transfer_frame_size - tm_primary_h
 #define TM_MAX_PACKET_SIZE 32768U // TODO: Check whether this is defined in ECSS of OBC
 
 /* TC Packet Definitions */
-const uint8_t  tc_primary_header_size = 5;
+const uint8_t tc_primary_header_size = 5;
 const bool tc_error_control_field_exists = false;
 
 const bool tc_segment_header_exists = 0;
