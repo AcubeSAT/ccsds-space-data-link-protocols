@@ -7,7 +7,7 @@ void CCSDSTransferFrameTM::createPrimaryHeader() {
 
     idOctets |= static_cast<uint16_t>(ocfFlag()); // Assign the Operational Control Flag
     idOctets |= (virtChannelID & 0x07U) << 1U; // Write the Virtual Channel ID in the Primary header
-    idOctets |= (SPACECRAFT_IDENTIFIER & 0x03FFU) << 4U; // Append the spacecraft ID and the transfer frame version
+    idOctets |= (spacecraft_identifier & 0x03FFU) << 4U; // Append the spacecraft ID and the transfer frame version
 
     // Assign the ID header to the primary header
     primaryHeader.push_back((idOctets & 0xFF00U) >> 8U);
@@ -50,14 +50,14 @@ void CCSDSTransferFrameTM::increaseVirtualChannelFrameCount() {
     primaryHeader.replace(3, 1, 1, static_cast<char>(currentCount)); // Append the updated value
 }
 
-String<TM_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTM::transferFrame() {
-    String<TM_TRANSFER_FRAME_SIZE> completeFrame;
+String<tm_transfer_frame_size> CCSDSTransferFrameTM::transferFrame() {
+    String<tm_transfer_frame_size> completeFrame;
 
     for (auto octet : primaryHeader) {
         completeFrame.push_back(octet);
     }
 
-#if TM_SECONDARY_HEADER_SIZE > 0U
+#if tm_secondary_header_size > 0U
     for (auto octet : secondaryHeader) {
         completeFrame.push_back(octet);
     }
@@ -68,8 +68,8 @@ String<TM_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTM::transferFrame() {
     }
 
     // Fill the rest of empty bits of the data field with zeros to maintain the length
-    if (dataField.size() < TM_FRAME_DATA_FIELD_SIZE) {
-        completeFrame.append(TM_FRAME_DATA_FIELD_SIZE - dataField.size(), 0);
+    if (dataField.size() < tm_frame_data_field_size) {
+        completeFrame.append(tm_frame_data_field_size - dataField.size(), 0);
     }
 
     if (not operationalControlField.empty()) {
@@ -78,7 +78,7 @@ String<TM_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTM::transferFrame() {
         }
     }
 
-#if TC_ERROR_CONTROL_FIELD_EXISTS
+#if tc_error_control_field_exists
     for (auto const octet : errorControlField) {
         completeFrame.push_back(octet);
     }
@@ -90,7 +90,7 @@ String<TM_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTM::transferFrame() {
 uint16_t CCSDSTransferFrameTM::getTransferFrameSize() {
     uint16_t tempSize = primaryHeader.size() + dataField.size() + operationalControlField.size();
 
-#if TM_SECONDARY_HEADER_SIZE > 0U
+#if tm_secondary_header_size > 0U
     tempSize += secondaryHeader.size()
 #endif
     return tempSize;

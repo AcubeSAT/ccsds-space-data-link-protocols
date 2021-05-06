@@ -88,7 +88,7 @@ protected:
     /**
      * Store unprocessed received TCs
      */
-    etl::list<Packet*, MAX_RECEIVED_TC_IN_MAP_BUFFER> unprocessedPacketList;
+    etl::list<Packet*, max_received_tc_in_map_channel> unprocessedPacketList;
 };
 
 struct VirtualChannel {
@@ -146,14 +146,14 @@ struct VirtualChannel {
     /**
     * @brief MAP channels of the virtual channel
     */
-    etl::map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChannels;
+    etl::map<uint8_t, MAPChannel, max_map_channels> mapChannels;
 
     VirtualChannel(const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
                    const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
                    const uint8_t repetition_cop_ctrl,
-                   etl::map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_chan
+                   etl::map<uint8_t, MAPChannel, max_map_channels> map_chan
     ) :
-            VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
+            VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
             maxFrameLength(max_frame_length), clcwRate(clcw_rate), blocking(blocking),
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
             waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)){
@@ -182,17 +182,17 @@ private:
     /**
      * @brief Buffer to store_out incoming packets before being processed by COP
      */
-    etl::list<Packet*, MAX_RECEIVED_TC_IN_WAIT_QUEUE> waitQueue;
+    etl::list<Packet*, max_received_tc_in_wait_queue> waitQueue;
 
     /**
      * @brief Buffer to store_out outcoming packets after being processed by COP
      */
-    etl::list<Packet*, MAX_RECEIVED_TC_IN_SENT_QUEUE> sentQueue;
+    etl::list<Packet*, max_received_tc_in_sent_queue> sentQueue;
 
     /**
      * @brief Buffer to store_out unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
-    etl::list<Packet*, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> unprocessedPacketList;
+    etl::list<Packet*, max_received_unprocessed_tc_in_virt_buffer> unprocessedPacketList;
 
     /**
      * @brief Holds the FOP state of the virtual channel
@@ -217,11 +217,11 @@ struct MasterChannel {
      * @brief Virtual channels of the master channel
      */
     // TODO: Type aliases because this is getting out of hand
-    etl::map<uint8_t, VirtualChannel, MAX_VIRTUAL_CHANNELS> virtChannels;
+    etl::map<uint8_t, VirtualChannel, max_virtual_channels> virtChannels;
     bool errorCtrlField;
 
     MasterChannel(
-            etl::map<uint8_t, VirtualChannel, MAX_VIRTUAL_CHANNELS> virt_chan,
+            etl::map<uint8_t, VirtualChannel, max_virtual_channels> virt_chan,
             bool errorCtrlField)
             :
             outFramesList(), errorCtrlField(errorCtrlField) {
@@ -236,15 +236,15 @@ struct MasterChannel {
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<Packet*, MAX_RECEIVED_TC_IN_MASTER_BUFFER> outFramesList;
+    etl::list<Packet*, max_received_tc_in_master_buffer> outFramesList;
 
     // Packets ready to be transmitted having passed thorugh the all frames generation service
-    etl::list<Packet*, MAX_RECEIVED_TC_OUT_IN_MASTER_BUFFER> toBeTransmittedFramesList;
+    etl::list<Packet*, max_received_tc_out_in_master_buffer> toBeTransmittedFramesList;
 
     /**
      * @brief Buffer holding the master copy of the packets that are currently being processed
      */
-    etl::list<Packet, MAX_RECEIVED_TC_IN_MASTER_BUFFER> masterCopy;
+    etl::list<Packet, max_received_tc_in_master_buffer> masterCopy;
 };
 
 

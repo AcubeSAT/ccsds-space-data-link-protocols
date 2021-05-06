@@ -14,21 +14,21 @@ private:
      * @brief Store the encoded sequence of transfer frames.
      * @details The ASM synchronization bits are also included in the sequence
      */
-    String<TC_MAX_TRANSFER_FRAME_SIZE> encodedFrame;
+    String<tc_max_header_size> encodedFrame;
 
 public:
     /**
      * @brief Generate a transfer frame sequence with the data provided
      */
     void encodeFrame(CCSDSTransferFrameTC &transferFrame,
-                     String<(TC_MAX_TRANSFER_FRAME_SIZE / (TM_TRANSFER_FRAME_SIZE + TC_SYNCH_BITS_SIZE)) *
-                            TM_FRAME_DATA_FIELD_SIZE> &data,
+                     String<(tc_max_header_size / (tm_transfer_frame_size + tc_synch_bits_size)) *
+                            tm_frame_data_field_size> &data,
                      const uint32_t *packetSizes = nullptr);
 
     /**
      * @brief Get the encoded transfer frame sequence
      */
-    String<TC_MAX_TRANSFER_FRAME_SIZE> getEncodedPacket() {
+    String<tc_max_header_size> getEncodedPacket() {
         return encodedFrame;
     }
 

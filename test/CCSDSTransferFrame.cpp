@@ -6,11 +6,11 @@
 TEST_CASE("CCSDS TC Transfer Frame") {
     CCSDSTransferFrameTC transferFrame = CCSDSTransferFrameTC(33, 1022);
 
-    String<TC_PRIMARY_HEADER_SIZE> primHeader = transferFrame.getPrimaryHeader();
+    String<tc_primary_header_size> primHeader = transferFrame.getPrimaryHeader();
 
-    String<TC_MAX_TRANSFER_FRAME_SIZE> frame = transferFrame.transferFrame();
+    String<tc_max_header_size> frame = transferFrame.transferFrame();
 
-    CHECK(primHeader.size() == TC_PRIMARY_HEADER_SIZE); // Check the size of the primary header
+    CHECK(primHeader.size() == tc_primary_header_size); // Check the size of the primary header
 
     CHECK(primHeader.at(0) == 0x02U);
     CHECK(primHeader.at(1) == 0x37U);
@@ -34,12 +34,12 @@ TEST_CASE("CCSDS TC Transfer Frame") {
 TEST_CASE("CCSDS TM Transfer Frame") {
     CCSDSTransferFrameTM transferFrame = CCSDSTransferFrameTM(4);
 
-    String<TM_PRIMARY_HEADER_SIZE> primHeader = transferFrame.getPrimaryHeader();
+    String<tm_primary_header_size> primHeader = transferFrame.getPrimaryHeader();
     transferFrame.setFirstHeaderPointer(0x07FFU);
 
-    String<TM_TRANSFER_FRAME_SIZE> frame = transferFrame.transferFrame();
+    String<tm_transfer_frame_size> frame = transferFrame.transferFrame();
 
-    CHECK(primHeader.size() == TM_PRIMARY_HEADER_SIZE); // Check the size of the primary header
+    CHECK(primHeader.size() == tm_primary_header_size); // Check the size of the primary header
 
     // Validate the contents of the primary header String. Created from constructor
     CHECK(primHeader.at(0) == 0x23U);
@@ -59,7 +59,7 @@ TEST_CASE("CCSDS TM Transfer Frame") {
 
     // Check individual attributes
     CHECK(not transferFrame.secondaryHeaderExists());
-    CHECK(transferFrame.masterChannelID() == (SPACECRAFT_IDENTIFIER & 0x03FFU));
+    CHECK(transferFrame.masterChannelID() == (spacecraft_identifier & 0x03FFU));
     CHECK(transferFrame.masterChannelFrameCount() == 0); // Master channel frame count
     CHECK(transferFrame.virtualChannelFrameCount() == 0);
     CHECK(transferFrame.virtualChannelID() == 4);

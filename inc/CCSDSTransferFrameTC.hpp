@@ -40,7 +40,7 @@ private:
     /**
      * @brief Internal function to create the packet's primary header upon the packet creation.
      * @details This particular function is called inside the constructor to generate the primary header of the packet.
-     * The primary header is saved as the `String<TC_PRIMARY_HEADER_SIZE>` attribute in this class and can be accessed
+     * The primary header is saved as the `String<tc_primary_header_size>` attribute in this class and can be accessed
      * publicly.
      *
      * @note As per CCSDS 232.0-B-3 recommendation, the transfer frame version number is `00`
@@ -52,10 +52,10 @@ private:
 	 * @details The length of this field is variable and it is determined by the mission requirements for the
 	 * total packet length.
 	 */
-    String<TC_MAX_DATA_FIELD_SIZE> dataField;
+    String<tc_max_data_field_size> dataField;
 
 protected:
-#if TC_ERROR_CONTROL_FIELD_EXISTS
+#if tc_error_control_field_exists
     /**
      * @brief Store the result of the CRC generation for the packet as the standard recommends
      *
@@ -68,14 +68,14 @@ protected:
     /**
      * @brief Store the transfer frame primary header generated from the `createPrimaryHeader` function
     */
-    String<TC_PRIMARY_HEADER_SIZE> primaryHeader;
+    String<tc_primary_header_size> primaryHeader;
 
 public:
 
-    explicit CCSDSTransferFrameTC(uint8_t vChannelID = 0, uint16_t frameLen = TC_MAX_TRANSFER_FRAME_SIZE,
+    explicit CCSDSTransferFrameTC(uint8_t vChannelID = 0, uint16_t frameLen = tc_max_header_size,
                                   bool bypassFlag = false, bool ctrlCmdFlag = false)
             : primaryHeader(),
-#if TC_ERROR_CONTROL_FIELD_EXISTS
+#if tc_error_control_field_exists
             errorControlField(),
 #endif
               frameLength(frameLen), frameSeqCount(0), virtChannelID(vChannelID), bypassFlag(bypassFlag),
@@ -97,7 +97,7 @@ public:
 	 * @brief Get the generated transfer frame
      * @todo Handle variable length in higher level services
 	 */
-    String<TC_MAX_TRANSFER_FRAME_SIZE> transferFrame();
+    String<tc_max_header_size> transferFrame();
 
     /**
 	 * @brief The total size of the transfer frame
@@ -110,7 +110,7 @@ public:
 	 * @brief Access the primary header
 	 * @details Access functions are used to avoid accidental misconfiguration of the returned object/value
 	 */
-    String<TC_PRIMARY_HEADER_SIZE> getPrimaryHeader() {
+    String<tc_primary_header_size> getPrimaryHeader() {
         return primaryHeader;
     }
 };

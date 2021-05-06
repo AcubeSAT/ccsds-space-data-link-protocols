@@ -47,7 +47,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
     bool blocking_enabled = virt_channel->blocking;
 
-    const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled * 1U);
+    const uint16_t max_packet_length = max_frame_length - (tc_primary_header_size + segmentation_enabled * 1U);
 
     if (packet->packetLength > max_packet_length) {
         if (segmentation_enabled) {
@@ -109,7 +109,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-#if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
+#if max_received_unprocessed_tc_in_virt_buffer > 0
 
 ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
@@ -127,7 +127,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
     bool blocking_enabled = virt_channel->blocking;
 
-    const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled * 1U);
+    const uint16_t max_packet_length = max_frame_length - (tc_primary_header_size + segmentation_enabled * 1U);
 
     if (packet->packetLength > max_packet_length) {
         if (segmentation_enabled) {
@@ -322,7 +322,7 @@ const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const{
 }
 
 etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8_t vid, const uint8_t mapid) const{
-    const etl::list<Packet*, MAX_RECEIVED_TC_IN_MAP_BUFFER> *mc = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList);
+    const etl::list<Packet*, max_received_tc_in_map_channel> *mc = &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList);
     if(mc->empty()){
         return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
@@ -331,7 +331,7 @@ etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8
 }
 
 etl::pair<ServiceChannelNotif, const Packet*> ServiceChannel::packet(const uint8_t vid) const{
-    const etl::list<Packet*, MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER> *vc = &(masterChannel.virtChannels.at(vid).unprocessedPacketList);
+    const etl::list<Packet*, max_received_unprocessed_tc_in_virt_buffer> *vc = &(masterChannel.virtChannels.at(vid).unprocessedPacketList);
     if(vc->empty()){
         return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }

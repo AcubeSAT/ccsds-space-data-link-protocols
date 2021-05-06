@@ -7,13 +7,13 @@ TEST_CASE("Initiate FOP Directives") {
     PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12,
                                                   1024, 220000, 20);
 
-    etl::map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_channels_fop = {
+    etl::map<uint8_t, MAPChannel, max_map_channels> map_channels_fop = {
             {2, MAPChannel(2, DataFieldContent::PACKET)},
             {3, MAPChannel(3, DataFieldContent::PACKET)}
     };
 
 
-    etl::map<uint8_t, VirtualChannel, MAX_VIRTUAL_CHANNELS> virt_channels_fop = {
+    etl::map<uint8_t, VirtualChannel, max_virtual_channels> virt_channels_fop = {
             {3, VirtualChannel(3, true, 1024, 20,
                                true, 32, 32, map_channels_fop)}
     };
@@ -25,11 +25,11 @@ TEST_CASE("Initiate FOP Directives") {
 
     serv_channel_fop.store(data, 11, 3, 2, 10, ServiceType::TYPE_A);
 
-    CHECK(serv_channel_fop.available(3, 2) == MAX_RECEIVED_TC_IN_MAP_BUFFER - 1);
+    CHECK(serv_channel_fop.available(3, 2) == max_received_tc_in_map_channel - 1);
 
     serv_channel_fop.mapp_request(3, 2);
 
-    CHECK(serv_channel_fop.available(3, 2) == MAX_RECEIVED_TC_IN_MAP_BUFFER);
+    CHECK(serv_channel_fop.available(3, 2) == max_received_tc_in_map_channel);
 
     CHECK(serv_channel_fop.fop_state(3) == FOPState::INITIAL);
     serv_channel_fop.initiate_ad_no_clcw(3);
@@ -45,11 +45,11 @@ TEST_CASE("Initiate FOP Directives") {
     serv_channel_fop.set_timeout_type(3, 1);
     CHECK(serv_channel_fop.timeout_type(3) == 1);
 
-    CHECK(serv_channel_fop.t1_timer(3) == FOP_TIMER_INITIAL);
+    CHECK(serv_channel_fop.t1_timer(3) == fop_timer_initial);
     serv_channel_fop.set_t1_initial(3, 55);
     CHECK(serv_channel_fop.t1_timer(3) == 55);
 
-    CHECK(serv_channel_fop.fop_sliding_window_width(3) == FOP_SLIDING_WINDOW_INITIAL);
+    CHECK(serv_channel_fop.fop_sliding_window_width(3) == fop_sliding_window_initial);
     serv_channel_fop.set_fop_width(3, 100);
     CHECK(serv_channel_fop.fop_sliding_window_width(3) == 100);
 }

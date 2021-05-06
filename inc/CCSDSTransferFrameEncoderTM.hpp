@@ -21,8 +21,8 @@ public:
      * @brief Generate a transfer frame sequence with the data provided
      */
     void encodeFrame(CCSDSTransferFrameTM &transferFrame,
-                     String<(TM_MAX_PACKET_SIZE / (TM_TRANSFER_FRAME_SIZE + TC_SYNCH_BITS_SIZE)) *
-                            TM_FRAME_DATA_FIELD_SIZE> &data,
+                     String<(TM_MAX_PACKET_SIZE / (tm_transfer_frame_size + tc_synch_bits_size)) *
+                            tm_frame_data_field_size> &data,
                      const uint32_t *packetSizes = nullptr);
 
     /**

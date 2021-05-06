@@ -1,5 +1,5 @@
 #ifndef CCSDS_SERVICECHANNEL_HPP
-#define  CCSDS_SERVICECHANNEL_HPP
+#define CCSDS_SERVICECHANNEL_HPP
 
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
@@ -50,7 +50,7 @@ public:
      */
     ServiceChannelNotif mapp_request(uint8_t vid, uint8_t mapid);
 
-#if MAX_RECEIVED_UNPROCESSED_TC_IN_VIRT_BUFFER > 0
+#if max_received_unprocessed_tc_in_virt_buffer > 0
 
     /**
      * @brief  Requests to process the last packet stored in the buffer of the specific virtual channel

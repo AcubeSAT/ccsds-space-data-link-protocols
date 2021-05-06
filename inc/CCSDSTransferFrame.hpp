@@ -13,8 +13,8 @@ private:
      *
      * @attention At the moment the secondary header part is not implemented, since it is not required.
      */
-#if TM_SECONDARY_HEADER_SIZE > 0U
-    virtual void createSecondaryHeader(String<TM_SECONDARY_HEADER_SIZE - 1>& dataField){};
+#if tm_secondary_header_size > 0U
+    virtual void createSecondaryHeader(String<tm_secondary_header_size - 1>& dataField){};
 #endif
 
 protected:

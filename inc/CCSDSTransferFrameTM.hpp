@@ -52,7 +52,7 @@ protected:
      */
     String<4> operationalControlField;
 
-#if TM_ERROR_CONTROL_FIELD_EXISTS
+#if tm_error_control_field_exists
     /**
      * @brief Store the result of the CRC generation for the packet as the standard recommends
      *
@@ -65,15 +65,15 @@ protected:
     /**
      * @brief Store the transfer frame primary header generated from the `createPrimaryHeader` function
      */
-    String<TM_PRIMARY_HEADER_SIZE> primaryHeader;
+    String<tm_primary_header_size> primaryHeader;
 
     /**
      * @brief Store the transfer frame secondary header generated from the `createSecondaryHeader` function
      *
      * @attention At the moment the secondary header part is not implemented, since it is not required.
      */
-#if TM_SECONDARY_HEADER_SIZE > 0U
-    String<TM_SECONDARY_HEADER_SIZE> secondaryHeader;
+#if tm_secondary_header_size > 0U
+    String<tm_secondary_header_size> secondaryHeader;
 #endif
 
 public:
@@ -82,13 +82,13 @@ public:
      * @details The length of this field is variable and it is determined by the mission requirements for the
      * total packet length.
      */
-    String<TM_FRAME_DATA_FIELD_SIZE> dataField;
+    String<tm_frame_data_field_size> dataField;
 
 private:
     /**
      * @brief Internal function to create the packet's primary header upon the packet creation.
      * @details This particular function is called inside the constructor to generate the primary header of the packet.
-     * The primary header is saved as the `String<TM_PRIMARY_HEADER_SIZE>` attribute in this class and can be accessed
+     * The primary header is saved as the `String<tm_primary_header_size>` attribute in this class and can be accessed
      * publicly.
      *
      * @note As per CCSDS 132.0-B-2 recommendation, the transfer frame version number is `00`
@@ -102,8 +102,8 @@ private:
      *
      * @attention At the moment the secondary header part is not implemented, since it is not required.
      */
-#if TM_SECONDARY_HEADER_SIZE > 0U
-    void createSecondaryHeader(String<TM_SECONDARY_HEADER_SIZE - 1>& dataField) override;
+#if tm_secondary_header_size > 0U
+    void createSecondaryHeader(String<tm_secondary_header_size - 1>& dataField) override;
 #endif
 
 public:
@@ -115,11 +115,11 @@ public:
      */
     explicit CCSDSTransferFrameTM(uint8_t vChannelID = 0) // Ignore-MISRA
             : primaryHeader(),
-#if TM_SECONDARY_HEADER_SIZE > 0U
+#if tm_secondary_header_size > 0U
             secondaryHeader(),
 #endif
-              secondaryHeaderPresent(TM_SECONDARY_HEADER_SIZE > 0), dataField(), operationalControlField(),
-#if TM_ERROR_CONTROL_FIELD_EXISTS
+              secondaryHeaderPresent(tm_secondary_header_size > 0), dataField(), operationalControlField(),
+#if tm_error_control_field_exists
             errorControlField(),
 #endif
               mChannelFrameCount(0), vChannelFrameCount(0), virtChannelID(vChannelID),
@@ -179,7 +179,7 @@ public:
      * @brief Access the primary header
      * @details Access functions are used to avoid accidental misconfiguration of the returned object/value
      */
-    String<TM_PRIMARY_HEADER_SIZE> getPrimaryHeader() {
+    String<tm_primary_header_size> getPrimaryHeader() {
         return primaryHeader;
     }
 
@@ -188,8 +188,8 @@ public:
      *
      * @attention At the moment the secondary header part is not implemented, since it is not required.
      */
-#if TM_SECONDARY_HEADER_SIZE > 0U
-    String<TM_SECONDARY_HEADER_SIZE> getSecondaryHeader() {
+#if tm_secondary_header_size > 0U
+    String<tm_secondary_header_size> getSecondaryHeader() {
         return secondaryHeader;
     };
 #endif
@@ -198,7 +198,7 @@ public:
      * @brief Get if there is a secondary header in the packet
      */
     bool secondaryHeaderExists() {
-        return TM_SECONDARY_HEADER_SIZE > 0U;
+        return tm_secondary_header_size > 0U;
     }
 
     /**
@@ -230,7 +230,7 @@ public:
      * @brief Get the master channel ID from the primary header as defined in the standard
      */
     uint16_t masterChannelID() {
-        return SPACECRAFT_IDENTIFIER & 0x03FFU;
+        return spacecraft_identifier & 0x03FFU;
     };
 
     /**
@@ -257,7 +257,7 @@ public:
     /**
      * @brief Get the generated transfer frame
      */
-    String<TM_TRANSFER_FRAME_SIZE> transferFrame();
+    String<tm_transfer_frame_size> transferFrame();
 
     /**
      * @brief The total size of the transfer frame

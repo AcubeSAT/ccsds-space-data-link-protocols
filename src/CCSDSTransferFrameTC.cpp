@@ -4,7 +4,7 @@ void CCSDSTransferFrameTC::createPrimaryHeader() {
     uint16_t idOctet = 0; // The first two octets of the header
     uint16_t dataFieldStatus = 0; // Hold the data field status
 
-    idOctet |= static_cast<uint16_t>(SPACECRAFT_IDENTIFIER) & 0x7FF; // Append the Spacecraft ID
+    idOctet |= static_cast<uint16_t>(spacecraft_identifier) & 0x7FF; // Append the Spacecraft ID
     idOctet |= static_cast<uint16_t>(ctrlCmdFlag & 0x01) << 12U; // Set the Control and Command Flag
     idOctet |= static_cast<uint16_t>(bypassFlag & 0x01) << 13U; // Set the Bypass Flag
     // Transfer Frame Version Number is set to 00
@@ -22,8 +22,8 @@ void CCSDSTransferFrameTC::createPrimaryHeader() {
     primaryHeader.push_back(frameSeqCount); // Append Frame Sequence Counter
 }
 
-String<TC_MAX_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTC::transferFrame() {
-    String<TC_MAX_TRANSFER_FRAME_SIZE> completeFrame;
+String<tc_max_header_size> CCSDSTransferFrameTC::transferFrame() {
+    String<tc_max_header_size> completeFrame;
 
     for (uint8_t const octet : primaryHeader) {
         completeFrame.push_back(octet);
@@ -32,7 +32,7 @@ String<TC_MAX_TRANSFER_FRAME_SIZE> CCSDSTransferFrameTC::transferFrame() {
     uint8_t i = 0;
     for (uint8_t const octet:dataField) {
         completeFrame.push_back(octet);
-        if (i++ == frameLength - 5 - 2 * TC_ERROR_CONTROL_FIELD_EXISTS) {
+        if (i++ == frameLength - 5 - 2 * tc_error_control_field_exists) {
             break;
         }
     }
