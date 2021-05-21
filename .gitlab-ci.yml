@@ -1,4 +1,4 @@
-image: lycantropos/cmake
+image: lightspot21/acubesat-ci
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
