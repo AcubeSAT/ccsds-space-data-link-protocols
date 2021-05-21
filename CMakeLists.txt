@@ -43,7 +43,6 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     add_executable(tests
             $<TARGET_OBJECTS:common>
             ${test_main_SRC}
-            ${test_SRC}
-            test/FrameOperationProcedure.cpp test/CCSDSServiceChannel.cpp test/CCSDSServiceChannel.h)
+            ${test_SRC})
     target_link_libraries(tests Catch2::Catch2)
 ENDIF ()
