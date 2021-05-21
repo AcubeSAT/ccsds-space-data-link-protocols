@@ -9,19 +9,15 @@ TEST_CASE("CCSDS TC Channel Model") {
     PhysicalChannel phy_channel = PhysicalChannel(1024, false, 12,
                                                   1024, 220000, 20);
 
-    etl::map<uint8_t, MAPChannel, max_map_channels> map_channels = {
+    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_channels = {
             {2, MAPChannel(2, DataFieldContent::PACKET)},
             {3, MAPChannel(3, DataFieldContent::VCA_SDU)}
     };
 
-
-    etl::map<uint8_t, VirtualChannel, max_virtual_channels> virt_channels = {
-            {3, VirtualChannel(3, true, 1024, 20,
-                               true, 32, 32, map_channels)}
-    };
-
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-    MasterChannel master_channel = MasterChannel(virt_channels, true);
+    MasterChannel master_channel = MasterChannel(true);
+    master_channel.add_vc(3, true, 1024, 20,
+                                         true, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
     ServiceChannel serv_channel = ServiceChannel(master_channel);
@@ -30,18 +26,15 @@ TEST_CASE("CCSDS TC Channel Model") {
 
 TEST_CASE("MAPP blocking") {
 
-    etl::map<uint8_t, MAPChannel, max_map_channels> map_channels = {
+    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_channels = {
             {2, MAPChannel(2, DataFieldContent::PACKET)}
     };
 
 
-    etl::map<uint8_t, VirtualChannel, max_virtual_channels> virt_channels = {
-            {3, VirtualChannel(3, true, 8, 20,
-                               true, 32, 32, map_channels)}
-    };
+    MasterChannel master_channel = MasterChannel(true);
+    master_channel.add_vc(3, true, 8, 20,
+                           true, 32, 32, map_channels);
 
-
-    MasterChannel master_channel = MasterChannel(virt_channels, true);
     CHECK(master_channel.virtChannels.at(3).VCID == 3);
     ServiceChannel serv_channel = ServiceChannel(master_channel);
 

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <etl/map.h>
+#include <etl/flat_map.h>
 #include <etl/list.h>
 
 #include <CCSDS_Definitions.hpp>
@@ -148,19 +149,20 @@ struct VirtualChannel {
     /**
     * @brief MAP channels of the virtual channel
     */
-    etl::map<uint8_t, MAPChannel, max_map_channels> mapChannels;
+    etl::flat_map<uint8_t, MAPChannel, max_map_channels> mapChannels;
 
-    VirtualChannel(const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
+    VirtualChannel(MasterChannel& master_channel, const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
                    const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
                    const uint8_t repetition_cop_ctrl,
-                   etl::map<uint8_t, MAPChannel, max_map_channels> map_chan
+                   etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_chan
     ) :
-            VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
+            masterChannel(master_channel), VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
             maxFrameLength(max_frame_length), clcwRate(clcw_rate), blocking(blocking),
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
             waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)) {
         mapChannels = map_chan;
     }
+
 
     VirtualChannel(const VirtualChannel &v) :
             VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
@@ -175,7 +177,12 @@ struct VirtualChannel {
 
     VirtualChannelAlert store(Packet *packet);
 
-    MasterChannel *master_channel() {
+    /**
+     * @bried Add MAP channel to virtual channel
+     */
+    VirtualChannelAlert add_map(const uint8_t mapid, const DataFieldContent data_field_content);
+
+    MasterChannel &master_channel() {
         return masterChannel;
     }
 
@@ -201,13 +208,9 @@ private:
     FrameOperationProcedure fop;
 
     /**
-     * @brief Pointer to the Master Channel the Virtual Channel belongs in
+     * @brief The Master Channel the Virtual Channel belongs in
      */
-    MasterChannel *masterChannel;
-
-    void set_master_channel(MasterChannel *master_channel) {
-        masterChannel = master_channel;
-    }
+    MasterChannel &masterChannel;
 };
 
 
@@ -218,24 +221,26 @@ struct MasterChannel {
      * @brief Virtual channels of the master channel
      */
     // TODO: Type aliases because this is getting out of hand
-    etl::map<uint8_t, VirtualChannel, max_virtual_channels> virtChannels;
+    etl::flat_map<uint8_t, VirtualChannel, max_virtual_channels> virtChannels;
     bool errorCtrlField;
 
     MasterChannel(
-            etl::map<uint8_t, VirtualChannel, max_virtual_channels> virt_chan,
             bool errorCtrlField)
             :
-            outFramesList(), errorCtrlField(errorCtrlField) {
-
-        virtChannels = virt_chan;
-        for (auto &virt_channel : virtChannels) {
-            virt_channel.second.set_master_channel(this);
-        }
+            virtChannels(), outFramesList(), errorCtrlField(errorCtrlField) {
     }
 
     MasterChannelAlert store_out(Packet *packet);
 
     MasterChannelAlert store_transmitted_out(Packet *packet);
+
+    /**
+     * @brief Add virtual channel to master channel
+     */
+    MasterChannelAlert add_vc(const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
+                                     const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
+                                     const uint8_t repetition_cop_ctrl,
+                                     etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_chan);
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service

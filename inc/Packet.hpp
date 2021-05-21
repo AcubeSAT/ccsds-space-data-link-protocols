@@ -5,6 +5,10 @@
 #include <algorithm>
 #include <cstring>
 #include <cstdint>
+#include <etl/memory.h>
+
+class Packet;
+typedef etl::unique_ptr<Packet> UniquePacket;
 
 enum ServiceType {
     TYPE_A = 0,

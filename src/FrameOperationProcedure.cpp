@@ -44,7 +44,7 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
 
     // TODO start the timer
     // pass the frame into the all frames generation service
-    vchan->master_channel()->store_out(ad_frame);
+    vchan->master_channel().store_out(ad_frame);
     waitQueue->pop_front();
 
     return FOPNotif::NO_FOP_EVENT;
@@ -55,14 +55,14 @@ FOPNotif FrameOperationProcedure::transmit_bc_frame(Packet *bc_frame) {
     transmissionCount = 1;
 
     // TODO start the timer
-    vchan->master_channel()->store_out(bc_frame);
+    vchan->master_channel().store_out(bc_frame);
     return FOPNotif::NO_FOP_EVENT;
 }
 
 FOPNotif FrameOperationProcedure::transmit_bd_frame(Packet *bd_frame) {
     bdOut = NOT_READY;
     // Pass frame to all frames generation service
-    vchan->master_channel()->store_out(bd_frame);
+    vchan->master_channel().store_out(bd_frame);
     return FOPNotif::NO_FOP_EVENT;
 }
 
@@ -628,7 +628,7 @@ FOPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
         }
     } else {
         // transfer directly to lower procedure
-        vchan->master_channel()->store_out(frame);
+        vchan->master_channel().store_out(frame);
     }
 }
 

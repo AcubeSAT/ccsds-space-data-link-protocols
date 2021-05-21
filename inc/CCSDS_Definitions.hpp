@@ -10,6 +10,7 @@
 // TODO? See if some of those constants don't need to be global and can be defined in the class instead
 const uint16_t spacecraft_identifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
+
 /* TM Packet Definitions */
 const uint16_t tm_transfer_frame_size = 128;
 const uint8_t tm_primary_header_size = 6;

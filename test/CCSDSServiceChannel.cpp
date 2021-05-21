@@ -9,19 +9,15 @@ TEST_CASE("Service Channel") {
     PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12,
                                                       1024, 220000, 20);
 
-    etl::map<uint8_t, MAPChannel, max_map_channels> map_channels = {
+    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_channels = {
             {0, MAPChannel(0, DataFieldContent::PACKET)},
             {1, MAPChannel(1, DataFieldContent::PACKET)},
             {2, MAPChannel(2, DataFieldContent::PACKET)},
     };
 
-
-    etl::map<uint8_t, VirtualChannel, max_virtual_channels> virt_channels = {
-            {0, VirtualChannel(0, true, 128, 20,
-                               true, 2, 2, map_channels)}
-    };
-
-    MasterChannel master_channel = MasterChannel(virt_channels, true);
+    MasterChannel master_channel = MasterChannel(true);
+    master_channel.add_vc(0, true, 128, 20,
+                                         true, 2, 2, map_channels);
 
     ServiceChannel serv_channel = ServiceChannel(master_channel);
 

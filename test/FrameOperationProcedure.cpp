@@ -7,19 +7,15 @@ TEST_CASE("Initiate FOP Directives") {
     PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12,
                                                       1024, 220000, 20);
 
-    etl::map<uint8_t, MAPChannel, max_map_channels> map_channels_fop = {
+    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_channels_fop = {
             {2, MAPChannel(2, DataFieldContent::PACKET)},
             {3, MAPChannel(3, DataFieldContent::PACKET)}
     };
 
-
-    etl::map<uint8_t, VirtualChannel, max_virtual_channels> virt_channels_fop = {
-            {3, VirtualChannel(3, true, 1024, 20,
-                               true, 32, 32, map_channels_fop)}
-    };
-
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-    MasterChannel master_channel_fop = MasterChannel(std::move(virt_channels_fop), true);
+    MasterChannel master_channel_fop = MasterChannel(true);
+    master_channel_fop.add_vc(3, true, 1024, 20,
+                              true, 32, 32, map_channels_fop);
 
     ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop);
 
