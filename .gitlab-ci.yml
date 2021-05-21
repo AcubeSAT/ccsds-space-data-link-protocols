@@ -1,4 +1,4 @@
-image: lycantropos/cmake
+image: lightspot21/acubesat-ci:latest
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -15,7 +15,7 @@ stages:
   - deploy
 
 before_script:
-  - apt-get update -qq && apt-get -qq -y install python3-pip && python3 -m pip install --upgrade pip
+  - apt-get update -qq && apt-get -qq -y install libstdc++6 python3-pip && python3 -m pip install --upgrade pip
   - python3 -V
   - python3 -m pip --version
   - g++ --version
@@ -29,11 +29,10 @@ build:
     GCC_COLORS: "error=31;1:warning=35;1:note=36;1:range1=32:range2=34:locus=39;1:quote=39;1:fixit-insert=32:fixit-delete=31:diff-filename=39;1:diff-hunk=32:diff-delete=31:diff-insert=32:type-diff=32;1"
     CLICOLOR_FORCE: 1 # Necessary for cmake to output colours
   script:
-    - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_FLAGS="-Werror -fdiagnostics-color=always"
+    - cmake . -DCMAKE_CXX_FLAGS="-Werror -fdiagnostics-color=always"
     - make -j4
     - make clean
-    - cmake .. -DCMAKE_CXX_FLAGS="-Wall -Wextra -fdiagnostics-color=always" # Build again, but with more warnings
+    - cmake . -DCMAKE_CXX_FLAGS="-Wall -Wextra -fdiagnostics-color=always" # Build again, but with more warnings
     - make -j4
 
 tests:
@@ -42,8 +41,7 @@ tests:
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
-    - mkdir build && cd build
-    - cmake ..
+    - cmake .
     - make tests -j4
     - ./tests --use-colour yes  # Run the tests
   after_script:
@@ -56,9 +54,6 @@ tests:
 cppcheck:
   stage: build
   before_script:
-    - echo deb http://deb.debian.org/debian testing main > /etc/apt/sources.list
-    - apt-get update -qq && apt-get -t testing install -y cppcheck
-    - apt update -qq && apt install -y cppcheck
     - cppcheck --version
   script:
     - ci/cppcheck.sh
@@ -66,37 +61,18 @@ cppcheck:
 cppcheck-misra:
   stage: build
   before_script:
-  # install cppcheck from the testing repos in order to get the latest version
-    - echo deb http://deb.debian.org/debian testing main > /etc/apt/sources.list
-    - apt-get update -qq && apt-get -t testing install -y cppcheck && apt-get -t testing install -y python3
     - cppcheck --version
   script:
     - ci/cppcheck-misra.sh
-
-vera:
-  stage: build
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq vera++
-    - vera++ --version
-    - cp ci/vera.profile /usr/lib/vera++/profiles/custom
-  script:
-    - ci/vera.sh
 
 clang-tidy:
   stage: build
   variables:
     GIT_SUBMODULE_STRATEGY: normal
     TERM: xterm-color
-  before_script:
-    # Installing the `sid` repository to get the latest version of clang
-    - echo deb http://deb.debian.org/debian sid main > /etc/apt/sources.list
-    - apt-get update -qq && apt-get -t sid install -y -qq clang-tidy-7
-    - clang-tidy-7 --version
   script:
-    # Running with `script` to give clang a tty so that it outputs colours
-    - script -c "bash -x ci/clang-tidy.sh"
+    - ci/clang-tidy.sh
 
-# Do not publish the pages yet
 pages:
   stage: deploy
   when: always  # Deploy always and on build or test failure, generate just the documentation
@@ -107,8 +83,6 @@ pages:
   variables:
     GIT_SUBMODULE_STRATEGY: normal
   script:
-    - apt-get install -qq -y doxygen graphviz lcov
-  after_script:
     - ./ci/pages_deploy.sh
     - echo -e "\e[1;36mPublic directory contents\e[0m" && ls -l public/coverage  # Print directory contents for debugging
   artifacts:
