@@ -151,12 +151,14 @@ struct VirtualChannel {
     */
     etl::flat_map<uint8_t, MAPChannel, max_map_channels> mapChannels;
 
-    VirtualChannel(MasterChannel& master_channel, const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
+    VirtualChannel(MasterChannel &master_channel, const uint8_t vcid, const bool segment_header_present,
+                   const uint16_t max_frame_length,
                    const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
                    const uint8_t repetition_cop_ctrl,
                    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_chan
     ) :
-            masterChannel(master_channel), VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID), segmentHeaderPresent(segment_header_present),
+            masterChannel(master_channel), VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID),
+            segmentHeaderPresent(segment_header_present),
             maxFrameLength(max_frame_length), clcwRate(clcw_rate), blocking(blocking),
             repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
             waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)) {
@@ -238,9 +240,9 @@ struct MasterChannel {
      * @brief Add virtual channel to master channel
      */
     MasterChannelAlert add_vc(const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
-                                     const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
-                                     const uint8_t repetition_cop_ctrl,
-                                     etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_chan);
+                              const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
+                              const uint8_t repetition_cop_ctrl,
+                              etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_chan);
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service

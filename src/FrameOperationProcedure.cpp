@@ -35,7 +35,7 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
     Packet *ad_frame = waitQueue->front();
 
     sentQueue->push_back(ad_frame);
-    ad_frame->transferFrameSeqNumber = transmitterFrameSeqNumber;
+    ad_frame->set_transfer_frame_sequence_number(transmitterFrameSeqNumber);
 
     ad_frame->mark_for_retransmission(0);
 
@@ -72,7 +72,7 @@ void FrameOperationProcedure::initiate_ad_retransmission() {
     // TODO start the timer
 
     for (Packet *frame:*sentQueue) {
-        if (frame->serviceType == ServiceType::TYPE_A) {
+        if (frame->service_type() == ServiceType::TYPE_A) {
             frame->mark_for_retransmission(1);
         }
     }
@@ -84,7 +84,7 @@ void FrameOperationProcedure::initiate_bc_retransmission() {
     // TODO start the timer
 
     for (Packet *frame:*sentQueue) {
-        if (frame->serviceType == ServiceType::TYPE_B) {
+        if (frame->service_type() == ServiceType::TYPE_B) {
             frame->mark_for_retransmission(1);
         }
     }
@@ -94,9 +94,9 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
     etl::ilist<Packet *>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
-        if ((*cur_frame)->acknowledged) {
+        if ((*cur_frame)->acknowledged()) {
             (*cur_frame)->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
-            expectedAcknowledgementSeqNumber = (*cur_frame)->transferFrameSeqNumber;
+            expectedAcknowledgementSeqNumber = (*cur_frame)->transfer_frame_sequence_number();
             sentQueue->erase(cur_frame++);
         } else {
             ++cur_frame;
@@ -108,7 +108,7 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
 void FrameOperationProcedure::look_for_directive() {
     if (bcOut == FlagState::READY) {
         for (Packet *frame : *sentQueue) {
-            if (frame->serviceType == ServiceType::TYPE_B && frame->to_be_retransmitted()) {
+            if (frame->service_type() == ServiceType::TYPE_B && frame->to_be_retransmitted()) {
                 bcOut == FlagState::NOT_READY;
                 frame->mark_for_retransmission(0);
             }
@@ -122,7 +122,7 @@ void FrameOperationProcedure::look_for_directive() {
 FOPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
     if (adOut == FlagState::READY) {
         for (Packet *frame : *sentQueue) {
-            if (frame->serviceType == ServiceType::TYPE_A) {
+            if (frame->service_type() == ServiceType::TYPE_A) {
                 // adOut = FlagState::NOT_READY;
                 frame->mark_for_retransmission(0);
                 FOPNotif resp = transmit_ad_frame();
@@ -133,7 +133,7 @@ FOPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
         // The wait queue is supposed to have a maximum capacity of one
         if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
             Packet *frame = waitQueue->front();
-            if (frame->serviceType == ServiceType::TYPE_A) {
+            if (frame->service_type() == ServiceType::TYPE_A) {
                 sentQueue->push_front(frame);
                 waitQueue->pop_front();
                 return FOPDirectiveResponse::ACCEPT;
@@ -599,8 +599,8 @@ void FrameOperationProcedure::bd_reject() {
 
 FOPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
     Packet *frame = vchan->unprocessedPacketList.front();
-    if (frame->hdr.bypass_flag() == 0) {
-        if (frame->serviceType == ServiceType::TYPE_A) {
+    if (frame->transfer_frame_header().bypass_flag() == 0) {
+        if (frame->service_type() == ServiceType::TYPE_A) {
             if (!waitQueue->full()) {
                 // E19
                 if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT) {
@@ -616,9 +616,9 @@ FOPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
                 // E20
                 return FOPDirectiveResponse::REJECT;
             }
-        } else if (frame->serviceType == ServiceType::TYPE_B) {
+        } else if (frame->service_type() == ServiceType::TYPE_B) {
             if (bdOut == FlagState::READY) {
-                // E21
+                //
                 transmit_bc_frame(frame);
                 return FOPDirectiveResponse::ACCEPT;
             } else {

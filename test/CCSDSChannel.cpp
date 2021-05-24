@@ -17,7 +17,7 @@ TEST_CASE("CCSDS TC Channel Model") {
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
     MasterChannel master_channel = MasterChannel(true);
     master_channel.add_vc(3, true, 1024, 20,
-                                         true, 32, 32, map_channels);
+                          true, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
     ServiceChannel serv_channel = ServiceChannel(master_channel);
@@ -33,7 +33,7 @@ TEST_CASE("MAPP blocking") {
 
     MasterChannel master_channel = MasterChannel(true);
     master_channel.add_vc(3, true, 8, 20,
-                           true, 32, 32, map_channels);
+                          true, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 3);
     ServiceChannel serv_channel = ServiceChannel(master_channel);

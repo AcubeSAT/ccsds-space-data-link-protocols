@@ -49,10 +49,11 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 
     const uint16_t max_packet_length = max_frame_length - (tc_primary_header_size + segmentation_enabled * 1U);
 
-    if (packet->packetLength > max_packet_length) {
+    if (packet->packet_length() > max_packet_length) {
         if (segmentation_enabled) {
             // Check if there is enough space in the buffer of the virtual channel to store_out all the segments
-            uint8_t tf_n = (packet->packetLength / max_packet_length) + (packet->packetLength % max_packet_length != 0);
+            uint8_t tf_n =
+                    (packet->packet_length() / max_packet_length) + (packet->packet_length() % max_packet_length != 0);
 
             if (virt_channel->waitQueue.capacity() >= tf_n) {
                 // Break up packet
@@ -61,22 +62,23 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
                 // First portion
                 uint16_t seg_header = mapid || 0x40;
 
-                Packet t_packet = Packet(packet->packet, max_packet_length, seg_header, packet->gvcid, packet->mapid,
-                                         packet->sduid,
-                                         packet->serviceType);
+                Packet t_packet = Packet(packet->packet_data(), max_packet_length, seg_header,
+                                         packet->global_virtual_channel_id(), packet->map_id(),
+                                         packet->spacecraft_id(),
+                                         packet->service_type());
                 virt_channel->store(&t_packet);
 
                 // Middle portion
-                t_packet.segHdr = mapid || 0x00;
+                t_packet.set_segmentation_header(mapid || 0x00);
                 for (uint8_t i = 1; i < (tf_n - 1); i++) {
-                    t_packet.packet = &packet->packet[i * max_packet_length];
+                    t_packet.set_packet_data(&packet->packet_data()[i * max_packet_length]);
                     virt_channel->store(&t_packet);
                 }
 
                 // Last portion
-                t_packet.segHdr = mapid || 0x80;
-                t_packet.packet = &packet->packet[(tf_n - 1) * max_packet_length];
-                t_packet.packetLength = packet->packetLength % max_packet_length;
+                t_packet.set_segmentation_header(mapid || 0x80);
+                t_packet.set_packet_data(&packet->packet_data()[(tf_n - 1) * max_packet_length]);
+                t_packet.set_packet_length(packet->packet_length() % max_packet_length);
                 virt_channel->store(&t_packet);
             }
         } else {
@@ -101,7 +103,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
             virt_channel->store(packet);
         } else {
             if (segmentation_enabled) {
-                packet->segHdr = (0xc0) || (mapid && 0x3F);
+                packet->set_segmentation_header((0xc0) || (mapid && 0x3F));
             }
             virt_channel->store(packet);
         }
@@ -129,10 +131,10 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
     const uint16_t max_packet_length = max_frame_length - (tc_primary_header_size + segmentation_enabled * 1U);
 
-    if (packet->packetLength > max_packet_length) {
+    if (packet->packet_length() > max_packet_length) {
         if (segmentation_enabled) {
             // Check if there is enough space in the buffer of the virtual channel to store_out all the segments
-            uint8_t tf_n = (packet->packetLength / max_packet_length) + (packet->packetLength % max_packet_length != 0);
+            uint8_t tf_n = (packet->packet_length() / max_packet_length) + (packet->packet_length() % max_packet_length != 0);
 
             if (virt_channel->waitQueue.capacity() >= tf_n) {
                 // Break up packet
@@ -141,22 +143,22 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
                 // First portion
                 uint16_t seg_header = 0x40;
 
-                Packet t_packet = Packet(packet->packet, max_packet_length, seg_header, packet->gvcid, packet->mapid,
-                                         packet->sduid,
-                                         packet->serviceType);
+                Packet t_packet = Packet(packet->packet_data(), max_packet_length, seg_header, packet->global_virtual_channel_id(), packet->map_id(),
+                                         packet->spacecraft_id(),
+                                         packet->service_type());
                 virt_channel->store(&t_packet);
 
                 // Middle portion
-                t_packet.segHdr = 0x00;
+                t_packet.set_segmentation_header(0x00);
                 for (uint8_t i = 1; i < (tf_n - 1); i++) {
-                    t_packet.packet = &packet->packet[i * max_packet_length];
+                    t_packet.set_packet_data(&packet->packet_data()[i * max_packet_length]);
                     virt_channel->store(&t_packet);
                 }
 
                 // Last portion
-                t_packet.segHdr = 0x80;
-                t_packet.packet = &packet->packet[(tf_n - 1) * max_packet_length];
-                t_packet.packetLength = packet->packetLength % max_packet_length;
+                t_packet.set_segmentation_header(0x80);
+                t_packet.set_packet_data(&packet->packet_data()[(tf_n - 1) * max_packet_length]);
+                t_packet.set_packet_length(packet->packet_length()% max_packet_length);
                 virt_channel->store(&t_packet);
             }
         } else {
@@ -171,7 +173,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
             virt_channel->store(packet);
         } else {
             if (segmentation_enabled) {
-                packet->segHdr = 0xc0;
+                packet->set_segmentation_header(0xc0);
             }
             virt_channel->store(packet);
         }
@@ -222,11 +224,11 @@ ServiceChannelNotif ServiceChannel::transmit_frame(uint8_t *pack) {
     }
 
     Packet *packet = masterChannel.toBeTransmittedFramesList.front();
-    packet->repetitions -= 1;
-    if (packet->repetitions == 0) {
+    packet->set_repetitions(packet->repetitions() - 1);
+    if (packet->repetitions() == 0) {
         masterChannel.toBeTransmittedFramesList.pop_front();
     }
-    memcpy(pack, packet, packet->packetLength);
+    memcpy(pack, packet, packet->packet_length());
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 

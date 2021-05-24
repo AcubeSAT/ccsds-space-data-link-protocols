@@ -8,6 +8,7 @@
 #include <etl/memory.h>
 
 class Packet;
+
 typedef etl::unique_ptr<Packet> UniquePacket;
 
 enum ServiceType {
@@ -67,18 +68,6 @@ private:
 };
 
 struct Packet {
-    // @todo those fields shouldn't be public
-    uint8_t *packet;
-    TransferFrameHeader hdr;
-    uint16_t packetLength;
-    uint8_t segHdr;
-    uint8_t gvcid;
-    uint8_t mapid;
-    uint16_t sduid;
-    ServiceType serviceType;
-    uint8_t transferFrameSeqNumber;
-    bool acknowledged;
-    uint8_t repetitions;
 
     void setConfSignal(FDURequestType reqSignal) {
         confSignal = reqSignal;
@@ -103,8 +92,8 @@ struct Packet {
     /**
      * @brief Set the number of repetitions that is determined by the virtual channel
      */
-    void set_repetitions(const uint8_t reps) {
-        repetitions = reps;
+    void set_repetitions(const uint8_t repetitions) {
+        reps = repetitions;
     }
 
     /**
@@ -116,16 +105,98 @@ struct Packet {
 
     void mark_for_retransmission(bool f) { toBeRetransmitted = f; }
 
+    const TransferFrameHeader transfer_frame_header() const {
+        return hdr;
+    }
+
+    const uint16_t packet_length() const {
+        return packetLength;
+    }
+
+    const uint8_t segmentation_header() const {
+        return segHdr;
+    }
+
+    const uint8_t global_virtual_channel_id() const {
+        return gvcid;
+    }
+
+    const uint8_t map_id() const {
+        return mapid;
+    }
+
+    const uint16_t spacecraft_id() const {
+        return sduid;
+    }
+
+    const uint8_t transfer_frame_sequence_number() const {
+        return transferFrameSeqNumber;
+    }
+
+    const ServiceType service_type() const {
+        return serviceType;
+    }
+
+    const bool acknowledged() const {
+        return ack;
+    }
+
+    const uint8_t repetitions() const {
+        return reps;
+    }
+
+    uint8_t *packet_data() const {
+        return packet;
+    }
+
+    // Setters are not strictly needed in this case. The are just offered as a utility functions for the VC/MAP
+    // generation services when segmenting or blocking transfer frames.
+    void set_segmentation_header(uint8_t seg_hdr) {
+        segHdr = seg_hdr;
+    }
+
+    void set_packet_data(uint8_t *packt_data) {
+        packet = packt_data;
+    }
+
+    void set_packet_length(uint16_t packt_len) {
+        packetLength = packt_len;
+    }
+
+    void set_service_type(ServiceType serv_type) {
+        serviceType = serv_type;
+    }
+
+    void set_acknowledgement(bool acknowledgement) {
+        ack = acknowledgement;
+    }
+
+    void set_transfer_frame_sequence_number(uint8_t frame_seq_number) {
+        transferFrameSeqNumber = frame_seq_number;
+    }
+
     Packet(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
            ServiceType service_type) :
             packet(packet), hdr(packet), packetLength(packet_length), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid),
             sduid(sduid),
-            serviceType(service_type), transferFrameSeqNumber(0), acknowledged(0), toBeRetransmitted(0) {}
+            serviceType(service_type), transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0) {}
 
 private:
     bool toBeRetransmitted;
     // This is used by COP to signal the higher procedures
     FDURequestType confSignal;
+    uint8_t *packet;
+    TransferFrameHeader hdr;
+    uint16_t packetLength;
+    uint8_t segHdr;
+    uint8_t gvcid;
+    uint8_t mapid;
+    uint16_t sduid;
+    ServiceType serviceType;
+    uint8_t transferFrameSeqNumber;
+    bool ack;
+    uint8_t reps;
+
 };
 
 class CLCW {
