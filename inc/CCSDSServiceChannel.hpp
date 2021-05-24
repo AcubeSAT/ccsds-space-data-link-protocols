@@ -5,7 +5,6 @@
 #include <Alert.hpp>
 #include <etl/circular_buffer.h>
 
-#include <CCSDSTransferFrameTC.hpp>
 #include <Packet.hpp>
 #include <utility>
 

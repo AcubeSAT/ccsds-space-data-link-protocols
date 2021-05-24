@@ -16,15 +16,10 @@ add_custom_target(check
 
 # Specify the .cpp files common across all targets
 add_library(common OBJECT
-        src/CCSDSTransferFrame.cpp
-        src/CCSDSTransferFrameTM.cpp
-        src/CCSDSTransferFrameTC.cpp
-        src/CCSDSTransferFrameEncoder.cpp
-        src/CCSDSTransferFrameEncoderTM.cpp
-        src/CCSDSTransferFrameEncoderTC.cpp
         src/CCSDSServiceChannel.cpp
         src/CCSDSChannel.cpp
-        src/FrameOperationProcedure.cpp src/Packet.cpp)
+        src/FrameOperationProcedure.cpp
+        src/Packet.cpp)
 
 # Specify the .cpp files for the executables
 #file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")

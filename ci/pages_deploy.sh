@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-#set -e # Exit on any error
-
 # Bash color ouput
 # https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
@@ -26,13 +24,14 @@ else
 fi
 
 # Empty the contents from the stored cache, if any
-rm -rf public/"${DOCUMENT_PATH}"/*
+rm -rf public/${DOCUMENT_PATH}/*
 
 # Create the necessary directories
-mkdir -p public/"${DOCUMENT_PATH}"
+mkdir -p public/${DOCUMENT_PATH}
 
-mkdir build && cd build
-cmake .. -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make all -j4
+
+# Try to make and build the application
+cmake . -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make all -j4
 
 # If the command above returned something different than zero, generate only the docs
 if [[ $? -ne 0 ]];
@@ -42,7 +41,7 @@ else
     # Coverage generation using lcov
     # Generate coverage baseline
     lcov -q --capture --initial --directory . -o coverage_base
-    ./tests --use-colour yes #  Run the tests to generate coverage notes
+    ./tests --use-colour yes # Run the tests to generate coverage notes
 
     # In the event of test failure, generate only the documentation
     if [[ $? -ne 0 ]];
@@ -50,8 +49,8 @@ else
         echo -e "\e[1;5;91mTests failed, only documentation will be generated.\e[0m"
     else
         # Empty the contents from the stored cache, if any, and create the necessary directories
-        rm -rf ../public/"${COVERAGE_PATH}"/*
-        mkdir -p ../public/"${COVERAGE_PATH}" "../public/${COVERAGE_PATH}/gcovr"
+        rm -rf public/${COVERAGE_PATH}/*
+        mkdir -p public/${COVERAGE_PATH} "public/${COVERAGE_PATH}/gcovr"
 
         # Generate the tracefile for the coverage reports
         lcov -q --capture --directory . -o coverage_tests
@@ -63,26 +62,26 @@ else
 
         # Coverage generation using gcovr. Also generates the html page with the results
         # Output a summary (-s), sort by ascending percentage (-p), exclude files (-e)
-        gcovr -s -p -e "${EXCLUDED_FILES}" --html --html-details --html-title "${HTML_TITLE}" -o "../public/${COVERAGE_PATH}/gcovr/gcovr.html"
+        gcovr -s -p -e "${EXCLUDED_FILES}" --html --html-details --html-title "${HTML_TITLE}" -o public/${COVERAGE_PATH}/gcovr/gcovr.html
         gcovr -e "^.*(test|lib|main.cpp|CMakeFiles)"  # Generate coverage report for the CI
 
         # Render the html page for the lcov results
-        genhtml --demangle-cpp -t "${PAGE_TITLE}" --html-epilog ../ci/page_style/epilog.html -o "../public/${COVERAGE_PATH}" coverage_total_filtered
-        cp ../ci/page_style/custom_format.css ../ci/page_style/epilog.html "../public/${COVERAGE_PATH}"
+        genhtml --demangle-cpp -t "${PAGE_TITLE}" --html-epilog ci/page_style/epilog.html -o public/${COVERAGE_PATH} coverage_total_filtered
+        cp ci/page_style/custom_format.css ci/page_style/epilog.html public/${COVERAGE_PATH}
 
         echo \
         "
         .title:after {
             content: \" for the ${CI_COMMIT_REF_NAME} branch\";
         }
-        " >> "../public/${COVERAGE_PATH}/custom_format.css"
+        " >> public/${COVERAGE_PATH}/custom_format.css
     fi  # Test failure check
 fi  # Build failure check
 
 
 # Documentation generation
-cd .. && doxygen doxygen.conf
-mv docs/html/* "public/${DOCUMENT_PATH}"
+doxygen doxygen.conf
+mv docs/html/* public/${DOCUMENT_PATH}
 
 # Expired branch deletion
 git branch -a | grep "remote" | xargs -n 1 -i sh -c "path=\"{}\"; basename \"\$path\"" > branches_list
@@ -100,7 +99,7 @@ cat directory_list
 
 
 # Remove any expired branch folders
-while read -r directory;
+while read directory;
 do
 	if ! grep -q "^${directory}$" branches_list
 	then
