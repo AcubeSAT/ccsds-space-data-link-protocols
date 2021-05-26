@@ -229,7 +229,7 @@ struct MasterChannel {
     MasterChannel(
             bool errorCtrlField)
             :
-            virtChannels(), outFramesList(), errorCtrlField(errorCtrlField) {
+            virtChannels(), txOutFramesList(), errorCtrlField(errorCtrlField) {
     }
 
     MasterChannelAlert store_out(Packet *packet);
@@ -246,9 +246,8 @@ struct MasterChannel {
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<Packet *, max_received_tc_in_master_buffer> outFramesList;
-
-    // Packets ready to be transmitted having passed thorugh the all frames generation service
+    etl::list<Packet *, max_received_tc_in_master_buffer> txOutFramesList;
+    // Packets ready to be transmitted having passed through the all frames generation service
     etl::list<Packet *, max_received_tc_out_in_master_buffer> toBeTransmittedFramesList;
 
     /**

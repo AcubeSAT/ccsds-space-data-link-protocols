@@ -41,12 +41,12 @@ TEST_CASE("MAPP blocking") {
     uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
     serv_channel.store(data, 11, 3, 2, 10, ServiceType::TYPE_A);
-    CHECK(serv_channel.available(3, 2) == max_received_tc_in_map_channel - 1);
+    CHECK(serv_channel.tx_available(3, 2) == max_received_tc_in_map_channel - 1);
 
     serv_channel.mapp_request(3, 2);
 
-    CHECK(serv_channel.available(3) == max_received_unprocessed_tc_in_virt_buffer - 6);
-    CHECK(serv_channel.available(3, 2) == max_received_tc_in_map_channel);
+    CHECK(serv_channel.tx_available(3) == max_received_unprocessed_tc_in_virt_buffer - 6);
+    CHECK(serv_channel.tx_available(3, 2) == max_received_tc_in_map_channel);
 }
 
 TEST_CASE("Virtual Channel Generation") {

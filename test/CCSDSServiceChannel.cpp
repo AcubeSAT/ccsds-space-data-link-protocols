@@ -34,69 +34,69 @@ TEST_CASE("Service Channel") {
     serv_channel.initiate_ad_no_clcw(0);
     CHECK(serv_channel.fop_state(0) == FOPState::ACTIVE);
 
-    CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel);
-    CHECK(serv_channel.available(0, 1) == max_received_tc_in_map_channel);
-    CHECK(serv_channel.available(0, 2) == max_received_tc_in_map_channel);
+    CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel);
+    CHECK(serv_channel.tx_available(0, 1) == max_received_tc_in_map_channel);
+    CHECK(serv_channel.tx_available(0, 2) == max_received_tc_in_map_channel);
 
     serv_channel.store(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
-    CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 1);
-    const Packet *packet_a = serv_channel.packet().second;
+    CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 1);
+    const Packet *packet_a = serv_channel.tx_out_packet().second;
     CHECK(packet_a->packet_length() == 9);
     CHECK(packet_a->service_type() == ServiceType::TYPE_A);
-    CHECK((serv_channel.packet(0, 0).second == packet_a));
+    CHECK((serv_channel.out_packet(0, 0).second == packet_a));
 
     serv_channel.store(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
-    CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 2);
-    const Packet *packet_b = serv_channel.packet().second;
+    CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 2);
+    const Packet *packet_b = serv_channel.tx_out_packet().second;
     CHECK(packet_b->packet_length() == 10);
     CHECK(packet_b->service_type() == ServiceType::TYPE_B);
 
     serv_channel.store(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_A);
-    CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 3);
-    const Packet *packet_c = serv_channel.packet().second;
+    CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 3);
+    const Packet *packet_c = serv_channel.tx_out_packet().second;
     CHECK(packet_c->packet_length() == 3);
     CHECK(packet_c->service_type() == ServiceType::TYPE_A);
-    CHECK((serv_channel.packet(0, 0).second == packet_a));
+    CHECK((serv_channel.out_packet(0, 0).second == packet_a));
 
-    CHECK(serv_channel.available(0) == max_received_unprocessed_tc_in_virt_buffer);
+    CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tc_in_virt_buffer);
     ServiceChannelNotif err;
     err = serv_channel.mapp_request(0, 0);
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
-    CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 2);
-    CHECK(serv_channel.available(0) == max_received_unprocessed_tc_in_virt_buffer - 1);
+    CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 2);
+    CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tc_in_virt_buffer - 1);
 
-    CHECK((serv_channel.packet(0, 0).second == packet_b));
-
-    err = serv_channel.mapp_request(0, 0);
-    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
-    CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel - 1);
-
-    CHECK((serv_channel.packet(0, 0).second == packet_c));
+    CHECK((serv_channel.out_packet(0, 0).second == packet_b));
 
     err = serv_channel.mapp_request(0, 0);
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
-    CHECK(serv_channel.available(0, 0) == max_received_tc_in_map_channel);
+    CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 1);
+
+    CHECK((serv_channel.out_packet(0, 0).second == packet_c));
+
+    err = serv_channel.mapp_request(0, 0);
+    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
+    CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel);
     CHECK(serv_channel.mapp_request(0, 0) == ServiceChannelNotif::NO_PACKETS_TO_PROCESS);
 
     // VC Generation Service
-    CHECK(serv_channel.packet(0).second == packet_a);
-    CHECK(serv_channel.available(0) == max_received_unprocessed_tc_in_virt_buffer - 3U);
+    CHECK(serv_channel.tx_out_packet(0).second == packet_a);
+    CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tc_in_virt_buffer - 3U);
 
     // Process first type-A packet
     err = serv_channel.vc_generation_request(0);
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
-    CHECK(serv_channel.packet(0).second == packet_b);
-    CHECK(serv_channel.available(0) == max_received_unprocessed_tc_in_virt_buffer - 2U);
+    CHECK(serv_channel.tx_out_packet(0).second == packet_b);
+    CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tc_in_virt_buffer - 2U);
 
     // Process first type-B  packet
     err = serv_channel.vc_generation_request(0);
-    CHECK(serv_channel.available(0) == max_received_unprocessed_tc_in_virt_buffer - 1U);
+    CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tc_in_virt_buffer - 1U);
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
-    CHECK(serv_channel.packet(0).second == packet_c);
+    CHECK(serv_channel.tx_out_packet(0).second == packet_c);
 
     // Process second type-A  packet
     err = serv_channel.vc_generation_request(0);
-    CHECK(serv_channel.available(0) == max_received_unprocessed_tc_in_virt_buffer);
+    CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tc_in_virt_buffer);
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
-    CHECK(serv_channel.packet(0).second == nullptr);
+    CHECK(serv_channel.tx_out_packet(0).second == nullptr);
 }

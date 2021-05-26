@@ -189,7 +189,7 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.outFramesList.full()) {
+    if (masterChannel.txOutFramesList.full()) {
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
@@ -204,11 +204,11 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
 }
 
 ServiceChannelNotif ServiceChannel::all_frames_generation_request() {
-    if (masterChannel.outFramesList.empty()) {
+    if (masterChannel.txOutFramesList.empty()) {
         return ServiceChannelNotif::NO_PACKETS_TO_PROCESS;
     }
 
-    Packet *packet = masterChannel.outFramesList.front();
+    Packet *packet = masterChannel.txOutFramesList.front();
 
     if (masterChannel.errorCtrlField) {
         packet->append_crc();
@@ -323,7 +323,7 @@ const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
 }
 
-etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet(const uint8_t vid, const uint8_t mapid) const {
+etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::out_packet(const uint8_t vid, const uint8_t mapid) const {
     const etl::list<Packet *, max_received_tc_in_map_channel> *mc = &(masterChannel.virtChannels.at(vid).mapChannels.at(
             mapid).unprocessedPacketList);
     if (mc->empty()) {
@@ -333,7 +333,7 @@ etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet(const uint
     return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc->front());
 }
 
-etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet(const uint8_t vid) const {
+etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet(const uint8_t vid) const {
     const etl::list<Packet *, max_received_unprocessed_tc_in_virt_buffer> *vc = &(masterChannel.virtChannels.at(
             vid).unprocessedPacketList);
     if (vc->empty()) {
@@ -343,7 +343,7 @@ etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet(const uint
     return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
 }
 
-etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::packet() const {
+etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet() const {
     if (masterChannel.masterCopy.empty()) {
         return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }

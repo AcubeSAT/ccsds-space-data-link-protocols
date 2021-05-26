@@ -64,6 +64,8 @@ public:
 
     ServiceChannelNotif all_frames_generation_request();
 
+    ServiceChannelNotif all_frames_reception();
+
     ServiceChannelNotif transmit_frame(uint8_t *pack);
 
     // COP Directives
@@ -139,7 +141,7 @@ public:
      * @brief Available number of incoming frames in master channel buffer
      */
     const uint16_t in_available() const {
-        return masterChannel.outFramesList.available();
+        return masterChannel.txOutFramesList.available();
     }
 
     /**
@@ -152,32 +154,33 @@ public:
     /**
     * @brief Available space in virtual channel buffer
     */
-    const uint16_t available(const uint8_t vid) const {
+    const uint16_t tx_available(const uint8_t vid) const {
         masterChannel.virtChannels.at(vid).available();
     }
 
     /**
     * @brief Available space in MAP channel buffer
     */
-    const uint16_t available(const uint8_t vid, const uint8_t mapid) const {
+    const uint16_t tx_available(const uint8_t vid, const uint8_t mapid) const {
         return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).available();
     }
 
     /**
      * @brief Read first packet of the MAP channel buffer
      */
-    etl::pair<ServiceChannelNotif, const Packet *> packet(const uint8_t vid, const uint8_t mapid) const;
+    etl::pair<ServiceChannelNotif, const Packet *>
+
+    out_packet(const uint8_t vid, const uint8_t mapid) const;
 
     /**
     * @brief Read first packet of the virtual channel buffer
     */
-    etl::pair<ServiceChannelNotif, const Packet *> packet(const uint8_t vid) const;
+    etl::pair<ServiceChannelNotif, const Packet *> tx_out_packet(const uint8_t vid) const;
 
     /**
     * @brief Return the last stored packet
     */
-
-    etl::pair<ServiceChannelNotif, const Packet *> packet() const;
+    etl::pair<ServiceChannelNotif, const Packet *> tx_out_packet() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) :

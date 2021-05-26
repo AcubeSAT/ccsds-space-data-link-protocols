@@ -18,11 +18,11 @@ VirtualChannelAlert VirtualChannel::store(Packet *packet) {
 // @todo consider another data structure
 
 MasterChannelAlert MasterChannel::store_out(Packet *packet) {
-    if (outFramesList.full()) {
+    if (txOutFramesList.full()) {
         // Log that buffer is full
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
-    outFramesList.push_back(packet);
+    txOutFramesList.push_back(packet);
     uint8_t vid = packet->global_virtual_channel_id();
     // virtChannels.at(0).fop.
 

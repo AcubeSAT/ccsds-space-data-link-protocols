@@ -21,11 +21,11 @@ TEST_CASE("Initiate FOP Directives") {
 
     serv_channel_fop.store(data, 11, 3, 2, 10, ServiceType::TYPE_A);
 
-    CHECK(serv_channel_fop.available(3, 2) == max_received_tc_in_map_channel - 1);
+    CHECK(serv_channel_fop.tx_available(3, 2) == max_received_tc_in_map_channel - 1);
 
     serv_channel_fop.mapp_request(3, 2);
 
-    CHECK(serv_channel_fop.available(3, 2) == max_received_tc_in_map_channel);
+    CHECK(serv_channel_fop.tx_available(3, 2) == max_received_tc_in_map_channel);
 
     CHECK(serv_channel_fop.fop_state(3) == FOPState::INITIAL);
     serv_channel_fop.initiate_ad_no_clcw(3);
