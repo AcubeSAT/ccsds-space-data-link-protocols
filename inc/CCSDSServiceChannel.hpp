@@ -3,7 +3,6 @@
 
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
-#include <etl/circular_buffer.h>
 
 #include <Packet.hpp>
 #include <utility>
@@ -168,19 +167,19 @@ public:
     /**
      * @brief Read first packet of the MAP channel buffer
      */
-    etl::pair<ServiceChannelNotif, const Packet *>
+    std::pair<ServiceChannelNotif, const Packet *>
 
     out_packet(const uint8_t vid, const uint8_t mapid) const;
 
     /**
     * @brief Read first packet of the virtual channel buffer
     */
-    etl::pair<ServiceChannelNotif, const Packet *> tx_out_packet(const uint8_t vid) const;
+    std::pair<ServiceChannelNotif, const Packet *> tx_out_packet(const uint8_t vid) const;
 
     /**
     * @brief Return the last stored packet
     */
-    etl::pair<ServiceChannelNotif, const Packet *> tx_out_packet() const;
+    std::pair<ServiceChannelNotif, const Packet *> tx_out_packet() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) :

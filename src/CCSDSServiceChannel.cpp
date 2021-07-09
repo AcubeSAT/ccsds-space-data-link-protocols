@@ -55,7 +55,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
             uint8_t tf_n =
                     (packet->packet_length() / max_packet_length) + (packet->packet_length() % max_packet_length != 0);
 
-            if (virt_channel->waitQueue.capacity() >= tf_n) {
+            if (virt_channel->waitQueue.available() >= tf_n) {
                 // Break up packet
                 map_channel->unprocessedPacketList.pop_front();
 
@@ -323,29 +323,29 @@ const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
 }
 
-etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::out_packet(const uint8_t vid, const uint8_t mapid) const {
+std::pair<ServiceChannelNotif, const Packet *> ServiceChannel::out_packet(const uint8_t vid, const uint8_t mapid) const {
     const etl::list<Packet *, max_received_tc_in_map_channel> *mc = &(masterChannel.virtChannels.at(vid).mapChannels.at(
             mapid).unprocessedPacketList);
     if (mc->empty()) {
-        return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+        return std::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
 
-    return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc->front());
+    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc->front());
 }
 
-etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet(const uint8_t vid) const {
+std::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet(const uint8_t vid) const {
     const etl::list<Packet *, max_received_unprocessed_tc_in_virt_buffer> *vc = &(masterChannel.virtChannels.at(
             vid).unprocessedPacketList);
     if (vc->empty()) {
-        return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+        return std::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
 
-    return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
+    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
 }
 
-etl::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet() const {
+std::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet() const {
     if (masterChannel.masterCopy.empty()) {
-        return etl::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
+        return std::pair(ServiceChannelNotif::NO_PACKETS_TO_PROCESS, nullptr);
     }
-    return etl::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.masterCopy.back()));
+    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.masterCopy.back()));
 }

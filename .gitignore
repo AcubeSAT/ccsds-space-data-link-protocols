@@ -69,5 +69,8 @@ __pycache__
 .idea/**/dbnavigator.xml
 .idea/**/markdown-*
 
+# Virtual environment
+venv/**
+
 # IDEs
 .vscode
