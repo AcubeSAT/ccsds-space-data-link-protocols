@@ -7,9 +7,9 @@ TEST_CASE("Packet Generation") {
 
 	CHECK(pckt.segmentation_header() == 5);
 	CHECK(pckt.packet_data()[0] == 0);
-    CHECK(pckt.packet_data()[1] == 11);
-    CHECK(pckt.packet_data()[2] == 128);
-    CHECK(pckt.packet_data()[3] == 33);
-    CHECK(pckt.packet_data()[4] == 4);
+	CHECK(pckt.packet_data()[1] == 11);
+	CHECK(pckt.packet_data()[2] == 128);
+	CHECK(pckt.packet_data()[3] == 33);
+	CHECK(pckt.packet_data()[4] == 4);
 	CHECK(pckt.global_virtual_channel_id() == 32);
 }
