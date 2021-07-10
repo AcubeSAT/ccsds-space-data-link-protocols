@@ -54,8 +54,11 @@ const uint16_t mcid = spacecraft_identifier;
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
 const uint8_t max_received_tc_in_map_channel = 5;
 
-// Maximum received TCs in wait queue (before COP checks).
-const uint8_t max_received_tc_in_wait_queue = 10;
+// Maximum received RX TCs in wait queue (before COP checks).
+const uint8_t max_received_tx_tc_in_wait_queue = 10;
+// Maximum received TX TCs in wait queue (before COP checks).
+const uint8_t max_received_rx_tc_in_wait_queue = 10;
+
 // Maximum received TCs in sent queue (following COP checks).
 const uint8_t max_received_tc_in_sent_queue = 10;
 
@@ -80,8 +83,8 @@ const uint8_t max_tx_in_master_channel = 200;
 // frames that are stored in all services
 const uint8_t max_rx_in_master_channel = 200;
 
-// Raw packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
-const uint8_t max_received_unprocessed_tc_in_virt_buffer = 6;
+// Raw TX packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
+const uint8_t max_received_unprocessed_tx_tc_in_virt_buffer = 6;
 
 const uint8_t fop_sliding_window_initial = 255;
 const uint8_t fop_timer_initial = 60; // sec

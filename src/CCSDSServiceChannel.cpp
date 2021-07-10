@@ -56,7 +56,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 		return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
 	}
 
-	if (virt_channel->waitQueue.full()) {
+	if (virt_channel->txWaitQueue.full()) {
 		return ServiceChannelNotif::VC_MC_FRAME_BUFFER_FULL;
 	}
 
@@ -74,12 +74,12 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 			uint8_t tf_n =
 			    (packet->packet_length() / max_packet_length) + (packet->packet_length() % max_packet_length != 0);
 
-			if (virt_channel->waitQueue.available() >= tf_n) {
+			if (virt_channel->txWaitQueue.available() >= tf_n) {
 				// Break up packet
 				map_channel->unprocessedPacketList.pop_front();
 
 				// First portion
-				uint16_t seg_header = mapid || 0x40;
+				uint16_t seg_header = mapid | 0x40;
 
 				Packet t_packet =
 				    Packet(packet->packet_data(), max_packet_length, seg_header, packet->global_virtual_channel_id(),
@@ -87,14 +87,14 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 				virt_channel->store(&t_packet);
 
 				// Middle portion
-				t_packet.set_segmentation_header(mapid || 0x00);
+				t_packet.set_segmentation_header(mapid | 0x00);
 				for (uint8_t i = 1; i < (tf_n - 1); i++) {
 					t_packet.set_packet_data(&packet->packet_data()[i * max_packet_length]);
 					virt_channel->store(&t_packet);
 				}
 
 				// Last portion
-				t_packet.set_segmentation_header(mapid || 0x80);
+				t_packet.set_segmentation_header(mapid | 0x80);
 				t_packet.set_packet_data(&packet->packet_data()[(tf_n - 1) * max_packet_length]);
 				t_packet.set_packet_length(packet->packet_length() % max_packet_length);
 				virt_channel->store(&t_packet);
@@ -121,7 +121,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 			virt_channel->store(packet);
 		} else {
 			if (segmentation_enabled) {
-				packet->set_segmentation_header((0xc0) || (mapid && 0x3F));
+				packet->set_segmentation_header((0xc0) | (mapid && 0x3F));
 			}
 			virt_channel->store(packet);
 		}
@@ -129,20 +129,20 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 	return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-#if max_received_unprocessed_tc_in_virt_buffer > 0
+#if max_received_unprocessed_tx_tc_in_virt_buffer > 0
 
 ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
 
-	if (virt_channel->unprocessedPacketList.empty()) {
+	if (virt_channel->txUnprocessedPacketList.empty()) {
 		return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
 	}
 
-	if (virt_channel->waitQueue.full()) {
+	if (virt_channel->txWaitQueue.full()) {
 		return ServiceChannelNotif::VC_MC_FRAME_BUFFER_FULL;
 		;
 	}
-	Packet* packet = virt_channel->unprocessedPacketList.front();
+	Packet* packet = virt_channel->txUnprocessedPacketList.front();
 
 	const uint16_t max_frame_length = virt_channel->maxFrameLength;
 	bool segmentation_enabled = virt_channel->segmentHeaderPresent;
@@ -156,9 +156,9 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 			uint8_t tf_n =
 			    (packet->packet_length() / max_packet_length) + (packet->packet_length() % max_packet_length != 0);
 
-			if (virt_channel->waitQueue.capacity() >= tf_n) {
+			if (virt_channel->txWaitQueue.capacity() >= tf_n) {
 				// Break up packet
-				virt_channel->unprocessedPacketList.pop_front();
+				virt_channel->txUnprocessedPacketList.pop_front();
 
 				// First portion
 				uint16_t seg_header = 0x40;
@@ -187,7 +187,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 	} else {
 		// We've already checked whether there is enough space in the buffer so we can simply remove the packet from
 		// the buffer.
-		virt_channel->unprocessedPacketList.pop_front();
+		virt_channel->txUnprocessedPacketList.pop_front();
 
 		if (blocking_enabled) {
 			virt_channel->store(packet);
@@ -205,7 +205,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
 ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
 	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
-	if (virt_channel->unprocessedPacketList.empty()) {
+	if (virt_channel->txUnprocessedPacketList.empty()) {
 		return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
 	}
 
@@ -219,7 +219,7 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
 		return ServiceChannelNotif::FOP_REQUEST_REJECTED;
 	}
 
-	virt_channel->unprocessedPacketList.pop_front();
+	virt_channel->txUnprocessedPacketList.pop_front();
 	return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
@@ -233,6 +233,11 @@ ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
 	}
 
 	Packet* packet = masterChannel.rxInFramesList.front();
+    VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(packet->virtual_channel_id()));
+
+	if (virt_channel->rxWaitQueue.full()){
+		return ServiceChannelNotif::VC_RX_WAIT_QUEUE_FULL;
+	}
 
 	// Frame Delimiting and Fill Removal supposedly aren't implemented here
 
@@ -263,7 +268,11 @@ ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
 		return ServiceChannelNotif::RX_INVALID_CRC;
 	}
 #endif
-	return ServiceChannelNotif::NO_SERVICE_EVENT;
+
+    virt_channel->rxWaitQueue.push_back(packet);
+    masterChannel.rxInFramesList.pop_front();
+
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
 ServiceChannelNotif ServiceChannel::all_frames_generation_request() {
@@ -397,8 +406,8 @@ std::pair<ServiceChannelNotif, const Packet*> ServiceChannel::out_packet(const u
 }
 
 std::pair<ServiceChannelNotif, const Packet*> ServiceChannel::tx_out_packet(const uint8_t vid) const {
-	const etl::list<Packet*, max_received_unprocessed_tc_in_virt_buffer>* vc =
-	    &(masterChannel.virtChannels.at(vid).unprocessedPacketList);
+	const etl::list<Packet*, max_received_unprocessed_tx_tc_in_virt_buffer>* vc =
+	    &(masterChannel.virtChannels.at(vid).txUnprocessedPacketList);
 	if (vc->empty()) {
 		return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
 	}

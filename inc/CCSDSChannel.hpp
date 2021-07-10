@@ -142,7 +142,7 @@ struct VirtualChannel {
 	 * @brief Returns available space in the buffer
 	 */
 	const uint16_t available() const {
-		return unprocessedPacketList.available();
+		return txUnprocessedPacketList.available();
 	}
 
 	/**
@@ -157,18 +157,18 @@ struct VirtualChannel {
 	    : masterChannel(master_channel), VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID),
 	      segmentHeaderPresent(segment_header_present), maxFrameLength(max_frame_length), clcwRate(clcw_rate),
 	      blocking(blocking), repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
-	      waitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &waitQueue, &sentQueue, repetition_cop_ctrl)) {
+	      txWaitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &txWaitQueue, &sentQueue, repetition_cop_ctrl)) {
 		mapChannels = map_chan;
 	}
 
 	VirtualChannel(const VirtualChannel& v)
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent), maxFrameLength(v.maxFrameLength),
 	      clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame), repetitionCOPCtrl(v.repetitionCOPCtrl),
-	      waitQueue(v.waitQueue), sentQueue(v.sentQueue), unprocessedPacketList(v.unprocessedPacketList), fop(v.fop),
+	      txWaitQueue(v.txWaitQueue), sentQueue(v.sentQueue), txUnprocessedPacketList(v.txUnprocessedPacketList), fop(v.fop),
 	      masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
 		fop.vchan = this;
 		fop.sentQueue = &sentQueue;
-		fop.waitQueue = &waitQueue;
+		fop.waitQueue = &txWaitQueue;
 	}
 
 	VirtualChannelAlert store(Packet* packet);
@@ -186,9 +186,14 @@ private:
 	/**
 	 * @brief Buffer to store_out incoming packets before being processed by COP
 	 */
-	etl::list<Packet*, max_received_tc_in_wait_queue> waitQueue;
+	etl::list<Packet*, max_received_tx_tc_in_wait_queue> txWaitQueue;
 
-	/**
+    /**
+     * @brief Buffer to store_out incoming packets before being processed by COP
+     */
+    etl::list<Packet*, max_received_tx_tc_in_wait_queue> rxWaitQueue;
+
+    /**
 	 * @brief Buffer to store_out outcoming packets after being processed by COP
 	 */
 	etl::list<Packet*, max_received_tc_in_sent_queue> sentQueue;
@@ -196,7 +201,7 @@ private:
 	/**
 	 * @brief Buffer to store_out unprocessed packets that are directly processed in the virtual instead of MAP channel
 	 */
-	etl::list<Packet*, max_received_unprocessed_tc_in_virt_buffer> unprocessedPacketList;
+	etl::list<Packet*, max_received_unprocessed_tx_tc_in_virt_buffer> txUnprocessedPacketList;
 
 	/**
 	 * @brief Holds the FOP state of the virtual channel

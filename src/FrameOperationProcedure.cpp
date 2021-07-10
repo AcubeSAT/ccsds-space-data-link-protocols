@@ -597,7 +597,7 @@ void FrameOperationProcedure::bd_reject() {
 }
 
 FOPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
-	Packet* frame = vchan->unprocessedPacketList.front();
+	Packet* frame = vchan->txUnprocessedPacketList.front();
 	if (frame->transfer_frame_header().bypass_flag() == 0) {
 		if (frame->service_type() == ServiceType::TYPE_A) {
 			if (!waitQueue->full()) {

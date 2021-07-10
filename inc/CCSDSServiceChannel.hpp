@@ -149,11 +149,18 @@ public:
 	}
 
 	/**
-	 * @brief Available number of outcoming frames in master channel buffer
+	 * @brief Available number of outcoming TX frames in master channel buffer
 	 */
-	const uint16_t out_available() const {
+	const uint16_t tx_out_available() const {
 		return masterChannel.txToBeTransmittedFramesList.available();
 	}
+
+    /**
+     * @brief Available number of outcoming RX frames in master channel buffer
+     */
+    const uint16_t rx_out_available() const {
+        return masterChannel.rxToBeTransmittedFramesList.available();
+    }
 
 	/**
 	 * @brief Available space in virtual channel buffer

@@ -43,7 +43,7 @@ class FrameOperationProcedure {
 
 private:
 public:
-	etl::list<Packet*, max_received_tc_in_wait_queue>* waitQueue;
+	etl::list<Packet*, max_received_tx_tc_in_wait_queue>* waitQueue;
 	etl::list<Packet*, max_received_tc_in_sent_queue>* sentQueue;
 	VirtualChannel* vchan;
 
@@ -170,7 +170,7 @@ private:
 	FOPDirectiveResponse transfer_fdu();
 
 public:
-	FrameOperationProcedure(VirtualChannel* vchan, etl::list<Packet*, max_received_tc_in_wait_queue>* waitQueue,
+	FrameOperationProcedure(VirtualChannel* vchan, etl::list<Packet*, max_received_tx_tc_in_wait_queue>* waitQueue,
 	                        etl::list<Packet*, max_received_tc_in_sent_queue>* sentQueue,
 	                        const uint8_t repetition_cop_ctrl)
 	    : waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),

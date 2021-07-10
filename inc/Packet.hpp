@@ -119,6 +119,10 @@ struct Packet {
 		return gvcid;
 	}
 
+	const uint8_t virtual_channel_id() const{
+	    return gvcid & 0x3F;
+	};
+
 	const uint8_t map_id() const {
 		return mapid;
 	}

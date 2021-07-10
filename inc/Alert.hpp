@@ -18,6 +18,7 @@ enum ServiceChannelNotif {
 	RX_INVALID_TFVN,
 	RX_INVALID_SCID,
 	RX_INVALID_LENGTH,
+	VC_RX_WAIT_QUEUE_FULL,
 #if tc_error_control_field_exists
 	RX_INVALID_CRC,
 #endif
@@ -41,7 +42,8 @@ enum FOPConfirmResponse {
 enum VirtualChannelAlert {
 	NO_VC_ALERT,
 	UNPROCESSED_PACKET_LIST_FULL,
-	WAIT_QUEUE_FULL,
+	TX_WAIT_QUEUE_FULL,
+	RX_WAIT_QUEUE_FULL,
 };
 
 enum MasterChannelAlert {

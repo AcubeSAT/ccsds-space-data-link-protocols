@@ -35,7 +35,7 @@ TEST_CASE("MAPP blocking") {
 
 	serv_channel.mapp_request(3, 2);
 
-	CHECK(serv_channel.tx_available(3) == max_received_unprocessed_tc_in_virt_buffer - 6);
+	CHECK(serv_channel.tx_available(3) == max_received_unprocessed_tx_tc_in_virt_buffer - 6);
 	CHECK(serv_channel.tx_available(3, 2) == max_received_tc_in_map_channel);
 }
 
