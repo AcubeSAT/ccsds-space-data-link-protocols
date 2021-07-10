@@ -56,19 +56,30 @@ const uint8_t max_received_tc_in_map_channel = 5;
 const uint8_t max_received_tc_in_wait_queue = 10;
 // Maximum received TCs in sent queue (following COP checks).
 const uint8_t max_received_tc_in_sent_queue = 10;
+
 // Maximum received TC in the master buffer, before being passed to the all frames generation service
-const uint8_t max_received_tc_in_master_buffer = 100;
+const uint8_t max_received_tx_tc_in_master_buffer = 100;
 // Maximum received TC in the master buffer, ready to be transmitted to the lower procedures (doesn't include
 // repetitions)
-const uint8_t max_received_tc_out_in_master_buffer = 100;
+const uint8_t max_received_tx_tc_out_in_master_buffer = 100;
+
+// Maximum received TC in the master buffer, before being passed to the all frames reception service
+const uint8_t max_received_rx_tc_in_master_buffer = 100;
+// Maximum received TC in the master buffer, ready to be transmitted to the higher procedures
+const uint8_t max_received_rx_tc_out_in_master_buffer = 100;
 
 const uint8_t max_virtual_channels = 10;
 const uint8_t max_map_channels = 3;
 
+// Number of master copies of TX transfer frames that are stored in the master channel. This holds all the transfer
+// frames that are stored in all services
+const uint8_t max_tx_in_master_channel = 200;
+// Number of master copies of RX transfer frames that are stored in the master channel. This holds all the transfer
+// frames that are stored in all services
+const uint8_t max_rx_in_master_channel = 200;
 
 // Raw packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
 const uint8_t max_received_unprocessed_tc_in_virt_buffer = 6;
-const uint16_t max_received_tc_in_channel = 1000;
 
 const uint8_t fop_sliding_window_initial = 255;
 const uint8_t fop_timer_initial = 60; // sec

@@ -246,14 +246,24 @@ struct MasterChannel {
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<Packet *, max_received_tc_in_master_buffer> txOutFramesList;
+    etl::list<Packet *, max_received_tx_tc_in_master_buffer> txOutFramesList;
     // Packets ready to be transmitted having passed through the all frames generation service
-    etl::list<Packet *, max_received_tc_out_in_master_buffer> toBeTransmittedFramesList;
+    etl::list<Packet *, max_received_tx_tc_out_in_master_buffer> txToBeTransmittedFramesList;
+
+	// Packets that are received, before being received by the all frames reception service
+	etl::list<Packet*, max_received_rx_tc_in_master_buffer> rxInFramesList;
+	// Packets that are ready to be transmitted to higher procedures following all frames generation service
+	etl::list<Packet*, max_received_rx_tc_out_in_master_buffer> rxToBeransmittedFramesList;
 
     /**
-     * @brief Buffer holding the master copy of the packets that are currently being processed
+     * @brief Buffer holding the master copy of TX packets that are currently being processed
      */
-    etl::list<Packet, max_received_tc_in_master_buffer> masterCopy;
+    etl::list<Packet, max_tx_in_master_channel> txMasterCopy;
+
+    /**
+     * @brief Buffer holding the master copy of RX packets that are currently being processed
+     */
+    etl::list<Packet, max_rx_in_master_channel> rxMasterCopy;
 };
 
 

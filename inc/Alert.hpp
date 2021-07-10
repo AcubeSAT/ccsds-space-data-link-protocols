@@ -11,6 +11,8 @@ enum ServiceChannelNotif {
     FOP_SENT_QUEUE_FULL = 6,
     TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY = 7,
     FOP_REQUEST_REJECTED = 8,
+    RX_IN_MC_FULL = 9,
+    RX_IN_BUFFER_FULL = 10,
 };
 
 enum FOPNotif {
@@ -38,8 +40,7 @@ enum MasterChannelAlert {
     NO_MC_ALERT = 0,
     OUT_FRAMES_LIST_FULL = 1,
     TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 2,
-    MAX_AMOUNT_OF_VIRT_CHANNELS = 3
-
+    MAX_AMOUNT_OF_VIRT_CHANNELS = 3,
 };
 
 

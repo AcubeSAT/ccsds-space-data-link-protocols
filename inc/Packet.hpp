@@ -179,6 +179,8 @@ struct Packet {
             sduid(sduid),
             serviceType(service_type), transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0) {}
 
+	Packet(uint8_t *packet, uint16_t packet_length);
+
 private:
     bool toBeRetransmitted;
     // This is used by COP to signal the higher procedures

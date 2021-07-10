@@ -37,3 +37,19 @@ void Packet::append_crc() {
     packet[len] = (crc >> 8) & 0xFF;
     packet[len + 1] = crc & 0xFF;
 }
+
+Packet::Packet(uint8_t *packet, uint16_t packet_length) :
+      packet(packet), hdr(packet), packetLength(packet_length){
+	// Segment header may be unavailable in virtual channels, here we treat it as if it's there sinc it's existence is
+	// dependent on the channel. We deal with it's existence afterwards
+	segHdr = packet[5];
+	gvcid = packet[2] >> 2;
+	// todo: MAP ID is supposed to be determined by the Service Channel. This will be set by another method
+	mapid = 0;
+	// todo: Same as MAP ID since it is sorta dependent on that
+	sduid = 0;
+	serviceType = ServiceType::TYPE_A;
+    transferFrameSeqNumber = packet[4];
+	ack = 0;
+	toBeRetransmitted = 0; // N/A
+}

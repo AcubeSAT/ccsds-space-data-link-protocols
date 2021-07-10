@@ -30,10 +30,10 @@ MasterChannelAlert MasterChannel::store_out(Packet *packet) {
 }
 
 MasterChannelAlert MasterChannel::store_transmitted_out(Packet *packet) {
-    if (toBeTransmittedFramesList.full()) {
+    if (txToBeTransmittedFramesList.full()) {
         return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
-    toBeTransmittedFramesList.push_back(packet);
+	txToBeTransmittedFramesList.push_back(packet);
     return MasterChannelAlert::NO_MC_ALERT;
 }
 

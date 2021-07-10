@@ -42,6 +42,14 @@ public:
                               ServiceType service_type);
 
     /**
+    * @brief This service is used for storing incoming packets in the master channel
+    * @param packet Raw packet data
+    * @param packet_length The length of the packet
+    */
+    ServiceChannelNotif store(uint8_t *packet, uint16_t packet_length);
+
+
+    /**
      * @brief Requests to process the last packet stored in the buffer of the specific MAPP channel
      * (possible more if blocking is enabled). The packets are segmented or blocked together
      * and then transferred to the buffer of the virtual channel
@@ -63,7 +71,7 @@ public:
 
     ServiceChannelNotif all_frames_generation_request();
 
-    ServiceChannelNotif all_frames_reception();
+    ServiceChannelNotif all_frames_reception_request();
 
     ServiceChannelNotif transmit_frame(uint8_t *pack);
 
@@ -147,7 +155,7 @@ public:
      * @brief Available number of outcoming frames in master channel buffer
      */
     const uint16_t out_available() const {
-        return masterChannel.toBeTransmittedFramesList.available();
+        return masterChannel.txToBeTransmittedFramesList.available();
     }
 
     /**
