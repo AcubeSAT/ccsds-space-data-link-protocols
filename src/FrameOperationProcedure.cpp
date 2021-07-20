@@ -119,14 +119,14 @@ void FrameOperationProcedure::look_for_directive() {
 	}
 }
 
-FOPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
+COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
 	if (adOut == FlagState::READY) {
 		for (Packet* frame : *sentQueue) {
 			if (frame->service_type() == ServiceType::TYPE_A) {
 				// adOut = FlagState::NOT_READY;
 				frame->mark_for_retransmission(0);
 				FOPNotif resp = transmit_ad_frame();
-				return FOPDirectiveResponse::ACCEPT;
+				return COPDirectiveResponse::ACCEPT;
 			}
 		}
 		// Search the wait queue for a suitable FDU
@@ -136,12 +136,12 @@ FOPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
 			if (frame->service_type() == ServiceType::TYPE_A) {
 				sentQueue->push_front(frame);
 				waitQueue->pop_front();
-				return FOPDirectiveResponse::ACCEPT;
+				return COPDirectiveResponse::ACCEPT;
 			}
 		}
 	} else {
 		// TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
-		return FOPDirectiveResponse::REJECT;
+		return COPDirectiveResponse::REJECT;
 	}
 }
 
@@ -519,44 +519,44 @@ FDURequestType FrameOperationProcedure::resume_ad_service() {
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_vs(uint8_t vs) {
+COPDirectiveResponse FrameOperationProcedure::set_vs(uint8_t vs) {
 	// E35
 	if (state == FOPState::INITIAL && suspendState == FOPState::INITIAL) {
 		transmitterFrameSeqNumber = vs;
 		expectedAcknowledgementSeqNumber = vs;
-		return FOPDirectiveResponse::ACCEPT;
+		return COPDirectiveResponse::ACCEPT;
 	} else {
-		return FOPDirectiveResponse::REJECT;
+		return COPDirectiveResponse::REJECT;
 	}
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_fop_width(uint8_t vr) {
+COPDirectiveResponse FrameOperationProcedure::set_fop_width(uint8_t vr) {
 	// E36
 	fopSlidingWindow = vr;
-	return FOPDirectiveResponse::ACCEPT;
+	return COPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_t1_initial(uint16_t t1_init) {
+COPDirectiveResponse FrameOperationProcedure::set_t1_initial(uint16_t t1_init) {
 	// E37
 	tiInitial = t1_init;
-	return FOPDirectiveResponse::ACCEPT;
+	return COPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_transmission_limit(uint8_t vr) {
+COPDirectiveResponse FrameOperationProcedure::set_transmission_limit(uint8_t vr) {
 	// E38
 	transmissionLimit = vr;
-	return FOPDirectiveResponse::ACCEPT;
+	return COPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::set_timeout_type(bool vr) {
+COPDirectiveResponse FrameOperationProcedure::set_timeout_type(bool vr) {
 	// E39
 	timeoutType = vr;
-	return FOPDirectiveResponse::ACCEPT;
+	return COPDirectiveResponse::ACCEPT;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::invalid_directive() {
+COPDirectiveResponse FrameOperationProcedure::invalid_directive() {
 	// E40
-	return FOPDirectiveResponse::REJECT;
+	return COPDirectiveResponse::REJECT;
 }
 
 void FrameOperationProcedure::ad_accept() {
@@ -586,9 +586,9 @@ void FrameOperationProcedure::bc_reject() {
 	state = FOPState::INITIAL;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::bd_accept() {
+COPDirectiveResponse FrameOperationProcedure::bd_accept() {
 	bdOut = FlagState::READY;
-	return FOPDirectiveResponse::ACCEPT;
+	return COPDirectiveResponse::ACCEPT;
 }
 
 void FrameOperationProcedure::bd_reject() {
@@ -596,7 +596,7 @@ void FrameOperationProcedure::bd_reject() {
 	state = FOPState::INITIAL;
 }
 
-FOPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
+COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
 	Packet* frame = vchan->txUnprocessedPacketList.front();
 	if (frame->transfer_frame_header().bypass_flag() == 0) {
 		if (frame->service_type() == ServiceType::TYPE_A) {
@@ -608,21 +608,21 @@ FOPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
 				} else if (state == FOPState::RETRANSMIT_WITH_WAIT) {
 					waitQueue->push_back(frame);
 				} else {
-					return FOPDirectiveResponse::REJECT;
+					return COPDirectiveResponse::REJECT;
 				}
-				return FOPDirectiveResponse::ACCEPT;
+				return COPDirectiveResponse::ACCEPT;
 			} else {
 				// E20
-				return FOPDirectiveResponse::REJECT;
+				return COPDirectiveResponse::REJECT;
 			}
 		} else if (frame->service_type() == ServiceType::TYPE_B) {
 			if (bdOut == FlagState::READY) {
 				//
 				transmit_bc_frame(frame);
-				return FOPDirectiveResponse::ACCEPT;
+				return COPDirectiveResponse::ACCEPT;
 			} else {
 				// E22
-				FOPDirectiveResponse::REJECT;
+				COPDirectiveResponse::REJECT;
 			}
 		}
 	} else {

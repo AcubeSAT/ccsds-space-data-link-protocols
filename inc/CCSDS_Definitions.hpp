@@ -54,13 +54,15 @@ const uint16_t mcid = spacecraft_identifier;
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
 const uint8_t max_received_tc_in_map_channel = 5;
 
-// Maximum received RX TCs in wait queue (before COP checks).
-const uint8_t max_received_tx_tc_in_wait_queue = 10;
 // Maximum received TX TCs in wait queue (before COP checks).
+const uint8_t max_received_tx_tc_in_wait_queue = 10;
+// Maximum received RX TCs in wait queue (before COP checks).
 const uint8_t max_received_rx_tc_in_wait_queue = 10;
 
-// Maximum received TCs in sent queue (following COP checks).
-const uint8_t max_received_tc_in_sent_queue = 10;
+// Maximum received TX TCs in sent queue (following COP checks).
+const uint8_t max_received_tx_tc_in_sent_queue = 10;
+// Maximum received RX TCs in sent queue (following COP checks).
+const uint8_t max_received_rx_tc_in_sent_queue = 10;
 
 // Maximum received TC in the master buffer, before being passed to the all frames generation service
 const uint8_t max_received_tx_tc_in_master_buffer = 100;
@@ -88,5 +90,10 @@ const uint8_t max_received_unprocessed_tx_tc_in_virt_buffer = 6;
 
 const uint8_t fop_sliding_window_initial = 255;
 const uint8_t fop_timer_initial = 60; // sec
+
+enum FlagState {
+    NOT_READY = 0, READY = 1
+};
+
 
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP

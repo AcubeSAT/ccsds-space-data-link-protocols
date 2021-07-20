@@ -213,9 +213,9 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
 		return ServiceChannelNotif::TX_MC_FRAME_BUFFER_FULL;
 	}
 
-	FOPDirectiveResponse err = virt_channel->fop.transfer_fdu();
+	COPDirectiveResponse err = virt_channel->fop.transfer_fdu();
 
-	if (err == FOPDirectiveResponse::REJECT) {
+	if (err == COPDirectiveResponse::REJECT) {
 		return ServiceChannelNotif::FOP_REQUEST_REJECTED;
 	}
 
