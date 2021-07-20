@@ -34,7 +34,7 @@ private:
 
 public:
     /* Directives */
-    COPDirectiveResponse frame_arrives();
+    COPDirectiveResponse ad_frame_arrives();
 
     etl::list<Packet *, max_received_rx_tc_in_wait_queue> *waitQueue;
     etl::list<Packet *, max_received_rx_tc_in_sent_queue> *sentQueue;
