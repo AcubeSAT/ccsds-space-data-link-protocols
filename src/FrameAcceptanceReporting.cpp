@@ -1,10 +1,10 @@
 #include <FarmeAcceptanceReporting.h>
 
-COPDirectiveResponse FarmAcceptanceReporting::frame_arrives(){
+COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
     Packet *frame = waitQueue->front();
 
-    if (frame->transfer_frame_sequence_number() == receiver_frame_seq_number){
-        if (!sentQueue->empty()){
+    if (frame->transfer_frame_sequence_number() == receiver_frame_seq_number) {
+        if (!sentQueue->empty()) {
             // E1
             if (state == FARMState::OPEN) {
                 sentQueue->push_back(frame);
@@ -15,25 +15,28 @@ COPDirectiveResponse FarmAcceptanceReporting::frame_arrives(){
             } else {
                 return COPDirectiveResponse::REJECT;
             }
-        } else{
+        } else {
             // E2
-             if (state == FARMState::OPEN){
-                 retransmit = FlagState::READY;
-                 wait = FlagState::READY;
-                 state = FARMState::WAIT;
-             }
-             return COPDirectiveResponse::REJECT;
+            if (state == FARMState::OPEN) {
+                retransmit = FlagState::READY;
+                wait = FlagState::READY;
+                state = FARMState::WAIT;
+            }
+            return COPDirectiveResponse::REJECT;
         }
-    } else if((frame->transfer_frame_sequence_number() > receiver_frame_seq_number) && (frame->transfer_frame_sequence_number() <= receiver_frame_seq_number + farmPositiveWinWidth - 1)){
+    } else if ((frame->transfer_frame_sequence_number() > receiver_frame_seq_number) &&
+               (frame->transfer_frame_sequence_number() <= receiver_frame_seq_number + farmPositiveWinWidth - 1)) {
         // E3
-        if (state == FARMState::OPEN){
+        if (state == FARMState::OPEN) {
             retransmit = FlagState::READY;
         }
         return COPDirectiveResponse::REJECT;
-    } else if ((frame->transfer_frame_sequence_number() < receiver_frame_seq_number) && (frame->transfer_frame_sequence_number() >= receiver_frame_seq_number - farmNegativeWidth)){
+    } else if ((frame->transfer_frame_sequence_number() < receiver_frame_seq_number) &&
+               (frame->transfer_frame_sequence_number() >= receiver_frame_seq_number - farmNegativeWidth)) {
         // E4
         return COPDirectiveResponse::REJECT;
-    } else if ((frame->transfer_frame_sequence_number() > receiver_frame_seq_number + farmPositiveWinWidth - 1) && (frame->transfer_frame_sequence_number() < farmPositiveWinWidth - farmNegativeWidth)){
+    } else if ((frame->transfer_frame_sequence_number() > receiver_frame_seq_number + farmPositiveWinWidth - 1) &&
+               (frame->transfer_frame_sequence_number() < farmPositiveWinWidth - farmNegativeWidth)) {
         // E5
         state = FARMState::LOCKOUT;
         return COPDirectiveResponse::REJECT;
