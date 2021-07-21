@@ -35,7 +35,7 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
         return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type);
+    Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type, vchan->segmentHeaderPresent);
 
     if (service_type == ServiceType::TYPE_A) {
         packet_s.set_repetitions(vchan->repetitionTypeAFrame);
@@ -84,7 +84,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
                 Packet t_packet =
                         Packet(packet->packet_data(), max_packet_length, seg_header,
                                packet->global_virtual_channel_id(),
-                               packet->map_id(), packet->spacecraft_id(), packet->service_type());
+                               packet->map_id(), packet->spacecraft_id(), packet->service_type(), virt_channel->segmentHeaderPresent);
                 virt_channel->store(&t_packet);
 
                 // Middle portion

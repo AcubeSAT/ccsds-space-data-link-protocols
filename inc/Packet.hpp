@@ -81,6 +81,56 @@ struct Packet {
         pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber;
     }
 
+    // TODO: Handle CLCWs without any ambiguities
+
+    const uint8_t *packet_pl_data()const {
+        return data;
+    }
+
+    const uint8_t control_word_type() const{
+        data[0] & 0x80 >> 7U;
+    }
+
+    const uint8_t field_status() const{
+        return (data[0] & 0x1C) >> 2U;
+    }
+
+    const uint8_t cop_in_effect() const{
+        return data[0] & 0x03;
+    }
+
+    const uint8_t vcId() const{
+        return (data[1] & 0xFC) >> 2U;
+    }
+
+    const uint8_t no_rf_avail() const{
+        return (data[2] & 0x80) >> 7U;
+    }
+
+    const uint8_t no_bit_lock() const{
+        return (data[2] & 0x20) >> 5U;
+    }
+
+    const uint8_t lckout() const{
+        return (data[2] & 0x20) >> 5U;
+    }
+
+    const uint8_t wt() const{
+        return (data[2] & 0x10) >> 4U;
+    }
+
+    const uint8_t retransmit() const{
+        return (data[2] & 0x08) >> 3U;
+    }
+
+    const uint8_t farm_b_counter() const{
+        return (data[2] & 0x06) >> 1U;
+    }
+
+    const uint8_t report_value() const{
+        return data[3];
+    }
+
     /**
      * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
      * virtual channel)
@@ -184,10 +234,10 @@ struct Packet {
     }
 
     Packet(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-           ServiceType service_type)
+           ServiceType service_type, bool seg_hdr_present)
             : packet(packet), hdr(packet), packetLength(packet_length), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid),
               sduid(sduid), serviceType(service_type), transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0),
-              transferFrameVersionNumber(0) {}
+              transferFrameVersionNumber(0), data(&packet[5 + 1*seg_hdr_present]) {}
 
     Packet(uint8_t *packet, uint16_t packet_length);
 
@@ -207,6 +257,7 @@ private:
     uint8_t transferFrameSeqNumber;
     bool ack;
     uint8_t reps;
+    uint8_t *data;
 };
 
 class CLCW {

@@ -26,15 +26,15 @@ private:
     FlagState lockout;
     FlagState wait;
     FlagState retransmit;
-    uint16_t receiver_frame_seq_number;
-    uint16_t farm_b_count;
+    uint16_t receiverFrameSeqNumber;
+    uint16_t farmBCount;
     const uint8_t farmSlidingWinWidth;
     const uint8_t farmPositiveWinWidth;
     const uint8_t farmNegativeWidth;
 
 public:
     /* Directives */
-    COPDirectiveResponse ad_frame_arrives();
+    COPDirectiveResponse frame_arrives();
 
     etl::list<Packet *, max_received_rx_tc_in_wait_queue> *waitQueue;
     etl::list<Packet *, max_received_rx_tc_in_sent_queue> *sentQueue;
@@ -46,7 +46,7 @@ public:
                             const uint8_t farm_negative_win_width) :
             waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farm_sliding_win_width),
             farmNegativeWidth(farm_negative_win_width),
-            farmPositiveWinWidth(farm_positive_win_width), receiver_frame_seq_number(0), farm_b_count(0),
+            farmPositiveWinWidth(farm_positive_win_width), receiverFrameSeqNumber(0), farmBCount(0),
             lockout(FlagState::NOT_READY), wait(FlagState::NOT_READY), retransmit(FlagState::NOT_READY) {};
 };
 
