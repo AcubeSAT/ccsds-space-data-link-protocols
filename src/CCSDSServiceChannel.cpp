@@ -214,7 +214,14 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::TX_MC_FRAME_BUFFER_FULL;
     }
 
-    COPDirectiveResponse err = virt_channel->fop.transfer_fdu();
+    Packet *frame = virt_channel->txUnprocessedPacketList.front();
+    COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
+
+    if (frame->transfer_frame_header().ctrl_and_cmd_flag() == 0) {
+        err = virt_channel->fop.transfer_fdu();
+    } else {
+        err = virt_channel->fop.valid_clcw_arrival();
+    }
 
     if (err == COPDirectiveResponse::REJECT) {
         return ServiceChannelNotif::FOP_REQUEST_REJECTED;

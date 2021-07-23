@@ -162,11 +162,13 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
-void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
-    if (clcw->lockout() == 0) {
-        if (clcw->report_value() == expectedAcknowledgementSeqNumber) {
-            if (clcw->retransmission() == 0) {
-                if (clcw->wait() == 0) {
+COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
+    Packet *frame = vchan->txUnprocessedPacketList.front();
+
+    if (frame->lckout() == 0) {
+        if (frame->report_value() == expectedAcknowledgementSeqNumber) {
+            if (frame->retransmit() == 0) {
+                if (frame->wt() == 0) {
                     if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
                         // E1
                         switch (state) {
@@ -178,12 +180,12 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                                 state = FOPState::INITIAL;
                                 break;
                             case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                clcw->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
+                                frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
                                 state = FOPState::ACTIVE;
                                 // cancel timer
                                 break;
                             case FOPState::INITIALIZING_WITH_BC_FRAME:
-                                clcw->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
+                                frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
                                 // bc_accept()??
                                 //  cancel timer
                                 state = FOPState::ACTIVE;
@@ -239,10 +241,10 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                         break;
                 }
             }
-        } else if (clcw->report_value() > expectedAcknowledgementSeqNumber &&
+        } else if (frame->report_value() > expectedAcknowledgementSeqNumber &&
                    expectedAcknowledgementSeqNumber >= transmitterFrameSeqNumber) {
-            if (clcw->retransmission() == 0) {
-                if (clcw->wait() == 0) {
+            if (frame->retransmit() == 0) {
+                if (frame->wt() == 0) {
                     if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
                         // E5
                         switch (state) {
@@ -323,7 +325,7 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                     }
                 } else if (transmissionLimit > 1) {
                     if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
-                        if (clcw->wait() == 0) {
+                        if (frame->wt() == 0) {
                             // E8
                             switch (state) {
                                 case FOPState::ACTIVE:
@@ -356,7 +358,7 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                         }
                     } else {
                         if (transmissionCount < transmissionLimit) {
-                            if (clcw->wait() == 0) {
+                            if (frame->wt() == 0) {
                                 //  E10
                                 switch (state) {
                                     case FOPState::ACTIVE:
@@ -386,7 +388,7 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                                 }
                             }
                         } else {
-                            if (clcw->wait() == 0) {
+                            if (frame->wt() == 0) {
                                 // E12
                                 switch (state) {
                                     case FOPState::ACTIVE:
@@ -446,6 +448,13 @@ void FrameOperationProcedure::valid_clcw_arrival(CLCW *clcw) {
                 break;
         }
     }
+
+    MasterChannelAlert mc = vchan->master_channel().store_out(frame);
+    if (mc != MasterChannelAlert::NO_MC_ALERT){
+        return COPDirectiveResponse::REJECT;
+    }
+
+    return COPDirectiveResponse::ACCEPT;
 }
 
 void FrameOperationProcedure::invalid_clcw_arrival() {
@@ -598,6 +607,7 @@ void FrameOperationProcedure::bd_reject() {
 
 COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
     Packet *frame = vchan->txUnprocessedPacketList.front();
+
     if (frame->transfer_frame_header().bypass_flag() == 0) {
         if (frame->service_type() == ServiceType::TYPE_A) {
             if (!waitQueue->full()) {
@@ -616,6 +626,7 @@ COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
                 return COPDirectiveResponse::REJECT;
             }
         } else if (frame->service_type() == ServiceType::TYPE_B) {
+
             if (bdOut == FlagState::READY) {
                 //
                 transmit_bc_frame(frame);
@@ -627,6 +638,10 @@ COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
         }
     } else {
         // transfer directly to lower procedure
-        vchan->master_channel().store_out(frame);
+
+        MasterChannelAlert mc = vchan->master_channel().store_out(frame);
+        if (mc != MasterChannelAlert::NO_MC_ALERT){
+            return COPDirectiveResponse::REJECT;
+        }
     }
 }

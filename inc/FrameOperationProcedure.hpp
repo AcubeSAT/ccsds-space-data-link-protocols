@@ -59,7 +59,6 @@ private:
     uint16_t transmissionCount;
     uint8_t fopSlidingWindow;
     bool timeoutType;
-
     /**
      * @brief Purge the sent queue of the virtual channel and generate a response
      */
@@ -120,8 +119,9 @@ private:
     /**
      * @brief Process event where a valid CLCW arrives
      */
-    void valid_clcw_arrival(CLCW *clcw);
+    COPDirectiveResponse valid_clcw_arrival();
 
+    // TODO: Check for invalid CLCW
     /**
      * @brief Process invalid CLCW arrival
      */
