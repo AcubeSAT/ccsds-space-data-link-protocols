@@ -11,6 +11,7 @@
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
 #include <Packet.hpp>
+#include <iostream>
 
 class MasterChannel;
 
@@ -150,7 +151,7 @@ struct VirtualChannel {
      */
     etl::flat_map<uint8_t, MAPChannel, max_map_channels> mapChannels;
 
-    VirtualChannel(MasterChannel &master_channel, const uint8_t vcid, const bool segment_header_present,
+    VirtualChannel(std::reference_wrapper<MasterChannel> master_channel, const uint8_t vcid, const bool segment_header_present,
                    const uint16_t max_frame_length, const uint8_t clcw_rate, const bool blocking,
                    const uint8_t repetition_type_a_frame, const uint8_t repetition_cop_ctrl,
                    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_chan)
@@ -215,7 +216,7 @@ private:
     /**
      * @brief The Master Channel the Virtual Channel belongs in
      */
-    MasterChannel &masterChannel;
+    std::reference_wrapper<MasterChannel> masterChannel;
 };
 
 struct MasterChannel {
@@ -228,7 +229,15 @@ struct MasterChannel {
     etl::flat_map<uint8_t, VirtualChannel, max_virtual_channels> virtChannels;
     bool errorCtrlField;
 
-    MasterChannel(bool errorCtrlField) : virtChannels(), txOutFramesList(), errorCtrlField(errorCtrlField) {}
+    MasterChannel(bool errorCtrlField) : virtChannels(), txOutFramesList(), txToBeTransmittedFramesList(), errorCtrlField(errorCtrlField) {}
+
+    MasterChannel(const MasterChannel &m)
+            : virtChannels(m.virtChannels), txOutFramesList(m.txOutFramesList),
+            txToBeTransmittedFramesList(m.txToBeTransmittedFramesList), errorCtrlField(m.errorCtrlField) {
+        for (auto &vc : virtChannels){
+            vc.second.masterChannel = *this;
+        }
+    }
 
     MasterChannelAlert store_out(Packet *packet);
 

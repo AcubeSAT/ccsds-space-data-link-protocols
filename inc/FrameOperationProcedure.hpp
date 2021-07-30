@@ -104,6 +104,7 @@ private:
      */
     void look_for_directive();
 
+    COPDirectiveResponse push_sent_queue();
     /**
      * @brief Search for a FDU that can be transmitted in the sent_queueu. If none are found also search in
      * the wait_queue

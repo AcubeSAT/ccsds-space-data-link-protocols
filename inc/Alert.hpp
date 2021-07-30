@@ -11,6 +11,7 @@ enum ServiceChannelNotif {
     PACKET_EXCEEDS_MAX_SIZE,
     FOP_SENT_QUEUE_FULL,
     TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY,
+    TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL,
     FOP_REQUEST_REJECTED,
     RX_IN_MC_FULL,
     RX_IN_BUFFER_FULL,
@@ -19,6 +20,7 @@ enum ServiceChannelNotif {
     RX_INVALID_SCID,
     RX_INVALID_LENGTH,
     VC_RX_WAIT_QUEUE_FULL,
+    TX_FOP_REJECTED,
 #if tc_error_control_field_exists
     RX_INVALID_CRC,
 #endif
@@ -27,6 +29,7 @@ enum ServiceChannelNotif {
 enum FOPNotif {
     NO_FOP_EVENT,
     SENT_QUEUE_FULL,
+    WAIT_QUEUE_EMPTY,
 };
 
 enum COPDirectiveResponse {

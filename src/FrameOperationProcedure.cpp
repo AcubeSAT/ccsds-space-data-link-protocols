@@ -32,6 +32,10 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
         transmissionCount = 1;
     }
 
+    if (waitQueue->empty()){
+        return FOPNotif::WAIT_QUEUE_EMPTY;
+    }
+
     Packet *ad_frame = waitQueue->front();
 
     sentQueue->push_back(ad_frame);
@@ -119,6 +123,23 @@ void FrameOperationProcedure::look_for_directive() {
     }
 }
 
+// TODO: Sent Queue as-is is pretty much tx
+COPDirectiveResponse FrameOperationProcedure::push_sent_queue(){
+    if (vchan->sentQueue.empty()){
+        return COPDirectiveResponse::REJECT;
+    }
+
+    Packet* pckt = sentQueue->front();
+
+    MasterChannelAlert err = vchan->master_channel().store_out(pckt);
+
+    if (err == MasterChannelAlert::NO_MC_ALERT){
+        sentQueue->pop_front();
+        return COPDirectiveResponse::ACCEPT;
+    }
+    return COPDirectiveResponse::REJECT;
+}
+
 COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
     if (adOut == FlagState::READY) {
         for (Packet *frame : *sentQueue) {
@@ -134,7 +155,7 @@ COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
         if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
             Packet *frame = waitQueue->front();
             if (frame->service_type() == ServiceType::TYPE_A) {
-                sentQueue->push_front(frame);
+                sentQueue->push_back(frame);
                 waitQueue->pop_front();
                 return COPDirectiveResponse::ACCEPT;
             }

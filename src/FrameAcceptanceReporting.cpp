@@ -71,3 +71,12 @@ COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
         }
     }
 }
+
+COPDirectiveResponse FarmAcceptanceReporting::buffer_release() {
+    if (state == FARMState::LOCKOUT){
+        state = FARMState::OPEN;
+        wait = FlagState::NOT_READY;
+    } else if(state == FARMState::WAIT){
+        wait = FlagState::NOT_READY;
+    }
+}

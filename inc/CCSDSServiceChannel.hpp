@@ -68,9 +68,15 @@ public:
 
     ServiceChannelNotif all_frames_generation_request();
 
+    std::optional<Packet> get_tx_processed_packet();
+
     ServiceChannelNotif all_frames_reception_request();
 
     ServiceChannelNotif transmit_frame(uint8_t *pack);
+
+    ServiceChannelNotif transmit_ad_frame(uint8_t vid);
+
+    ServiceChannelNotif push_sent_queue(uint8_t vid);
 
     // COP Directives
     // TODO: Properly handle Notifications
@@ -181,7 +187,7 @@ public:
      */
     std::pair<ServiceChannelNotif, const Packet *>
 
-    out_packet(const uint8_t vid, const uint8_t mapid) const;
+    tx_out_packet(const uint8_t vid, const uint8_t mapid) const;
 
     /**
      * @brief Read first packet of the virtual channel buffer
@@ -192,6 +198,11 @@ public:
      * @brief Return the last stored packet
      */
     std::pair<ServiceChannelNotif, const Packet *> tx_out_packet() const;
+
+    /**
+     * @brief Return the last processed packet
+     */
+    std::pair<ServiceChannelNotif, const Packet *> tx_out_processed_packet() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) : masterChannel(master_channel) {}
