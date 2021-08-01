@@ -1,9 +1,9 @@
 
 #ifndef CCSDS_TM_PACKETS_PACKETTM_HPP
 #define CCSDS_TM_PACKETS_PACKETTM_HPP
-struct TransferFrameHeaderΤΜ : public TransferFrameHeader {
+struct TransferFrameHeaderTM : public TransferFrameHeader {
 public:
-	TransferFrameHeaderΤΜ(uint8_t* pckt) : TransferFrameHeader(pckt) {}
+	TransferFrameHeaderTM(uint8_t* pckt) : TransferFrameHeader(pckt) {}
 
 	/**
 	 * @brief The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
@@ -33,7 +33,7 @@ public:
 	 */
 
 	const bool transfer_frame_secondary_header_flag() const {
-		return (packet_header[4] << 7U & 0x01);
+		return (packet_header[4] << 7U & 0x80);
 	}
 
 	/**
@@ -41,19 +41,16 @@ public:
 	 */
 
 	const bool synchronization_flag() const {
-		return (packet_header[4] << 6U & 0x01);
+		return (packet_header[4] << 6U & 0x80);
 	}
 
 	const bool packet_order_flag() const {
-		return (packet_header[4] << 5U & 0x01);
+		return (packet_header[4] << 5U & 0x80);
 	}
 
-	const uint8_t packet_order_flag() const {
-		return (packet_header[4] << 4U & 0x07);
-	}
 
 	const uint16_t first_header_pointer() const {
-		return ((packet_header[4] << 3U & 0x11)) << 3U | packet_header[5];
+		return (static_cast<uint16_t>((packet_header[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packet_header[5])));
 	}
-}
+};
 #endif // CCSDS_TM_PACKETS_PACKETTM_HPP
