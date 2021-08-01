@@ -41,7 +41,8 @@ public:
 	 * @brief The length of the transfer frame
 	 */
 	const uint16_t transfer_frame_length() const {
-		return (static_cast<uint16_t>(packet_header[2]) << 8U) | (static_cast<uint16_t>(packet_header[3])) & 0x3FF;
+		return (static_cast<uint16_t>(packet_header[2] & 0x03) << 8U) |
+		       (static_cast<uint16_t>(packet_header[3]));
 	}
 };
 
