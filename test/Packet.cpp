@@ -25,9 +25,8 @@ TEST_CASE("TC Header Generation") {
 	CHECK(transfer_frame_header_tc.transfer_frame_length() == 1023);
 }
 
-
 TEST_CASE("TM Header Generation") {
-	uint8_t data[] = {255, 255, 255, 255, 255,255};
+	uint8_t data[] = {255, 255, 255, 255, 255, 255};
 	TransferFrameHeaderTM transfer_frame_header_tm = TransferFrameHeaderTM(data);
 	CHECK(transfer_frame_header_tm.spacecraft_id(TM) == 1023);
 	CHECK(transfer_frame_header_tm.operational_control_field_flag() == 0x01);

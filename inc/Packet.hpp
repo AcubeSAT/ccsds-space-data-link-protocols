@@ -14,8 +14,7 @@ struct TransferFrameHeader {
 	 */
 	const uint16_t spacecraft_id(enum PacketType T) const {
 		if (T == TC) {
-			return (static_cast<uint16_t>(packet_header[0] & 0x03) << 8U) |
-			(static_cast<uint16_t>(packet_header[1]));
+			return (static_cast<uint16_t>(packet_header[0] & 0x03) << 8U) | (static_cast<uint16_t>(packet_header[1]));
 		}
 
 		else {
