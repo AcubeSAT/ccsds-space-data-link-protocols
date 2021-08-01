@@ -4,7 +4,7 @@
 #pragma once
 
 #include <cstdint>
-#include <Packet.hpp>
+#include <PacketTC.hpp>
 #include <etl/list.h>
 #include <Alert.hpp>
 
@@ -41,8 +41,8 @@ class FrameOperationProcedure {
     friend class ServiceChannel;
 
 public:
-    etl::list<Packet *, max_received_tx_tc_in_wait_queue> *waitQueue;
-    etl::list<Packet *, max_received_tx_tc_in_sent_queue> *sentQueue;
+    etl::list<PacketTC*, max_received_tx_tc_in_wait_queue> *waitQueue;
+    etl::list<PacketTC*, max_received_tx_tc_in_sent_queue> *sentQueue;
     VirtualChannel *vchan;
 
 private:
@@ -77,12 +77,12 @@ private:
     /**
      * @brief Prepares a Type-BC Frame for transmission
      */
-    FOPNotif transmit_bc_frame(Packet *bc_frame);
+    FOPNotif transmit_bc_frame(PacketTC*bc_frame);
 
     /**
      * @brief Prepares a Type-BD Frame for transmission
      */
-    FOPNotif transmit_bd_frame(Packet *bd_frame);
+    FOPNotif transmit_bd_frame(PacketTC*bd_frame);
 
     /**
      * @brief Marks AD Frames stored in the sent queue to be retransmitted
@@ -169,8 +169,8 @@ private:
     COPDirectiveResponse transfer_fdu();
 
 public:
-    FrameOperationProcedure(VirtualChannel *vchan, etl::list<Packet *, max_received_tx_tc_in_wait_queue> *waitQueue,
-                            etl::list<Packet *, max_received_tx_tc_in_sent_queue> *sentQueue,
+    FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC*, max_received_tx_tc_in_wait_queue> *waitQueue,
+                            etl::list<PacketTC*, max_received_tx_tc_in_sent_queue> *sentQueue,
                             const uint8_t repetition_cop_ctrl)
             : waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
               vchan(vchan), adOut(FlagState::READY), bdOut(FlagState::READY), bcOut(FlagState::READY),

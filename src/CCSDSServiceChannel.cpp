@@ -1,5 +1,5 @@
 #include <CCSDSServiceChannel.hpp>
-#include <Packet.hpp>
+#include <PacketTC.hpp>
 #include <etl/iterator.h>
 #include <Alert.hpp>
 
@@ -12,14 +12,14 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
         return ServiceChannelNotif::RX_IN_BUFFER_FULL;
     }
 
-    Packet pckt = Packet(packet, packet_length);
+	PacketTC pckt = PacketTC(packet, packet_length);
 
     if (pckt.packet_length() != packet_length) {
         return ServiceChannelNotif::RX_INVALID_LENGTH;
     }
 
     masterChannel.rxMasterCopy.push_back(pckt);
-    Packet *master_pckt = &(masterChannel.rxMasterCopy.front());
+	PacketTC*master_pckt = &(masterChannel.rxMasterCopy.front());
     masterChannel.rxInFramesList.push_back(master_pckt);
 
     return ServiceChannelNotif::NO_SERVICE_EVENT;
@@ -35,7 +35,8 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
         return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    Packet packet_s = Packet(packet, packet_length, 0, gvcid, mapid, sduid, service_type, vchan->segmentHeaderPresent);
+	PacketTC packet_s =
+	    PacketTC(packet, packet_length, 0, gvcid, mapid, sduid, service_type, vchan->segmentHeaderPresent);
 
     if (service_type == ServiceType::TYPE_A) {
         packet_s.set_repetitions(vchan->repetitionTypeAFrame);
@@ -60,7 +61,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
         return ServiceChannelNotif::VC_MC_FRAME_BUFFER_FULL;
     }
 
-    Packet *packet = map_channel->unprocessedPacketList.front();
+	PacketTC*packet = map_channel->unprocessedPacketList.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
@@ -81,8 +82,8 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
                 // First portion
                 uint16_t seg_header = mapid | 0x40;
 
-                Packet t_packet =
-                        Packet(packet->packet_data(), max_packet_length, seg_header,
+				PacketTC t_packet =
+				    PacketTC(packet->packet_data(), max_packet_length, seg_header,
                                packet->global_virtual_channel_id(),
                                packet->map_id(), packet->spacecraft_id(), packet->service_type(), virt_channel->segmentHeaderPresent);
                 virt_channel->store(&t_packet);
@@ -143,7 +144,7 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
         return ServiceChannelNotif::VC_MC_FRAME_BUFFER_FULL;
         ;
     }
-    Packet* packet = virt_channel->txUnprocessedPacketList.front();
+    PacketTC* packet = virt_channel->txUnprocessedPacketList.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
@@ -164,8 +165,8 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
                 // First portion
                 uint16_t seg_header = 0x40;
 
-                Packet t_packet =
-                    Packet(packet->packet_data(), max_packet_length, seg_header, packet->global_virtual_channel_id(),
+                PacketTC t_packet =
+                    PacketTC(packet->packet_data(), max_packet_length, seg_header, packet->global_virtual_channel_id(),
                            packet->map_id(), packet->spacecraft_id(), packet->service_type());
                 virt_channel->store(&t_packet);
 
@@ -214,7 +215,7 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
         return ServiceChannelNotif::TX_MC_FRAME_BUFFER_FULL;
     }
 
-    Packet *frame = virt_channel->txUnprocessedPacketList.front();
+	PacketTC*frame = virt_channel->txUnprocessedPacketList.front();
     COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
     if (frame->transfer_frame_header().ctrl_and_cmd_flag() == 0) {
@@ -240,7 +241,7 @@ ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
         return ServiceChannelNotif::RX_OUT_BUFFER_FULL;
     }
 
-    Packet *packet = masterChannel.rxInFramesList.front();
+	PacketTC*packet = masterChannel.rxInFramesList.front();
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(packet->virtual_channel_id()));
 
     if (virt_channel->rxWaitQueue.full()) {
@@ -263,7 +264,7 @@ ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
         return ServiceChannelNotif::RX_INVALID_SCID;
     }
 
-    // Packet length is checked upon storing the packet in the MC
+    // PacketTC length is checked upon storing the packet in the MC
 
     // If present in channel, check if CRC is valid
 #if tc_error_control_field_exists
@@ -283,12 +284,12 @@ ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
-std::optional<Packet> ServiceChannel::get_tx_processed_packet(){
+std::optional<PacketTC> ServiceChannel::get_tx_processed_packet(){
     if (masterChannel.txOutFramesList.empty()) {
         return {};
     }
 
-    Packet packet = *masterChannel.txOutFramesList.front();
+    PacketTC packet = *masterChannel.txOutFramesList.front();
     // TODO: Here the packet should probably be deleted from the master buffer
     return packet;
 }
@@ -298,11 +299,12 @@ ServiceChannelNotif ServiceChannel::all_frames_generation_request() {
         return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
     }
 
+	PacketTC*packet = masterChannel.txOutFramesList.front();
     if (masterChannel.txToBeTransmittedFramesList.full()){
         return ServiceChannelNotif::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
 
-    Packet *packet = masterChannel.txOutFramesList.front();
+    PacketTC*packet = masterChannel.txOutFramesList.front();
     masterChannel.txOutFramesList.pop_front();
 
     if (masterChannel.errorCtrlField) {
@@ -321,7 +323,7 @@ ServiceChannelNotif ServiceChannel::transmit_frame(uint8_t *pack) {
         return ServiceChannelNotif::TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY;
     }
 
-    Packet *packet = masterChannel.txToBeTransmittedFramesList.front();
+	PacketTC*packet = masterChannel.txToBeTransmittedFramesList.front();
     packet->set_repetitions(packet->repetitions() - 1);
     if (packet->repetitions() == 0) {
         masterChannel.txToBeTransmittedFramesList.pop_front();
@@ -444,6 +446,9 @@ const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
 }
 
+std::pair<ServiceChannelNotif, const PacketTC*>
+ServiceChannel::out_packet(const uint8_t vid, const uint8_t mapid) const {
+    const etl::list<PacketTC*, max_received_tc_in_map_channel> *mc =
 std::pair<ServiceChannelNotif, const Packet *>
 ServiceChannel::tx_out_packet(const uint8_t vid, const uint8_t mapid) const {
     const etl::list<Packet *, max_received_tc_in_map_channel> *mc =
@@ -455,8 +460,8 @@ ServiceChannel::tx_out_packet(const uint8_t vid, const uint8_t mapid) const {
     return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc->front());
 }
 
-std::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet(const uint8_t vid) const {
-    const etl::list<Packet *, max_received_unprocessed_tx_tc_in_virt_buffer> *vc =
+std::pair<ServiceChannelNotif, const PacketTC*> ServiceChannel::tx_out_packet(const uint8_t vid) const {
+    const etl::list<PacketTC*, max_received_unprocessed_tx_tc_in_virt_buffer> *vc =
             &(masterChannel.virtChannels.at(vid).txUnprocessedPacketList);
     if (vc->empty()) {
         return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
@@ -465,7 +470,7 @@ std::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet(con
     return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
 }
 
-std::pair<ServiceChannelNotif, const Packet *> ServiceChannel::tx_out_packet() const {
+std::pair<ServiceChannelNotif, const PacketTC*> ServiceChannel::tx_out_packet() const {
     if (masterChannel.txMasterCopy.empty()) {
         return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }

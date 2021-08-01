@@ -19,7 +19,7 @@ add_library(common OBJECT
         src/CCSDSServiceChannel.cpp
         src/CCSDSChannel.cpp
         src/FrameOperationProcedure.cpp
-        src/Packet.cpp src/FrameAcceptanceReporting.cpp)
+        src/PacketTC.cpp src/FrameAcceptanceReporting.cpp)
 
 # Specify the .cpp files for the executables
 #file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
@@ -27,7 +27,7 @@ add_executable(ccsds_tm_packets
         src/main.cpp
         $<TARGET_OBJECTS:common>
         #        ${x86_main_SRC}
-        inc/Alert.hpp)
+        inc/Alert.hpp inc/Packet.cpp inc/Packet.h inc/PacketTM.h)
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     # Gather all the .cpp files corresponding to tests
