@@ -48,7 +48,6 @@ public:
 		return (packet_header[4] << 5U & 0x80);
 	}
 
-
 	const uint16_t first_header_pointer() const {
 		return (static_cast<uint16_t>((packet_header[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packet_header[5])));
 	}
