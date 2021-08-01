@@ -4,7 +4,7 @@
 #pragma once
 
 #include <cstdint>
-#include <Packet.hpp>
+#include <PacketTC.hpp>
 #include <etl/list.h>
 #include <Alert.hpp>
 
@@ -36,12 +36,12 @@ public:
     /* Directives */
     COPDirectiveResponse frame_arrives();
 
-    etl::list<Packet *, max_received_rx_tc_in_wait_queue> *waitQueue;
-    etl::list<Packet *, max_received_rx_tc_in_sent_queue> *sentQueue;
+    etl::list<PacketTC*, max_received_rx_tc_in_wait_queue> *waitQueue;
+    etl::list<PacketTC*, max_received_rx_tc_in_sent_queue> *sentQueue;
     VirtualChannel *vchan;
 
-    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<Packet *, max_received_rx_tc_in_wait_queue> *waitQueue,
-                            etl::list<Packet *, max_received_rx_tc_in_sent_queue> *sentQueue,
+    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<PacketTC*, max_received_rx_tc_in_wait_queue> *waitQueue,
+                            etl::list<PacketTC*, max_received_rx_tc_in_sent_queue> *sentQueue,
                             const uint8_t farm_sliding_win_width, const uint8_t farm_positive_win_width,
                             const uint8_t farm_negative_win_width) :
             waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farm_sliding_win_width),

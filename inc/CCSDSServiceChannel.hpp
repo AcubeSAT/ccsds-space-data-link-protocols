@@ -4,7 +4,7 @@
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
 
-#include <Packet.hpp>
+#include <PacketTC.hpp>
 #include <utility>
 
 /**
@@ -30,7 +30,7 @@ public:
      * @brief Stores an incoming packet in the ring buffer
      *
      * @param packet Data of the packet
-     * @param packet_length Packet length
+     * @param packet_length PacketTC length
      * @param gvcid Global Virtual Channel ID
      * @param mapid MAP ID
      * @param sduid SDU ID
@@ -179,19 +179,19 @@ public:
     /**
      * @brief Read first packet of the MAP channel buffer
      */
-    std::pair<ServiceChannelNotif, const Packet *>
+    std::pair<ServiceChannelNotif, const PacketTC*>
 
     out_packet(const uint8_t vid, const uint8_t mapid) const;
 
     /**
      * @brief Read first packet of the virtual channel buffer
      */
-    std::pair<ServiceChannelNotif, const Packet *> tx_out_packet(const uint8_t vid) const;
+    std::pair<ServiceChannelNotif, const PacketTC*> tx_out_packet(const uint8_t vid) const;
 
     /**
      * @brief Return the last stored packet
      */
-    std::pair<ServiceChannelNotif, const Packet *> tx_out_packet() const;
+    std::pair<ServiceChannelNotif, const PacketTC*> tx_out_packet() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) : masterChannel(master_channel) {}

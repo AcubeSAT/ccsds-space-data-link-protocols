@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 #include <CCSDSChannel.hpp>
-#include <Packet.hpp>
+#include <PacketTC.hpp>
 #include <CCSDSServiceChannel.hpp>
 
 TEST_CASE("CCSDS TC Channel Model") {

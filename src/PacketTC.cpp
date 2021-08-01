@@ -1,4 +1,4 @@
-#include <Packet.hpp>
+#include <PacketTC.hpp>
 
 static uint16_t crc_16_ccitt_table[]{
         0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad,
@@ -32,7 +32,7 @@ uint16_t calculate_crc(uint8_t *packet, uint16_t len) {
     return crc;
 }
 
-void Packet::append_crc() {
+void PacketTC::append_crc() {
     uint16_t len = hdr.transfer_frame_length() - 2;
     uint16_t crc = calculate_crc(packet_data(), len);
 
@@ -41,7 +41,7 @@ void Packet::append_crc() {
     packet[len + 1] = crc & 0xFF;
 }
 
-Packet::Packet(uint8_t *packet, uint16_t packet_length) : packet(packet), hdr(packet), packetLength(packet_length) {
+PacketTC::PacketTC(uint8_t *packet, uint16_t packet_length) : packet(packet), hdr(packet), packetLength(packet_length) {
     // Segment header may be unavailable in virtual channels, here we treat it as if it's there sinc it's existence is
     // dependent on the channel. We deal with it's existence afterwards
     segHdr = packet[5];

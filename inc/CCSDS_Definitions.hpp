@@ -10,7 +10,7 @@
 // TODO? See if some of those constants don't need to be global and can be defined in the class instead
 const uint16_t spacecraft_identifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
-/* TM Packet Definitions */
+/* TM PacketTC Definitions */
 const uint16_t tm_transfer_frame_size = 128;
 const uint8_t tm_primary_header_size = 6;
 const uint8_t tm_secondary_header_size = 0; // Size set to zero if the secondary header is not used
@@ -35,7 +35,7 @@ const uint16_t tm_frame_data_field_size = (tm_transfer_frame_size - tm_primary_h
 
 #define TM_MAX_PACKET_SIZE 32768U // TODO: Check whether this is defined in ECSS of OBC
 
-/* TC Packet Definitions */
+/* TC PacketTC Definitions */
 const uint8_t tc_primary_header_size = 5;
 const bool tc_error_control_field_exists = false;
 
