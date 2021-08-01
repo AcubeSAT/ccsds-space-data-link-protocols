@@ -1,7 +1,7 @@
 #include <FarmeAcceptanceReporting.h>
 
 COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
-    Packet *frame = waitQueue->front();
+	PacketTC*frame = waitQueue->front();
 
     if (frame->service_type() == ServiceType::TYPE_A && frame->transfer_frame_header().ctrl_and_cmd_flag()) {
         if (frame->transfer_frame_sequence_number() == receiverFrameSeqNumber) {

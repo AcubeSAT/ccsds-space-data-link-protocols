@@ -1,9 +1,9 @@
 #include <catch2/catch.hpp>
-#include <Packet.hpp>
+#include <PacketTC.hpp>
 
-TEST_CASE("Packet Generation") {
+TEST_CASE("PacketTC Generation") {
     uint8_t data[] = {0, 11, 128, 33, 4, 5};
-    Packet pckt = Packet(data, 5);
+	PacketTC pckt = PacketTC(data, 5);
 
     CHECK(pckt.segmentation_header() == 5);
     CHECK(pckt.packet_data()[0] == 0);
