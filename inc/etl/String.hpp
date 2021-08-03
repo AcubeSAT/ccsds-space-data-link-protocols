@@ -22,45 +22,45 @@
  *
  * @tparam MAX_SIZE The maximum size of the strings
  */
-template <const size_t MAX_SIZE>
+template<const size_t MAX_SIZE>
 class String : public etl::string<MAX_SIZE> {
 public:
-	/**
-	 * String constructor from a uint8_t array, with a length equal to \p MAX_SIZE
-	 *
-	 * The array does NOT need to be null-terminated.
-	 *
-	 * @param data The array of uint8_t data
-	 */
-	explicit String(const uint8_t* data) // NOLINTNEXTLINE(google-explicit-constructor)
-	    : etl::string<MAX_SIZE>(reinterpret_cast<const char*>(data), MAX_SIZE) {}
+    /**
+     * String constructor from a uint8_t array, with a length equal to \p MAX_SIZE
+     *
+     * The array does NOT need to be null-terminated.
+     *
+     * @param data The array of uint8_t data
+     */
+    explicit String(const uint8_t *data) // NOLINTNEXTLINE(google-explicit-constructor)
+            : etl::string<MAX_SIZE>(reinterpret_cast<const char *>(data), MAX_SIZE) {}
 
-	/**
-	 * An empty string constructor. An empty etl::string is allocated.
-	 */
-	String() : etl::string<MAX_SIZE>() {}
+    /**
+     * An empty string constructor. An empty etl::string is allocated.
+     */
+    String() : etl::string<MAX_SIZE>() {}
 
-	/**
-	 * String constructor from a uint8_t array
-	 *
-	 * The array does NOT need to be null-terminated.
-	 *
-	 * @param data The array of uint8_t data
-	 * @param count The number of bytes to include
-	 */
-	String(const uint8_t* data, size_t count) : etl::string<MAX_SIZE>(reinterpret_cast<const char*>(data), count) {}
+    /**
+     * String constructor from a uint8_t array
+     *
+     * The array does NOT need to be null-terminated.
+     *
+     * @param data The array of uint8_t data
+     * @param count The number of bytes to include
+     */
+    String(const uint8_t *data, size_t count) : etl::string<MAX_SIZE>(reinterpret_cast<const char *>(data), count) {}
 
-	/**
-	 * Declaration of the constructor from const char*s that calls the parent constructor
-	 *
-	 * This is required for some reason, so that C++ recognises and converts string literals
-	 * automatically
-	 *
-	 * @param text The pointer to a null terminated string
-	 *
-	 */
-	explicit String(const char* text) // NOLINTNEXTLINE(google-explicit-constructor)
-	    : etl::string<MAX_SIZE>(text) {}
+    /**
+     * Declaration of the constructor from const char*s that calls the parent constructor
+     *
+     * This is required for some reason, so that C++ recognises and converts string literals
+     * automatically
+     *
+     * @param text The pointer to a null terminated string
+     *
+     */
+    explicit String(const char *text) // NOLINTNEXTLINE(google-explicit-constructor)
+            : etl::string<MAX_SIZE>(text) {}
 };
 
 #endif // CCSDS_TM_PACKETS_STRING_HPP

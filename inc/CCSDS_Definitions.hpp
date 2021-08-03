@@ -91,6 +91,8 @@ const uint8_t max_received_unprocessed_tx_tc_in_virt_buffer = 6;
 const uint8_t fop_sliding_window_initial = 255;
 const uint8_t fop_timer_initial = 60; // sec
 
-enum FlagState { NOT_READY = 0, READY = 1 };
+enum FlagState {
+    NOT_READY = 0, READY = 1
+};
 
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP
