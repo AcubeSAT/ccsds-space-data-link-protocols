@@ -9,6 +9,9 @@
     <libraryRoots>
       <file path="$PROJECT_DIR$/lib" />
     </libraryRoots>
+    <excludeRoots>
+      <file path="$PROJECT_DIR$/inc/etl" />
+    </excludeRoots>
   </component>
   <component name="JavaScriptSettings">
     <option name="languageLevel" value="ES6" />

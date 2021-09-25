@@ -11,7 +11,6 @@
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
 #include <Packet.hpp>
-#include <iostream>
 
 class MasterChannel;
 
@@ -221,6 +220,7 @@ private:
 
 struct MasterChannel {
     friend class ServiceChannel;
+    friend class FrameOperationProcedure;
 
     /**
      * @brief Virtual channels of the master channel

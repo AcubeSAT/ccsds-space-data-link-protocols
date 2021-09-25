@@ -38,7 +38,6 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
 
     Packet *ad_frame = waitQueue->front();
 
-    sentQueue->push_back(ad_frame);
     ad_frame->set_transfer_frame_sequence_number(transmitterFrameSeqNumber);
 
     ad_frame->mark_for_retransmission(0);
@@ -94,18 +93,38 @@ void FrameOperationProcedure::initiate_bc_retransmission() {
     }
 }
 
+void FrameOperationProcedure::acknowledge_frame(uint8_t frame_seq_num){
+    for (Packet* pckt : *sentQueue){
+        if (pckt->transfer_frame_sequence_number() == frame_seq_num){
+            pckt->set_acknowledgement(1);
+            return;
+        }
+    }
+}
+
 void FrameOperationProcedure::remove_acknowledged_frames() {
     etl::ilist<Packet *>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
         if ((*cur_frame)->acknowledged()) {
-            (*cur_frame)->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
             expectedAcknowledgementSeqNumber = (*cur_frame)->transfer_frame_sequence_number();
             sentQueue->erase(cur_frame++);
         } else {
             ++cur_frame;
         }
     }
+
+    // Also remove acknowledged frames from Master TX Buffer
+    etl::ilist<Packet>::iterator cur_packet = vchan->master_channel().txMasterCopy.begin();
+
+    while (cur_packet != vchan->master_channel().txMasterCopy.end()) {
+        if ((*cur_packet).acknowledged()) {
+            vchan->master_channel().txMasterCopy.erase(cur_packet++);
+        } else {
+            ++cur_packet;
+        }
+    }
+
     transmissionCount = 1;
 }
 
@@ -134,7 +153,7 @@ COPDirectiveResponse FrameOperationProcedure::push_sent_queue(){
     MasterChannelAlert err = vchan->master_channel().store_out(pckt);
 
     if (err == MasterChannelAlert::NO_MC_ALERT){
-        sentQueue->pop_front();
+        //sentQueue->pop_front();
         return COPDirectiveResponse::ACCEPT;
     }
     return COPDirectiveResponse::REJECT;

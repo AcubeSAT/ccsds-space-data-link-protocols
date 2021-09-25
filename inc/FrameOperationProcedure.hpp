@@ -34,11 +34,12 @@ enum AlertEvent {
 };
 
 class VirtualChannel;
-
+class NasterChannel;
 class MAPChannel;
 
 class FrameOperationProcedure {
     friend class ServiceChannel;
+    friend class MasterChannel;
 
 public:
     etl::list<Packet *, max_received_tx_tc_in_wait_queue> *waitQueue;
@@ -127,6 +128,8 @@ private:
      * @brief Process invalid CLCW arrival
      */
     void invalid_clcw_arrival();
+
+    void acknowledge_frame(uint8_t frame_seq_num);
 
     /* Directives */
     FDURequestType initiate_ad_no_clcw();
