@@ -56,7 +56,7 @@ tests:
 cppcheck:
   stage: build
   before_script:
-    - echo deb http://deb.debian.org/debian stable main > /etc/apt/sources.list
+    - echo deb http://deb.debian.org/debian testing main > /etc/apt/sources.list
     - apt-get update -qq && apt-get -t stable install -y cppcheck
     - apt update -qq && apt install -y cppcheck
     - cppcheck --version
