@@ -27,7 +27,7 @@ public:
     // Public methods that are called by the scheduler
 
     /**
-     * @brief Stores an incoming packet in the ring buffer
+     * @brief Stores an incoming  TC packet in the ring buffer
      *
      * @param packet Data of the packet
      * @param packet_length PacketTC length
@@ -39,7 +39,19 @@ public:
     ServiceChannelNotif store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
                               ServiceType service_type);
 
-    /**
+	/**
+     * @brief Stores an incoming  TM packet in the ring buffer
+     *
+     * @param packet Data of the packet
+     * @param packet_length PacketTC length
+     * @param gvcid Global Virtual Channel ID
+     * @param sduid SDU ID
+	 */
+
+	ServiceChannelNotif store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t sduid);
+
+
+	/**
      * @brief This service is used for storing incoming packets in the master channel
      * @param packet Raw packet data
      * @param packet_length The length of the packet
