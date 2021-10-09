@@ -124,9 +124,9 @@ struct PacketTM:public Packet {
 
 	PacketTM(uint8_t *packet, uint16_t packet_length, uint8_t virtualChannelFrameCount, uint8_t scid,
 	         uint16_t vcid, uint8_t masterChannelFrameCount, uint8_t* secondary_header,
-	         uint16_t transferFrameDataFieldStatus, uint8_t transferFrameVersionNumber, PacketType t=TM)
+	         uint16_t transferFrameDataFieldStatus, PacketType t=TM)
 	    	:Packet(t, packet_length, packet), hdr(packet), scid(scid), vcid(vcid),
-	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(transferFrameVersionNumber),
+	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
 	      secondaryHeader(secondary_header), virtualChannelFrameCount(virtualChannelFrameCount),
 	      masterChannelFrameCount(masterChannelFrameCount), firstHeaderPointer(firstHeaderPointer) {}
 
