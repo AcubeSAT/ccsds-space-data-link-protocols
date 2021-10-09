@@ -1,5 +1,5 @@
 #include <CCSDSServiceChannel.hpp>
-#include <PacketTC.hpp>
+#include <Packet.hpp>
 #include <etl/iterator.h>
 #include <Alert.hpp>
 

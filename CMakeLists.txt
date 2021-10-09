@@ -19,7 +19,7 @@ add_library(common OBJECT
         src/CCSDSServiceChannel.cpp
         src/CCSDSChannel.cpp
         src/FrameOperationProcedure.cpp
-        src/PacketTC.cpp src/FrameAcceptanceReporting.cpp src/PacketTM.cpp)
+        src/PacketTC.cpp src/FrameAcceptanceReporting.cpp src/PacketTM.cpp src/Packet.cpp)
 
 # Specify the .cpp files for the executables
 #file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
