@@ -1,4 +1,4 @@
-image: lightspot21/acubesat-ci
+image: lycantropos/cmake
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -30,7 +30,10 @@ build:
     CLICOLOR_FORCE: 1 # Necessary for cmake to output colours
   script:
     - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_FLAGS="-Wall -Wextra -fdiagnostics-color=always"
+    - cmake .. -DCMAKE_CXX_FLAGS="-Werror -fdiagnostics-color=always"
+    - make -j4
+    - make clean
+    - cmake .. -DCMAKE_CXX_FLAGS="-Wall -Wextra -fdiagnostics-color=always" # Build again, but with more warnings
     - make -j4
 
 tests:
@@ -53,8 +56,8 @@ tests:
 cppcheck:
   stage: build
   before_script:
-    - echo deb http://deb.debian.org/debian testing main > /etc/apt/sources.list
-    - apt-get update -qq && apt-get -t testing install -y cppcheck
+    - echo deb http://deb.debian.org/debian stable main > /etc/apt/sources.list
+    - apt-get update -qq && apt-get -t stable install -y cppcheck
     - apt update -qq && apt install -y cppcheck
     - cppcheck --version
   script:
@@ -63,21 +66,12 @@ cppcheck:
 cppcheck-misra:
   stage: build
   before_script:
-    # install cppcheck from the testing repos in order to get the latest version
-    - echo deb http://deb.debian.org/debian testing main > /etc/apt/sources.list
-    - apt-get update -qq && apt-get -t testing install -y cppcheck && apt-get -t testing install -y python3
+    # Installing the `stable` repository to get the appropriate version of clang for the used debian release
+    - echo deb http://deb.debian.org/debian stable main > /etc/apt/sources.list
+    - apt-get update -qq && apt-get -t stable install -y cppcheck && apt-get -t stable install -y python3
     - cppcheck --version
   script:
     - ci/cppcheck-misra.sh
-
-vera:
-  stage: build
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq vera++
-    - vera++ --version
-    - cp ci/vera.profile /usr/lib/vera++/profiles/custom
-  script:
-    - ci/vera.sh
 
 clang-tidy:
   stage: build
@@ -85,9 +79,10 @@ clang-tidy:
     GIT_SUBMODULE_STRATEGY: normal
     TERM: xterm-color
   before_script:
-    # Installing the `sid` repository to get the latest version of clang
-    - echo deb http://deb.debian.org/debian sid main > /etc/apt/sources.list
-    - apt-get update -qq && apt-get -t sid install -y -qq clang-tidy-7
+    # Installing the `stable` repository to get the appropriate version of clang for the used debian release
+    - echo deb http://deb.debian.org/debian testing main > /etc/apt/sources.list
+    - apt-get update -qq && apt-get install -y -qq clang-tidy-7
+    - apt search clang-tidy-7
     - clang-tidy-7 --version
   script:
     # Running with `script` to give clang a tty so that it outputs colours
