@@ -20,7 +20,6 @@ enum FDURequestType {
     REQUEST_NEGATIVE_CONFIRM = 2,
 };
 
-uint16_t calculate_crc(uint8_t *packet, uint16_t len);
 
 struct TransferFrameHeaderTC : public TransferFrameHeader {
 public:
@@ -49,7 +48,7 @@ public:
     }
 };
 
-struct PacketTC {
+struct PacketTC:public Packet {
     void setConfSignal(FDURequestType reqSignal) {
         confSignal = reqSignal;
         // TODO Maybe signal the higher procedures here instead of having them manually take care of them
@@ -114,11 +113,6 @@ struct PacketTC {
         return data[3];
     }
 
-    /**
-     * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
-     * virtual channel)
-     */
-    void append_crc();
 
     /**
      * @brief Set the number of repetitions that is determined by the virtual channel
@@ -217,20 +211,20 @@ struct PacketTC {
     }
 
     PacketTC(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-             ServiceType service_type, bool seg_hdr_present)
-            : packet(packet), hdr(packet), packetLength(packet_length), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid),
-              sduid(sduid), serviceType(service_type), transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0),
-              transferFrameVersionNumber(0), data(&packet[5 + 1 * seg_hdr_present]) {}
+             ServiceType service_type, bool seg_hdr_present, PacketType t=TC):  Packet(t,packet_length,packet),
+	         hdr(packet), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid), sduid(sduid), serviceType(service_type),
+	         transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0), transferFrameVersionNumber(0)
+	          {
+		data=&packet[5 + 1 * seg_hdr_present];
+	}
 
-    PacketTC(uint8_t *packet, uint16_t packet_length);
+    PacketTC(uint8_t *packet, uint16_t packet_length, PacketType t=TC);
 
 private:
     bool toBeRetransmitted;
     // This is used by COP to signal the higher procedures
     FDURequestType confSignal;
-    uint8_t *packet;
     TransferFrameHeaderTC hdr;
-    uint16_t packetLength;
     uint8_t segHdr;
     uint8_t gvcid;
     uint8_t mapid;
@@ -240,7 +234,6 @@ private:
     uint8_t transferFrameSeqNumber;
     bool ack;
     uint8_t reps;
-    uint8_t *data;
 };
 
 class CLCW {
