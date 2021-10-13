@@ -53,6 +53,9 @@ public:
         return (static_cast<uint16_t>((packet_header[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packet_header[5])));
     }
 
+    const uint16_t transfer_frame_data_field_status() const {
+        return (static_cast<uint16_t>((packet_header[4])) << 8U | (static_cast<uint16_t>((packet_header[5]))));
+    }
 
 };
 

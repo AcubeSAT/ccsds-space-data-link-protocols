@@ -45,10 +45,10 @@ public:
      * @param packet Data of the packet
      * @param packet_length PacketTC length
      * @param gvcid Global Virtual Channel ID
-     * @param sduid SDU ID
+     * @param scid Spacecraft ID
 	 */
 
-	ServiceChannelNotif store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t sduid);
+	ServiceChannelNotif store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t scid);
 
 
 	/**
@@ -209,7 +209,12 @@ public:
     /**
      * @brief Return the last stored packet
      */
-    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_packet() const;
+    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_packet_TC() const;
+
+    /**
+ * @brief Return the last stored packet
+ */
+    std::pair<ServiceChannelNotif, const PacketTM *> tx_out_packet_TM() const;
 
     /**
      * @brief Return the last processed packet

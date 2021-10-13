@@ -87,6 +87,7 @@ const uint8_t max_rx_in_master_channel = 200;
 
 // Raw TX packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
 const uint8_t max_received_unprocessed_tx_tc_in_virt_buffer = 6;
+const uint8_t max_received_unprocessed_tx_tm_in_virt_buffer = 6;
 
 const uint8_t fop_sliding_window_initial = 255;
 const uint8_t fop_timer_initial = 60; // sec
