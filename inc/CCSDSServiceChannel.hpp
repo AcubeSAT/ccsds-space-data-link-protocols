@@ -68,7 +68,7 @@ public:
 
     ServiceChannelNotif all_frames_generation_request();
 
-    std::optional<Packet> get_tx_processed_packet();
+    std::optional<PacketTC> get_tx_processed_packet();
 
     ServiceChannelNotif all_frames_reception_request();
 
@@ -205,7 +205,7 @@ public:
     /**
      * @brief Return the last processed packet
      */
-    std::pair<ServiceChannelNotif, const Packet *> tx_out_processed_packet() const;
+    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_processed_packet() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) : masterChannel(master_channel) {}

@@ -94,7 +94,7 @@ void FrameOperationProcedure::initiate_bc_retransmission() {
 }
 
 void FrameOperationProcedure::acknowledge_frame(uint8_t frame_seq_num){
-    for (Packet* pckt : *sentQueue){
+    for (PacketTC* pckt : *sentQueue){
         if (pckt->transfer_frame_sequence_number() == frame_seq_num){
             pckt->set_acknowledgement(1);
             return;
@@ -115,7 +115,7 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
     }
 
     // Also remove acknowledged frames from Master TX Buffer
-    etl::ilist<Packet>::iterator cur_packet = vchan->master_channel().txMasterCopy.begin();
+    etl::ilist<PacketTC>::iterator cur_packet = vchan->master_channel().txMasterCopy.begin();
 
     while (cur_packet != vchan->master_channel().txMasterCopy.end()) {
         if ((*cur_packet).acknowledged()) {
