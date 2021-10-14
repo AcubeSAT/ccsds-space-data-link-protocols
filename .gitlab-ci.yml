@@ -80,8 +80,8 @@ clang-tidy:
     TERM: xterm-color
   before_script:
     # Installing the `stable` repository to get the appropriate version of clang for the used debian release
-    - echo deb http://deb.debian.org/debian stable main > /etc/apt/sources.list
-    - apt-get update -qq && apt-get -t stable install -y -qq clang-tidy-7
+    - echo deb http://deb.debian.org/debian testing main > /etc/apt/sources.list
+    - apt-get update -qq && apt-get install -y -qq clang-tidy-7
     - apt search clang-tidy-7
     - clang-tidy-7 --version
   script:

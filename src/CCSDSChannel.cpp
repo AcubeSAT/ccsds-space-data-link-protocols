@@ -2,7 +2,7 @@
 
 // Virtual Channel
 
-VirtualChannelAlert VirtualChannel::store(Packet *packet) {
+VirtualChannelAlert VirtualChannel::store(PacketTC *packet) {
     // Limit the amount of packets that can be stored at any given time
     if (txUnprocessedPacketList.full()) {
         return VirtualChannelAlert::TX_WAIT_QUEUE_FULL;
@@ -16,7 +16,7 @@ VirtualChannelAlert VirtualChannel::store(Packet *packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-MasterChannelAlert MasterChannel::  store_out(Packet *packet) {
+MasterChannelAlert MasterChannel::  store_out(PacketTC *packet) {
     if (txOutFramesList.full()) {
         // Log that buffer is full
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
@@ -28,7 +28,7 @@ MasterChannelAlert MasterChannel::  store_out(Packet *packet) {
     return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::store_transmitted_out(Packet *packet) {
+MasterChannelAlert MasterChannel::store_transmitted_out(PacketTC *packet) {
     if (txToBeTransmittedFramesList.full()) {
         return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }

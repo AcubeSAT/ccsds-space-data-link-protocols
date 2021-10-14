@@ -1,7 +1,7 @@
-#include <FarmeAcceptanceReporting.h>
+#include <FarmeAcceptanceReporting.hpp>
 
 COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
-    Packet *frame = waitQueue->front();
+    PacketTC *frame = waitQueue->front();
 
     if (frame->service_type() == ServiceType::TYPE_A && frame->transfer_frame_header().ctrl_and_cmd_flag()) {
         if (frame->transfer_frame_sequence_number() == receiverFrameSeqNumber) {
@@ -42,26 +42,26 @@ COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
             state = FARMState::LOCKOUT;
             return COPDirectiveResponse::REJECT;
         }
-    } else if (frame->service_type() == ServiceType::TYPE_B && !frame->transfer_frame_header().ctrl_and_cmd_flag()){
+    } else if (frame->service_type() == ServiceType::TYPE_B && !frame->transfer_frame_header().ctrl_and_cmd_flag()) {
         // E6
         farmBCount += 1;
         return COPDirectiveResponse::ACCEPT;
-    } else if (frame->service_type() == ServiceType::TYPE_B && frame->transfer_frame_header().ctrl_and_cmd_flag()){
+    } else if (frame->service_type() == ServiceType::TYPE_B && frame->transfer_frame_header().ctrl_and_cmd_flag()) {
         if (frame->control_word_type() == 0) {
             if (frame->packet_pl_data()[4] == 0) {
                 // E7
                 farmBCount += 1;
                 retransmit = FlagState::NOT_READY;
 
-                if (state == FARMState::WAIT){
+                if (state == FARMState::WAIT) {
                     wait = FlagState::NOT_READY;
-                } else if (state == FARMState::LOCKOUT){
+                } else if (state == FARMState::LOCKOUT) {
                     wait = FlagState::NOT_READY;
                     lockout = FlagState::NOT_READY;
                 }
                 state = FARMState::OPEN;
                 return COPDirectiveResponse::ACCEPT;
-            } else if (frame->packet_pl_data()[4] == 130 && frame->packet_pl_data()[5] == 0){
+            } else if (frame->packet_pl_data()[4] == 130 && frame->packet_pl_data()[5] == 0) {
                 // E8
                 farmBCount += 1;
                 retransmit = FlagState::NOT_READY;
@@ -73,10 +73,10 @@ COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
 }
 
 COPDirectiveResponse FarmAcceptanceReporting::buffer_release() {
-    if (state == FARMState::LOCKOUT){
+    if (state == FARMState::LOCKOUT) {
         state = FARMState::OPEN;
         wait = FlagState::NOT_READY;
-    } else if(state == FARMState::WAIT){
+    } else if (state == FARMState::WAIT) {
         wait = FlagState::NOT_READY;
     }
 }
