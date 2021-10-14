@@ -54,6 +54,10 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
 	uint8_t vid = gvcid & 0x3F;
 	VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
 
+    if (masterChannel.txMasterCopyTM.full()) {
+        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+    }
+
     TransferFrameHeaderTM hdr = TransferFrameHeaderTM(packet);
 
     uint8_t  *secondaryHeader = 0;
