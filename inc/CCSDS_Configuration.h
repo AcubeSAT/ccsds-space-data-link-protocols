@@ -1,6 +1,3 @@
-//
-// Created by konkapo on 9/10/21.
-//
 
 #ifndef CCSDS_TM_PACKETS_CCSDS_CONFIGURATION_H
 #define CCSDS_TM_PACKETS_CCSDS_CONFIGURATION_H
