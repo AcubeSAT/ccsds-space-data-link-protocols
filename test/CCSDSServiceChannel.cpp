@@ -121,6 +121,7 @@ TEST_CASE("Service Channel") {
     CHECK(packet_a->transfer_frame_version_number() == 0);
     CHECK(packet_TM->master_channel_frame_count() == 0);
     CHECK(packet_TM->virtual_channel_frame_count() == 2);
-    CHECK(packet_TM->transfer_frame_data_field_status() == (static_cast<uint16_t>(0x04) << 8U | (static_cast<uint16_t>(0xA2))));
+    CHECK(packet_TM->transfer_frame_data_field_status() ==
+          (static_cast<uint16_t>(0x04) << 8U | (static_cast<uint16_t>(0xA2))));
 
 }

@@ -47,9 +47,9 @@ void PacketTM::append_crc_tm() {
 
 PacketTM::PacketTM(uint8_t *packet, uint16_t packet_length) : packet(packet), hdr(packet), packetLength(packet_length) {
 
-	if(hdr.transfer_frame_secondary_header_flag()==1) {
-		secondaryHeader = &packet[7];
-	}
+    if (hdr.transfer_frame_secondary_header_flag() == 1) {
+        secondaryHeader = &packet[7];
+    }
 	firstHeaderPointer = hdr.first_header_pointer();
 
 	data = &packet[firstHeaderPointer];

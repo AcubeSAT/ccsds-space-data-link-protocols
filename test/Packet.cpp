@@ -40,19 +40,19 @@ TEST_CASE("TM Header Generation") {
 }
 
 TEST_CASE("PacketTΜ Generation") {
-	uint8_t data[] = {200, 185, 99, 23, 40, 6, 0, 11, 128, 33, 4, 5, 9, 10};
-	PacketTM pckt = PacketTM(data, 14);
-	CHECK(pckt.packet_data()[0] == 200);
-	CHECK(pckt.packet_data()[1] == 185);
-	CHECK(pckt.packet_data()[2] == 99);
-	CHECK(pckt.packet_data()[3] == 23);
-	CHECK(pckt.packet_data()[4] == 40);
-	CHECK(pckt.packet_data()[5] == 6);
-	CHECK(pckt.packet_pl_data()[0] == 0);
-	CHECK(pckt.packet_pl_data()[1] == 11);
-	CHECK(pckt.operational_control_field()[0] == 128);
-	CHECK(pckt.operational_control_field()[1] == 33);
-	CHECK(pckt.operational_control_field()[2] == 4);
-	CHECK(pckt.operational_control_field()[3] == 5);
+    uint8_t data[] = {200, 185, 99, 23, 40, 6, 0, 11, 128, 33, 4, 5, 9, 10};
+    PacketTM pckt = PacketTM(data, 14);
+    CHECK(pckt.packet_data()[0] == 200);
+    CHECK(pckt.packet_data()[1] == 185);
+    CHECK(pckt.packet_data()[2] == 99);
+    CHECK(pckt.packet_data()[3] == 23);
+    CHECK(pckt.packet_data()[4] == 40);
+    CHECK(pckt.packet_data()[5] == 6);
+    CHECK(pckt.packet_pl_data()[0] == 0);
+    CHECK(pckt.packet_pl_data()[1] == 11);
+    CHECK(pckt.operational_control_field()[0] == 128);
+    CHECK(pckt.operational_control_field()[1] == 33);
+    CHECK(pckt.operational_control_field()[2] == 4);
+    CHECK(pckt.operational_control_field()[3] == 5);
 //	CHECK(pckt.global_virtual_channel_id() == 32);
 }

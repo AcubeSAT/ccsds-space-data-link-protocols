@@ -51,23 +51,27 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
 }
 
 ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t sduid) {
-	uint8_t vid = gvcid & 0x3F;
-	VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
+    uint8_t vid = gvcid & 0x3F;
+    VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
+
+    if (masterChannel.txMasterCopyTM.full()) {
+        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+    }
 
     TransferFrameHeaderTM hdr = TransferFrameHeaderTM(packet);
 
-    uint8_t  *secondaryHeader = 0;
-    if(hdr.transfer_frame_secondary_header_flag()==1) {
+    uint8_t *secondaryHeader = 0;
+    if (hdr.transfer_frame_secondary_header_flag() == 1) {
         secondaryHeader = &packet[7];
     }
 
-	PacketTM packet_s =
-	    PacketTM(packet, packet_length, vchan->frameCount, sduid, vid, masterChannel.frameCount,
-                 secondaryHeader, hdr.transfer_frame_data_field_status(), 0);
+    PacketTM packet_s =
+            PacketTM(packet, packet_length, vchan->frameCount, sduid, vid, masterChannel.frameCount,
+                     secondaryHeader, hdr.transfer_frame_data_field_status(), 0);
 
 
-	masterChannel.txMasterCopyTM.push_back(packet_s);
-	return ServiceChannelNotif::NO_SERVICE_EVENT;
+    masterChannel.txMasterCopyTM.push_back(packet_s);
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
 ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {

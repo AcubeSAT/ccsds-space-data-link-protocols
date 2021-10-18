@@ -46,5 +46,6 @@ MasterChannelAlert MasterChannel::add_vc(const uint8_t vcid, const bool segment_
     }
 
     virtChannels.emplace(vcid, VirtualChannel(*this, vcid, segment_header_present, max_frame_length, clcw_rate,
-                                              blocking, repetition_type_a_frame, repetition_cop_ctrl,frame_count, map_chan));
+                                              blocking, repetition_type_a_frame, repetition_cop_ctrl, frame_count,
+                                              map_chan));
 }

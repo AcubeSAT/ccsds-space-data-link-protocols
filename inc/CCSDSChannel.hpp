@@ -233,7 +233,7 @@ struct MasterChannel {
     // TODO: Type aliases because this is getting out of hand
     etl::flat_map<uint8_t, VirtualChannel, max_virtual_channels> virtChannels;
     bool errorCtrlField;
-    uint8_t  frameCount;
+    uint8_t frameCount;
 
     MasterChannel(bool errorCtrlField, uint8_t frameCount)
             : virtChannels(), txOutFramesList(), txToBeTransmittedFramesList(), errorCtrlField(errorCtrlField) {}
@@ -241,8 +241,8 @@ struct MasterChannel {
     MasterChannel(const MasterChannel &m)
             : virtChannels(m.virtChannels), txOutFramesList(m.txOutFramesList),
               txToBeTransmittedFramesList(m.txToBeTransmittedFramesList), errorCtrlField(m.errorCtrlField),
-              frameCount(m.frameCount){
-        for (auto &vc : virtChannels) {
+              frameCount(m.frameCount) {
+        for (auto &vc: virtChannels) {
             vc.second.masterChannel = *this;
         }
     }
