@@ -58,6 +58,10 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
         return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
+    if (masterChannel.txMasterCopyTM.full()) {
+        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+    }
+
     TransferFrameHeaderTM hdr = TransferFrameHeaderTM(packet);
 
     uint8_t *secondaryHeader = 0;
