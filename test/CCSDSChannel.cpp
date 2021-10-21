@@ -12,8 +12,8 @@ TEST_CASE("CCSDS TC Channel Model") {
                                                                          {3, MAPChannel(3, DataFieldContent::VCA_SDU)}};
 
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-    MasterChannel master_channel = MasterChannel(true);
-    master_channel.add_vc(3, true, 1024, 20, true, 32, 32, map_channels);
+    MasterChannel master_channel = MasterChannel(true, 0);
+    master_channel.add_vc(3, true, 1024, 20, true, 32, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
     ServiceChannel serv_channel = ServiceChannel(std::move(master_channel));
@@ -22,8 +22,8 @@ TEST_CASE("CCSDS TC Channel Model") {
 TEST_CASE("MAPP blocking") {
     etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)}};
 
-    MasterChannel master_channel = MasterChannel(true);
-    master_channel.add_vc(3, true, 8, 20, true, 32, 32, map_channels);
+    MasterChannel master_channel = MasterChannel(true, 0);
+    master_channel.add_vc(3, true, 8, 20, true, 32, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 3);
     ServiceChannel serv_channel = ServiceChannel(std::move(master_channel));
