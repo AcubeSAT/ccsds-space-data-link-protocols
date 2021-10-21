@@ -95,5 +95,5 @@ const uint8_t fop_timer_initial = 60; // sec
 enum FlagState {
     NOT_READY = 0, READY = 1
 };
-
+#define LOGGER_MAX_MESSAGE_SIZE 512
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP

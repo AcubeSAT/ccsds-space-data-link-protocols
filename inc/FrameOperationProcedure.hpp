@@ -17,6 +17,7 @@ enum FOPState {
     INITIAL = 6
 };
 
+
 enum Event {
     VALID_CLCW_RECEIVED = 0,
     INVALID_CLCW_RECEIVED = 1,
@@ -33,15 +34,16 @@ enum AlertEvent {
 };
 
 class VirtualChannel;
-
+class NasterChannel;
 class MAPChannel;
 
 class FrameOperationProcedure {
     friend class ServiceChannel;
+    friend class MasterChannel;
 
 public:
-    etl::list<PacketTC *, max_received_tx_tc_in_wait_queue> *waitQueue;
-    etl::list<PacketTC *, max_received_tx_tc_in_sent_queue> *sentQueue;
+    etl::list<PacketTC*, max_received_tx_tc_in_wait_queue> *waitQueue;
+    etl::list<PacketTC*, max_received_tx_tc_in_sent_queue> *sentQueue;
     VirtualChannel *vchan;
 
 private:
@@ -58,7 +60,6 @@ private:
     uint16_t transmissionCount;
     uint8_t fopSlidingWindow;
     bool timeoutType;
-
     /**
      * @brief Purge the sent queue of the virtual channel and generate a response
      */
@@ -77,12 +78,12 @@ private:
     /**
      * @brief Prepares a Type-BC Frame for transmission
      */
-    FOPNotif transmit_bc_frame(PacketTC *bc_frame);
+    FOPNotif transmit_bc_frame(PacketTC*bc_frame);
 
     /**
      * @brief Prepares a Type-BD Frame for transmission
      */
-    FOPNotif transmit_bd_frame(PacketTC *bd_frame);
+    FOPNotif transmit_bd_frame(PacketTC*bd_frame);
 
     /**
      * @brief Marks AD Frames stored in the sent queue to be retransmitted
@@ -105,7 +106,6 @@ private:
     void look_for_directive();
 
     COPDirectiveResponse push_sent_queue();
-
     /**
      * @brief Search for a FDU that can be transmitted in the sent_queueu. If none are found also search in
      * the wait_queue
@@ -128,6 +128,8 @@ private:
      * @brief Process invalid CLCW arrival
      */
     void invalid_clcw_arrival();
+
+    void acknowledge_frame(uint8_t frame_seq_num);
 
     /* Directives */
     FDURequestType initiate_ad_no_clcw();
@@ -170,8 +172,8 @@ private:
     COPDirectiveResponse transfer_fdu();
 
 public:
-    FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC *, max_received_tx_tc_in_wait_queue> *waitQueue,
-                            etl::list<PacketTC *, max_received_tx_tc_in_sent_queue> *sentQueue,
+    FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC*, max_received_tx_tc_in_wait_queue> *waitQueue,
+                            etl::list<PacketTC*, max_received_tx_tc_in_sent_queue> *sentQueue,
                             const uint8_t repetition_cop_ctrl)
             : waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
               vchan(vchan), adOut(FlagState::READY), bdOut(FlagState::READY), bcOut(FlagState::READY),

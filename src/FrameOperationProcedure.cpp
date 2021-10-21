@@ -2,7 +2,7 @@
 #include <CCSDSChannel.hpp>
 
 FOPNotif FrameOperationProcedure::purge_sent_queue() {
-    etl::ilist<PacketTC *>::iterator cur_frame = sentQueue->begin();
+    etl::ilist<PacketTC*>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
         (*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
@@ -13,7 +13,7 @@ FOPNotif FrameOperationProcedure::purge_sent_queue() {
 }
 
 FOPNotif FrameOperationProcedure::purge_wait_queue() {
-    etl::ilist<PacketTC *>::iterator cur_frame = waitQueue->begin();
+    etl::ilist<PacketTC*>::iterator cur_frame = waitQueue->begin();
 
     while (cur_frame != waitQueue->end()) {
         (*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
@@ -32,12 +32,12 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
         transmissionCount = 1;
     }
 
-    PacketTC *ad_frame = waitQueue->front();
-    if (waitQueue->empty()) {
+	PacketTC*ad_frame = waitQueue->front();
+    if (waitQueue->empty()){
         return FOPNotif::WAIT_QUEUE_EMPTY;
     }
 
-    sentQueue->push_back(ad_frame);
+
     ad_frame->set_transfer_frame_sequence_number(transmitterFrameSeqNumber);
 
     ad_frame->mark_for_retransmission(0);
@@ -53,7 +53,7 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bc_frame(PacketTC *bc_frame) {
+FOPNotif FrameOperationProcedure::transmit_bc_frame(PacketTC*bc_frame) {
     bc_frame->mark_for_retransmission(0);
     transmissionCount = 1;
 
@@ -62,7 +62,7 @@ FOPNotif FrameOperationProcedure::transmit_bc_frame(PacketTC *bc_frame) {
     return FOPNotif::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bd_frame(PacketTC *bd_frame) {
+FOPNotif FrameOperationProcedure::transmit_bd_frame(PacketTC*bd_frame) {
     bdOut = NOT_READY;
     // Pass frame to all frames generation service
     vchan->master_channel().store_out(bd_frame);
@@ -74,7 +74,7 @@ void FrameOperationProcedure::initiate_ad_retransmission() {
     transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
     // TODO start the timer
 
-    for (PacketTC *frame : *sentQueue) {
+    for (PacketTC*frame : *sentQueue) {
         if (frame->service_type() == ServiceType::TYPE_A) {
             frame->mark_for_retransmission(1);
         }
@@ -86,31 +86,51 @@ void FrameOperationProcedure::initiate_bc_retransmission() {
     transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
     // TODO start the timer
 
-    for (PacketTC *frame : *sentQueue) {
+    for (PacketTC*frame : *sentQueue) {
         if (frame->service_type() == ServiceType::TYPE_B) {
             frame->mark_for_retransmission(1);
         }
     }
 }
 
+void FrameOperationProcedure::acknowledge_frame(uint8_t frame_seq_num){
+    for (PacketTC* pckt : *sentQueue){
+        if (pckt->transfer_frame_sequence_number() == frame_seq_num){
+            pckt->set_acknowledgement(1);
+            return;
+        }
+    }
+}
+
 void FrameOperationProcedure::remove_acknowledged_frames() {
-    etl::ilist<PacketTC *>::iterator cur_frame = sentQueue->begin();
+    etl::ilist<PacketTC*>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
         if ((*cur_frame)->acknowledged()) {
-            (*cur_frame)->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
             expectedAcknowledgementSeqNumber = (*cur_frame)->transfer_frame_sequence_number();
             sentQueue->erase(cur_frame++);
         } else {
             ++cur_frame;
         }
     }
+
+    // Also remove acknowledged frames from Master TX Buffer
+    etl::ilist<PacketTC>::iterator cur_packet = vchan->master_channel().txMasterCopy.begin();
+
+    while (cur_packet != vchan->master_channel().txMasterCopy.end()) {
+        if ((*cur_packet).acknowledged()) {
+            vchan->master_channel().txMasterCopy.erase(cur_packet++);
+        } else {
+            ++cur_packet;
+        }
+    }
+
     transmissionCount = 1;
 }
 
 void FrameOperationProcedure::look_for_directive() {
     if (bcOut == FlagState::READY) {
-        for (PacketTC *frame : *sentQueue) {
+        for (PacketTC*frame : *sentQueue) {
             if (frame->service_type() == ServiceType::TYPE_B && frame->to_be_retransmitted()) {
                 bcOut == FlagState::NOT_READY;
                 frame->mark_for_retransmission(0);
@@ -123,17 +143,17 @@ void FrameOperationProcedure::look_for_directive() {
 }
 
 // TODO: Sent Queue as-is is pretty much tx
-COPDirectiveResponse FrameOperationProcedure::push_sent_queue() {
-    if (vchan->sentQueue.empty()) {
+COPDirectiveResponse FrameOperationProcedure::push_sent_queue(){
+    if (vchan->sentQueue.empty()){
         return COPDirectiveResponse::REJECT;
     }
 
-    PacketTC *pckt = sentQueue->front();
+    PacketTC* pckt = sentQueue->front();
 
     MasterChannelAlert err = vchan->master_channel().store_out(pckt);
 
-    if (err == MasterChannelAlert::NO_MC_ALERT) {
-        sentQueue->pop_front();
+    if (err == MasterChannelAlert::NO_MC_ALERT){
+        //sentQueue->pop_front();
         return COPDirectiveResponse::ACCEPT;
     }
     return COPDirectiveResponse::REJECT;
@@ -141,7 +161,7 @@ COPDirectiveResponse FrameOperationProcedure::push_sent_queue() {
 
 COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
     if (adOut == FlagState::READY) {
-        for (PacketTC *frame : *sentQueue) {
+        for (PacketTC*frame : *sentQueue) {
             if (frame->service_type() == ServiceType::TYPE_A) {
                 // adOut = FlagState::NOT_READY;
                 frame->mark_for_retransmission(0);
@@ -152,7 +172,7 @@ COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
         // Search the wait queue for a suitable FDU
         // The wait queue is supposed to have a maximum capacity of one
         if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
-            PacketTC *frame = waitQueue->front();
+			PacketTC*frame = waitQueue->front();
             if (frame->service_type() == ServiceType::TYPE_A) {
                 sentQueue->push_back(frame);
                 waitQueue->pop_front();
@@ -183,7 +203,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
-    PacketTC *frame = vchan->txUnprocessedPacketList.front();
+	PacketTC*frame = vchan->txUnprocessedPacketList.front();
 
     if (frame->lckout() == 0) {
         if (frame->report_value() == expectedAcknowledgementSeqNumber) {
@@ -470,7 +490,7 @@ COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
     }
 
     MasterChannelAlert mc = vchan->master_channel().store_out(frame);
-    if (mc != MasterChannelAlert::NO_MC_ALERT) {
+    if (mc != MasterChannelAlert::NO_MC_ALERT){
         return COPDirectiveResponse::REJECT;
     }
 
@@ -626,7 +646,7 @@ void FrameOperationProcedure::bd_reject() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
-    PacketTC *frame = vchan->txUnprocessedPacketList.front();
+	PacketTC*frame = vchan->txUnprocessedPacketList.front();
 
     if (frame->transfer_frame_header().bypass_flag() == 0) {
         if (frame->service_type() == ServiceType::TYPE_A) {
@@ -646,6 +666,7 @@ COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
                 return COPDirectiveResponse::REJECT;
             }
         } else if (frame->service_type() == ServiceType::TYPE_B) {
+
             if (bdOut == FlagState::READY) {
                 //
                 transmit_bc_frame(frame);
@@ -659,7 +680,7 @@ COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
         // transfer directly to lower procedure
 
         MasterChannelAlert mc = vchan->master_channel().store_out(frame);
-        if (mc != MasterChannelAlert::NO_MC_ALERT) {
+        if (mc != MasterChannelAlert::NO_MC_ALERT){
             return COPDirectiveResponse::REJECT;
         }
     }

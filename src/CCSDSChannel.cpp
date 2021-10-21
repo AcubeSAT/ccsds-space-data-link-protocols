@@ -16,7 +16,7 @@ VirtualChannelAlert VirtualChannel::store(PacketTC *packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-MasterChannelAlert MasterChannel::store_out(PacketTC *packet) {
+MasterChannelAlert MasterChannel::  store_out(PacketTC *packet) {
     if (txOutFramesList.full()) {
         // Log that buffer is full
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;

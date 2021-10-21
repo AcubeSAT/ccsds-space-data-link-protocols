@@ -90,7 +90,7 @@ protected:
     /**
      * Store unprocessed received TCs
      */
-    etl::list<PacketTC *, max_received_tc_in_map_channel> unprocessedPacketList;
+    etl::list<PacketTC*, max_received_tc_in_map_channel> unprocessedPacketList;
 };
 
 struct VirtualChannel {
@@ -175,13 +175,14 @@ struct VirtualChannel {
               clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
               repetitionCOPCtrl(v.repetitionCOPCtrl), frameCount(v.frameCount),
               txWaitQueue(v.txWaitQueue), sentQueue(v.sentQueue), txUnprocessedPacketList(v.txUnprocessedPacketList),
-              fop(v.fop), masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
+              fop(v.fop),
+              masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
         fop.vchan = this;
         fop.sentQueue = &sentQueue;
         fop.waitQueue = &txWaitQueue;
     }
 
-    VirtualChannelAlert store(PacketTC *packet);
+    VirtualChannelAlert store(PacketTC*packet);
 
     /**
      * @bried Add MAP channel to virtual channel
@@ -196,22 +197,22 @@ private:
     /**
      * @brief Buffer to store_out incoming packets before being processed by COP
      */
-    etl::list<PacketTC *, max_received_tx_tc_in_wait_queue> txWaitQueue;
+    etl::list<PacketTC*, max_received_tx_tc_in_wait_queue> txWaitQueue;
 
     /**
      * @brief Buffer to store_out incoming packets before being processed by COP
      */
-    etl::list<PacketTC *, max_received_tx_tc_in_wait_queue> rxWaitQueue;
+    etl::list<PacketTC*, max_received_tx_tc_in_wait_queue> rxWaitQueue;
 
     /**
-     * @brief Buffer to store_out outcoming packets after being processed by COP
-     */
-    etl::list<PacketTC *, max_received_tx_tc_in_sent_queue> sentQueue;
+	 * @brief Buffer to store_out outcoming packets after being processed by COP
+	 */
+    etl::list<PacketTC*, max_received_tx_tc_in_sent_queue> sentQueue;
 
     /**
      * @brief Buffer to store_out unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
-    etl::list<PacketTC *, max_received_unprocessed_tx_tc_in_virt_buffer> txUnprocessedPacketList;
+    etl::list<PacketTC*, max_received_unprocessed_tx_tc_in_virt_buffer> txUnprocessedPacketList;
 
     /**
      * @brief Holds the FOP state of the virtual channel
@@ -226,6 +227,7 @@ private:
 
 struct MasterChannel {
     friend class ServiceChannel;
+    friend class FrameOperationProcedure;
 
     /**
      * @brief Virtual channels of the master channel
@@ -247,9 +249,9 @@ struct MasterChannel {
         }
     }
 
-    MasterChannelAlert store_out(PacketTC *packet);
+    MasterChannelAlert store_out(PacketTC*packet);
 
-    MasterChannelAlert store_transmitted_out(PacketTC *packet);
+    MasterChannelAlert store_transmitted_out(PacketTC*packet);
 
     const uint16_t availableTM() const {
         return txMasterCopyTM.available();
@@ -265,14 +267,14 @@ struct MasterChannel {
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<PacketTC *, max_received_tx_tc_in_master_buffer> txOutFramesList;
+    etl::list<PacketTC*, max_received_tx_tc_in_master_buffer> txOutFramesList;
     // Packets ready to be transmitted having passed through the all frames generation service
-    etl::list<PacketTC *, max_received_tx_tc_out_in_master_buffer> txToBeTransmittedFramesList;
+    etl::list<PacketTC*, max_received_tx_tc_out_in_master_buffer> txToBeTransmittedFramesList;
 
     // Packets that are received, before being received by the all frames reception service
-    etl::list<PacketTC *, max_received_rx_tc_in_master_buffer> rxInFramesList;
+    etl::list<PacketTC*, max_received_rx_tc_in_master_buffer> rxInFramesList;
     // Packets that are ready to be transmitted to higher procedures following all frames generation service
-    etl::list<PacketTC *, max_received_rx_tc_out_in_master_buffer> rxToBeTransmittedFramesList;
+    etl::list<PacketTC*, max_received_rx_tc_out_in_master_buffer> rxToBeTransmittedFramesList;
 
     /**
      * @brief Buffer holding the master copy of TX packets that are currently being processed

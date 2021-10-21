@@ -1,7 +1,7 @@
-
 #ifndef CCSDS_TM_PACKETS_PACKETTM_HPP
 #define CCSDS_TM_PACKETS_PACKETTM_HPP
 #include "Packet.hpp"
+
 struct TransferFrameHeaderTM : public TransferFrameHeader {
 public:
     TransferFrameHeaderTM(uint8_t *pckt) : TransferFrameHeader(pckt) {}
@@ -59,16 +59,7 @@ public:
 
 };
 
-
-struct PacketTM {
-
-	// This only compares the frame sequence number of two packets both as a way to save time when comparing the
-	// data fields and because this is handy when getting rid of duplicate packets. However this could result in
-	// undesired behavior if we're to delete different packets that share a frame sequence number for some reason.
-	// This is normally not allowed but we have to cross-check if it is compatible with FARM checks
-
-
-	// TODO: Handle CLCWs without any ambiguities
+struct PacketTM:public Packet {
 
 	const uint8_t *packet_pl_data() const {
 		return data;
@@ -135,29 +126,18 @@ struct PacketTM {
 		packetLength = packt_len;
 	}
 
-	/**
-     * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
-     * virtual channel)
-	 */
-	void append_crc_tm();
-
-	uint16_t calculate_crc_tm(uint8_t *packet, uint16_t len);
-
-
 	PacketTM(uint8_t *packet, uint16_t packet_length, uint8_t virtualChannelFrameCount, uint8_t scid,
-	         uint16_t vcid, uint8_t masterChannelFrameCount, uint8_t* secondary_header, uint16_t transferFrameDataFieldStatus
-	         , uint8_t transferFrameVersionNumber)
-	    : packet(packet), hdr(packet), packetLength(packet_length), scid(scid), vcid(vcid),
-	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(transferFrameVersionNumber),
+	         uint16_t vcid, uint8_t masterChannelFrameCount, uint8_t* secondary_header,
+	         uint16_t transferFrameDataFieldStatus, PacketType t=TM)
+	    	:Packet(t, packet_length, packet), hdr(packet), scid(scid), vcid(vcid),
+	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
 	      secondaryHeader(secondary_header), virtualChannelFrameCount(virtualChannelFrameCount),
 	      masterChannelFrameCount(masterChannelFrameCount), firstHeaderPointer(firstHeaderPointer) {}
 
-	PacketTM(uint8_t *packet, uint16_t packet_length);
+	PacketTM(uint8_t *packet, uint16_t packet_length, PacketType t=TM);
 
 private:
-	uint8_t *packet;
 	TransferFrameHeaderTM hdr;
-	uint16_t packetLength;
 	uint8_t masterChannelFrameCount;
 	uint8_t virtualChannelFrameCount;
 	uint8_t scid;
@@ -165,12 +145,8 @@ private:
 	uint16_t transferFrameDataFieldStatus;
 	uint8_t transferFrameVersionNumber;
 	uint8_t * secondaryHeader;
-	uint8_t *data;
 	uint16_t firstHeaderPointer;
 	uint8_t *operationalControlField;
 };
-
-
-
 
 #endif // CCSDS_TM_PACKETS_PACKETTM_HPP

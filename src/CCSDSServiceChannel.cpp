@@ -382,6 +382,16 @@ ServiceChannelNotif ServiceChannel::push_sent_queue(uint8_t vid) {
     return ServiceChannelNotif::TX_FOP_REJECTED;
 }
 
+void ServiceChannel::acknowledge_frame(uint8_t vid, uint8_t frame_seq_number){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.acknowledge_frame(frame_seq_number);
+}
+
+void ServiceChannel::clear_acknowledged_frames(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    virt_channel->fop.remove_acknowledged_frames();
+}
+
 void ServiceChannel::initiate_ad_no_clcw(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     FDURequestType req;

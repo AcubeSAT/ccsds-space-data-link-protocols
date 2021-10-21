@@ -42,8 +42,26 @@ protected:
 
 class Packet {
 private:
+
     PacketType type;
-    TransferFrameHeader transfer_frame_header;
+
+public:
+	Packet(PacketType t, uint16_t packet_length, uint8_t *packet):
+	      type(t), packetLength(packet_length), packet(packet){};
+
+	/**
+     * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
+     * virtual channel)
+	 */
+
+	void append_crc();
+
+protected:
+	uint16_t packetLength;
+	uint8_t *packet;
+	uint8_t *data;
+	uint16_t calculate_crc(uint8_t *packet, uint16_t len);
+
 };
 
 #endif // CCSDS_TM_PACKETS_PACKET_H

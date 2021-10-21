@@ -92,6 +92,9 @@ public:
 
     // COP Directives
     // TODO: Properly handle Notifications
+    void acknowledge_frame(uint8_t vid, uint8_t frame_seq_number);
+
+    void clear_acknowledged_frames(uint8_t vid);
 
     void initiate_ad_no_clcw(uint8_t vid);
 
@@ -197,14 +200,14 @@ public:
     /**
      * @brief Read first packet of the MAP channel buffer
      */
-    std::pair<ServiceChannelNotif, const PacketTC *>
+    std::pair<ServiceChannelNotif, const PacketTC*>
 
     tx_out_packet(const uint8_t vid, const uint8_t mapid) const;
 
     /**
      * @brief Read first packet of the virtual channel buffer
      */
-    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_packet(const uint8_t vid) const;
+    std::pair<ServiceChannelNotif, const PacketTC*> tx_out_packet(const uint8_t vid) const;
 
     /**
      * @brief Return the last stored packet
