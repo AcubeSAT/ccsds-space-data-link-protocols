@@ -1,5 +1,6 @@
 #include <CCSDSServiceChannel.hpp>
-#include <Packet.hpp>
+#include <PacketTC.hpp>
+#include <PacketTM.hpp>
 #include <etl/iterator.h>
 #include <Alert.hpp>
 #include <CCSDS_Log.h>
@@ -34,6 +35,7 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
     uint8_t vid = gvcid & 0x3F;
     VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(vchan->mapChannels.at(mapid));
+
     if (map_channel->unprocessedPacketList.full()) {
 		ccsds_log(Tx_ServiceChannel_store_ServiceChannelNotif_MAP_CHANNEL_FRAME_BUFFER_FULL,true);
         return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
@@ -47,9 +49,37 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
     } else if (service_type == ServiceType::TYPE_B) {
         packet_s.set_repetitions(vchan->repetitionCOPCtrl);
     }
-	ccsds_log(Tx_ServiceChannel_store_ServiceChannelNotif_NO_SERVICE_EVENT,true);
-    masterChannel.txMasterCopy.push_back(packet_s);
-    map_channel->unprocessedPacketList.push_back(&(masterChannel.txMasterCopy.back()));
+
+    masterChannel.txMasterCopyTC.push_back(packet_s);
+    map_channel->unprocessedPacketList.push_back(&(masterChannel.txMasterCopyTC.back()));
+    return ServiceChannelNotif::NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t sduid) {
+    uint8_t vid = gvcid & 0x3F;
+    VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
+
+    if (masterChannel.txMasterCopyTM.full()) {
+        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+    }
+
+    if (masterChannel.txMasterCopyTM.full()) {
+        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+    }
+
+    TransferFrameHeaderTM hdr = TransferFrameHeaderTM(packet);
+
+    uint8_t *secondaryHeader = 0;
+    if (hdr.transfer_frame_secondary_header_flag() == 1) {
+        secondaryHeader = &packet[7];
+    }
+
+    PacketTM packet_s =
+            PacketTM(packet, packet_length, vchan->frameCount, sduid, vid, masterChannel.frameCount,
+                     secondaryHeader, hdr.transfer_frame_data_field_status(), 0);
+
+
+    masterChannel.txMasterCopyTM.push_back(packet_s);
     return ServiceChannelNotif::NO_SERVICE_EVENT;
 }
 
@@ -492,11 +522,18 @@ std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_packet(c
     return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
 }
 
-std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_packet() const {
-    if (masterChannel.txMasterCopy.empty()) {
+std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_packet_TC() const {
+    if (masterChannel.txMasterCopyTC.empty()) {
         return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
-    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.txMasterCopy.back()));
+    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.txMasterCopyTC.back()));
+}
+
+std::pair<ServiceChannelNotif, const PacketTM *> ServiceChannel::tx_out_packet_TM() const {
+    if (masterChannel.txMasterCopyTM.empty()) {
+        return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
+    }
+    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.txMasterCopyTM.back()));
 }
 
 std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_processed_packet() const {
