@@ -1,13 +1,15 @@
 #include <CCSDSChannel.hpp>
-
+#include "CCSDS_Log.h"
 // Virtual Channel
 
 VirtualChannelAlert VirtualChannel::store(PacketTC *packet) {
     // Limit the amount of packets that can be stored at any given time
     if (txUnprocessedPacketList.full()) {
+		ccsds_log(Tx_VirtualChannel_store_VirtualChannelAlert_TX_WAIT_QUEUE_FULL,true);
         return VirtualChannelAlert::TX_WAIT_QUEUE_FULL;
     }
     txUnprocessedPacketList.push_back(packet);
+	ccsds_log(Tx_VirtualChannel_store_VirtualChannelAlert_NO_VC_ALERT,true);
     return VirtualChannelAlert::NO_VC_ALERT;
 }
 
@@ -19,20 +21,23 @@ VirtualChannelAlert VirtualChannel::store(PacketTC *packet) {
 MasterChannelAlert MasterChannel::  store_out(PacketTC *packet) {
     if (txOutFramesList.full()) {
         // Log that buffer is full
+		ccsds_log(Tx_MasterChannel_store_out_MasterChannelAlert_OUT_FRAMES_LIST_FULL,true);
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
     txOutFramesList.push_back(packet);
     uint8_t vid = packet->global_virtual_channel_id();
     // virtChannels.at(0).fop.
-
+	ccsds_log(Tx_MasterChannel_store_out_MasterChannelAlert_NO_MC_ALERT,true);
     return MasterChannelAlert::NO_MC_ALERT;
 }
 
 MasterChannelAlert MasterChannel::store_transmitted_out(PacketTC *packet) {
     if (txToBeTransmittedFramesList.full()) {
+		ccsds_log(Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_TO_BE_TRANSMITTED_FRAMES_LIST_FULL, 1);
         return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
     txToBeTransmittedFramesList.push_back(packet);
+	ccsds_log(Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_NO_MC_ALERT,1);
     return MasterChannelAlert::NO_MC_ALERT;
 }
 

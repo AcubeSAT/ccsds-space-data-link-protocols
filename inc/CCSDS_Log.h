@@ -1,0 +1,49 @@
+#ifndef CCSDS_TM_PACKETS_CCSDS_LOG_H
+#define CCSDS_TM_PACKETS_CCSDS_LOG_H
+#include <cstdint>
+#include "map"
+#include <string>
+#include "Logger.hpp"
+
+enum LogID: int {
+	Tx_VirtualChannel_store_VirtualChannelAlert_NO_VC_ALERT = 0x4001,
+	Tx_VirtualChannel_store_VirtualChannelAlert_TX_WAIT_QUEUE_FULL = 0x4003,
+
+	Tx_MasterChannel_store_out_MasterChannelAlert_NO_MC_ALERT = 0x4211,
+	Tx_MasterChannel_store_out_MasterChannelAlert_OUT_FRAMES_LIST_FULL = 0x4212,
+
+	Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_NO_MC_ALERT = 0x4311,
+	Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x4313,
+
+	Tx_ServiceChannel_store_ServiceChannelNotif_NO_SERVICE_EVENT = 0x4521,
+	Tx_ServiceChannel_store_ServiceChannelNotif_MAP_CHANNEL_FRAME_BUFFER_FULL = 0x4522,
+
+	Rx_ServiceChannel_store_ServiceChannelNotif_NO_SERVICE_EVENT = 0x621,
+	Rx_ServiceChannel_store_ServiceChannelNotif_RX_IN_MC_FULL = 0x628,
+	Rx_ServiceChannel_store_ServiceChannelNotif_MAP_CHANNEL_RX_IN_BUFFER_FULL = 0x629,
+	Rx_ServiceChannel_store_ServiceChannelNotif_MAP_CHANNEL_RX_INVALID_LENGTH = 0x62D,
+
+	Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_NO_TX_PACKETS_TO_PROCESS=0x4825,
+	Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_TX_MC_FRAME_BUFFER_FULL=0x4824,
+	Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_FOP_REQUEST_REJECTED=0x482A,
+	Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_NO_SERVICE_EVENT=0x4821,
+
+	Tx_ServiceChannel_mapp_request_ServiceChannelNotif_NO_TX_PACKETS_TO_PROCESS = 0x4725,
+	Tx_ServiceChannel_mapp_request_ServiceChannelNotif_VC_MC_FRAME_BUFFER_FULL= 0x4723,
+	Tx_ServiceChannel_mapp_request_ServiceChannelNotif_PACKET_EXCEEDS_MAX_SIZE = 0x4726,
+	Tx_ServiceChannel_mapp_request_ServiceChannelNotif_NO_SERVICE_EVENT= 0x4721,
+
+	Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_NO_RX_PACKETS_TO_PROCESS= 0x924,
+	Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_RX_OUT_BUFFER_FULL= 0x92A,
+	Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_VC_RX_WAIT_QUEUE_FULL= 0x92E,
+	Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_RX_INVALID_TFVN= 0x92B,
+	Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_RX_INVALID_SCID= 0x92C,
+	Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_NO_SERVICE_EVENT= 0x921
+
+};
+
+void ccsds_log(const LogID id, const bool verbose);
+std::ostream& operator<<(std::ostream& out, const LogID value);
+
+
+#endif // CCSDS_TM_PACKETS_CCSDS_LOG_H

@@ -6,7 +6,6 @@
 #include <etl/to_string.h>
 #include "CCSDS_Definitions.hpp"
 #include "CCSDS_Configuration.h"
-
 #if defined LOGLEVEL_TRACE
 #define LOGLEVEL Logger::trace // Ignore-MISRA
 #elif defined LOGLEVEL_DEBUG
