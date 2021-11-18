@@ -18,27 +18,48 @@ VirtualChannelAlert VirtualChannel::store(PacketTC *packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-MasterChannelAlert MasterChannel::  store_out(PacketTC *packet) {
-    if (txOutFramesList.full()) {
+MasterChannelAlert MasterChannel::store_out(PacketTC *packet) {
+    if (txOutFramesListTC.full()) {
         // Log that buffer is full
 		ccsds_log(Tx_MasterChannel_store_out_MasterChannelAlert_OUT_FRAMES_LIST_FULL,true);
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
-    txOutFramesList.push_back(packet);
+    txOutFramesListTC.push_back(packet);
     uint8_t vid = packet->global_virtual_channel_id();
     // virtChannels.at(0).fop.
 	ccsds_log(Tx_MasterChannel_store_out_MasterChannelAlert_NO_MC_ALERT,true);
     return MasterChannelAlert::NO_MC_ALERT;
 }
 
+MasterChannelAlert MasterChannel::store_out(PacketTM *packet) {
+	if (txOutFramesListTM.full()) {
+		// Log that buffer is full
+		ccsds_log(Tx_MasterChannel_store_out_MasterChannelAlert_OUT_FRAMES_LIST_FULL,true);
+		return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
+	}
+	txOutFramesListTM.push_back(packet);
+	ccsds_log(Tx_MasterChannel_store_out_MasterChannelAlert_NO_MC_ALERT,true);
+	return MasterChannelAlert::NO_MC_ALERT;
+}
+
 MasterChannelAlert MasterChannel::store_transmitted_out(PacketTC *packet) {
-    if (txToBeTransmittedFramesList.full()) {
+    if (txToBeTransmittedFramesListTC.full()) {
 		ccsds_log(Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_TO_BE_TRANSMITTED_FRAMES_LIST_FULL, 1);
         return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
-    txToBeTransmittedFramesList.push_back(packet);
+    txToBeTransmittedFramesListTC.push_back(packet);
 	ccsds_log(Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_NO_MC_ALERT,1);
     return MasterChannelAlert::NO_MC_ALERT;
+}
+
+MasterChannelAlert MasterChannel::store_transmitted_out(PacketTM *packet) {
+	if (txToBeTransmittedFramesListTM.full()) {
+		ccsds_log(Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_TO_BE_TRANSMITTED_FRAMES_LIST_FULL, 1);
+		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
+	}
+	txToBeTransmittedFramesListTM.push_back(packet);
+	ccsds_log(Tx_MasterChannel_store_transmitted_out_MasterChannelAlert_NO_MC_ALERT,1);
+	return MasterChannelAlert::NO_MC_ALERT;
 }
 
 MasterChannelAlert MasterChannel::add_vc(const uint8_t vcid, const bool segment_header_present,

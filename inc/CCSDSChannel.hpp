@@ -238,11 +238,11 @@ struct MasterChannel {
     uint8_t frameCount;
 
     MasterChannel(bool errorCtrlField, uint8_t frameCount)
-            : virtChannels(), txOutFramesList(), txToBeTransmittedFramesList(), errorCtrlField(errorCtrlField) {}
+            : virtChannels(), txOutFramesListTC(), txToBeTransmittedFramesListTC(), errorCtrlField(errorCtrlField) {}
 
     MasterChannel(const MasterChannel &m)
-            : virtChannels(m.virtChannels), txOutFramesList(m.txOutFramesList),
-              txToBeTransmittedFramesList(m.txToBeTransmittedFramesList), errorCtrlField(m.errorCtrlField),
+            : virtChannels(m.virtChannels), txOutFramesListTC(m.txOutFramesListTC),
+              txToBeTransmittedFramesListTC(m.txToBeTransmittedFramesListTC), errorCtrlField(m.errorCtrlField),
               frameCount(m.frameCount) {
         for (auto &vc: virtChannels) {
             vc.second.masterChannel = *this;
@@ -250,8 +250,11 @@ struct MasterChannel {
     }
 
     MasterChannelAlert store_out(PacketTC*packet);
+	MasterChannelAlert store_out(PacketTM*packet);
+
 
     MasterChannelAlert store_transmitted_out(PacketTC*packet);
+	MasterChannelAlert store_transmitted_out(PacketTM*packet);
 
     const uint16_t availableTM() const {
         return txMasterCopyTM.available();
@@ -267,9 +270,14 @@ struct MasterChannel {
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<PacketTC*, max_received_tx_tc_in_master_buffer> txOutFramesList;
+    etl::list<PacketTC*, max_received_tx_tc_in_master_buffer> txOutFramesListTC;
     // Packets ready to be transmitted having passed through the all frames generation service
-    etl::list<PacketTC*, max_received_tx_tc_out_in_master_buffer> txToBeTransmittedFramesList;
+    etl::list<PacketTC*, max_received_tx_tc_out_in_master_buffer> txToBeTransmittedFramesListTC;
+
+	// Packets stored in frames list, before being processed by the all frames generation service
+	etl::list<PacketTM*, max_received_tx_tc_in_master_buffer> txOutFramesListTM;
+	// Packets ready to be transmitted having passed through the all frames generation service
+	etl::list<PacketTM*, max_received_tx_tc_out_in_master_buffer> txToBeTransmittedFramesListTM;
 
     // Packets that are received, before being received by the all frames reception service
     etl::list<PacketTC*, max_received_rx_tc_in_master_buffer> rxInFramesList;

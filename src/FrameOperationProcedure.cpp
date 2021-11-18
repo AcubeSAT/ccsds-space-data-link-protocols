@@ -115,11 +115,11 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
     }
 
     // Also remove acknowledged frames from Master TX Buffer
-    etl::ilist<PacketTC>::iterator cur_packet = vchan->master_channel().txMasterCopy.begin();
+    etl::ilist<PacketTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
 
-    while (cur_packet != vchan->master_channel().txMasterCopy.end()) {
+    while (cur_packet != vchan->master_channel().txMasterCopyTC.end()) {
         if ((*cur_packet).acknowledged()) {
-            vchan->master_channel().txMasterCopy.erase(cur_packet++);
+            vchan->master_channel().txMasterCopyTC.erase(cur_packet++);
         } else {
             ++cur_packet;
         }

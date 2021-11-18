@@ -78,7 +78,12 @@ public:
 
     ServiceChannelNotif vc_generation_request(uint8_t vid);
 
-    ServiceChannelNotif all_frames_generation_request();
+    ServiceChannelNotif all_frames_generation_request_TC();
+
+	ServiceChannelNotif all_frames_generation_request_TM();
+
+	//dummy function for all frames generation TM testing
+	ServiceChannelNotif all_frames_generation_TM_inbuffer_store(PacketTM*packet);
 
     std::optional<PacketTC> get_tx_processed_packet();
 
@@ -166,14 +171,14 @@ public:
      * @brief Available number of incoming frames in master channel buffer
      */
     const uint16_t in_available() const {
-        return masterChannel.txOutFramesList.available();
+        return masterChannel.txOutFramesListTC.available();
     }
 
     /**
      * @brief Available number of outcoming TX frames in master channel buffer
      */
     const uint16_t tx_out_available() const {
-        return masterChannel.txToBeTransmittedFramesList.available();
+        return masterChannel.txToBeTransmittedFramesListTC.available();
     }
 
     /**
@@ -222,7 +227,12 @@ public:
     /**
      * @brief Return the last processed packet
      */
-    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_processed_packet() const;
+    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_processed_packet_TC() const;
+
+	/**
+     * @brief Return the last processed packet
+	 */
+	std::pair<ServiceChannelNotif, const PacketTM *> tx_out_processed_packet_TM() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) : masterChannel(master_channel) {}

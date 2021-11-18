@@ -90,21 +90,22 @@ TEST_CASE("Service Channel") {
     CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tx_tc_in_virt_buffer - 2U);
     err = serv_channel.push_sent_queue(0);
 
+	CHECK(packet_a->acknowledged() == false);
+	CHECK(packet_a->transfer_frame_sequence_number() == 0);
+	serv_channel.acknowledge_frame(0, 0);
+	CHECK(packet_a->acknowledged() == true);
+
+	CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
+
     // All Frames Generation Service
-    CHECK(serv_channel.tx_out_processed_packet().second == nullptr);
-    err = serv_channel.all_frames_generation_request();
+    CHECK(serv_channel.tx_out_processed_packet_TC().second == nullptr);
+    err = serv_channel.all_frames_generation_request_TC();
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
 
-    Packet packet = *serv_channel.get_tx_processed_packet();
+    //PacketTC packet = *serv_channel.get_tx_processed_packet();
 
-    CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
+    CHECK(serv_channel.tx_out_processed_packet_TC().second == packet_a);
 
-    CHECK(packet_a->acknowledged() == false);
-    CHECK(packet_a->transfer_frame_sequence_number() == 0);
-    serv_channel.acknowledge_frame(0, 0);
-    CHECK(packet_a->acknowledged() == true);
-
-    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
     // Process first type-B packet
     err = serv_channel.vc_generation_request(0);
     CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tx_tc_in_virt_buffer - 1U);
@@ -117,14 +118,16 @@ TEST_CASE("Service Channel") {
     CHECK(serv_channel.tx_available(0) == max_received_unprocessed_tx_tc_in_virt_buffer);
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
 
-    // All Frames Generation Service
-    CHECK(serv_channel.tx_out_processed_packet().second == nullptr);
-    err = serv_channel.all_frames_generation_request();
-    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
+//    // All Frames Generation Service
+//    CHECK(serv_channel.tx_out_processed_packet_TC().second == nullptr);
+//	CHECK(serv_channel.get_tx_processed_packet() == *packet_a);
+//    err = serv_channel.all_frames_generation_request_TC();
+//    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
 
-    PacketTC packet = *serv_channel.get_tx_processed_packet();
+    //PacketTC packet = *serv_channel.get_tx_processed_packet();
 
-    CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
+    CHECK(serv_channel.tx_out_processed_packet_TC().second == packet_a);
+
 
     //TM store function
     uint8_t pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x21, 0xA1};
@@ -138,5 +141,15 @@ TEST_CASE("Service Channel") {
     CHECK(packet_TM->virtual_channel_frame_count() == 2);
     CHECK(packet_TM->transfer_frame_data_field_status() ==
           (static_cast<uint16_t>(0x04) << 8U | (static_cast<uint16_t>(0xA2))));
+
+	// All Frames Generation Service TM
+	CHECK(serv_channel.tx_out_processed_packet_TM().second == nullptr);
+	err = serv_channel.all_frames_generation_TM_inbuffer_store(const_cast<PacketTM*>(packet_TM));
+	err = serv_channel.all_frames_generation_request_TM();
+	CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
+
+	//PacketTC packet = *serv_channel.get_tx_processed_packet();
+
+	CHECK(serv_channel.tx_out_processed_packet_TM().second == packet_TM);
 
 }
