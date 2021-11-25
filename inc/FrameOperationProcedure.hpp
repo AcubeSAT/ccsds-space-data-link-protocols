@@ -175,11 +175,11 @@ public:
     FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC*, max_received_tx_tc_in_wait_queue> *waitQueue,
                             etl::list<PacketTC*, max_received_tx_tc_in_sent_queue> *sentQueue,
                             const uint8_t repetition_cop_ctrl)
-            : waitQueue(waitQueue), sentQueue(sentQueue), state(FOPState::INITIAL), transmitterFrameSeqNumber(0),
-              vchan(vchan), adOut(FlagState::READY), bdOut(FlagState::READY), bcOut(FlagState::READY),
-              expectedAcknowledgementSeqNumber(0), tiInitial(fop_timer_initial), transmissionLimit(repetition_cop_ctrl),
-              transmissionCount(1), fopSlidingWindow(fop_sliding_window_initial), timeoutType(0),
-              suspendState(FOPState::INITIAL) {};
+            : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), state(FOPState::INITIAL),
+              suspendState(FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(FlagState::READY), bdOut(FlagState::READY),
+              bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0), tiInitial(fop_timer_initial),
+              transmissionLimit(repetition_cop_ctrl), transmissionCount(1), fopSlidingWindow(fop_sliding_window_initial),
+              timeoutType(false) {};
 };
 
 #endif // CCSDS_FOP_H

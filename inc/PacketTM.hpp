@@ -129,10 +129,10 @@ struct PacketTM:public Packet {
 	PacketTM(uint8_t *packet, uint16_t packet_length, uint8_t virtualChannelFrameCount, uint8_t scid,
 	         uint16_t vcid, uint8_t masterChannelFrameCount, uint8_t* secondary_header,
 	         uint16_t transferFrameDataFieldStatus, PacketType t=TM)
-	    	:Packet(t, packet_length, packet), hdr(packet), scid(scid), vcid(vcid),
+	    	:Packet(t, packet_length, packet), hdr(packet), masterChannelFrameCount(masterChannelFrameCount), virtualChannelFrameCount(virtualChannelFrameCount),
+	      scid(scid), vcid(vcid),
 	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
-	      secondaryHeader(secondary_header), virtualChannelFrameCount(virtualChannelFrameCount),
-	      masterChannelFrameCount(masterChannelFrameCount), firstHeaderPointer(firstHeaderPointer) {}
+	      secondaryHeader(secondary_header), firstHeaderPointer(firstHeaderPointer) {}
 
 	PacketTM(uint8_t *packet, uint16_t packet_length, PacketType t=TM);
 
@@ -146,7 +146,7 @@ private:
 	uint8_t transferFrameVersionNumber;
 	uint8_t * secondaryHeader;
 	uint16_t firstHeaderPointer;
-	uint8_t *operationalControlField;
+	uint8_t *operationalControlField{};
 };
 
 #endif // CCSDS_TM_PACKETS_PACKETTM_HPP
