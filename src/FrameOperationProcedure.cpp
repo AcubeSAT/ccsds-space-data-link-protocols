@@ -1,7 +1,7 @@
 #include <FrameOperationProcedure.hpp>
 #include <CCSDSChannel.hpp>
 
-FOPNotif FrameOperationProcedure::purge_sent_queue() {
+FOPNotification FrameOperationProcedure::purge_sent_queue() {
     etl::ilist<PacketTC*>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
@@ -9,10 +9,10 @@ FOPNotif FrameOperationProcedure::purge_sent_queue() {
         sentQueue->erase(cur_frame++);
     }
 
-    return FOPNotif::NO_FOP_EVENT;
+    return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::purge_wait_queue() {
+FOPNotification FrameOperationProcedure::purge_wait_queue() {
     etl::ilist<PacketTC*>::iterator cur_frame = waitQueue->begin();
 
     while (cur_frame != waitQueue->end()) {
@@ -20,12 +20,12 @@ FOPNotif FrameOperationProcedure::purge_wait_queue() {
         waitQueue->erase(cur_frame++);
     }
 
-    return FOPNotif::NO_FOP_EVENT;
+    return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_ad_frame() {
+FOPNotification FrameOperationProcedure::transmit_ad_frame() {
     if (sentQueue->full()) {
-        return FOPNotif::SENT_QUEUE_FULL;
+        return FOPNotification::SENT_QUEUE_FULL;
     }
 
     if (sentQueue->empty()) {
@@ -34,13 +34,13 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
 
 	PacketTC*ad_frame = waitQueue->front();
     if (waitQueue->empty()){
-        return FOPNotif::WAIT_QUEUE_EMPTY;
+        return FOPNotification::WAIT_QUEUE_EMPTY;
     }
 
 
     ad_frame->set_transfer_frame_sequence_number(transmitterFrameSeqNumber);
 
-    ad_frame->mark_for_retransmission(0);
+    ad_frame->set_to_be_retransmitted(0);
 
     sentQueue->push_back(ad_frame);
     adOut = false;
@@ -50,23 +50,23 @@ FOPNotif FrameOperationProcedure::transmit_ad_frame() {
     vchan->master_channel().store_out(ad_frame);
     waitQueue->pop_front();
 
-    return FOPNotif::NO_FOP_EVENT;
+    return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bc_frame(PacketTC*bc_frame) {
-    bc_frame->mark_for_retransmission(0);
+FOPNotification FrameOperationProcedure::transmit_bc_frame(PacketTC*bc_frame) {
+    bc_frame->set_to_be_retransmitted(0);
     transmissionCount = 1;
 
     // TODO start the timer
     vchan->master_channel().store_out(bc_frame);
-    return FOPNotif::NO_FOP_EVENT;
+    return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotif FrameOperationProcedure::transmit_bd_frame(PacketTC*bd_frame) {
+FOPNotification FrameOperationProcedure::transmit_bd_frame(PacketTC*bd_frame) {
     bdOut = NOT_READY;
     // Pass frame to all frames generation service
     vchan->master_channel().store_out(bd_frame);
-    return FOPNotif::NO_FOP_EVENT;
+    return FOPNotification::NO_FOP_EVENT;
 }
 
 void FrameOperationProcedure::initiate_ad_retransmission() {
@@ -76,7 +76,7 @@ void FrameOperationProcedure::initiate_ad_retransmission() {
 
     for (PacketTC*frame : *sentQueue) {
         if (frame->service_type() == ServiceType::TYPE_A) {
-            frame->mark_for_retransmission(1);
+            frame->set_to_be_retransmitted(1);
         }
     }
 }
@@ -88,7 +88,7 @@ void FrameOperationProcedure::initiate_bc_retransmission() {
 
     for (PacketTC*frame : *sentQueue) {
         if (frame->service_type() == ServiceType::TYPE_B) {
-            frame->mark_for_retransmission(1);
+            frame->set_to_be_retransmitted(1);
         }
     }
 }
@@ -115,11 +115,11 @@ void FrameOperationProcedure::remove_acknowledged_frames() {
     }
 
     // Also remove acknowledged frames from Master TX Buffer
-    etl::ilist<PacketTC>::iterator cur_packet = vchan->master_channel().txMasterCopy.begin();
+    etl::ilist<PacketTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
 
-    while (cur_packet != vchan->master_channel().txMasterCopy.end()) {
+    while (cur_packet != vchan->master_channel().txMasterCopyTC.end()) {
         if ((*cur_packet).acknowledged()) {
-            vchan->master_channel().txMasterCopy.erase(cur_packet++);
+            vchan->master_channel().txMasterCopyTC.erase(cur_packet++);
         } else {
             ++cur_packet;
         }
@@ -133,7 +133,7 @@ void FrameOperationProcedure::look_for_directive() {
         for (PacketTC*frame : *sentQueue) {
             if (frame->service_type() == ServiceType::TYPE_B && frame->to_be_retransmitted()) {
                 bcOut == FlagState::NOT_READY;
-                frame->mark_for_retransmission(0);
+                frame->set_to_be_retransmitted(0);
             }
             // transmit_bc_frame();
         }
@@ -164,8 +164,8 @@ COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
         for (PacketTC*frame : *sentQueue) {
             if (frame->service_type() == ServiceType::TYPE_A) {
                 // adOut = FlagState::NOT_READY;
-                frame->mark_for_retransmission(0);
-                FOPNotif resp = transmit_ad_frame();
+                frame->set_to_be_retransmitted(0);
+				FOPNotification resp = transmit_ad_frame();
                 return COPDirectiveResponse::ACCEPT;
             }
         }
@@ -203,12 +203,12 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
-	PacketTC*frame = vchan->txUnprocessedPacketList.front();
+	PacketTC*frame = vchan->txUnprocessedPacketListBufferTC.front();
 
-    if (frame->lckout() == 0) {
+    if (frame->lockout() == 0) {
         if (frame->report_value() == expectedAcknowledgementSeqNumber) {
             if (frame->retransmit() == 0) {
-                if (frame->wt() == 0) {
+                if (frame->wait() == 0) {
                     if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
                         // E1
                         switch (state) {
@@ -284,7 +284,7 @@ COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
         } else if (frame->report_value() > expectedAcknowledgementSeqNumber &&
                    expectedAcknowledgementSeqNumber >= transmitterFrameSeqNumber) {
             if (frame->retransmit() == 0) {
-                if (frame->wt() == 0) {
+                if (frame->wait() == 0) {
                     if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
                         // E5
                         switch (state) {
@@ -365,7 +365,7 @@ COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
                     }
                 } else if (transmissionLimit > 1) {
                     if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
-                        if (frame->wt() == 0) {
+                        if (frame->wait() == 0) {
                             // E8
                             switch (state) {
                                 case FOPState::ACTIVE:
@@ -398,7 +398,7 @@ COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
                         }
                     } else {
                         if (transmissionCount < transmissionLimit) {
-                            if (frame->wt() == 0) {
+                            if (frame->wait() == 0) {
                                 //  E10
                                 switch (state) {
                                     case FOPState::ACTIVE:
@@ -428,7 +428,7 @@ COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
                                 }
                             }
                         } else {
-                            if (frame->wt() == 0) {
+                            if (frame->wait() == 0) {
                                 // E12
                                 switch (state) {
                                     case FOPState::ACTIVE:
@@ -646,7 +646,7 @@ void FrameOperationProcedure::bd_reject() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
-	PacketTC*frame = vchan->txUnprocessedPacketList.front();
+	PacketTC*frame = vchan->txUnprocessedPacketListBufferTC.front();
 
     if (frame->transfer_frame_header().bypass_flag() == 0) {
         if (frame->service_type() == ServiceType::TYPE_A) {
