@@ -8,7 +8,7 @@ TEST_CASE("CCSDS TC Channel Model") {
 
     PhysicalChannel phy_channel = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)},
+    etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)},
                                                                          {3, MAPChannel(3, DataFieldContent::VCA_SDU)}};
 
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
@@ -20,7 +20,7 @@ TEST_CASE("CCSDS TC Channel Model") {
 }
 
 TEST_CASE("MAPP blocking") {
-    etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)}};
+    etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)}};
 
     MasterChannel master_channel = MasterChannel(true, 0);
     master_channel.add_vc(3, true, 8, 20, true, 32, 32, 32, map_channels);
@@ -30,13 +30,13 @@ TEST_CASE("MAPP blocking") {
 
     uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
-    serv_channel.store(data, 11, 3, 2, 10, ServiceType::TYPE_A);
-    CHECK(serv_channel.tx_available(3, 2) == max_received_tc_in_map_channel - 1);
+	serv_channel.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
+    CHECK(serv_channel.tx_available(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 1);
 
     serv_channel.mapp_request(3, 2);
 
-    CHECK(serv_channel.tx_available(3) == max_received_unprocessed_tx_tc_in_virt_buffer - 6);
-    CHECK(serv_channel.tx_available(3, 2) == max_received_tc_in_map_channel);
+    CHECK(serv_channel.tx_available(3) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 6);
+    CHECK(serv_channel.tx_available(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL);
 }
 
 TEST_CASE("Virtual Channel Generation") {}

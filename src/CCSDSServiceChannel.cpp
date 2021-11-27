@@ -5,40 +5,40 @@
 #include <Alert.hpp>
 #include <CCSDS_Log.h>
 
-ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_length) {
-    if (masterChannel.rxMasterCopy.full()) {
+ServiceChannelNotification ServiceChannel::store(uint8_t *packet, uint16_t packet_length) {
+    if (masterChannel.rxMasterCopyTC.full()) {
 		ccsds_log(Rx_ServiceChannel_store_ServiceChannelNotif_RX_IN_MC_FULL,true);
-        return ServiceChannelNotif::RX_IN_MC_FULL;
+        return ServiceChannelNotification::RX_IN_MC_FULL;
     }
 
-    if (masterChannel.rxInFramesList.full()) {
+    if (masterChannel.rxInFramesBeforeAllFramesReceptionList.full()) {
 		ccsds_log(Rx_ServiceChannel_store_ServiceChannelNotif_MAP_CHANNEL_RX_IN_BUFFER_FULL,true);
-        return ServiceChannelNotif::RX_IN_BUFFER_FULL;
+        return ServiceChannelNotification::RX_IN_BUFFER_FULL;
     }
 
     PacketTC pckt = PacketTC(packet, packet_length);
 
     if (pckt.packet_length() != packet_length) {
 		ccsds_log(Rx_ServiceChannel_store_ServiceChannelNotif_MAP_CHANNEL_RX_INVALID_LENGTH,true);
-        return ServiceChannelNotif::RX_INVALID_LENGTH;
+        return ServiceChannelNotification::RX_INVALID_LENGTH;
     }
 
-    masterChannel.rxMasterCopy.push_back(pckt);
-    PacketTC *master_pckt = &(masterChannel.rxMasterCopy.front());
-    masterChannel.rxInFramesList.push_back(master_pckt);
+    masterChannel.rxMasterCopyTC.push_back(pckt);
+    PacketTC *master_pckt = &(masterChannel.rxMasterCopyTC.front());
+    masterChannel.rxInFramesBeforeAllFramesReceptionList.push_back(master_pckt);
 	ccsds_log(Rx_ServiceChannel_store_ServiceChannelNotif_NO_SERVICE_EVENT,true);
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid,
+ServiceChannelNotification ServiceChannel::storeTC(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid,
                                           uint16_t sduid, ServiceType service_type) {
     uint8_t vid = gvcid & 0x3F;
     VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(vchan->mapChannels.at(mapid));
 
-    if (map_channel->unprocessedPacketList.full()) {
+    if (map_channel->unprocessedPacketListBufferTC.full()) {
 		ccsds_log(Tx_ServiceChannel_store_ServiceChannelNotif_MAP_CHANNEL_FRAME_BUFFER_FULL,true);
-        return ServiceChannelNotif::MAP_CHANNEL_FRAME_BUFFER_FULL;
+        return ServiceChannelNotification::MAP_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     PacketTC packet_s =
@@ -51,20 +51,20 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
     }
 
     masterChannel.txMasterCopyTC.push_back(packet_s);
-    map_channel->unprocessedPacketList.push_back(&(masterChannel.txMasterCopyTC.back()));
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    map_channel->unprocessedPacketListBufferTC.push_back(&(masterChannel.txMasterCopyTC.back()));
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t sduid) {
+ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t scid) {
     uint8_t vid = gvcid & 0x3F;
     VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
 
     if (masterChannel.txMasterCopyTM.full()) {
-        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+        return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     if (masterChannel.txMasterCopyTM.full()) {
-        return ServiceChannelNotif::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+        return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
     TransferFrameHeaderTM hdr = TransferFrameHeaderTM(packet);
@@ -75,35 +75,35 @@ ServiceChannelNotif ServiceChannel::store(uint8_t *packet, uint16_t packet_lengt
     }
 
     PacketTM packet_s =
-            PacketTM(packet, packet_length, vchan->frameCount, sduid, vid, masterChannel.frameCount,
-                     secondaryHeader, hdr.transfer_frame_data_field_status(), 0);
+            PacketTM(packet, packet_length, vchan->frameCount, scid, vid, masterChannel.frameCount,
+                     secondaryHeader, hdr.transfer_frame_data_field_status());
 
 
     masterChannel.txMasterCopyTM.push_back(packet_s);
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
+ServiceChannelNotification ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     MAPChannel *map_channel = &(virt_channel->mapChannels.at(mapid));
 
-    if (map_channel->unprocessedPacketList.empty()) {
+    if (map_channel->unprocessedPacketListBufferTC.empty()) {
 		ccsds_log(Tx_ServiceChannel_mapp_request_ServiceChannelNotif_NO_TX_PACKETS_TO_PROCESS,true);
-        return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
+        return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
     }
 
     if (virt_channel->txWaitQueue.full()) {
 		ccsds_log(Tx_ServiceChannel_mapp_request_ServiceChannelNotif_VC_MC_FRAME_BUFFER_FULL,true);
-        return ServiceChannelNotif::VC_MC_FRAME_BUFFER_FULL;
+        return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
     }
 
-    PacketTC *packet = map_channel->unprocessedPacketList.front();
+    PacketTC *packet = map_channel->unprocessedPacketListBufferTC.front();
 
     const uint16_t max_frame_length = virt_channel->maxFrameLength;
     bool segmentation_enabled = virt_channel->segmentHeaderPresent;
     bool blocking_enabled = virt_channel->blocking;
 
-    const uint16_t max_packet_length = max_frame_length - (tc_primary_header_size + segmentation_enabled * 1U);
+    const uint16_t max_packet_length = max_frame_length - (TC_PRIMARY_HEADER_SIZE + segmentation_enabled * 1U);
 
     if (packet->packet_length() > max_packet_length) {
         if (segmentation_enabled) {
@@ -113,7 +113,7 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
 
             if (virt_channel->txWaitQueue.available() >= tf_n) {
                 // Break up packet
-                map_channel->unprocessedPacketList.pop_front();
+                map_channel->unprocessedPacketListBufferTC.pop_front();
 
                 // First portion
                 uint16_t seg_header = mapid | 0x40;
@@ -123,29 +123,29 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
                                  packet->global_virtual_channel_id(),
                                  packet->map_id(), packet->spacecraft_id(), packet->service_type(),
                                  virt_channel->segmentHeaderPresent);
-                virt_channel->store(&t_packet);
+                virt_channel->storeVC(&t_packet);
 
                 // Middle portion
                 t_packet.set_segmentation_header(mapid | 0x00);
                 for (uint8_t i = 1; i < (tf_n - 1); i++) {
                     t_packet.set_packet_data(&packet->packet_data()[i * max_packet_length]);
-                    virt_channel->store(&t_packet);
+                    virt_channel->storeVC(&t_packet);
                 }
 
                 // Last portion
                 t_packet.set_segmentation_header(mapid | 0x80);
                 t_packet.set_packet_data(&packet->packet_data()[(tf_n - 1) * max_packet_length]);
                 t_packet.set_packet_length(packet->packet_length() % max_packet_length);
-                virt_channel->store(&t_packet);
+                virt_channel->storeVC(&t_packet);
             }
         } else {
 			ccsds_log(Tx_ServiceChannel_mapp_request_ServiceChannelNotif_PACKET_EXCEEDS_MAX_SIZE,true);
-            return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
+            return ServiceChannelNotification::PACKET_EXCEEDS_MAX_SIZE;
         }
     } else {
         // We've already checked whether there is enough space in the buffer so we can simply remove the packet from
         // the buffer.
-        map_channel->unprocessedPacketList.pop_front();
+        map_channel->unprocessedPacketListBufferTC.pop_front();
 
         if (blocking_enabled) {
             // See if we can block it with other packets
@@ -158,19 +158,19 @@ ServiceChannelNotif ServiceChannel::mapp_request(uint8_t vid, uint8_t mapid) {
             // contiguous memory but I'm also against that)
 
             // for now just send packet as-is
-            virt_channel->store(packet);
+            virt_channel->storeVC(packet);
         } else {
             if (segmentation_enabled) {
                 packet->set_segmentation_header((0xc0) | (mapid && 0x3F));
             }
-            virt_channel->store(packet);
+            virt_channel->storeVC(packet);
         }
     }
 	ccsds_log(Tx_ServiceChannel_mapp_request_ServiceChannelNotif_NO_SERVICE_EVENT,true);
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-#if max_received_unprocessed_tx_tc_in_virt_buffer > 0
+#if MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER > 0
 
 ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
     VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
@@ -244,19 +244,19 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
 #endif
 
-ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
+ServiceChannelNotification ServiceChannel::vc_generation_request(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
-    if (virt_channel->txUnprocessedPacketList.empty()) {
+    if (virt_channel->txUnprocessedPacketListBufferTC.empty()) {
 		ccsds_log(Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_NO_TX_PACKETS_TO_PROCESS,true);
-        return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
+        return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.txOutFramesList.full()) {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationList.full()) {
 		ccsds_log(Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_TX_MC_FRAME_BUFFER_FULL,true);
-        return ServiceChannelNotif::TX_MC_FRAME_BUFFER_FULL;
+        return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
     }
 
-    PacketTC *frame = virt_channel->txUnprocessedPacketList.front();
+    PacketTC *frame = virt_channel->txUnprocessedPacketListBufferTC.front();
     COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
     if (frame->transfer_frame_header().ctrl_and_cmd_flag() == 0) {
@@ -267,31 +267,31 @@ ServiceChannelNotif ServiceChannel::vc_generation_request(uint8_t vid) {
 
     if (err == COPDirectiveResponse::REJECT) {
 		ccsds_log(Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_FOP_REQUEST_REJECTED,true);
-        return ServiceChannelNotif::FOP_REQUEST_REJECTED;
+        return ServiceChannelNotification::FOP_REQUEST_REJECTED;
     }
 
-    virt_channel->txUnprocessedPacketList.pop_front();
+    virt_channel->txUnprocessedPacketListBufferTC.pop_front();
 	ccsds_log(Tx_ServiceChannel_vc_generation_request_ServiceChannelNotif_NO_SERVICE_EVENT,true);
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
-    if (masterChannel.rxInFramesList.empty()) {
+ServiceChannelNotification ServiceChannel::all_frames_reception_request() {
+    if (masterChannel.rxInFramesBeforeAllFramesReceptionList.empty()) {
 		ccsds_log(Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_NO_RX_PACKETS_TO_PROCESS,1);
-        return ServiceChannelNotif::NO_RX_PACKETS_TO_PROCESS;
+        return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.rxToBeTransmittedFramesList.full()) {
+    if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionList.full()) {
 		ccsds_log(Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_RX_OUT_BUFFER_FULL,1);
-        return ServiceChannelNotif::RX_OUT_BUFFER_FULL;
+        return ServiceChannelNotification::RX_OUT_BUFFER_FULL;
     }
 
-    PacketTC *packet = masterChannel.rxInFramesList.front();
+    PacketTC *packet = masterChannel.rxInFramesBeforeAllFramesReceptionList.front();
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(packet->virtual_channel_id()));
 
     if (virt_channel->rxWaitQueue.full()) {
 		ccsds_log(Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_VC_RX_WAIT_QUEUE_FULL,1);
-        return ServiceChannelNotif::VC_RX_WAIT_QUEUE_FULL;
+        return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
     }
 
     // Frame Delimiting and Fill Removal supposedly aren't implemented here
@@ -303,13 +303,13 @@ ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
     // Check for valid TFVN
     if (packet->transfer_frame_version_number() != 0) {
 		ccsds_log(Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_RX_INVALID_TFVN,true);
-        return ServiceChannelNotif::RX_INVALID_TFVN;
+        return ServiceChannelNotification::RX_INVALID_TFVN;
     }
 
     // Check for valid SCID
-    if (packet->spacecraft_id() == spacecraft_identifier) {
+    if (packet->spacecraft_id() == SPACECRAFT_IDENTIFIER) {
 		ccsds_log(Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_RX_INVALID_SCID,true);
-        return ServiceChannelNotif::RX_INVALID_SCID;
+        return ServiceChannelNotification::RX_INVALID_SCID;
     }
 
     // PacketTC length is checked upon storing the packet in the MC
@@ -327,32 +327,32 @@ ServiceChannelNotif ServiceChannel::all_frames_reception_request() {
 #endif
 
     virt_channel->rxWaitQueue.push_back(packet);
-    masterChannel.rxInFramesList.pop_front();
+    masterChannel.rxInFramesBeforeAllFramesReceptionList.pop_front();
 	ccsds_log(Rx_ServiceChannel_all_frames_reception_request_ServiceChannelNotif_NO_SERVICE_EVENT,true);
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
 std::optional<PacketTC> ServiceChannel::get_tx_processed_packet() {
-    if (masterChannel.txOutFramesList.empty()) {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationList.empty()) {
         return {};
     }
 
-    PacketTC packet = *masterChannel.txOutFramesList.front();
+    PacketTC packet = *masterChannel.txOutFramesBeforeAllFramesGenerationList.front();
     // TODO: Here the packet should probably be deleted from the master buffer
     return packet;
 }
 
-ServiceChannelNotif ServiceChannel::all_frames_generation_request() {
-    if (masterChannel.txOutFramesList.empty()) {
-        return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
+ServiceChannelNotification ServiceChannel::all_frames_generation_request() {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationList.empty()) {
+        return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.txToBeTransmittedFramesList.full()) {
-        return ServiceChannelNotif::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.full()) {
+        return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
 
-    PacketTC *packet = masterChannel.txOutFramesList.front();
-    masterChannel.txOutFramesList.pop_front();
+    PacketTC *packet = masterChannel.txOutFramesBeforeAllFramesGenerationList.front();
+    masterChannel.txOutFramesBeforeAllFramesGenerationList.pop_front();
 
     if (masterChannel.errorCtrlField) {
         packet->append_crc();
@@ -360,44 +360,44 @@ ServiceChannelNotif ServiceChannel::all_frames_generation_request() {
 
     masterChannel.store_transmitted_out(packet);
 
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::transmit_frame(uint8_t *pack) {
-    if (masterChannel.txToBeTransmittedFramesList.empty()) {
-        return ServiceChannelNotif::TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY;
+ServiceChannelNotification ServiceChannel::transmit_frame(uint8_t *pack) {
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.empty()) {
+        return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY;
     }
 
-    PacketTC *packet = masterChannel.txToBeTransmittedFramesList.front();
+    PacketTC *packet = masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.front();
     packet->set_repetitions(packet->repetitions() - 1);
     if (packet->repetitions() == 0) {
-        masterChannel.txToBeTransmittedFramesList.pop_front();
+        masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.pop_front();
     }
     memcpy(pack, packet, packet->packet_length());
-    return ServiceChannelNotif::NO_SERVICE_EVENT;
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotif ServiceChannel::transmit_ad_frame(uint8_t vid) {
+ServiceChannelNotification ServiceChannel::transmit_ad_frame(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
-    FOPNotif req;
+	FOPNotification req;
     req = virt_channel->fop.transmit_ad_frame();
-    if (req == FOPNotif::NO_FOP_EVENT) {
-        return ServiceChannelNotif::NO_SERVICE_EVENT;
+    if (req == FOPNotification::NO_FOP_EVENT) {
+        return ServiceChannelNotification::NO_SERVICE_EVENT;
     } else {
         // TODO
     }
 }
 
 // TODO: Probably not needed. Refactor sentQueue
-ServiceChannelNotif ServiceChannel::push_sent_queue(uint8_t vid) {
+ServiceChannelNotification ServiceChannel::push_sent_queue(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
     COPDirectiveResponse req;
     req = virt_channel->fop.push_sent_queue();
 
     if (req == COPDirectiveResponse::ACCEPT) {
-        return ServiceChannelNotif::NO_SERVICE_EVENT;
+        return ServiceChannelNotification::NO_SERVICE_EVENT;
     }
-    return ServiceChannelNotif::TX_FOP_REJECTED;
+    return ServiceChannelNotification::TX_FOP_REJECTED;
 }
 
 void ServiceChannel::acknowledge_frame(uint8_t vid, uint8_t frame_seq_number){
@@ -501,44 +501,44 @@ const uint8_t ServiceChannel::expected_frame_seq_number(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
 }
 
-std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_packet(const uint8_t vid,
+std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::tx_out_packet(const uint8_t vid,
                                                                                const uint8_t mapid) const {
-    const etl::list<PacketTC *, max_received_tc_in_map_channel> *mc =
-            &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketList);
+    const etl::list<PacketTC *, MAX_RECEIVED_TC_IN_MAP_CHANNEL> *mc =
+            &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketListBufferTC);
     if (mc->empty()) {
-        return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
+        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
 
-    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, mc->front());
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, mc->front());
 }
 
-std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_packet(const uint8_t vid) const {
-    const etl::list<PacketTC *, max_received_unprocessed_tx_tc_in_virt_buffer> *vc =
-            &(masterChannel.virtChannels.at(vid).txUnprocessedPacketList);
+std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::tx_out_packet(const uint8_t vid) const {
+    const etl::list<PacketTC *, MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER> *vc =
+            &(masterChannel.virtChannels.at(vid).txUnprocessedPacketListBufferTC);
     if (vc->empty()) {
-        return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
+        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
 
-    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, vc->front());
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, vc->front());
 }
 
-std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_packet_TC() const {
+std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::tx_out_packet_TC() const {
     if (masterChannel.txMasterCopyTC.empty()) {
-        return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
+        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
-    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.txMasterCopyTC.back()));
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, &(masterChannel.txMasterCopyTC.back()));
 }
 
-std::pair<ServiceChannelNotif, const PacketTM *> ServiceChannel::tx_out_packet_TM() const {
+std::pair<ServiceChannelNotification, const PacketTM *> ServiceChannel::tx_out_packet_TM() const {
     if (masterChannel.txMasterCopyTM.empty()) {
-        return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
+        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
-    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, &(masterChannel.txMasterCopyTM.back()));
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, &(masterChannel.txMasterCopyTM.back()));
 }
 
-std::pair<ServiceChannelNotif, const PacketTC *> ServiceChannel::tx_out_processed_packet() const {
-    if (masterChannel.txToBeTransmittedFramesList.empty()) {
-        return std::pair(ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS, nullptr);
+std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::tx_out_processed_packet() const {
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.empty()) {
+        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
-    return std::pair(ServiceChannelNotif::NO_SERVICE_EVENT, masterChannel.txToBeTransmittedFramesList.front());
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.front());
 }
