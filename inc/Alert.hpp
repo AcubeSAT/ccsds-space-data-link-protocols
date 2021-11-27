@@ -1,7 +1,7 @@
 #ifndef CCSDS_ALERT_HPP
 #define CCSDS_ALERT_HPP
 
-enum ServiceChannelNotif {
+enum ServiceChannelNotification {
     NO_SERVICE_EVENT,
     MAP_CHANNEL_FRAME_BUFFER_FULL,
     MASTER_CHANNEL_FRAME_BUFFER_FULL,
@@ -27,7 +27,7 @@ enum ServiceChannelNotif {
 #endif
 };
 
-enum FOPNotif {
+enum FOPNotification {
     NO_FOP_EVENT,
     SENT_QUEUE_FULL,
     WAIT_QUEUE_EMPTY,
