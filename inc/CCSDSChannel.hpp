@@ -255,8 +255,8 @@ struct MasterChannel {
 
     MasterChannel(const MasterChannel &m)
             : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField),
-              frameCount(m.frameCount), txOutFramesList(m.txOutFramesList),
-              txToBeTransmittedFramesList(m.txToBeTransmittedFramesList) {
+              frameCount(m.frameCount), txOutFramesBeforeAllFramesGenerationList(m.txOutFramesBeforeAllFramesGenerationList),
+	      txToBeTransmittedFramesAfterAllFramesGenerationList(m.txToBeTransmittedFramesAfterAllFramesGenerationList) {
         for (auto &vc: virtChannels) {
             vc.second.masterChannel = *this;
         }

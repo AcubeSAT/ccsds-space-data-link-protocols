@@ -5,11 +5,11 @@
 
 VirtualChannelAlert VirtualChannel::storeVC(PacketTC *packet) {
     // Limit the amount of packets that can be stored at any given time
-    if (txUnprocessedPacketList.full()) {
+    if (txUnprocessedPacketListBufferTC.full()) {
 		ccsds_log(Tx, TypeVirtualChannelAlert, TX_WAIT_QUEUE_FULL);
         return VirtualChannelAlert::TX_WAIT_QUEUE_FULL;
     }
-    txUnprocessedPacketList.push_back(packet);
+	txUnprocessedPacketListBufferTC.push_back(packet);
 	ccsds_log(Tx, TypeVirtualChannelAlert, NO_VC_ALERT);
     return VirtualChannelAlert::NO_VC_ALERT;
 }
@@ -33,11 +33,11 @@ MasterChannelAlert MasterChannel::  store_out(PacketTC *packet) {
 }
 
 MasterChannelAlert MasterChannel::store_transmitted_out(PacketTC *packet) {
-    if (txToBeTransmittedFramesList.full()) {
+    if (txToBeTransmittedFramesAfterAllFramesGenerationList.full()) {
 		ccsds_log(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
         return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
-    txToBeTransmittedFramesList.push_back(packet);
+	txToBeTransmittedFramesAfterAllFramesGenerationList.push_back(packet);
 	ccsds_log(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
     return MasterChannelAlert::NO_MC_ALERT;
 }

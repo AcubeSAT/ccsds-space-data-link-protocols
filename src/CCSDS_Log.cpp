@@ -33,9 +33,9 @@ std::ostream& operator<<(std::ostream& out, const NotificationType value)
 	return out  << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const ServiceChannelNotif value)
+std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification value)
 {
-	static std::map<ServiceChannelNotif, std::string> strings;
+	static std::map<ServiceChannelNotification, std::string> strings;
 	if (strings.empty()){
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(NO_SERVICE_EVENT);
@@ -75,9 +75,9 @@ std::ostream& operator<<(std::ostream& out, const COPDirectiveResponse value)
 	return out  << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const FOPNotif value)
+std::ostream& operator<<(std::ostream& out, const FOPNotification value)
 {
-	static std::map<FOPNotif, std::string> strings;
+	static std::map<FOPNotification, std::string> strings;
 	if (strings.empty()){
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(NO_FOP_EVENT);
@@ -129,7 +129,7 @@ std::ostream& operator<<(std::ostream& out, const FDURequestType value)
 	return out  << strings[value];
 }
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, ServiceChannelNotif service_channel_notif) {
+void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, ServiceChannelNotification service_channel_notif) {
 	std::ostringstream ss;
 	uint16_t a;
 	switch (LOG_VERBOSE) {
@@ -188,7 +188,7 @@ void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, COPDirectiveResp
 	};
 }
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FOPNotif service_channel_notif){
+void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FOPNotification service_channel_notif){
 	std::ostringstream ss;
 	uint16_t a;
 	switch (LOG_VERBOSE) {

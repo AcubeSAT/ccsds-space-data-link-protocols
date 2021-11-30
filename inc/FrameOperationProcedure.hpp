@@ -273,8 +273,8 @@ public:
                             const uint8_t repetition_cop_ctrl)
             : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), state(FOPState::INITIAL),
               suspendState(FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(FlagState::READY), bdOut(FlagState::READY),
-              bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0), tiInitial(fop_timer_initial),
-              transmissionLimit(repetition_cop_ctrl), transmissionCount(1), fopSlidingWindow(fop_sliding_window_initial),
+              bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0), tiInitial(FOP_TIMER_INITIAL),
+              transmissionLimit(repetition_cop_ctrl), transmissionCount(1), fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL),
               timeoutType(false) {};
 };
 
