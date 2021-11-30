@@ -211,7 +211,7 @@ public:
      * @brief Available space in virtual channel buffer
      */
     const uint16_t tx_available(const uint8_t vid) const {
-		masterChannel.virtChannels.at(vid).availableBufferTC();
+        return masterChannel.virtChannels.at(vid).available();
     }
 
     /**

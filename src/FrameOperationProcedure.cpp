@@ -1,5 +1,6 @@
 #include <FrameOperationProcedure.hpp>
 #include <CCSDSChannel.hpp>
+#include <CCSDS_Log.h>
 
 FOPNotification FrameOperationProcedure::purge_sent_queue() {
     etl::ilist<PacketTC*>::iterator cur_frame = sentQueue->begin();
@@ -8,8 +9,8 @@ FOPNotification FrameOperationProcedure::purge_sent_queue() {
         (*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
         sentQueue->erase(cur_frame++);
     }
-
-    return FOPNotification::NO_FOP_EVENT;
+	ccsds_log(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotif::NO_FOP_EVENT;
 }
 
 FOPNotification FrameOperationProcedure::purge_wait_queue() {
@@ -19,13 +20,14 @@ FOPNotification FrameOperationProcedure::purge_wait_queue() {
         (*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
         waitQueue->erase(cur_frame++);
     }
-
-    return FOPNotification::NO_FOP_EVENT;
+	ccsds_log(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotif::NO_FOP_EVENT;
 }
 
 FOPNotification FrameOperationProcedure::transmit_ad_frame() {
     if (sentQueue->full()) {
-        return FOPNotification::SENT_QUEUE_FULL;
+		ccsds_log(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
+        return FOPNotif::SENT_QUEUE_FULL;
     }
 
     if (sentQueue->empty()) {
@@ -34,7 +36,8 @@ FOPNotification FrameOperationProcedure::transmit_ad_frame() {
 
 	PacketTC*ad_frame = waitQueue->front();
     if (waitQueue->empty()){
-        return FOPNotification::WAIT_QUEUE_EMPTY;
+		ccsds_log(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
+        return FOPNotif::WAIT_QUEUE_EMPTY;
     }
 
 
@@ -49,8 +52,8 @@ FOPNotification FrameOperationProcedure::transmit_ad_frame() {
     // pass the frame into the all frames generation service
     vchan->master_channel().store_out(ad_frame);
     waitQueue->pop_front();
-
-    return FOPNotification::NO_FOP_EVENT;
+	ccsds_log(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotif::NO_FOP_EVENT;
 }
 
 FOPNotification FrameOperationProcedure::transmit_bc_frame(PacketTC*bc_frame) {
@@ -59,14 +62,16 @@ FOPNotification FrameOperationProcedure::transmit_bc_frame(PacketTC*bc_frame) {
 
     // TODO start the timer
     vchan->master_channel().store_out(bc_frame);
-    return FOPNotification::NO_FOP_EVENT;
+	ccsds_log(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotif::NO_FOP_EVENT;
 }
 
 FOPNotification FrameOperationProcedure::transmit_bd_frame(PacketTC*bd_frame) {
     bdOut = NOT_READY;
     // Pass frame to all frames generation service
     vchan->master_channel().store_out(bd_frame);
-    return FOPNotification::NO_FOP_EVENT;
+	ccsds_log(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotif::NO_FOP_EVENT;
 }
 
 void FrameOperationProcedure::initiate_ad_retransmission() {
@@ -145,6 +150,7 @@ void FrameOperationProcedure::look_for_directive() {
 // TODO: Sent Queue as-is is pretty much tx
 COPDirectiveResponse FrameOperationProcedure::push_sent_queue(){
     if (vchan->sentQueue.empty()){
+		ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
         return COPDirectiveResponse::REJECT;
     }
 
@@ -154,8 +160,10 @@ COPDirectiveResponse FrameOperationProcedure::push_sent_queue(){
 
     if (err == MasterChannelAlert::NO_MC_ALERT){
         //sentQueue->pop_front();
+		ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
         return COPDirectiveResponse::ACCEPT;
     }
+	ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
     return COPDirectiveResponse::REJECT;
 }
 
@@ -164,8 +172,9 @@ COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
         for (PacketTC*frame : *sentQueue) {
             if (frame->service_type() == ServiceType::TYPE_A) {
                 // adOut = FlagState::NOT_READY;
-                frame->set_to_be_retransmitted(0);
-				FOPNotification resp = transmit_ad_frame();
+                frame->mark_for_retransmission(0);
+                FOPNotif resp = transmit_ad_frame();
+				ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
                 return COPDirectiveResponse::ACCEPT;
             }
         }
@@ -176,11 +185,13 @@ COPDirectiveResponse FrameOperationProcedure::look_for_fdu() {
             if (frame->service_type() == ServiceType::TYPE_A) {
                 sentQueue->push_back(frame);
                 waitQueue->pop_front();
+				ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
                 return COPDirectiveResponse::ACCEPT;
             }
         }
     } else {
         // TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
+		ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
         return COPDirectiveResponse::REJECT;
     }
 }
@@ -491,9 +502,10 @@ COPDirectiveResponse FrameOperationProcedure::valid_clcw_arrival() {
 
     MasterChannelAlert mc = vchan->master_channel().store_out(frame);
     if (mc != MasterChannelAlert::NO_MC_ALERT){
+		ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
         return COPDirectiveResponse::REJECT;
     }
-
+	ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
     return COPDirectiveResponse::ACCEPT;
 }
 
@@ -518,6 +530,7 @@ FDURequestType FrameOperationProcedure::initiate_ad_no_clcw() {
         initialize();
         state = FOPState::ACTIVE;
     }
+	ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
     return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -538,6 +551,7 @@ FDURequestType FrameOperationProcedure::initiate_ad_unlock() {
         // @todo transmit unlock frame
     }
     // E26
+	ccsds_log(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
     return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -551,6 +565,7 @@ FDURequestType FrameOperationProcedure::initiate_ad_vr(uint8_t vr) {
         state = FOPState::INITIALIZING_WITH_BC_FRAME;
     }
     // E28
+	ccsds_log(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
     return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -560,11 +575,13 @@ FDURequestType FrameOperationProcedure::terminate_ad_service() {
         alert(AlertEvent::ALRT_TERM);
         state = FOPState::INITIAL;
     }
+	ccsds_log(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
     return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
 FDURequestType FrameOperationProcedure::resume_ad_service() {
     state = suspendState;
+	ccsds_log(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
     return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -573,8 +590,10 @@ COPDirectiveResponse FrameOperationProcedure::set_vs(uint8_t vs) {
     if (state == FOPState::INITIAL && suspendState == FOPState::INITIAL) {
         transmitterFrameSeqNumber = vs;
         expectedAcknowledgementSeqNumber = vs;
+		ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
         return COPDirectiveResponse::ACCEPT;
     } else {
+		ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
         return COPDirectiveResponse::REJECT;
     }
 }
@@ -582,12 +601,14 @@ COPDirectiveResponse FrameOperationProcedure::set_vs(uint8_t vs) {
 COPDirectiveResponse FrameOperationProcedure::set_fop_width(uint8_t vr) {
     // E36
     fopSlidingWindow = vr;
+	ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
     return COPDirectiveResponse::ACCEPT;
 }
 
 COPDirectiveResponse FrameOperationProcedure::set_t1_initial(uint16_t t1_init) {
     // E37
     tiInitial = t1_init;
+	ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
     return COPDirectiveResponse::ACCEPT;
 }
 
@@ -600,11 +621,13 @@ COPDirectiveResponse FrameOperationProcedure::set_transmission_limit(uint8_t vr)
 COPDirectiveResponse FrameOperationProcedure::set_timeout_type(bool vr) {
     // E39
     timeoutType = vr;
+	ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
     return COPDirectiveResponse::ACCEPT;
 }
 
 COPDirectiveResponse FrameOperationProcedure::invalid_directive() {
     // E40
+	ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
     return COPDirectiveResponse::REJECT;
 }
 
@@ -637,6 +660,7 @@ void FrameOperationProcedure::bc_reject() {
 
 COPDirectiveResponse FrameOperationProcedure::bd_accept() {
     bdOut = FlagState::READY;
+	ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
     return COPDirectiveResponse::ACCEPT;
 }
 
@@ -658,11 +682,14 @@ COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
                 } else if (state == FOPState::RETRANSMIT_WITH_WAIT) {
                     waitQueue->push_back(frame);
                 } else {
+					ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
                     return COPDirectiveResponse::REJECT;
                 }
+				ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
                 return COPDirectiveResponse::ACCEPT;
             } else {
                 // E20
+				ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
                 return COPDirectiveResponse::REJECT;
             }
         } else if (frame->service_type() == ServiceType::TYPE_B) {
@@ -670,6 +697,7 @@ COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
             if (bdOut == FlagState::READY) {
                 //
                 transmit_bc_frame(frame);
+				ccsds_log(Tx, TypeCOPDirectiveResponse, ACCEPT);
                 return COPDirectiveResponse::ACCEPT;
             } else {
                 // E22
@@ -681,6 +709,7 @@ COPDirectiveResponse FrameOperationProcedure::transfer_fdu() {
 
         MasterChannelAlert mc = vchan->master_channel().store_out(frame);
         if (mc != MasterChannelAlert::NO_MC_ALERT){
+			ccsds_log(Tx, TypeCOPDirectiveResponse, REJECT);
             return COPDirectiveResponse::REJECT;
         }
     }

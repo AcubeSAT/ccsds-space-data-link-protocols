@@ -6,7 +6,6 @@
 
 #ifndef CCSDS_CCSDS_DEFINITIONS_HPP
 #define CCSDS_CCSDS_DEFINITIONS_HPP
-
 // TODO? See if some of those constants don't need to be global and can be defined in the class instead
 const uint16_t SPACECRAFT_IDENTIFIER = 567; // A 10-bit unique identifier, assigned by the SANA
 
@@ -96,4 +95,5 @@ enum FlagState {
     NOT_READY = 0, READY = 1
 };
 #define LOGGER_MAX_MESSAGE_SIZE 512
+#define LOG_VERBOSE 1
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP

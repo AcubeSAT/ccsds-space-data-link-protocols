@@ -18,7 +18,7 @@ enum ServiceType {
     TYPE_A = 0, TYPE_B = 1
 };
 
-enum FDURequestType {
+enum FDURequestType: uint8_t{
     REQUEST_PENDING = 0,
     REQUEST_POSITIVE_CONFIRM = 1,
     REQUEST_NEGATIVE_CONFIRM = 2,
@@ -73,7 +73,7 @@ struct PacketTC:public Packet {
     // This is normally not allowed, but we have to cross-check if it is compatible with FARM checks
 
     friend bool operator==(const PacketTC &pack1, const PacketTC &pack2) {
-        pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber;
+        return(pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber);
     }
 
     // TODO: Handle CLCWs without any ambiguities
@@ -90,7 +90,7 @@ struct PacketTC:public Packet {
 	 * @see p. 4.2.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
     const uint8_t control_word_type() const {
-        data[0] & 0x80 >> 7U;
+		return (data[0] & 0x80 >> 7U);
     }
 
 	/**
