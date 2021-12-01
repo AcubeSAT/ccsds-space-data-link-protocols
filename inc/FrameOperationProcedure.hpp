@@ -179,8 +179,8 @@ private:
     void look_for_directive();
 
 	/**
-	 *
-	 * @return 
+	 * @brief stores TC Packets, that have being processed by the FOP service, to the txOutFramesBeforeAllFramesGenerationList
+	 * list, in order to be processed by All Frames Generation Service
 	 */
     COPDirectiveResponse push_sent_queue();
     /**
@@ -191,6 +191,7 @@ private:
     COPDirectiveResponse look_for_fdu();
 
 	/**
+	 * @brief initializes FOP service
 	 * @see p. 5.2.14 from COP-1 CCSDS
 	 */
     void initialize();
@@ -215,50 +216,106 @@ private:
      */
     void invalid_clcw_arrival();
 
+	/**
+	 * @brief acknowledges TC Packets with frame_seq_num, that have being processed by the FOP service and that have
+	 * @param frame_seq_num
+	 */
     void acknowledge_frame(uint8_t frame_seq_num);
 
-    /* Directives */
+    /* Directives (@see Table 5-1 from COP-1 CCSDS)*/
+
 	/**
+	 * @brief E23
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-
-	//E23 (Table 5-1 from COP-1 CCSDS)
     FDURequestType initiate_ad_no_clcw();
-	//E24 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E24
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     FDURequestType initiate_ad_clcw();
-	//E25-E26 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E25-E26
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     FDURequestType initiate_ad_unlock();
-	//E27-E28 (Table 5-1 from COP-1 CCSDS)
-    FDURequestType initiate_ad_vr(uint8_t vr);
-	//E29 (Table 5-1 from COP-1 CCSDS)
-    FDURequestType terminate_ad_service();
-	//E30 -E34 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E27-E28
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
+	FDURequestType initiate_ad_vr(uint8_t vr);
+	/**
+	 * @brief E29-E30
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
+	FDURequestType terminate_ad_service();
+	/**
+	 * @brief E30-E34
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     FDURequestType resume_ad_service();
-	//E35 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E35
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     COPDirectiveResponse set_vs(uint8_t vs);
-	//E36 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E36
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     COPDirectiveResponse set_fop_width(uint8_t width);
-	//E37 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E37
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     COPDirectiveResponse set_t1_initial(uint16_t t1_init);
-	//E38 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E38
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     COPDirectiveResponse set_transmission_limit(uint8_t vr);
-	//E39 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E39
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     COPDirectiveResponse set_timeout_type(bool vr);
-	//E40 (Table 5-1 from COP-1 CCSDS)
+	/**
+	 * @brief E40
+	 * @see Table 5-1 from COP-1 CCSDS
+	 */
     COPDirectiveResponse invalid_directive();
 
     /** Response from lower procedures*/
-	//E41 (Table 5-1 Page 5 - 22 COP-1 CCSDS)
+
+	/**
+	 * @brief E41
+	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
+	 */
     void ad_accept();
-	//E42 (Table 5-1 Page 5 - 22 COP-1 CCSDS)
+	/**
+	 * @brief E42
+	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
+	 */
     void ad_reject();
-	//E43 (Table 5-1 Page 5 - 22 COP-1 CCSDS)
+	/**
+	 * @brief E43
+	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
+	 */
     void bc_accept();
-	//E44 (Table 5-1 Page 5 - 22 COP-1 CCSDS)
+	/**
+	 * @brief E44
+	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
+	 */
     void bc_reject();
-	//E45 (Table 5-1 Page 5 - 22 COP-1 CCSDS)
+	/**
+	 * @brief E45
+	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
+	 */
     COPDirectiveResponse bd_accept();
-	//E46 (Table 5-1 Page 5 - 22 COP-1 CCSDS)
+	/**
+	 * @brief E46
+	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
+	 */
     void bd_reject();
 
 	/**
