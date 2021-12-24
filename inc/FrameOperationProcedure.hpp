@@ -128,67 +128,67 @@ private:
      * @brief Purge the sent queue of the virtual channel and generate a response
      * @see p. 5.2.2 from COP-1 CCSDS
      */
-	FOPNotification purge_sent_queue();
+	FOPNotification purgeSentQueue();
 
     /**
      * @brief Purge the wait queue of the virtual channel and generate a response
      * @see p. 5.2.3 from COP-1 CCSDS
      */
-	FOPNotification purge_wait_queue();
+	FOPNotification purgeWaitQueue();
 
     /**
      * @brief Prepares a Type-AD Frame for transmission
      * @see p. 5.2.4 from COP-1 CCSDS
      */
-	FOPNotification transmit_ad_frame();
+	FOPNotification transmitAdFrame();
 
     /**
      * @brief Prepares a Type-BC Frame for transmission
      * @see p. 5.2.5 from COP-1 CCSDS
      */
-	FOPNotification transmit_bc_frame(PacketTC*bc_frame);
+	FOPNotification transmitBcFrame(PacketTC*bc_frame);
 
     /**
      * @brief Prepares a Type-BD Frame for transmission
      * @see p. 5.2.6 from COP-1 CCSDS
      */
-	FOPNotification transmit_bd_frame(PacketTC*bd_frame);
+	FOPNotification transmitBdFrame(PacketTC*bd_frame);
 
     /**
      * @brief Marks AD Frames stored in the sent queue to be retransmitted
      * @see p. 5.2.7 from COP-1 CCSDS
      */
-    void initiate_ad_retransmission();
+    void initiateAdRetransmission();
 
     /**
      * @brief Marks BC Frames stored in the sent queue to be retransmitted
      * @see p. 5.2.7 from COP-1 CCSDS
      */
-    void initiate_bc_retransmission();
+    void initiateBcRetransmission();
 
     /**
      * @brief Remove acknowledged frames from sent queue
      * @see p. 5.2.8 from COP-1 CCSDS
      */
-    void remove_acknowledged_frames();
+    void removeAcknowledgedFrames();
 
     /**
      * @brief Search for directives in the sent queue and transmit any eligible frames
      * @see p. 5.2.9 from COP-1 CCSDS
      */
-    void look_for_directive();
+    void lookForDirective();
 
 	/**
 	 * @brief stores TC Packets, that have being processed by the FOP service, to the txOutFramesBeforeAllFramesGenerationList
 	 * list, in order to be processed by All Frames Generation Service
 	 */
-    COPDirectiveResponse push_sent_queue();
+    COPDirectiveResponse pushSentQueue();
     /**
      * @brief Search for a FDU that can be transmitted in the sent_queue. If none are found also search in
      * the wait_queue
      * @see p. 5.2.10 from COP-1 CCSDS
      */
-    COPDirectiveResponse look_for_fdu();
+    COPDirectiveResponse lookForFdu();
 
 	/**
 	 * @brief initializes FOP service
@@ -207,20 +207,20 @@ private:
      * @brief Process event where a valid CLCW arrives
      * @see Table 5-1 from COP-1 CCSDS (E1 - E14)
      */
-    COPDirectiveResponse valid_clcw_arrival();
+    COPDirectiveResponse validClcwArrival();
 
     // TODO: Check for invalid CLCW
     /**
      * @brief Process invalid CLCW arrival
      * @see Table 5-1 from COP-1 CCSDS (E15)
      */
-    void invalid_clcw_arrival();
+    void invalidClcwArrival();
 
 	/**
 	 * @brief acknowledges TC Packets with frame_seq_num, that have being processed by the FOP service and that have
 	 * @param frame_seq_num
 	 */
-    void acknowledge_frame(uint8_t frame_seq_num);
+    void acknowledgeFrame(uint8_t frame_seq_num);
 
     /* Directives (@see Table 5-1 from COP-1 CCSDS)*/
 
@@ -228,62 +228,62 @@ private:
 	 * @brief E23
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    FDURequestType initiate_ad_no_clcw();
+    FDURequestType initiateAdNoClcw();
 	/**
 	 * @brief E24
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    FDURequestType initiate_ad_clcw();
+    FDURequestType initiateAdClcw();
 	/**
 	 * @brief E25-E26
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    FDURequestType initiate_ad_unlock();
+    FDURequestType initiateAdUnlock();
 	/**
 	 * @brief E27-E28
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-	FDURequestType initiate_ad_vr(uint8_t vr);
+	FDURequestType initiateAdVr(uint8_t vr);
 	/**
 	 * @brief E29-E30
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-	FDURequestType terminate_ad_service();
+	FDURequestType terminateAdService();
 	/**
 	 * @brief E30-E34
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    FDURequestType resume_ad_service();
+    FDURequestType resumeAdService();
 	/**
 	 * @brief E35
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse set_vs(uint8_t vs);
+    COPDirectiveResponse setVs(uint8_t vs);
 	/**
 	 * @brief E36
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse set_fop_width(uint8_t width);
+    COPDirectiveResponse setFopWidth(uint8_t width);
 	/**
 	 * @brief E37
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse set_t1_initial(uint16_t t1_init);
+    COPDirectiveResponse setT1Initial(uint16_t t1_init);
 	/**
 	 * @brief E38
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse set_transmission_limit(uint8_t vr);
+    COPDirectiveResponse setTransmissionLimit(uint8_t vr);
 	/**
 	 * @brief E39
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse set_timeout_type(bool vr);
+    COPDirectiveResponse setTimeoutType(bool vr);
 	/**
 	 * @brief E40
 	 * @see Table 5-1 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse invalid_directive();
+    COPDirectiveResponse invalidDirective();
 
     /** Response from lower procedures*/
 
@@ -291,38 +291,38 @@ private:
 	 * @brief E41
 	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
 	 */
-    void ad_accept();
+    void adAccept();
 	/**
 	 * @brief E42
 	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
 	 */
-    void ad_reject();
+    void adReject();
 	/**
 	 * @brief E43
 	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
 	 */
-    void bc_accept();
+    void bcAccept();
 	/**
 	 * @brief E44
 	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
 	 */
-    void bc_reject();
+    void bcReject();
 	/**
 	 * @brief E45
 	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse bd_accept();
+    COPDirectiveResponse bdAccept();
 	/**
 	 * @brief E46
 	 * @see Table 5-1 Page 5 - 22 from COP-1 CCSDS
 	 */
-    void bd_reject();
+    void bdReject();
 
 	/**
 	 * E19 - E22 Table 5-1 COP-1 CCSDS
 	 * @see p. 3.2.2.3.2 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse transfer_fdu();
+    COPDirectiveResponse transferFdu();
 
 public:
     FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> *waitQueue,

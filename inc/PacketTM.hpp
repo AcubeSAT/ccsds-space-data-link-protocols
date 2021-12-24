@@ -14,7 +14,7 @@ public:
      * @details Bit  15  of  the  Transfer  Frame  Primary  Header
      * @see p. 4.1.2.4 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const bool operational_control_field_flag() const {
+    const bool operationalControlFieldFlag() const {
         return (packet_header[1]) & 0x01;
     }
 
@@ -24,7 +24,7 @@ public:
      * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header
      * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t master_channel_frame_count() const {
+    const uint8_t masterChannelFrameCount() const {
         return packet_header[2];
     }
 
@@ -34,7 +34,7 @@ public:
      * @details Bits  24–31  of  the  Transfer  Frame  Primary  Header
      * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
      */
-    const uint8_t virtual_channel_frame_count() const {
+    const uint8_t virtualChannelFrameCount() const {
         return packet_header[3];
     }
 
@@ -44,7 +44,7 @@ public:
      * @see p. 4.1.2.7.2 from TM SPACE DATA LINK PROTOCOL
      */
 
-    const bool transfer_frame_secondary_header_flag() const {
+    const bool transferFrameSecondaryHeaderFlag() const {
         return (packet_header[4] & 0x80) >> 7U;
     }
 
@@ -54,7 +54,7 @@ public:
      * @see p. 4.1.2.7.3 from TM SPACE DATA LINK PROTOCOL
      */
 
-    const bool synchronization_flag() const {
+    const bool synchronizationFlag() const {
         return (packet_header[4] & 0x40) >> 6U;
     }
 
@@ -65,7 +65,7 @@ public:
 	 * @details Bit 34 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.4 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const bool packet_order_flag() const {
+    const bool packetOrderFlag() const {
         return (packet_header[4] & 0x20) >> 5U;
     }
 	/**
@@ -75,7 +75,7 @@ public:
 	 * @details Bits 37–47 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const uint16_t first_header_pointer() const {
+    const uint16_t firstHeaderPointer() const {
         return (static_cast<uint16_t>((packet_header[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packet_header[5])));
     }
 
@@ -88,7 +88,7 @@ public:
 	 * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const uint16_t transfer_frame_data_field_status() const {
+    const uint16_t transferFrameDataFieldStatus() const {
         return (static_cast<uint16_t>((packet_header[4])) << 8U | (static_cast<uint16_t>((packet_header[5]))));
     }
 
@@ -97,18 +97,18 @@ public:
 struct PacketTM:public Packet {
 
 	/**
-	 * @note this function is the same with uint8_t *packet_data() const.
+	 * @note this function is the same with uint8_t *packetData() const.
 	 * it is duplicated
 	 */
 
-	const uint8_t *packet_pl_data() const {
+	const uint8_t * packetPlData() const {
 		return data;
 	}
 
 	/**
 	 * @see p. 4.1.2 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const TransferFrameHeaderTM transfer_frame_header() const {
+	const TransferFrameHeaderTM transferFrameHeader() const {
 		return hdr;
 	}
 	/**
@@ -116,7 +116,7 @@ struct PacketTM:public Packet {
 	 * 			(shall be set to ‘00’)
 	 * @see p. 4.1.2.2.2 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t transfer_frame_version_number() const {
+	const uint8_t getTransferFrameVersionNumber() const {
 		return transferFrameVersionNumber;
 	}
 
@@ -126,7 +126,7 @@ struct PacketTM:public Packet {
 	 * @details Bits  2–11  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint16_t spacecraft_id() const {
+	const uint16_t spacecraftId() const {
 		return scid;
 	}
 
@@ -135,7 +135,7 @@ struct PacketTM:public Packet {
 	 * @details Bits 12–14 of the Transfer Frame Primary Header.
 	 * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t virtual_channel_id() const {
+	const uint8_t virtualChannelId() const {
 		return vcid;
 	}
 
@@ -145,7 +145,7 @@ struct PacketTM:public Packet {
 	 * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t master_channel_frame_count() const {
+	const uint8_t getMasterChannelFrameCount() const {
 		return masterChannelFrameCount;
 	}
 
@@ -155,7 +155,7 @@ struct PacketTM:public Packet {
 	 * @details Bits  24-31  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t virtual_channel_frame_count() const {
+	const uint8_t getVirtualChannelFrameCount() const {
 		return virtualChannelFrameCount;
 	}
 
@@ -169,22 +169,22 @@ struct PacketTM:public Packet {
 	     * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
 		 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint16_t transfer_frame_data_field_status() const {
+	const uint16_t getTransferFrameDataFieldStatus() const {
 		return transferFrameDataFieldStatus;
 	}
 
-	const uint16_t packet_length() const {
+	const uint16_t getPacketLength() const {
 		return packetLength;
 	}
 
-	uint8_t *packet_data() const {
+	uint8_t * packetData() const {
 		return packet;
 	}
 
 	/**
 	 * @see p. 4.1.3 from TM DATA LINK PROTOCOL
 	 */
-	const uint8_t *secondary_header() const {
+	const uint8_t * getSecondaryHeader() const {
 		return secondaryHeader;
 	}
 
@@ -195,25 +195,25 @@ struct PacketTM:public Packet {
 	 * @details Bits 37–47 of the Transfer Frame Primary Header.
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint16_t first_header_pointer() const {
+	const uint16_t getFirstHeaderPointer() const {
 		return firstHeaderPointer;
 	}
 
 	/**
 	 * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
 	 */
-	uint8_t *operational_control_field() const {
+	uint8_t * getOperationalControlField() const {
 		return operationalControlField;
 	}
 
 	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
 
-	void set_packet_data(uint8_t *packt_data) {
+	void setPacketData(uint8_t *packt_data) {
 		packet = packt_data;
 	}
 
-	void set_packet_length(uint16_t packt_len) {
+	void setPacketLength(uint16_t packt_len) {
 		packetLength = packt_len;
 	}
 

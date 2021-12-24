@@ -3,14 +3,14 @@
 
 PacketTM::PacketTM(uint8_t *packet, uint16_t packet_length, PacketType t): Packet(t,packet_length,packet), hdr(packet) {
 
-    if (hdr.transfer_frame_secondary_header_flag() == 1) {
+    if (hdr.transferFrameSecondaryHeaderFlag() == 1) {
         secondaryHeader = &packet[7];
     }
-	firstHeaderPointer = hdr.first_header_pointer();
+	firstHeaderPointer = hdr.firstHeaderPointer();
 
 	data = &packet[firstHeaderPointer];
 
-	if(hdr.operational_control_field_flag()==1)
+	if(hdr.operationalControlFieldFlag()==1)
 	{
 		operationalControlField=&packet[packet_length-6];
 	}

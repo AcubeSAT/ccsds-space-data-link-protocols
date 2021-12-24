@@ -45,13 +45,13 @@ public:
 	 * @brief FARM actions according to the table 6-1
 	 * @see p. 6.2-6.3 and table 6-1 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse frame_arrives();
+    COPDirectiveResponse frameArrives();
 
 	/**
 	 * @brief signals when sufficient buffer space becomes available for at least one more maximum-size Frame.
 	 * @see p. 6.3.2.3 from COP-1 CCSDS
 	 */
-    COPDirectiveResponse buffer_release();
+    COPDirectiveResponse bufferRelease();
 
 	/**
 	 * @brief Buffer for storing packets, BEFORE being processed by FARM.

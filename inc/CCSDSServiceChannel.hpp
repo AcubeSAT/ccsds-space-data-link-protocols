@@ -63,7 +63,7 @@ public:
      * (possible more if blocking is enabled). The packets are segmented or blocked together
      * and then transferred to the buffer of the virtual channel
      */
-	ServiceChannelNotification mapp_request(uint8_t vid, uint8_t mapid);
+	ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid);
 
 #if max_received_unprocessed_tc_in_virt_buffer > 0
 
@@ -84,7 +84,7 @@ public:
 	 * 		b) the Frame Generation Procedure in this order.
 	 * @see p. 4.3.5 from TC SPACE DATA LINK PROTOCOL
 	 */
-	ServiceChannelNotification vc_generation_request(uint8_t vid);
+	ServiceChannelNotification vcGenerationRequest(uint8_t vid);
 
 	/**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
@@ -92,12 +92,12 @@ public:
 	 * rate to the Channel Coding Sublayer.
 	 * @see p. 4.3.8 from TC SPACE DATA LINK PROTOCOL
 	 */
-	ServiceChannelNotification all_frames_generation_request();
+	ServiceChannelNotification allFramesGenerationRequest();
 
 	/**
 	 * @return The front TC Packet from txOutFramesBeforeAllFramesGenerationList
 	 */
-    std::optional<PacketTC> get_tx_processed_packet();
+    std::optional<PacketTC> getTxProcessedPacket();
 
 	/**
 	 * @brief The All Frames Reception Function shall be used to reconstitute Transfer Frames
@@ -105,81 +105,81 @@ public:
 	 * determine whether the reconstituted Transfer Frames are valid or not.
 	 * @see p.4.4.8 from TC SPACE DATA LINK PROTOCOL
 	 */
-	ServiceChannelNotification all_frames_reception_request();
+	ServiceChannelNotification allFramesReceptionRequest();
 
 	// COP Directives
 
-	ServiceChannelNotification transmit_frame(uint8_t *pack);
+	ServiceChannelNotification transmitFrame(uint8_t *pack);
 
-	ServiceChannelNotification transmit_ad_frame(uint8_t vid);
+	ServiceChannelNotification transmitAdFrame(uint8_t vid);
 
-	ServiceChannelNotification push_sent_queue(uint8_t vid);
+	ServiceChannelNotification pushSentQueue(uint8_t vid);
 
     // TODO: Properly handle Notifications
-    void acknowledge_frame(uint8_t vid, uint8_t frame_seq_number);
+    void acknowledgeFrame(uint8_t vid, uint8_t frame_seq_number);
 
-    void clear_acknowledged_frames(uint8_t vid);
+    void clearAcknowledgedFrames(uint8_t vid);
 
-    void initiate_ad_no_clcw(uint8_t vid);
+    void initiateAdNoClcw(uint8_t vid);
 
-    void initiate_ad_clcw(uint8_t vid);
+    void initiateAdClcw(uint8_t vid);
 
-    void initiate_ad_unlock(uint8_t vid);
+    void initiateAdUnlock(uint8_t vid);
 
-    void initiate_ad_vr(uint8_t vid, uint8_t vr);
+    void initiateAdVr(uint8_t vid, uint8_t vr);
 
-    void terminate_ad_service(uint8_t vid);
+    void terminateAdService(uint8_t vid);
 
-    void resume_ad_service(uint8_t vid);
+    void resumeAdService(uint8_t vid);
 
-    void set_vs(uint8_t vid, uint8_t vs);
+    void setVs(uint8_t vid, uint8_t vs);
 
-    void set_fop_width(uint8_t vid, uint8_t width);
+    void setFopWidth(uint8_t vid, uint8_t width);
 
-    void set_t1_initial(uint8_t vid, uint16_t t1_init);
+    void setT1Initial(uint8_t vid, uint16_t t1_init);
 
-    void set_transmission_limit(uint8_t vid, uint8_t vr);
+    void setTransmissionLimit(uint8_t vid, uint8_t vr);
 
-    void set_timeout_type(uint8_t vid, bool vr);
+    void setTimeoutType(uint8_t vid, bool vr);
 
-    void invalid_directive(uint8_t vid);
+    void invalidDirective(uint8_t vid);
 
     /**
      * @brief Get FOP State of the virtual channel
      */
-    const FOPState fop_state(uint8_t vid) const;
+    const FOPState fopState(uint8_t vid) const;
 
     /**
      * @brief Returns the value of the timer that is used to determine the time frame for acknowledging transferred
      * frames
      */
-    const uint16_t t1_timer(uint8_t vid) const;
+    const uint16_t t1Timer(uint8_t vid) const;
 
     /**
      * @brief Indicates the width of the sliding window which is used to proceed to the lockout state in case the
      * transfer frame number of the received packet deviates too much from the expected one.
      */
-    const uint8_t fop_sliding_window_width(uint8_t vid) const;
+    const uint8_t fopSlidingWindowWidth(uint8_t vid) const;
 
     /**
      * @brief Returns the timeout action which is to be performed once the maximum transmission limit is reached and
      * the timer has expired.
      */
-    const bool timeout_type(uint8_t vid) const;
+    const bool timeoutType(uint8_t vid) const;
 
     /**
      * @brief Returns the last frame sequence number, V(S), that will be placed in the header of the next transferred
      * packet
      * @param vid Virtual Channel ID
      */
-    const uint8_t transmitter_frame_seq_number(uint8_t vid) const;
+    const uint8_t transmitterFrameSeqNumber(uint8_t vid) const;
 
     /**
      * @brief Returns the expected acknowledgement frame sequence number, NN(R). This is essentially the frame sequence
      * number of the oldest unacknowledged frame
      * @param vid Virtual Channel ID
      */
-    const uint8_t expected_frame_seq_number(uint8_t vid) const;
+    const uint8_t expectedFrameSeqNumber(uint8_t vid) const;
 
     /**
      * @brief Processes the packet at the head of the buffer
@@ -189,62 +189,62 @@ public:
     /**
      * @brief Available number of incoming frames in master channel buffer
      */
-    const uint16_t in_available() const {
+    const uint16_t inAvailable() const {
         return masterChannel.txOutFramesBeforeAllFramesGenerationList.available();
     }
 
     /**
      * @brief Available number of outcoming TX frames in master channel buffer
      */
-    const uint16_t tx_out_available() const {
+    const uint16_t txOutAvailable() const {
         return masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.available();
     }
 
     /**
      * @brief Available number of outcoming RX frames in master channel buffer
      */
-    const uint16_t rx_out_available() const {
+    const uint16_t rxOutAvailable() const {
         return masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionList.available();
     }
 
     /**
      * @brief Available space in virtual channel buffer
      */
-    const uint16_t tx_available(const uint8_t vid) const {
+    const uint16_t txAvailable(const uint8_t vid) const {
         return masterChannel.virtChannels.at(vid).availableBufferTC();
     }
 
     /**
      * @brief Available space in MAP channel buffer
      */
-    const uint16_t tx_available(const uint8_t vid, const uint8_t mapid) const {
+    const uint16_t txAvailable(const uint8_t vid, const uint8_t mapid) const {
         return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
     }
 
     /**
      * @brief Read first packet of the MAP channel buffer (unprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const PacketTC*> tx_out_packet(const uint8_t vid, const uint8_t mapid) const;
+    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(const uint8_t vid, const uint8_t mapid) const;
 
     /**
      * @brief Read first TC packet of the virtual channel buffer (txUnprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const PacketTC*> tx_out_packet(const uint8_t vid) const;
+    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(const uint8_t vid) const;
 
     /**
      * @brief Return the last stored packet from txMasterCopyTC
      */
-    std::pair<ServiceChannelNotification, const PacketTC *> tx_out_packet_TC() const;
+    std::pair<ServiceChannelNotification, const PacketTC *> txOutPacketTC() const;
 
     /**
  * @brief Return the last stored packet from txMasterCopyTM
  */
-    std::pair<ServiceChannelNotification, const PacketTM *> tx_out_packet_TM() const;
+    std::pair<ServiceChannelNotification, const PacketTM *> txOutPacketTM() const;
 
     /**
      * @brief Return the last processed packet from txToBeTransmittedFramesAfterAllFramesGenerationList
      */
-    std::pair<ServiceChannelNotification, const PacketTC *> tx_out_processed_packet() const;
+    std::pair<ServiceChannelNotification, const PacketTC *> txOutProcessedPacket() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) : masterChannel(master_channel) {}

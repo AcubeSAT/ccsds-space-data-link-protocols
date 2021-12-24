@@ -207,22 +207,22 @@ struct VirtualChannel {
 
 private:
     /**
-     * @brief Buffer to store_out incoming packets BEFORE being processed by COP
+     * @brief Buffer to storeOut incoming packets BEFORE being processed by COP
      */
     etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> txWaitQueue;
 
     /**
-     * @brief Buffer to store_out incoming packets AFTER being processed by COP
+     * @brief Buffer to storeOut incoming packets AFTER being processed by COP
      */
     etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> rxWaitQueue;
 
     /**
-	 * @brief Buffer to store_out outcoming packets AFTER being processed by COP
+	 * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
 	 */
     etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_SENT_QUEUE> sentQueue;
 
     /**
-     * @brief Buffer to store_out unprocessed packets that are directly processed in the virtual instead of MAP channel
+     * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
     etl::list<PacketTC*, MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER> txUnprocessedPacketListBufferTC;
 
@@ -267,14 +267,14 @@ struct MasterChannel {
 	 * @param packet TC
 	 * @brief stores TC packet in txOutFramesBeforeAllFramesGenerationList in order to be processed by the All Frames Generation Service
 	 */
-    MasterChannelAlert store_out(PacketTC*packet);
+    MasterChannelAlert storeOut(PacketTC*packet);
 
 	/**
 	 *
 	 * @param packet TC
 	 * @brief stores TC packet in txToBeTransmittedFramesAfterAllFramesGenerationList after it has been processed by the All Frames Generation Service
 	 */
-    MasterChannelAlert store_transmitted_out(PacketTC*packet);
+    MasterChannelAlert storeTransmittedOut(PacketTC*packet);
 
 	/**
 	 * @return
@@ -286,7 +286,7 @@ struct MasterChannel {
     /**
      * @brief Add virtual channel to master channel
      */
-    MasterChannelAlert add_vc(const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
+    MasterChannelAlert addVC(const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
                               const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
                               const uint8_t repetition_cop_ctrl, const uint8_t frame_count,
                               etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_chan);

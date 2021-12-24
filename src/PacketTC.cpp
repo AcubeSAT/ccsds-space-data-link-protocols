@@ -8,7 +8,7 @@ PacketTC::PacketTC(uint8_t *packet, uint16_t packet_length, PacketType t): Packe
 
     // MAP IDs are relevant in case the transfer frame primary header is present. If it's not, this will be determined
     // upon processing the packet in the relevant channel since since this value will be essentially junk
-    mapid = map_id() & 0x63;
+    mapid = mapId() & 0x63;
 
     // todo: This is supposed to be a user-set number that will help with identification of a packet upon generating an
     // alert. However, I'm still unsure on the specifics so let's just leave this blank for now

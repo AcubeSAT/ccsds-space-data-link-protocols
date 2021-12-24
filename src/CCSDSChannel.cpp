@@ -19,20 +19,20 @@ VirtualChannelAlert VirtualChannel::storeVC(PacketTC *packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-MasterChannelAlert MasterChannel::  store_out(PacketTC *packet) {
+MasterChannelAlert MasterChannel::storeOut(PacketTC *packet) {
     if (txOutFramesBeforeAllFramesGenerationList.full()) {
         // Log that buffer is full
 		ccsds_log(Tx, TypeMasterChannelAlert, OUT_FRAMES_LIST_FULL);
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
 	txOutFramesBeforeAllFramesGenerationList.push_back(packet);
-    uint8_t vid = packet->global_virtual_channel_id();
+    uint8_t vid = packet->globalVirtualChannelId();
     // virtChannels.at(0).fop.
 	ccsds_log(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
     return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::store_transmitted_out(PacketTC *packet) {
+MasterChannelAlert MasterChannel::storeTransmittedOut(PacketTC *packet) {
     if (txToBeTransmittedFramesAfterAllFramesGenerationList.full()) {
 		ccsds_log(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
         return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
@@ -42,7 +42,7 @@ MasterChannelAlert MasterChannel::store_transmitted_out(PacketTC *packet) {
     return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::add_vc(const uint8_t vcid, const bool segment_header_present,
+MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segment_header_present,
                                          const uint16_t max_frame_length, const uint8_t clcw_rate, const bool blocking,
                                          const uint8_t repetition_type_a_frame, const uint8_t repetition_cop_ctrl,
                                          const uint8_t frame_count,
