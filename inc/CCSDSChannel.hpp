@@ -76,13 +76,13 @@ struct MAPChannel {
     /**
      * @brief Returns available space in the buffer
      */
-    const uint16_t available() const {
+    uint16_t available() const {
         return unprocessedPacketList.available();
     }
 
     MAPChannel(const uint8_t mapid, const DataFieldContent data_field_content)
             : MAPID(mapid), dataFieldContent(data_field_content) {
-        uint8_t d = unprocessedPacketList.size();
+        //uint8_t d = unprocessedPacketList.size();
         unprocessedPacketList.full();
     };
 
@@ -148,7 +148,7 @@ struct VirtualChannel {
     /**
      * @brief Returns available space in the TC buffer
      */
-    const uint16_t available() const {
+    uint16_t available() const {
         return txUnprocessedPacketList.available();
     }
 
@@ -161,22 +161,21 @@ struct VirtualChannel {
                    const bool segment_header_present, const uint16_t max_frame_length, const uint8_t clcw_rate,
                    const bool blocking, const uint8_t repetition_type_a_frame, const uint8_t repetition_cop_ctrl,
                    const uint8_t frame_count, etl::flat_map<uint8_t, MAPChannel, max_map_channels> map_chan)
-            : masterChannel(master_channel), VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID),
+            :  VCID(vcid & 0x3FU), GVCID((mcid << 0x06U) + VCID),
               segmentHeaderPresent(segment_header_present), maxFrameLength(max_frame_length), clcwRate(clcw_rate),
               blocking(blocking), repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
-              frameCount(frame_count), txWaitQueue(), sentQueue(),
-              fop(FrameOperationProcedure(this, &txWaitQueue, &sentQueue, repetition_cop_ctrl)) {
+              frameCount(frame_count), txWaitQueue(), sentQueue(), fop(FrameOperationProcedure(this, &txWaitQueue, &sentQueue, repetition_cop_ctrl)),
+              masterChannel(master_channel) {
         mapChannels = map_chan;
     }
 
     VirtualChannel(const VirtualChannel &v)
             : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
               maxFrameLength(v.maxFrameLength),
-              clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
-              repetitionCOPCtrl(v.repetitionCOPCtrl), frameCount(v.frameCount),
-              txWaitQueue(v.txWaitQueue), sentQueue(v.sentQueue), txUnprocessedPacketList(v.txUnprocessedPacketList),
-              fop(v.fop),
-              masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
+              clcwRate(v.clcwRate), blocking(v.blocking), repetitionTypeAFrame(v.repetitionTypeAFrame),
+              repetitionCOPCtrl(v.repetitionCOPCtrl), frameCount(v.frameCount),mapChannels(v.mapChannels),
+              txWaitQueue(v.txWaitQueue), sentQueue(v.sentQueue),
+              txUnprocessedPacketList(v.txUnprocessedPacketList), fop(v.fop), masterChannel(v.masterChannel){
         fop.vchan = this;
         fop.sentQueue = &sentQueue;
         fop.waitQueue = &txWaitQueue;
@@ -222,7 +221,7 @@ private:
     /**
      * @brief The Master Channel the Virtual Channel belongs in
      */
-    std::reference_wrapper<MasterChannel> masterChannel;
+    std::reference_wrapper<MasterChannel> masterChannel;//peviously named materchannel, changed it to masterChannel
 };
 
 struct MasterChannel {
@@ -238,7 +237,7 @@ struct MasterChannel {
     uint8_t frameCount{};
 
     MasterChannel(bool errorCtrlField, uint8_t frameCount)
-            : virtChannels(), txOutFramesList(), txToBeTransmittedFramesList(), errorCtrlField(errorCtrlField) {}
+            : virtChannels(), errorCtrlField(errorCtrlField), txOutFramesList(),txToBeTransmittedFramesList() {}
 
     MasterChannel(const MasterChannel &m)
             : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField),
@@ -253,7 +252,7 @@ struct MasterChannel {
 
     MasterChannelAlert store_transmitted_out(PacketTC*packet);
 
-    const uint16_t availableTM() const {
+    uint16_t availableTM() const {
         return txMasterCopyTM.available();
     }
 

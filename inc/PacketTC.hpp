@@ -28,7 +28,7 @@ public:
     /**
      * @brief The bypass Flag determines whether the packet will bypass FARM checks
      */
-    const bool bypass_flag() const {
+    bool bypass_flag() const {
         return (packet_header[0] >> 5U) & 0x01;
     }
 
@@ -36,14 +36,14 @@ public:
      * @brief The control and command Flag determines whether the packet carries control commands (Type-C) or
      * data (Type-D)
      */
-    const bool ctrl_and_cmd_flag() const {
+    bool ctrl_and_cmd_flag() const {
         return (packet_header[0] >> 4U) & 0x01;
     }
 
     /**
      * @brief The length of the transfer frame
      */
-    const uint16_t transfer_frame_length() const {
+    uint16_t transfer_frame_length() const {
         return (static_cast<uint16_t>(packet_header[2] & 0x03) << 8U) | (static_cast<uint16_t>(packet_header[3]));
     }
 };
@@ -69,47 +69,47 @@ struct PacketTC:public Packet {
         return data;
     }
 
-    const uint8_t control_word_type() const {
+    uint8_t control_word_type() const {
 		return (data[0] & 0x80 >> 7U);
     }
 
-    const uint8_t field_status() const {
+    uint8_t field_status() const {
         return (data[0] & 0x1C) >> 2U;
     }
 
-    const uint8_t cop_in_effect() const {
+    uint8_t cop_in_effect() const {
         return data[0] & 0x03;
     }
 
-    const uint8_t vcId() const {
+    uint8_t vcId() const {
         return (data[1] & 0xFC) >> 2U;
     }
 
-    const uint8_t no_rf_avail() const {
+    uint8_t no_rf_avail() const {
         return (data[2] & 0x80) >> 7U;
     }
 
-    const uint8_t no_bit_lock() const {
+    uint8_t no_bit_lock() const {
         return (data[2] & 0x20) >> 5U;
     }
 
-    const uint8_t lckout() const {
+    uint8_t lckout() const {
         return (data[2] & 0x20) >> 5U;
     }
 
-    const uint8_t wt() const {
+    uint8_t wt() const {
         return (data[2] & 0x10) >> 4U;
     }
 
-    const uint8_t retransmit() const {
+    uint8_t retransmit() const {
         return (data[2] & 0x08) >> 3U;
     }
 
-    const uint8_t farm_b_counter() const {
+    uint8_t farm_b_counter() const {
         return (data[2] & 0x06) >> 1U;
     }
 
-    const uint8_t report_value() const {
+    uint8_t report_value() const {
         return data[3];
     }
 
@@ -124,7 +124,7 @@ struct PacketTC:public Packet {
     /**
      * @brief Determines whether the packet is marked for retransmission while in the sent queue
      */
-    const bool to_be_retransmitted() const {
+    bool to_be_retransmitted() const {
         return toBeRetransmitted;
     }
 
@@ -136,47 +136,47 @@ struct PacketTC:public Packet {
         return hdr;
     }
 
-    const uint16_t packet_length() const {
+    uint16_t packet_length() const {
         return packetLength;
     }
 
-    const uint8_t segmentation_header() const {
+    uint8_t segmentation_header() const {
         return segHdr;
     }
 
-    const uint8_t global_virtual_channel_id() const {
+    uint8_t global_virtual_channel_id() const {
         return gvcid;
     }
 
-    const uint8_t virtual_channel_id() const {
+    uint8_t virtual_channel_id() const {
         return gvcid & 0x3F;
     };
 
-    const uint8_t map_id() const {
+    uint8_t map_id() const {
         return mapid;
     }
 
-    const uint16_t spacecraft_id() const {
+    uint16_t spacecraft_id() const {
         return sduid;
     }
 
-    const uint8_t transfer_frame_sequence_number() const {
+    uint8_t transfer_frame_sequence_number() const {
         return transferFrameSeqNumber;
     }
 
-    const uint8_t transfer_frame_version_number() const {
+    uint8_t transfer_frame_version_number() const {
         return transferFrameVersionNumber;
     }
 
-    const ServiceType service_type() const {
+    ServiceType service_type() const {
         return serviceType;
     }
 
-    const bool acknowledged() const {
+    bool acknowledged() const {
         return ack;
     }
 
-    const uint8_t repetitions() const {
+    uint8_t repetitions() const {
         return reps;
     }
 
@@ -212,8 +212,8 @@ struct PacketTC:public Packet {
 
     PacketTC(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
              ServiceType service_type, bool seg_hdr_present, PacketType t=TC):  Packet(t,packet_length,packet),
-	         hdr(packet), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid), sduid(sduid), serviceType(service_type),
-	         transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0), transferFrameVersionNumber(0)
+	             toBeRetransmitted(0), hdr(packet), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid), sduid(sduid),
+	             transferFrameVersionNumber(0), serviceType(service_type),  transferFrameSeqNumber(0), ack(0)
 	          {
 		data=&packet[5 + 1 * seg_hdr_present];
 	}
@@ -246,70 +246,70 @@ public:
     /**-+
      * @brief Field status is mission-specific and not used in the CCSDS data link protocol
      */
-    const uint8_t field_status() const {
+    uint8_t field_status() const {
         return fieldStatus;
     }
 
     /**
      * @brief COP version in effect
      */
-    const uint8_t cop_in_effect() const {
+    uint8_t cop_in_effect() const {
         return copInEffect;
     }
 
     /**
      * @brief Virtual Channel identifier of target virtual channel
      */
-    const uint8_t vcid() const {
+    uint8_t vcid() const {
         return vcId;
     }
 
     /**
      * @brief Indicates whether RF transmission in the physical channel is ready
      */
-    const bool no_rf_avail() const {
+    bool no_rf_avail() const {
         return noRFAvail;
     }
 
     /**
      * @brief Indicates whether "bit lock" is achieved
      */
-    const bool no_bit_lock() const {
+    bool no_bit_lock() const {
         return noBitLock;
     }
 
     /**
      * @brief Indicates whether FARM is in the Lockout state
      */
-    const bool lockout() const {
+    bool lockout() const {
         return lckout;
     }
 
     /**
      * @brief Indicates whether the receiver doesn't accept any packets
      */
-    const bool wait() const {
+    bool wait() const {
         return wt;
     }
 
     /**
      * @brief Indicates whether there are Type-A Frames that will need to be retransmitted
      */
-    const bool retransmission() const {
+    bool retransmission() const {
         return retransmit;
     }
 
     /**
      * @brief The two least significant bits of the virtual channel
      */
-    const uint8_t farm_b_counter() const {
+    uint8_t farm_b_counter() const {
         return farmBCounter;
     }
 
     /**
      * @brief Next expected transfer frame number
      */
-    const uint8_t report_value() const {
+    uint8_t report_value() const {
         return reportValue;
     }
 

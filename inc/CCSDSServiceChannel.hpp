@@ -3,7 +3,7 @@
 
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
-
+#include <optional>
 #include <PacketTC.hpp>
 #include <utility>
 
@@ -123,39 +123,39 @@ public:
     /**
      * @brief Get FOP State of the virtual channel
      */
-    const FOPState fop_state(uint8_t vid) const;
+    FOPState fop_state(uint8_t vid) const;
 
     /**
      * @brief Returns the value of the timer that is used to determine the time frame for acknowledging transferred
      * frames
      */
-    const uint16_t t1_timer(uint8_t vid) const;
+    uint16_t t1_timer(uint8_t vid) const;
 
     /**
      * @brief Indicates the width of the sliding window which is used to proceed to the lockout state in case the
      * transfer frame number of the received packet deviates too much from the expected one.
      */
-    const uint8_t fop_sliding_window_width(uint8_t vid) const;
+    uint8_t fop_sliding_window_width(uint8_t vid) const;
 
     /**
      * @brief Returns the timeout action which is to be performed once the maximum transmission limit is reached and
      * the timer has expired.
      */
-    const bool timeout_type(uint8_t vid) const;
+    bool timeout_type(uint8_t vid) const;
 
     /**
      * @brief Returns the last frame sequence number, V(S), that will be placed in the header of the next transferred
      * packet
      * @param vid Virtual Channel ID
      */
-    const uint8_t transmitter_frame_seq_number(uint8_t vid) const;
+    uint8_t transmitter_frame_seq_number(uint8_t vid) const;
 
     /**
      * @brief Returns the expected acknowledgement frame sequence number, NN(R). This is essentially the frame sequence
      * number of the oldest unacknowledged frame
      * @param vid Virtual Channel ID
      */
-    const uint8_t expected_frame_seq_number(uint8_t vid) const;
+    uint8_t expected_frame_seq_number(uint8_t vid) const;
 
     /**
      * @brief Processes the packet at the head of the buffer
@@ -165,35 +165,35 @@ public:
     /**
      * @brief Available number of incoming frames in master channel buffer
      */
-    const uint16_t in_available() const {
+    uint16_t in_available() const {
         return masterChannel.txOutFramesList.available();
     }
 
     /**
      * @brief Available number of outcoming TX frames in master channel buffer
      */
-    const uint16_t tx_out_available() const {
+    uint16_t tx_out_available() const {
         return masterChannel.txToBeTransmittedFramesList.available();
     }
 
     /**
      * @brief Available number of outcoming RX frames in master channel buffer
      */
-    const uint16_t rx_out_available() const {
+    uint16_t rx_out_available() const {
         return masterChannel.rxToBeTransmittedFramesList.available();
     }
 
     /**
      * @brief Available space in virtual channel buffer
      */
-    const uint16_t tx_available(const uint8_t vid) const {
+    uint16_t tx_available(const uint8_t vid) const {
         return masterChannel.virtChannels.at(vid).available();
     }
 
     /**
      * @brief Available space in MAP channel buffer
      */
-    const uint16_t tx_available(const uint8_t vid, const uint8_t mapid) const {
+    uint16_t tx_available(const uint8_t vid, const uint8_t mapid) const {
         return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).available();
     }
 

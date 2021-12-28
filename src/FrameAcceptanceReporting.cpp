@@ -89,4 +89,6 @@ COPDirectiveResponse FarmAcceptanceReporting::buffer_release() {
     } else if (state == FARMState::WAIT) {
         wait = FlagState::NOT_READY;
     }
+
+
 }

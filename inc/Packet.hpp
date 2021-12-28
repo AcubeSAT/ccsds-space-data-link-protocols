@@ -16,7 +16,7 @@ struct TransferFrameHeader {
     /**
      * @brief The ID of the spacecraft
      */
-    const uint16_t spacecraft_id(enum PacketType packet_type) const {
+     uint16_t spacecraft_id(enum PacketType packet_type) const {
         if (packet_type == TC) {
             return (static_cast<uint16_t>(packet_header[0] & 0x03) << 8U) | (static_cast<uint16_t>(packet_header[1]));
         } else {
@@ -28,7 +28,7 @@ struct TransferFrameHeader {
     /**
      * @brief The virtual channel ID this channel is transferred in
      */
-    const uint8_t vcid(enum PacketType packet_type) const {
+     uint8_t vcid(enum PacketType packet_type) const {
         if (packet_type == TC) {
             return (packet_header[2] >> 2U) & 0x3F;
         } else {

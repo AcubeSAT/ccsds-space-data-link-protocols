@@ -46,10 +46,10 @@ public:
                             etl::list<PacketTC *, max_received_rx_tc_in_sent_queue> *sentQueue,
                             const uint8_t farm_sliding_win_width, const uint8_t farm_positive_win_width,
                             const uint8_t farm_negative_win_width)
-            : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farm_sliding_win_width),
-              farmNegativeWidth(farm_negative_win_width), farmPositiveWinWidth(farm_positive_win_width),
-              receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY), wait(FlagState::NOT_READY),
-              retransmit(FlagState::NOT_READY) {};
+            : lockout(FlagState::NOT_READY), wait(FlagState::NOT_READY),retransmit(FlagState::NOT_READY),
+              receiverFrameSeqNumber(0), farmBCount(0), farmSlidingWinWidth(farm_sliding_win_width),
+              farmPositiveWinWidth(farm_positive_win_width), farmNegativeWidth(farm_negative_win_width),
+              waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan) {};
 };
 
 #endif // CCSDS_TM_PACKETS_FARMEACCEPTANCEREPORTING_HPP
