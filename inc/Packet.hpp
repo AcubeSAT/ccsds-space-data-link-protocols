@@ -15,8 +15,10 @@ struct TransferFrameHeader {
 
     /**
      * @brief The ID of the spacecraft
-     */
-    const uint16_t spacecraft_id(enum PacketType packet_type) const {
+     * 			TC: Bits  6–15  of  the  Transfer  Frame  Primary  Header
+     * 			TM: Bits  2–11  of  the  Transfer  Frame  Primary  Header
+	 */
+    const uint16_t spacecraftId(enum PacketType packet_type) const {
         if (packet_type == TC) {
             return (static_cast<uint16_t>(packet_header[0] & 0x03) << 8U) | (static_cast<uint16_t>(packet_header[1]));
         } else {
@@ -27,6 +29,8 @@ struct TransferFrameHeader {
 
     /**
      * @brief The virtual channel ID this channel is transferred in
+     * 			TC: Bits 16–21 of the Transfer Frame Primary Header
+     * 			TM: Bits 12–14 of the Transfer Frame Primary Header
      */
     const uint8_t vcid(enum PacketType packet_type) const {
         if (packet_type == TC) {
@@ -52,6 +56,7 @@ public:
 	/**
      * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
      * virtual channel)
+     * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 
 	void append_crc();
@@ -60,7 +65,13 @@ protected:
 	uint16_t packetLength;
 	uint8_t *packet;
 	uint8_t *data;
-	uint16_t calculate_crc(uint8_t *packet, uint16_t len);
+
+	/**
+     * @brief Calculates the CRC code
+     * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+	 */
+
+	uint16_t calculateCRC(uint8_t *packet, uint16_t len);
 
 };
 

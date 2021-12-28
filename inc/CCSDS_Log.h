@@ -26,16 +26,16 @@ enum NotificationType: uint8_t {
 };
 
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, ServiceChannelNotif service_channel_notif);
+void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, ServiceChannelNotification service_channel_notif);
 void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, MasterChannelAlert service_channel_notif);
 void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, VirtualChannelAlert service_channel_notif);
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FOPNotif service_channel_notif);
+void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FOPNotification service_channel_notif);
 void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FDURequestType service_channel_notif);
 void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, COPDirectiveResponse service_channel_notif);
 std::ostream& operator<<(std::ostream& out, const Tx_Rx value);
 std::ostream& operator<<(std::ostream& out, const NotificationType value);
-std::ostream& operator<<(std::ostream& out, const ServiceChannelNotif value);
+std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification value);
 std::ostream& operator<<(std::ostream& out, const COPDirectiveResponse value);
-std::ostream& operator<<(std::ostream& out, const FOPNotif value);
+std::ostream& operator<<(std::ostream& out, const FOPNotification value);
 
 #endif // CCSDS_TM_PACKETS_CCSDS_LOG_H
