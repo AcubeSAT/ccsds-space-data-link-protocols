@@ -22,7 +22,8 @@ before_script:
   - cat /etc/*-release
   - python3 -m pip install gcovr
 
-build:
+check-build:
+  image: spacedot/build-base # TODO: push build-base
   stage: build
   variables:
     GIT_SUBMODULE_STRATEGY: normal
@@ -55,27 +56,65 @@ tests:
     reports:
       junit: junit.xml
 
-cppcheck:
-  stage: build
-  before_script:
-    - cppcheck --version
-  script:
-    - ci/cppcheck.sh
 
-cppcheck-misra:
-  stage: build
+cppcheck:
+  image: spacedot/cppcheck:2.5
+  stage: analyze
   before_script:
     - cppcheck --version
+  allow_failure: true
   script:
-    - ci/cppcheck-misra.sh
+    - cd $CI_PROJECT_DIR
+    - cppcheck --enable=all --addon=misra --suppress=misra-c2012-3.1 --suppress=misra-c2012-5.1 --suppress=misra-c2012-5.2 \
+      --suppress=misra-c2012-5.3 --suppress=misra-c2012-12.3 --suppress=misra-c2012-13.4 --suppress=misra-c2012-14.4 \
+      --suppress=misra-c2012-15.5 --suppress=misra-c2012-16.3 --suppress=misra-c2012-18.4 --suppress=misra-c2012-18.8 \
+      --suppress=unusedFunction --suppress=noExplicitConstructor --force --inline-suppr --error-exitcode=1 \
+      --xml --xml-version=2 2>report.xml -I ./inc ./src
+  after_script:
+    - mkdir cppcheck-html-report
+    - cppcheck-htmlreport --source-dir=. --title=html-report --file=report.xml --report-dir=cppcheck-html-report
+  artifacts:
+    when: on_failure
+    paths:
+      - ./cppcheck-html-report
 
 clang-tidy:
-  stage: build
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-    TERM: xterm-color
+  image: spacedot/clang-tools:13.0.0-html-1.3.7
+  stage: analyze
   script:
-    - ci/clang-tidy.sh
+    - cd $CI_PROJECT_DIR
+    - cmake -B ./build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    - clang-tidy -p $CI_PROJECT_DIR/build/compile_commands.json --checks=* `find $CI_PROJECT_DIR/src -type f -regextype posix-egrep -regex '.*\.(cpp|hpp|c|h)'` >> clang-tidy-output.log
+  after_script:
+    - mkdir clang-tidy-html-report
+    - clang-tidy-html clang-tidy-output.log
+    - mv clang.html clang-tidy-html-report
+  artifacts:
+    paths:
+      - ./clang-tidy-html-report
+
+clang-analyzer:
+  image: spacedot/clang-tools:13.0.0-html-1.3.7
+  stage: analyze
+  before_script:
+    - mkdir scan-build-html-report
+  script:
+    - cd $CI_PROJECT_DIR
+    - scan-build cmake ./ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+    - scan-build -o ./scan-build-html-report make
+  artifacts:
+    paths:
+      - ./scan-build-html-report
+
+doxygen:
+  image: spacedot/doxygen:1.9.2-awesomecss-1.6.0
+  stage: analyze
+  script:
+    - cd $CI_PROJECT_DIR
+    - doxygen doxygen.conf
+  artifacts:
+    paths:
+      - ./docs
 
 pages:
   stage: deploy
