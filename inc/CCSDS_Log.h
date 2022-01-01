@@ -7,11 +7,9 @@
 #include "Alert.hpp"
 #include "PacketTC.hpp"
 
-enum Tx_Rx: uint8_t  {
-
+enum TxRx : uint8_t  {
 	Rx = 0x00,
 	Tx = 0x01
-
 };
 
 enum NotificationType: uint8_t {
@@ -26,13 +24,13 @@ enum NotificationType: uint8_t {
 };
 
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, ServiceChannelNotification service_channel_notif);
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, MasterChannelAlert service_channel_notif);
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, VirtualChannelAlert service_channel_notif);
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FOPNotification service_channel_notif);
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FDURequestType service_channel_notif);
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, COPDirectiveResponse service_channel_notif);
-std::ostream& operator<<(std::ostream& out, const Tx_Rx value);
+void ccsdsLog(TxRx txRx, NotificationType notificationType, ServiceChannelNotification serviceChannelNotif);
+void ccsdsLog(TxRx txRx, NotificationType notificationType, MasterChannelAlert serviceChannelNotif);
+void ccsdsLog(TxRx txRx, NotificationType notificationType, VirtualChannelAlert serviceChannelNotif);
+void ccsdsLog(TxRx txRx, NotificationType notificationType, FOPNotification serviceChannelNotif);
+void ccsdsLog(TxRx txRx, NotificationType notificationType, FDURequestType serviceChannelNotif);
+void ccsdsLog(TxRx txRx, NotificationType notificationType, COPDirectiveResponse serviceChannelNotif);
+std::ostream& operator<<(std::ostream& out, const TxRx value);
 std::ostream& operator<<(std::ostream& out, const NotificationType value);
 std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification value);
 std::ostream& operator<<(std::ostream& out, const COPDirectiveResponse value);

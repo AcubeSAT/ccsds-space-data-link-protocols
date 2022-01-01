@@ -15,7 +15,7 @@ public:
      * @see p. 4.1.2.4 from TM SPACE DATA LINK PROTOCOL
 	 */
     const bool operationalControlFieldFlag() const {
-        return (packet_header[1]) & 0x01;
+        return (packetHeader[1]) & 0x01;
     }
 
     /**
@@ -25,7 +25,7 @@ public:
      * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
     const uint8_t masterChannelFrameCount() const {
-        return packet_header[2];
+        return packetHeader[2];
     }
 
     /**
@@ -35,7 +35,7 @@ public:
      * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
      */
     const uint8_t virtualChannelFrameCount() const {
-        return packet_header[3];
+        return packetHeader[3];
     }
 
     /**
@@ -45,7 +45,7 @@ public:
      */
 
     const bool transferFrameSecondaryHeaderFlag() const {
-        return (packet_header[4] & 0x80) >> 7U;
+        return (packetHeader[4] & 0x80) >> 7U;
     }
 
     /**
@@ -55,7 +55,7 @@ public:
      */
 
     const bool synchronizationFlag() const {
-        return (packet_header[4] & 0x40) >> 6U;
+        return (packetHeader[4] & 0x40) >> 6U;
     }
 
 	/**
@@ -66,7 +66,7 @@ public:
 	 * @see p. 4.1.2.7.4 from TM SPACE DATA LINK PROTOCOL
 	 */
     const bool packetOrderFlag() const {
-        return (packet_header[4] & 0x20) >> 5U;
+        return (packetHeader[4] & 0x20) >> 5U;
     }
 	/**
 	 * @brief If the Synchronization Flag is set to ‘0’, the First Header Pointer shall contain
@@ -76,7 +76,7 @@ public:
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
 	 */
     const uint16_t firstHeaderPointer() const {
-        return (static_cast<uint16_t>((packet_header[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packet_header[5])));
+        return (static_cast<uint16_t>((packetHeader[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packetHeader[5])));
     }
 
 	/**
@@ -89,7 +89,7 @@ public:
 	 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
     const uint16_t transferFrameDataFieldStatus() const {
-        return (static_cast<uint16_t>((packet_header[4])) << 8U | (static_cast<uint16_t>((packet_header[5]))));
+        return (static_cast<uint16_t>((packetHeader[4])) << 8U | (static_cast<uint16_t>((packetHeader[5]))));
     }
 
 };
@@ -217,13 +217,13 @@ struct PacketTM:public Packet {
 		packetLength = packt_len;
 	}
 
-	PacketTM(uint8_t *packet, uint16_t packet_length, uint8_t virtualChannelFrameCount, uint8_t scid,
-	         uint16_t vcid, uint8_t masterChannelFrameCount, uint8_t* secondary_header,
+	PacketTM(uint8_t *packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint8_t scid,
+	         uint16_t vcid, uint8_t masterChannelFrameCount, uint8_t* secondaryHeader,
 	         uint16_t transferFrameDataFieldStatus, PacketType t=TM)
-	    	:Packet(t, packet_length, packet), hdr(packet), masterChannelFrameCount(masterChannelFrameCount), virtualChannelFrameCount(virtualChannelFrameCount),
+	    	:Packet(t, packetLength, packet), hdr(packet), masterChannelFrameCount(masterChannelFrameCount), virtualChannelFrameCount(virtualChannelFrameCount),
 	      scid(scid), vcid(vcid),
 	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
-	      secondaryHeader(secondary_header), firstHeaderPointer(firstHeaderPointer) {}
+	      secondaryHeader(secondaryHeader), firstHeaderPointer(firstHeaderPointer) {}
 
 	PacketTM(uint8_t *packet, uint16_t packet_length, PacketType t=TM);
 

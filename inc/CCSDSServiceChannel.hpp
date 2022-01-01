@@ -30,33 +30,33 @@ public:
      * @brief Stores an incoming  TC packet in the ring buffer
      *
      * @param packet Data of the packet
-     * @param packet_length PacketTC length
+     * @param packetLength PacketTC length
      * @param gvcid Global Virtual Channel ID
      * @param mapid MAP ID
      * @param sduid SDU ID
-     * @param service_type Service Type - Type-A or Type-B
+     * @param serviceType Service Type - Type-A or Type-B
      */
-	ServiceChannelNotification storeTC(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-                              ServiceType service_type);
+	ServiceChannelNotification storeTC(uint8_t *packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+                              ServiceType serviceType);
 
     /**
      * @brief Stores an incoming  TM packet in the ring buffer
      *
      * @param packet Data of the packet
-     * @param packet_length PacketTC length
+     * @param packetLength PacketTC length
      * @param gvcid Global Virtual Channel ID
      * @param scid Spacecraft ID
      */
 
-	ServiceChannelNotification storeTM(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t scid);
+	ServiceChannelNotification storeTM(uint8_t *packet, uint16_t packetLength, uint8_t gvcid, uint16_t scid);
 
 
     /**
      * @brief This service is used for storing incoming packets in the master channel
      * @param packet Raw packet data
-     * @param packet_length The length of the packet
+     * @param packetLength The length of the packet
      */
-	ServiceChannelNotification store(uint8_t *packet, uint16_t packet_length);
+	ServiceChannelNotification store(uint8_t *packet, uint16_t packetLength);
 
     /**
      * @brief Requests to process the last packet stored in the buffer of the specific MAPP channel
@@ -65,7 +65,7 @@ public:
      */
 	ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid);
 
-#if max_received_unprocessed_tc_in_virt_buffer > 0
+#if maxReceivedUnprocessedTcInVirtBuffer > 0
 
     /**
      * @brief  Requests to process the last packet stored in the buffer of the specific virtual channel
@@ -116,7 +116,7 @@ public:
 	ServiceChannelNotification pushSentQueue(uint8_t vid);
 
     // TODO: Properly handle Notifications
-    void acknowledgeFrame(uint8_t vid, uint8_t frame_seq_number);
+    void acknowledgeFrame(uint8_t vid, uint8_t frameSeqNumber);
 
     void clearAcknowledgedFrames(uint8_t vid);
 
@@ -247,7 +247,7 @@ public:
     std::pair<ServiceChannelNotification, const PacketTC *> txOutProcessedPacket() const;
 
     // This is honestly a bit confusing
-    ServiceChannel(MasterChannel master_channel) : masterChannel(master_channel) {}
+    ServiceChannel(MasterChannel MasterChannel) : masterChannel(MasterChannel) {}
 };
 
 #endif // CCSDS_CCSDSSERVICECHANNEL_HPP

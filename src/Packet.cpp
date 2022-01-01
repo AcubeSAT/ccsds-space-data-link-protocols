@@ -34,7 +34,7 @@ uint16_t Packet::calculateCRC(uint8_t *packet, uint16_t len) {
 }
 
 void Packet::append_crc() {
-	uint16_t len =packetLength - 2;
+	uint16_t len = packetLength - 2;
 	uint16_t crc = calculateCRC(packet, len);
 
 	// append CRC

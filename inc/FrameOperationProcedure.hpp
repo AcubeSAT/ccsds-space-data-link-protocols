@@ -327,11 +327,11 @@ private:
 public:
     FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> *waitQueue,
                             etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_SENT_QUEUE> *sentQueue,
-                            const uint8_t repetition_cop_ctrl)
+                            const uint8_t repetitionCopCtrl)
             : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), state(FOPState::INITIAL),
               suspendState(FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(FlagState::READY), bdOut(FlagState::READY),
               bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0), tiInitial(FOP_TIMER_INITIAL),
-              transmissionLimit(repetition_cop_ctrl), transmissionCount(1), fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL),
+              transmissionLimit(repetitionCopCtrl), transmissionCount(1), fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL),
               timeoutType(false) {};
 };
 
