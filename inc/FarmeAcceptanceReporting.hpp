@@ -69,10 +69,10 @@ public:
 
     FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<PacketTC *, MAX_RECEIVED_RX_TC_IN_WAIT_QUEUE> *waitQueue,
                             etl::list<PacketTC *, MAX_RECEIVED_RX_TC_IN_SENT_QUEUE> *sentQueue,
-                            const uint8_t farm_sliding_win_width, const uint8_t farm_positive_win_width,
-                            const uint8_t farm_negative_win_width)
-            : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farm_sliding_win_width),
-              farmNegativeWidth(farm_negative_win_width), farmPositiveWinWidth(farm_positive_win_width),
+                            const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
+                            const uint8_t farmNegativeWinWidth)
+            : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farmSlidingWinWidth),
+              farmNegativeWidth(farmNegativeWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
               receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY), wait(FlagState::NOT_READY),
               retransmit(FlagState::NOT_READY) {};
 };

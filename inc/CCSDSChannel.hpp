@@ -55,10 +55,10 @@ struct PhysicalChannel {
      */
     const uint16_t repetitions;
 
-    PhysicalChannel(const uint16_t max_frame_length, const bool error_control_present, const uint16_t max_frames_pdu,
-                    const uint16_t max_pdu_length, const uint32_t bitrate, const uint16_t repetitions)
-            : maxFrameLength(max_frame_length), errorControlFieldPresent(error_control_present),
-              maxFramePdu(max_frames_pdu), maxPDULength(max_pdu_length), bitrate(bitrate), repetitions(repetitions) {}
+    PhysicalChannel(const uint16_t maxFrameLength, const bool errorControlPresent, const uint16_t maxFramesPdu,
+                    const uint16_t maxPduLength, const uint32_t bitrate, const uint16_t repetitions)
+            : maxFrameLength(maxFrameLength), errorControlFieldPresent(errorControlPresent),
+              maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength), bitrate(bitrate), repetitions(repetitions) {}
 };
 
 /**
@@ -86,8 +86,8 @@ struct MAPChannel {
         return unprocessedPacketListBufferTC.available();
     }
 
-    MAPChannel(const uint8_t mapid, const DataFieldContent data_field_content)
-            : MAPID(mapid), dataFieldContent(data_field_content) {
+    MAPChannel(const uint8_t mapid, const DataFieldContent dataFieldContent)
+            : MAPID(mapid), dataFieldContent(dataFieldContent) {
         uint8_t d = unprocessedPacketListBufferTC.size();
 		unprocessedPacketListBufferTC.full();
     };
@@ -168,16 +168,16 @@ struct VirtualChannel {
      */
     etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChannels;
 
-    VirtualChannel(std::reference_wrapper<MasterChannel> master_channel, const uint8_t vcid,
-                   const bool segment_header_present, const uint16_t max_frame_length, const uint8_t clcw_rate,
-                   const bool blocking, const uint8_t repetition_type_a_frame, const uint8_t repetition_cop_ctrl,
-                   const uint8_t frame_count, etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_chan)
-            : masterChannel(master_channel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
-              segmentHeaderPresent(segment_header_present), maxFrameLength(max_frame_length), clcwRate(clcw_rate),
-              blocking(blocking), repetitionTypeAFrame(repetition_type_a_frame), repetitionCOPCtrl(repetition_cop_ctrl),
-              frameCount(frame_count), txWaitQueue(), sentQueue(),
-              fop(FrameOperationProcedure(this, &txWaitQueue, &sentQueue, repetition_cop_ctrl)) {
-        mapChannels = map_chan;
+    VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
+                   const bool segmentHeaderPresent, const uint16_t maxFrameLength, const uint8_t clcwRate,
+                   const bool blocking, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+                   const uint8_t frameCount, etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChan)
+            : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
+              segmentHeaderPresent(segmentHeaderPresent), maxFrameLength(maxFrameLength), clcwRate(clcwRate),
+              blocking(blocking), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
+              frameCount(frameCount), txWaitQueue(), sentQueue(),
+              fop(FrameOperationProcedure(this, &txWaitQueue, &sentQueue, repetitionCopCtrl)) {
+        mapChannels = mapChan;
     }
 
     VirtualChannel(const VirtualChannel &v)
@@ -199,7 +199,7 @@ struct VirtualChannel {
     /**
      * @bried Add MAP channel to virtual channel
      */
-    VirtualChannelAlert add_map(const uint8_t mapid, const DataFieldContent data_field_content);
+    VirtualChannelAlert add_map(const uint8_t mapid, const DataFieldContent dataFieldContent);
 
     MasterChannel &master_channel() {
         return masterChannel;
@@ -286,10 +286,10 @@ struct MasterChannel {
     /**
      * @brief Add virtual channel to master channel
      */
-    MasterChannelAlert addVC(const uint8_t vcid, const bool segment_header_present, const uint16_t max_frame_length,
-                              const uint8_t clcw_rate, const bool blocking, const uint8_t repetition_type_a_frame,
-                              const uint8_t repetition_cop_ctrl, const uint8_t frame_count,
-                              etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_chan);
+    MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength,
+                              const uint8_t clcwRate, const bool blocking, const uint8_t repetitionTypeAFrame,
+                              const uint8_t repetitionCopCtrl, const uint8_t frameCount,
+                              etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChan);
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service

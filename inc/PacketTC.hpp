@@ -38,7 +38,7 @@ public:
      * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
      */
     const bool bypassFlag() const {
-        return (packet_header[0] >> 5U) & 0x01;
+        return (packetHeader[0] >> 5U) & 0x01;
     }
 
     /**
@@ -48,7 +48,7 @@ public:
      * @see p. 4.1.2.3.2 from TC SPACE DATA LINK PROTOCOL
      */
     const bool ctrlAndCmdFlag() const {
-        return (packet_header[0] >> 4U) & 0x01;
+        return (packetHeader[0] >> 4U) & 0x01;
     }
 
     /**
@@ -57,7 +57,7 @@ public:
      * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
     const uint16_t transferFrameLength() const {
-        return (static_cast<uint16_t>(packet_header[2] & 0x03) << 8U) | (static_cast<uint16_t>(packet_header[3]));
+        return (static_cast<uint16_t>(packetHeader[2] & 0x03) << 8U) | (static_cast<uint16_t>(packetHeader[3]));
     }
 };
 
@@ -312,15 +312,15 @@ struct PacketTC:public Packet {
         transferFrameSeqNumber = frame_seq_number;
     }
 
-    PacketTC(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-             ServiceType service_type, bool seg_hdr_present, PacketType t=TC):  Packet(t,packet_length,packet),
-	         hdr(packet), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid), sduid(sduid), serviceType(service_type),
+    PacketTC(uint8_t *packet, uint16_t packetLength, uint8_t segHdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+             ServiceType serviceType, bool segHdrPresent, PacketType t=TC):  Packet(t, packetLength,packet),
+	         hdr(packet), segHdr(segHdr), gvcid(gvcid), mapid(mapid), sduid(sduid), serviceType(serviceType),
 	         transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0), transferFrameVersionNumber(0)
 	          {
-		data=&packet[5 + 1 * seg_hdr_present];
+		data=&packet[5 + 1 * segHdrPresent];
 	}
 
-    PacketTC(uint8_t *packet, uint16_t packet_length, PacketType t=TC);
+    PacketTC(uint8_t *packet, uint16_t packetLength, PacketType t=TC);
 
 private:
     bool toBeRetransmitted;
@@ -448,49 +448,49 @@ public:
      * @brief Control Link Words used for FARM reports (see Figure 4-6)
      */
     CLCW(uint8_t *data) {
-        clcw_data[0] = data[0];
-        clcw_data[1] = data[1];
-        clcw_data[2] = data[2];
-        clcw_data[3] = data[3];
+		clcwData[0] = data[0];
+		clcwData[1] = data[1];
+		clcwData[2] = data[2];
+		clcwData[3] = data[3];
 
-        fieldStatus = (clcw_data[0] & 0x1C) >> 2U;
-        copInEffect = clcw_data[0] & 0x03;
-        vcId = (clcw_data[1] & 0xFC) >> 2U;
-        noRFAvail = (clcw_data[2] & 0x80) >> 7U;
-        noBitLock = (clcw_data[2] & 0x40) >> 6U;
-        lckout = (clcw_data[2] & 0x20) >> 5U;
-        wt = (clcw_data[2] & 0x10) >> 4U;
-        retransmit = (clcw_data[2] & 0x08) >> 3U;
-        farmBCounter = (clcw_data[2] & 0x06) >> 1U;
-        reportValue = clcw_data[3];
+        fieldStatus = (clcwData[0] & 0x1C) >> 2U;
+        copInEffect = clcwData[0] & 0x03;
+        vcId = (clcwData[1] & 0xFC) >> 2U;
+        noRFAvail = (clcwData[2] & 0x80) >> 7U;
+        noBitLock = (clcwData[2] & 0x40) >> 6U;
+        lckout = (clcwData[2] & 0x20) >> 5U;
+        wt = (clcwData[2] & 0x10) >> 4U;
+        retransmit = (clcwData[2] & 0x08) >> 3U;
+        farmBCounter = (clcwData[2] & 0x06) >> 1U;
+        reportValue = clcwData[3];
     }
 
     /**
      * @brief Control Link Words used for FARM reports
      */
-    CLCW(const uint8_t field_status, const uint8_t cop_in_effect, const uint8_t virtual_channel, const bool no_rf_avail,
-         const bool no_bit_lock, const bool lockout, const bool wait, const bool retransmission,
-         const uint8_t farm_b_counter, const uint8_t report_value) {
-        clcw_data[0] = (field_status << 2U) | cop_in_effect;
-        clcw_data[1] = (virtual_channel << 2U);
-        clcw_data[2] = (no_rf_avail << 7U) | (no_bit_lock << 6U) | (lockout << 5U) | (wait << 4U) |
-                       (retransmission << 3U) | (farm_b_counter << 1U);
-        clcw_data[3] = report_value;
+    CLCW(const uint8_t fieldStatusParam, const uint8_t copInEffectParam, const uint8_t virtualChannelParam, const bool noRfAvailParam,
+         const bool noBitLockParam, const bool lockout, const bool wait, const bool retransmission,
+         const uint8_t farmBCounterParam, const uint8_t reportValueParam) {
+		clcwData[0] = (fieldStatusParam << 2U) | copInEffectParam;
+		clcwData[1] = (virtualChannelParam << 2U);
+		clcwData[2] = (noRfAvailParam << 7U) | (noBitLockParam << 6U) | (lockout << 5U) | (wait << 4U) |
+                       (retransmission << 3U) | (farmBCounterParam << 1U);
+		clcwData[3] = reportValueParam;
 
-        fieldStatus = field_status;
-        noRFAvail = no_rf_avail;
-        vcId = virtual_channel;
-        copInEffect = cop_in_effect;
+        fieldStatus = fieldStatusParam;
+        noRFAvail = noRfAvailParam;
+        vcId = virtualChannelParam;
+        copInEffect = copInEffectParam;
         lckout = lockout;
-        noBitLock = no_bit_lock;
+        noBitLock = noBitLockParam;
         wt = wait;
         retransmit = retransmission;
-        farmBCounter = farm_b_counter;
-        reportValue = report_value;
+        farmBCounter = farmBCounterParam;
+        reportValue = reportValueParam;
     }
 
 private:
-    uint8_t clcw_data[4];
+    uint8_t clcwData[4];
     // This is used by COP to signal the higher procedures
     FDURequestType confSignal;
     uint8_t fieldStatus;

@@ -5,9 +5,9 @@
 #include "Logger.hpp"
 #include "Alert.hpp"
 
-std::ostream& operator<<(std::ostream& out, const Tx_Rx value)
+std::ostream& operator<<(std::ostream& out, const TxRx value)
 {
-	static std::map<Tx_Rx, std::string> strings;
+	static std::map<TxRx, std::string> strings;
 	if (strings.empty()){
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(Tx);
@@ -129,90 +129,90 @@ std::ostream& operator<<(std::ostream& out, const FDURequestType value)
 	return out  << strings[value];
 }
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, ServiceChannelNotification service_channel_notif) {
+void ccsdsLog(TxRx txRx, NotificationType notificationType, ServiceChannelNotification serviceChannelNotif) {
 	std::ostringstream ss;
 	uint16_t a;
 	switch (LOG_VERBOSE) {
 		case 0:
-			ss << tx_rx << ":" << notification_type << ":" << service_channel_notif;
+			ss << txRx << ":" << notificationType << ":" << serviceChannelNotif;
 			LOG_NOTICE << ss.str();
 		case 1:
-			a = (static_cast<uint16_t>(tx_rx) << 8U) | (static_cast<uint16_t>(notification_type) << 5U) |
-			    (static_cast<uint16_t>(service_channel_notif));
+			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |
+			    (static_cast<uint16_t>(serviceChannelNotif));
 			ss << std::hex << a << std::endl;
 			LOG_NOTICE << ss.str();
 	};
 }
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, MasterChannelAlert service_channel_notif) {
+void ccsdsLog(TxRx txRx, NotificationType notificationType, MasterChannelAlert serviceChannelNotif) {
 	std::ostringstream ss;
 	uint16_t a;
 	switch (LOG_VERBOSE) {
 		case 0:
-			ss << tx_rx << ":" << notification_type << ":" << service_channel_notif;
+			ss << txRx << ":" << notificationType << ":" << serviceChannelNotif;
 			LOG_NOTICE << ss.str();
 		case 1:
-			a = (static_cast<uint16_t>(tx_rx) << 8U) | (static_cast<uint16_t>(notification_type) << 5U) |
-			    (static_cast<uint16_t>(service_channel_notif));
-			ss << std::hex << a << std::endl;
-			LOG_NOTICE << ss.str();
-	};
-}
-
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, VirtualChannelAlert service_channel_notif){
-	std::ostringstream ss;
-	uint16_t a;
-	switch (LOG_VERBOSE) {
-		case 0:
-			ss << tx_rx << ":" << notification_type << ":" << service_channel_notif;
-			LOG_NOTICE << ss.str();
-		case 1:
-			a = (static_cast<uint16_t>(tx_rx) << 8U) | (static_cast<uint16_t>(notification_type) << 5U) |
-				(static_cast<uint16_t>(service_channel_notif));
+			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |
+			    (static_cast<uint16_t>(serviceChannelNotif));
 			ss << std::hex << a << std::endl;
 			LOG_NOTICE << ss.str();
 	};
 }
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, COPDirectiveResponse service_channel_notif){
+void ccsdsLog(TxRx txRx, NotificationType notificationType, VirtualChannelAlert serviceChannelNotif){
 	std::ostringstream ss;
 	uint16_t a;
 	switch (LOG_VERBOSE) {
 		case 0:
-			ss << tx_rx << ":" << notification_type << ":" << service_channel_notif;
+			ss << txRx << ":" << notificationType << ":" << serviceChannelNotif;
 			LOG_NOTICE << ss.str();
 		case 1:
-			a = (static_cast<uint16_t>(tx_rx) << 8U) | (static_cast<uint16_t>(notification_type) << 5U) |
-				(static_cast<uint16_t>(service_channel_notif));
+			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |
+				(static_cast<uint16_t>(serviceChannelNotif));
 			ss << std::hex << a << std::endl;
 			LOG_NOTICE << ss.str();
 	};
 }
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FOPNotification service_channel_notif){
+void ccsdsLog(TxRx txRx, NotificationType notificationType, COPDirectiveResponse serviceChannelNotif){
 	std::ostringstream ss;
 	uint16_t a;
 	switch (LOG_VERBOSE) {
 		case 0:
-			ss << tx_rx << ":" << notification_type << ":" << service_channel_notif;
+			ss << txRx << ":" << notificationType << ":" << serviceChannelNotif;
 			LOG_NOTICE << ss.str();
 		case 1:
-			a = (static_cast<uint16_t>(tx_rx) << 8U) | (static_cast<uint16_t>(notification_type) << 5U) |
-				(static_cast<uint16_t>(service_channel_notif));
+			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |
+				(static_cast<uint16_t>(serviceChannelNotif));
 			ss << std::hex << a << std::endl;
 			LOG_NOTICE << ss.str();
 	};
 }
 
-void ccsds_log(Tx_Rx tx_rx, NotificationType notification_type, FDURequestType service_channel_notif){
+void ccsdsLog(TxRx txRx, NotificationType notificationType, FOPNotification serviceChannelNotif){
 	std::ostringstream ss;
 	uint16_t a;
 	switch (LOG_VERBOSE) {
 		case 0:
-			ss << tx_rx << ":" << notification_type << ":" << service_channel_notif;
+			ss << txRx << ":" << notificationType << ":" << serviceChannelNotif;
 			LOG_NOTICE << ss.str();
 		case 1:
-			a = (static_cast<uint16_t>(tx_rx) << 8U) | (static_cast<uint16_t>(notification_type) << 5U) |
-				(static_cast<uint16_t>(service_channel_notif));
+			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |
+				(static_cast<uint16_t>(serviceChannelNotif));
+			ss << std::hex << a << std::endl;
+			LOG_NOTICE << ss.str();
+	};
+}
+
+void ccsdsLog(TxRx txRx, NotificationType notificationType, FDURequestType serviceChannelNotif){
+	std::ostringstream ss;
+	uint16_t a;
+	switch (LOG_VERBOSE) {
+		case 0:
+			ss << txRx << ":" << notificationType << ":" << serviceChannelNotif;
+			LOG_NOTICE << ss.str();
+		case 1:
+			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |
+				(static_cast<uint16_t>(serviceChannelNotif));
 			ss << std::hex << a << std::endl;
 			LOG_NOTICE << ss.str();
 	};
