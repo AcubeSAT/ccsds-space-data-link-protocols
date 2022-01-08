@@ -2,7 +2,7 @@
 #include "CCSDS_Log.h"
 
 COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
-    PacketTC *frame = waitQueue->front();
+	TransferFrameTC*frame = waitQueue->front();
 
     if (frame->service_type() == ServiceType::TYPE_A && frame->transfer_frame_header().ctrl_and_cmd_flag()) {
         if (frame->transfer_frame_sequence_number() == receiverFrameSeqNumber) {

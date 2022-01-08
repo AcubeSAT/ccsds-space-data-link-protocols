@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <Packet.hpp>
+#include <TransferFrame.hpp>
 
 static uint16_t crc_16_ccitt_table[]{
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad,
@@ -22,7 +22,7 @@ static uint16_t crc_16_ccitt_table[]{
     0x1ce0, 0x0cc1, 0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
     0x2e93, 0x3eb2, 0x0ed1, 0x1ef0};
 
-uint16_t Packet::calculate_crc(uint8_t *packet, uint16_t len) {
+uint16_t TransferFrame::calculate_crc(uint8_t *packet, uint16_t len) {
 	uint16_t crc = 0xFFFF;
 
 	// calculate remainder of binary polynomial division
@@ -33,11 +33,11 @@ uint16_t Packet::calculate_crc(uint8_t *packet, uint16_t len) {
 	return crc;
 }
 
-void Packet::append_crc() {
-	uint16_t len =packetLength - 2;
-	uint16_t crc = calculate_crc(packet, len);
+void TransferFrame::append_crc() {
+	uint16_t len = transferFrameLength - 2;
+	uint16_t crc = calculate_crc(transferFrame, len);
 
 	// append CRC
-	packet[len] = (crc >> 8) & 0xFF;
-	packet[len + 1] = crc & 0xFF;
+	transferFrame[len] = (crc >> 8) & 0xFF;
+	transferFrame[len + 1] = crc & 0xFF;
 }

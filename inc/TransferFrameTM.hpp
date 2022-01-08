@@ -1,6 +1,6 @@
-#ifndef CCSDS_TM_PACKETS_PACKETTM_HPP
-#define CCSDS_TM_PACKETS_PACKETTM_HPP
-#include "Packet.hpp"
+#ifndef CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
+#define CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
+#include "TransferFrame.hpp"
 
 struct TransferFrameHeaderTM : public TransferFrameHeader {
 public:
@@ -10,7 +10,7 @@ public:
      * @brief The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
      */
     const bool operational_control_field_flag() const {
-        return (packet_header[1]) & 0x01;
+        return (transfer_frame_header[1]) & 0x01;
     }
 
     /**
@@ -18,7 +18,7 @@ public:
      * same  Master  Channel.
      */
     const uint8_t master_channel_frame_count() const {
-        return packet_header[2];
+        return transfer_frame_header[2];
     }
 
     /**
@@ -26,7 +26,7 @@ public:
      * specific Virtual Channel.
      */
     const uint8_t virtual_channel_frame_count() const {
-        return packet_header[3];
+        return transfer_frame_header[3];
     }
 
     /**
@@ -34,7 +34,7 @@ public:
      */
 
     const bool transfer_frame_secondary_header_flag() const {
-        return (packet_header[4] & 0x80) >> 7U;
+        return (transfer_frame_header[4] & 0x80) >> 7U;
     }
 
     /**
@@ -42,26 +42,26 @@ public:
      */
 
     const bool synchronization_flag() const {
-        return (packet_header[4] & 0x40) >> 6U;
+        return (transfer_frame_header[4] & 0x40) >> 6U;
     }
 
     const bool packet_order_flag() const {
-        return (packet_header[4] & 0x20) >> 5U;
+        return (transfer_frame_header[4] & 0x20) >> 5U;
     }
 
     const uint16_t first_header_pointer() const {
-        return (static_cast<uint16_t>((packet_header[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packet_header[5])));
+        return (static_cast<uint16_t>((transfer_frame_header[4]) & 0x07)) << 8U | (static_cast<uint16_t>((transfer_frame_header[5])));
     }
 
     const uint16_t transfer_frame_data_field_status() const {
-        return (static_cast<uint16_t>((packet_header[4])) << 8U | (static_cast<uint16_t>((packet_header[5]))));
+        return (static_cast<uint16_t>((transfer_frame_header[4])) << 8U | (static_cast<uint16_t>((transfer_frame_header[5]))));
     }
 
 };
 
-struct PacketTM:public Packet {
+struct TransferFrameTM :public TransferFrame {
 
-	const uint8_t *packet_pl_data() const {
+	const uint8_t * transfer_frame_pl_data() const {
 		return data;
 	}
 
@@ -96,11 +96,11 @@ struct PacketTM:public Packet {
 	}
 
 	const uint16_t packet_length() const {
-		return packetLength;
+		return transferFrameLength;
 	}
 
-	uint8_t *packet_data() const {
-		return packet;
+	uint8_t * transfer_frame_data() const {
+		return transferFrame;
 	}
 
 	const uint8_t *secondary_header() const {
@@ -118,23 +118,24 @@ struct PacketTM:public Packet {
 	// Setters are not strictly needed in this case. The are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
 
-	void set_packet_data(uint8_t *packt_data) {
-		packet = packt_data;
+	void set_transfer_frame_data(uint8_t * transfer_frame_data) {
+		transferFrame = transfer_frame_data;
 	}
 
-	void set_packet_length(uint16_t packt_len) {
-		packetLength = packt_len;
+	void set_transfer_frame_length(uint16_t transfer_frame_len) {
+		transferFrameLength = transfer_frame_len;
 	}
 
-	PacketTM(uint8_t *packet, uint16_t packet_length, uint8_t virtualChannelFrameCount, uint8_t scid,
+	TransferFrameTM(uint8_t * transfer_frame, uint16_t transfer_frame_length, uint8_t virtualChannelFrameCount, uint8_t scid,
 	         uint16_t vcid, uint8_t masterChannelFrameCount, uint8_t* secondary_header,
-	         uint16_t transferFrameDataFieldStatus, PacketType t=TM)
-	    	:Packet(t, packet_length, packet), hdr(packet), masterChannelFrameCount(masterChannelFrameCount), virtualChannelFrameCount(virtualChannelFrameCount),
+	         uint16_t transferFrameDataFieldStatus,
+	         TransferFrameType t=TM)
+	    	: TransferFrame(t, transfer_frame_length, transfer_frame), hdr(transfer_frame), masterChannelFrameCount(masterChannelFrameCount), virtualChannelFrameCount(virtualChannelFrameCount),
 	      scid(scid), vcid(vcid),
 	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
 	      secondaryHeader(secondary_header), firstHeaderPointer(firstHeaderPointer) {}
 
-	PacketTM(uint8_t *packet, uint16_t packet_length, PacketType t=TM);
+	TransferFrameTM(uint8_t * tranfer_frame, uint16_t transfer_frame_length, TransferFrameType t=TM);
 
 private:
 	TransferFrameHeaderTM hdr;
@@ -149,4 +150,4 @@ private:
 	uint8_t *operationalControlField{};
 };
 
-#endif // CCSDS_TM_PACKETS_PACKETTM_HPP
+#endif // CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP

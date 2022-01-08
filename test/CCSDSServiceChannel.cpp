@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include <CCSDSChannel.hpp>
-#include <PacketTC.hpp>
-#include <PacketTM.hpp>
+#include <TransferFrameTC.hpp>
+#include <TransferFrameTM.hpp>
 #include <CCSDSServiceChannel.hpp>
 #include <iostream>
 
@@ -41,21 +41,21 @@ TEST_CASE("Service Channel") {
 
     serv_channel.store(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 1);
-    const PacketTC *packet_a = serv_channel.tx_out_packet_TC().second;
-    CHECK(packet_a->packet_length() == 9);
+    const TransferFrameTC*packet_a = serv_channel.tx_out_packet_TC().second;
+    CHECK(packet_a->transfer_frame_length() == 9);
     CHECK(packet_a->service_type() == ServiceType::TYPE_A);
     CHECK((serv_channel.tx_out_packet(0, 0).second == packet_a));
 
     serv_channel.store(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
     CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 2);
-    const PacketTC *packet_b = serv_channel.tx_out_packet_TC().second;
-    CHECK(packet_b->packet_length() == 10);
+    const TransferFrameTC*packet_b = serv_channel.tx_out_packet_TC().second;
+    CHECK(packet_b->transfer_frame_length() == 10);
     CHECK(packet_b->service_type() == ServiceType::TYPE_B);
 
     serv_channel.store(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.tx_available(0, 0) == max_received_tc_in_map_channel - 3);
-    const PacketTC *packet_c = serv_channel.tx_out_packet_TC().second;
-    CHECK(packet_c->packet_length() == 3);
+    const TransferFrameTC*packet_c = serv_channel.tx_out_packet_TC().second;
+    CHECK(packet_c->transfer_frame_length() == 3);
     CHECK(packet_c->service_type() == ServiceType::TYPE_A);
     CHECK((serv_channel.tx_out_packet(0, 0).second == packet_a));
 
@@ -95,7 +95,7 @@ TEST_CASE("Service Channel") {
     err = serv_channel.all_frames_generation_request();
     CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
 
-    PacketTC packet = *serv_channel.get_tx_processed_packet();
+	TransferFrameTC packet = *serv_channel.get_tx_processed_packet();
 
     CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
 
@@ -128,7 +128,7 @@ TEST_CASE("Service Channel") {
 
     serv_channel.store(pckt_TM, 9, 0, 0);
 
-    const PacketTM *packet_TM = serv_channel.tx_out_packet_TM().second;
+    const TransferFrameTM*packet_TM = serv_channel.tx_out_packet_TM().second;
     CHECK(packet_TM->packet_length() == 9);
     CHECK(packet_a->transfer_frame_version_number() == 0);
     CHECK(packet_TM->master_channel_frame_count() == 0);

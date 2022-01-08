@@ -6,9 +6,9 @@
 #include <cstring>
 #include <cstdint>
 #include <etl/memory.h>
-#include "Packet.hpp"
+#include "TransferFrame.hpp"
 
-class PacketTC;
+class TransferFrameTC;
 
 enum ServiceType {
     TYPE_A = 0, TYPE_B = 1
@@ -23,13 +23,13 @@ enum FDURequestType: uint8_t{
 
 struct TransferFrameHeaderTC : public TransferFrameHeader {
 public:
-    TransferFrameHeaderTC(uint8_t *pckt) : TransferFrameHeader(pckt) {}
+    TransferFrameHeaderTC(uint8_t * transfer_frame) : TransferFrameHeader(transfer_frame) {}
 
     /**
      * @brief The bypass Flag determines whether the packet will bypass FARM checks
      */
     const bool bypass_flag() const {
-        return (packet_header[0] >> 5U) & 0x01;
+        return (transfer_frame_header[0] >> 5U) & 0x01;
     }
 
     /**
@@ -37,18 +37,18 @@ public:
      * data (Type-D)
      */
     const bool ctrl_and_cmd_flag() const {
-        return (packet_header[0] >> 4U) & 0x01;
+        return (transfer_frame_header[0] >> 4U) & 0x01;
     }
 
     /**
      * @brief The length of the transfer frame
      */
     const uint16_t transfer_frame_length() const {
-        return (static_cast<uint16_t>(packet_header[2] & 0x03) << 8U) | (static_cast<uint16_t>(packet_header[3]));
+        return (static_cast<uint16_t>(transfer_frame_header[2] & 0x03) << 8U) | (static_cast<uint16_t>(transfer_frame_header[3]));
     }
 };
 
-struct PacketTC:public Packet {
+struct TransferFrameTC :public TransferFrame {
     void setConfSignal(FDURequestType reqSignal) {
         confSignal = reqSignal;
         // TODO Maybe signal the higher procedures here instead of having them manually take care of them
@@ -59,7 +59,7 @@ struct PacketTC:public Packet {
     // undesired behavior if we're to delete different packets that share a frame sequence number for some reason.
     // This is normally not allowed but we have to cross-check if it is compatible with FARM checks
 
-    friend bool operator==(const PacketTC &pack1, const PacketTC &pack2) {
+    friend bool operator==(const TransferFrameTC&pack1, const TransferFrameTC&pack2) {
         return(pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber);
     }
 
@@ -136,8 +136,8 @@ struct PacketTC:public Packet {
         return hdr;
     }
 
-    const uint16_t packet_length() const {
-        return packetLength;
+    const uint16_t transfer_frame_length() const {
+        return transferFrameLength;
     }
 
     const uint8_t segmentation_header() const {
@@ -180,8 +180,8 @@ struct PacketTC:public Packet {
         return reps;
     }
 
-    uint8_t *packet_data() const {
-        return packet;
+    uint8_t * transfer_frame_data() const {
+        return transferFrame;
     }
 
     // Setters are not strictly needed in this case. The are just offered as a utility functions for the VC/MAP
@@ -191,11 +191,11 @@ struct PacketTC:public Packet {
     }
 
     void set_packet_data(uint8_t *packt_data) {
-        packet = packt_data;
+		transferFrame = packt_data;
     }
 
-    void set_packet_length(uint16_t packt_len) {
-        packetLength = packt_len;
+    void set_transfer_frame_length(uint16_t transfer_frame_len) {
+		transferFrameLength = transfer_frame_len;
     }
 
     void set_service_type(ServiceType serv_type) {
@@ -210,15 +210,15 @@ struct PacketTC:public Packet {
         transferFrameSeqNumber = frame_seq_number;
     }
 
-    PacketTC(uint8_t *packet, uint16_t packet_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-             ServiceType service_type, bool seg_hdr_present, PacketType t=TC):  Packet(t,packet_length,packet),
-	         hdr(packet), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid), sduid(sduid), serviceType(service_type),
+	TransferFrameTC(uint8_t * transfer_frame, uint16_t transfer_frame_length, uint8_t seg_hdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+             ServiceType service_type, bool seg_hdr_present, TransferFrameType t=TC): TransferFrame(t, transfer_frame_length, transfer_frame),
+	         hdr(transfer_frame), segHdr(seg_hdr), gvcid(gvcid), mapid(mapid), sduid(sduid), serviceType(service_type),
 	         transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0), transferFrameVersionNumber(0)
 	          {
-		data=&packet[5 + 1 * seg_hdr_present];
+		data=&transfer_frame[5 + 1 * seg_hdr_present];
 	}
 
-    PacketTC(uint8_t *packet, uint16_t packet_length, PacketType t=TC);
+	TransferFrameTC(uint8_t * transfer_frame, uint16_t transfer_frame_length, TransferFrameType t=TC);
 
 private:
     bool toBeRetransmitted;

@@ -4,7 +4,7 @@
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
 
-#include <PacketTC.hpp>
+#include <TransferFrameTC.hpp>
 #include <utility>
 
 /**
@@ -27,28 +27,28 @@ public:
     // Public methods that are called by the scheduler
 
     /**
-     * @brief Stores an incoming  TC packet in the ring buffer
+     * @brief Stores an incoming  TC transfer frame in the ring buffer
      *
-     * @param packet Data of the packet
-     * @param packet_length PacketTC length
+     * @param transfer_frame Data of the transfer frame
+     * @param transfer_frame_length TransferFrameTC length
      * @param gvcid Global Virtual Channel ID
      * @param mapid MAP ID
      * @param sduid SDU ID
      * @param service_type Service Type - Type-A or Type-B
      */
-    ServiceChannelNotif store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+    ServiceChannelNotif store(uint8_t * transfer_frame, uint16_t transfer_frame_length, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
                               ServiceType service_type);
 
     /**
-     * @brief Stores an incoming  TM packet in the ring buffer
+     * @brief Stores an incoming TM transfer frame in the ring buffer
      *
-     * @param packet Data of the packet
-     * @param packet_length PacketTC length
+     * @param transfer_frame Data of the transfer frame
+     * @param transfer_frame_length TransferFrameTM length
      * @param gvcid Global Virtual Channel ID
      * @param scid Spacecraft ID
      */
 
-    ServiceChannelNotif store(uint8_t *packet, uint16_t packet_length, uint8_t gvcid, uint16_t scid);
+    ServiceChannelNotif store(uint8_t * transfer_frame, uint16_t transfer_frame_length, uint8_t gvcid, uint16_t scid);
 
 
     /**
@@ -80,7 +80,7 @@ public:
 
     ServiceChannelNotif all_frames_generation_request();
 
-    std::optional<PacketTC> get_tx_processed_packet();
+    std::optional<TransferFrameTC> get_tx_processed_packet();
 
     ServiceChannelNotif all_frames_reception_request();
 
@@ -200,29 +200,29 @@ public:
     /**
      * @brief Read first packet of the MAP channel buffer
      */
-    std::pair<ServiceChannelNotif, const PacketTC*>
+    std::pair<ServiceChannelNotif, const TransferFrameTC*>
 
     tx_out_packet(const uint8_t vid, const uint8_t mapid) const;
 
     /**
      * @brief Read first packet of the virtual channel buffer
      */
-    std::pair<ServiceChannelNotif, const PacketTC*> tx_out_packet(const uint8_t vid) const;
+    std::pair<ServiceChannelNotif, const TransferFrameTC*> tx_out_packet(const uint8_t vid) const;
 
     /**
      * @brief Return the last stored packet
      */
-    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_packet_TC() const;
+    std::pair<ServiceChannelNotif, const TransferFrameTC*> tx_out_packet_TC() const;
 
     /**
  * @brief Return the last stored packet
  */
-    std::pair<ServiceChannelNotif, const PacketTM *> tx_out_packet_TM() const;
+    std::pair<ServiceChannelNotif, const TransferFrameTM*> tx_out_packet_TM() const;
 
     /**
      * @brief Return the last processed packet
      */
-    std::pair<ServiceChannelNotif, const PacketTC *> tx_out_processed_packet() const;
+    std::pair<ServiceChannelNotif, const TransferFrameTC*> tx_out_processed_packet() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel master_channel) : masterChannel(master_channel) {}
