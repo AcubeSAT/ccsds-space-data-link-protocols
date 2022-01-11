@@ -82,7 +82,7 @@ struct MAPChannel {
     /**
      * @brief Returns availableBufferTC space in the MAP Channel buffer
      */
-    const uint16_t availableBufferTC() const {
+    uint16_t availableBufferTC() const {
         return unprocessedPacketListBufferTC.available();
     }
 
@@ -158,7 +158,7 @@ struct VirtualChannel {
     /**
      * @brief Returns availableVCBufferTC space in the VC TC buffer
      */
-    const uint16_t availableBufferTC() const {
+    uint16_t availableBufferTC() const {
         return txUnprocessedPacketListBufferTC.available();
     }
 
@@ -279,7 +279,7 @@ struct MasterChannel {
 	/**
 	 * @return
 	 */
-    const uint16_t availableSpaceBufferTM() const {
+    uint16_t availableSpaceBufferTM() const {
         return txMasterCopyTM.available();
     }
 

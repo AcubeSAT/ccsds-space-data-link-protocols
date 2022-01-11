@@ -14,7 +14,7 @@ public:
      * @details Bit  15  of  the  Transfer  Frame  Primary  Header
      * @see p. 4.1.2.4 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const bool operationalControlFieldFlag() const {
+    bool operationalControlFieldFlag() const {
         return (packetHeader[1]) & 0x01;
     }
 
@@ -24,7 +24,7 @@ public:
      * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header
      * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t masterChannelFrameCount() const {
+    uint8_t masterChannelFrameCount() const {
         return packetHeader[2];
     }
 
@@ -34,7 +34,7 @@ public:
      * @details Bits  24–31  of  the  Transfer  Frame  Primary  Header
      * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
      */
-    const uint8_t virtualChannelFrameCount() const {
+    uint8_t virtualChannelFrameCount() const {
         return packetHeader[3];
     }
 
@@ -44,7 +44,7 @@ public:
      * @see p. 4.1.2.7.2 from TM SPACE DATA LINK PROTOCOL
      */
 
-    const bool transferFrameSecondaryHeaderFlag() const {
+    bool transferFrameSecondaryHeaderFlag() const {
         return (packetHeader[4] & 0x80) >> 7U;
     }
 
@@ -54,7 +54,7 @@ public:
      * @see p. 4.1.2.7.3 from TM SPACE DATA LINK PROTOCOL
      */
 
-    const bool synchronizationFlag() const {
+    bool synchronizationFlag() const {
         return (packetHeader[4] & 0x40) >> 6U;
     }
 
@@ -65,7 +65,7 @@ public:
 	 * @details Bit 34 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.4 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const bool packetOrderFlag() const {
+    bool packetOrderFlag() const {
         return (packetHeader[4] & 0x20) >> 5U;
     }
 	/**
@@ -75,7 +75,7 @@ public:
 	 * @details Bits 37–47 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const uint16_t firstHeaderPointer() const {
+    uint16_t firstHeaderPointer() const {
         return (static_cast<uint16_t>((packetHeader[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packetHeader[5])));
     }
 
@@ -88,7 +88,7 @@ public:
 	 * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
-    const uint16_t transferFrameDataFieldStatus() const {
+    uint16_t transferFrameDataFieldStatus() const {
         return (static_cast<uint16_t>((packetHeader[4])) << 8U | (static_cast<uint16_t>((packetHeader[5]))));
     }
 
@@ -116,7 +116,7 @@ struct PacketTM:public Packet {
 	 * 			(shall be set to ‘00’)
 	 * @see p. 4.1.2.2.2 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t getTransferFrameVersionNumber() const {
+	uint8_t getTransferFrameVersionNumber() const {
 		return transferFrameVersionNumber;
 	}
 
@@ -126,7 +126,7 @@ struct PacketTM:public Packet {
 	 * @details Bits  2–11  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint16_t spacecraftId() const {
+	uint16_t spacecraftId() const {
 		return scid;
 	}
 
@@ -135,7 +135,7 @@ struct PacketTM:public Packet {
 	 * @details Bits 12–14 of the Transfer Frame Primary Header.
 	 * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t virtualChannelId() const {
+	uint8_t virtualChannelId() const {
 		return vcid;
 	}
 
@@ -145,7 +145,7 @@ struct PacketTM:public Packet {
 	 * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t getMasterChannelFrameCount() const {
+	uint8_t getMasterChannelFrameCount() const {
 		return masterChannelFrameCount;
 	}
 
@@ -155,7 +155,7 @@ struct PacketTM:public Packet {
 	 * @details Bits  24-31  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint8_t getVirtualChannelFrameCount() const {
+	uint8_t getVirtualChannelFrameCount() const {
 		return virtualChannelFrameCount;
 	}
 
@@ -169,11 +169,11 @@ struct PacketTM:public Packet {
 	     * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
 		 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint16_t getTransferFrameDataFieldStatus() const {
+	uint16_t getTransferFrameDataFieldStatus() const {
 		return transferFrameDataFieldStatus;
 	}
 
-	const uint16_t getPacketLength() const {
+	uint16_t getPacketLength() const {
 		return packetLength;
 	}
 
@@ -184,7 +184,7 @@ struct PacketTM:public Packet {
 	/**
 	 * @see p. 4.1.3 from TM DATA LINK PROTOCOL
 	 */
-	const uint8_t * getSecondaryHeader() const {
+	uint8_t * getSecondaryHeader() const {
 		return secondaryHeader;
 	}
 
@@ -195,7 +195,7 @@ struct PacketTM:public Packet {
 	 * @details Bits 37–47 of the Transfer Frame Primary Header.
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const uint16_t getFirstHeaderPointer() const {
+	uint16_t getFirstHeaderPointer() const {
 		return firstHeaderPointer;
 	}
 

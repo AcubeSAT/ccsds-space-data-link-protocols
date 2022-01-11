@@ -488,27 +488,27 @@ void ServiceChannel::invalidDirective(uint8_t vid) {
     virtChannel->fop.invalidDirective();
 }
 
-const FOPState ServiceChannel::fopState(uint8_t vid) const {
+FOPState ServiceChannel::fopState(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.state;
 }
 
-const uint16_t ServiceChannel::t1Timer(uint8_t vid) const {
+uint16_t ServiceChannel::t1Timer(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.tiInitial;
 }
 
-const uint8_t ServiceChannel::fopSlidingWindowWidth(uint8_t vid) const {
+uint8_t ServiceChannel::fopSlidingWindowWidth(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.fopSlidingWindow;
 }
 
-const bool ServiceChannel::timeoutType(uint8_t vid) const {
+bool ServiceChannel::timeoutType(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.timeoutType;
 }
 
-const uint8_t ServiceChannel::transmitterFrameSeqNumber(uint8_t vid) const {
+uint8_t ServiceChannel::transmitterFrameSeqNumber(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.transmitterFrameSeqNumber;
 }
 
-const uint8_t ServiceChannel::expectedFrameSeqNumber(uint8_t vid) const {
+uint8_t ServiceChannel::expectedFrameSeqNumber(uint8_t vid) const {
     return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
 }
 

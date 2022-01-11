@@ -37,7 +37,7 @@ public:
      * @details Bit 2 of the Transfer Frame Primary Header
      * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
      */
-    const bool bypassFlag() const {
+    bool bypassFlag() const {
         return (packetHeader[0] >> 5U) & 0x01;
     }
 
@@ -47,7 +47,7 @@ public:
      * @details Bit 3 of the Transfer Frame Primary Header
      * @see p. 4.1.2.3.2 from TC SPACE DATA LINK PROTOCOL
      */
-    const bool ctrlAndCmdFlag() const {
+    bool ctrlAndCmdFlag() const {
         return (packetHeader[0] >> 4U) & 0x01;
     }
 
@@ -56,7 +56,7 @@ public:
      * @details Bits 22–31 of the Transfer Frame Primary Header
      * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint16_t transferFrameLength() const {
+    uint16_t transferFrameLength() const {
         return (static_cast<uint16_t>(packetHeader[2] & 0x03) << 8U) | (static_cast<uint16_t>(packetHeader[3]));
     }
 };
@@ -89,7 +89,7 @@ struct PacketTC:public Packet {
 	 * @details This one-bit field shall be set to ‘0’.
 	 * @see p. 4.2.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t controlWordType() const {
+    uint8_t controlWordType() const {
 		return (data[0] & 0x80 >> 7U);
     }
 
@@ -98,7 +98,7 @@ struct PacketTC:public Packet {
 	 * @see p. 4.2.1.4 from TC SPACE DATA LINK PROTOCOL
 	 *
 	 */
-    const uint8_t statusField() const {
+    uint8_t statusField() const {
         return (data[0] & 0x1C) >> 2U;
     }
 
@@ -107,7 +107,7 @@ struct PacketTC:public Packet {
 	 * @return Bits 6-7 of the CLCW (the COP in Effect parameter)
 	 * @see p. 4.2.1.5 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t copInEffect() const {
+    uint8_t copInEffect() const {
         return data[0] & 0x03;
     }
 
@@ -116,7 +116,7 @@ struct PacketTC:public Packet {
 	 * with which this COP report is associated).
 	 * @see p. 4.2.1.6 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t vcIdentification() const {
+    uint8_t vcIdentification() const {
         return (data[1] & 0xFC) >> 2U;
     }
 
@@ -126,7 +126,7 @@ struct PacketTC:public Packet {
 	 * @return Bit 16 of the CLCW (the No RF Available Flag).
 	 * @see p. 4.2.1.8.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t noRfAvail() const {
+    uint8_t noRfAvail() const {
         return (data[2] & 0x80) >> 7U;
     }
 
@@ -134,7 +134,7 @@ struct PacketTC:public Packet {
 	 * @return Bit 17 of the CLCW (the No Bit Lock Flag).
 	 * @see p. 4.2.1.8.3 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t noBitLock() const {
+    uint8_t noBitLock() const {
         return (data[2] & 0x20) >> 5U;
     }
 
@@ -142,7 +142,7 @@ struct PacketTC:public Packet {
 	 * @return Bit 18 of the CLCW (the Lockout Flag).
 	 * @see p. 4.2.1.8.4 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t lockout() const {
+    uint8_t lockout() const {
         return (data[2] & 0x20) >> 5U;
     }
 
@@ -150,7 +150,7 @@ struct PacketTC:public Packet {
 	 * @return Bit 19 of the CLCW (the Wait Flag)
 	 * @see p. 4.1.2.8.5 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t wait() const {
+    uint8_t wait() const {
         return (data[2] & 0x10) >> 4U;
     }
 
@@ -158,7 +158,7 @@ struct PacketTC:public Packet {
 	 * @return Bit 20 of the CLCW (the Retransmit Flag).
 	 * @see p. 4.2.1.8.6 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t retransmit() const {
+    uint8_t retransmit() const {
         return (data[2] & 0x08) >> 3U;
     }
 
@@ -166,7 +166,7 @@ struct PacketTC:public Packet {
 	 * @return Bits 21-22 of the CLCW (the FARM-B Counter).
 	 * @see p. 4.2.1.9 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t farmBCounter() const {
+    uint8_t farmBCounter() const {
         return (data[2] & 0x06) >> 1U;
     }
 
@@ -174,7 +174,7 @@ struct PacketTC:public Packet {
 	 * @return Bits 24-31 of the CLCW (the Report Value).
 	 * @see p. 4.2.11.1 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t reportValue() const {
+    uint8_t reportValue() const {
         return data[3];
     }
 
@@ -189,7 +189,7 @@ struct PacketTC:public Packet {
     /**
      * @brief Determines whether the packet is marked for retransmission while in the sent queue
      */
-    const bool getToBeRetransmitted() const {
+    bool getToBeRetransmitted() const {
         return toBeRetransmitted;
     }
 
@@ -201,7 +201,7 @@ struct PacketTC:public Packet {
 	 * @return TC transfer frame primary header (the first 5 octets of the TC transfer frame)
 	 * @see p. 4.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const TransferFrameHeaderTC transferFrameHeader() const {
+    TransferFrameHeaderTC transferFrameHeader() const {
         return hdr;
     }
 
@@ -209,14 +209,14 @@ struct PacketTC:public Packet {
 	 * @return Bits 22–31 of the Transfer Frame Primary Header (the Frame Length)
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint16_t getPacketLength() const {
+    uint16_t getPacketLength() const {
         return packetLength;
     }
 
 	/**
 	 * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t segmentationHeader() const {
+    uint8_t segmentationHeader() const {
         return segHdr;
     }
 
@@ -224,7 +224,7 @@ struct PacketTC:public Packet {
 	 * @return the Global Virtual Channel Identifier (GVCID)
 	 * @see p. 2.1.3 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t globalVirtualChannelId() const {
+    uint8_t globalVirtualChannelId() const {
         return gvcid;
     }
 
@@ -232,11 +232,11 @@ struct PacketTC:public Packet {
 	 * @return Bits  16–21  of  the  Transfer  Frame  Primary  Header (the  Virtual Channel Identifier (VCID)).
 	 * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t virtualChannelId() const {
+    uint8_t virtualChannelId() const {
         return gvcid & 0x3F;
     };
 
-    const uint8_t mapId() const {
+    uint8_t mapId() const {
         return mapid;
     }
 
@@ -244,7 +244,7 @@ struct PacketTC:public Packet {
 	 * @return Bits  6–15  of  the  Transfer  Frame  Primary  Header (the  Spacecraft Identifier (SCID)).
 	 * @see p. 4.1.2.5 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint16_t spacecraftId() const {
+    uint16_t spacecraftId() const {
         return sduid;
     }
 
@@ -252,7 +252,7 @@ struct PacketTC:public Packet {
 	 * @return Bits 32–39 of the Transfer Frame Primary Header (the Frame Sequence Number, N(S)).
 	 * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL.
 	 */
-    const uint8_t transferFrameSequenceNumber() const {
+    uint8_t transferFrameSequenceNumber() const {
         return transferFrameSeqNumber;
     }
 
@@ -260,25 +260,25 @@ struct PacketTC:public Packet {
 	 * @return Bits 0–1 of the Transfer Frame Primary Header (the (binary encoded) Transfer Frame Version Number).
 	 * @see p. 4.1.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t getTransferFrameVersionNumber() const {
+    uint8_t getTransferFrameVersionNumber() const {
         return transferFrameVersionNumber;
     }
 
 	/**
 	 * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const ServiceType getServiceType() const {
+    ServiceType getServiceType() const {
         return serviceType;
     }
 
-    const bool acknowledged() const {
+    bool acknowledged() const {
         return ack;
     }
 
 	/**
 	 * @see p. 2.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t repetitions() const {
+    uint8_t repetitions() const {
         return reps;
     }
 
@@ -355,7 +355,7 @@ public:
 	 *
 	 */
 
-    const uint8_t getFieldStatus() const {
+    uint8_t getFieldStatus() const {
         return fieldStatus;
     }
 
@@ -364,7 +364,7 @@ public:
 	 * @return Bits 6-7 of the CLCW (the COP in Effect parameter)
 	 * @see p. 4.2.1.5 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t getCopInEffect() const {
+    uint8_t getCopInEffect() const {
         return copInEffect;
     }
 
@@ -373,7 +373,7 @@ public:
 	 * with which this COP report is associated).
 	 * @see p. 4.2.1.6 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const uint8_t vcid() const {
+    uint8_t vcid() const {
         return vcId;
     }
 
@@ -383,7 +383,7 @@ public:
 	 * @return Bit 16 of the CLCW (the No RF Available Flag).
 	 * @see p. 4.2.1.8.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const bool getNoRFAvail() const {
+    bool getNoRFAvail() const {
         return noRFAvail;
     }
 
@@ -392,7 +392,7 @@ public:
 	 * @return Bit 17 of the CLCW (the No Bit Lock Flag).
 	 * @see p. 4.2.1.8.3 from TC SPACE DATA LINK PROTOCOL
 	 */
-    const bool getNoBitLock() const {
+	bool getNoBitLock() const {
         return noBitLock;
     }
 
@@ -401,7 +401,7 @@ public:
      * @return Bit 18 of the CLCW (the Lockout Flag).
 	 * @see p. 4.2.1.8.4 from TC SPACE DATA LINK PROTOCOL
      */
-    const bool lockout() const {
+    bool lockout() const {
         return lckout;
     }
 
@@ -410,7 +410,7 @@ public:
 	 * @return Bit 19 of the CLCW (the Wait Flag)
 	 * @see p. 4.1.2.8.5 from TC SPACE DATA LINK PROTOCOL
      */
-    const bool wait() const {
+    bool wait() const {
         return wt;
     }
 
@@ -419,7 +419,7 @@ public:
      * @return Bit 20 of the CLCW (the Retransmit Flag).
 	 * @see p. 4.2.1.8.6 from TC SPACE DATA LINK PROTOCOL
      */
-    const bool retransmission() const {
+    bool retransmission() const {
         return retransmit;
     }
 
@@ -428,7 +428,7 @@ public:
      * @return Bits 21-22 of the CLCW (the FARM-B Counter).
 	 * @see p. 4.2.1.9 from TC SPACE DATA LINK PROTOCOL
      */
-    const uint8_t getFarmBCounter() const {
+    uint8_t getFarmBCounter() const {
         return farmBCounter;
     }
 
@@ -437,7 +437,7 @@ public:
      * @return Bits 24-31 of the CLCW (the Report Value).
 	 * @see p. 4.2.11.1 from TC SPACE DATA LINK PROTOCOL
      */
-    const uint8_t getReportValue() const {
+    uint8_t getReportValue() const {
         return reportValue;
     }
 
