@@ -14,7 +14,7 @@ TEST_CASE("Initiate FOP Directives") {
     MasterChannel master_channel_fop = MasterChannel(true, 0);
 	master_channel_fop.addVC(3, true, 1024, 20, true, 32, 32, 32, map_channels_fop);
 
-    ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop);
+    ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 
 	serv_channel_fop.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
 

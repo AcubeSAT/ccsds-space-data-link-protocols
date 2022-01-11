@@ -38,11 +38,6 @@ enum COPDirectiveResponse: uint8_t{
     REJECT = 0x02,
 };
 
-enum FOPConfirmResponse: uint8_t{
-    POSITIVE,
-    NEGATIVE,
-};
-
 enum VirtualChannelAlert: uint8_t{
     NO_VC_ALERT = 0x01,
     UNPROCESSED_PACKET_LIST_FULL = 0x02,

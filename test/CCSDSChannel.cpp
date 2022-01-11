@@ -16,17 +16,22 @@ TEST_CASE("CCSDS TC Channel Model") {
 	master_channel.addVC(3, true, 1024, 20, true, 32, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
-    ServiceChannel serv_channel = ServiceChannel(std::move(master_channel));
+	PhysicalChannel physical_channel = PhysicalChannel(TM_TRANSFER_FRAME_SIZE, TC_ERROR_CONTROL_FIELD_EXISTS,
+	                                                   100, 50, 20000, 5);
+    ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
 }
 
 TEST_CASE("MAPP blocking") {
+    PhysicalChannel physical_channel = PhysicalChannel(TM_TRANSFER_FRAME_SIZE, TC_ERROR_CONTROL_FIELD_EXISTS,
+                                                       100, 50, 20000, 5);
+
     etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)}};
 
     MasterChannel master_channel = MasterChannel(true, 0);
 	master_channel.addVC(3, true, 8, 20, true, 32, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 3);
-    ServiceChannel serv_channel = ServiceChannel(std::move(master_channel));
+    ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
 
     uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 

@@ -19,6 +19,11 @@ private:
      * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic
      */
     MasterChannel masterChannel;
+	/**
+	 * @brief PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame length
+	 * @TODO: Replace defines for maxFrameLength
+	 */
+	PhysicalChannel physicalChannel;
 
     // @todo Think about whether we need to keep the size of the packets in a queue. Technically, we can determine this
     // from the header of the frame. Not sure what makes more sense
@@ -247,7 +252,8 @@ public:
     std::pair<ServiceChannelNotification, const PacketTC *> txOutProcessedPacket() const;
 
     // This is honestly a bit confusing
-    ServiceChannel(MasterChannel MasterChannel) : masterChannel(MasterChannel) {}
+    ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel) : masterChannel(masterChannel),
+	      physicalChannel(physicalChannel) {}
 };
 
 #endif // CCSDS_CCSDSSERVICECHANNEL_HPP

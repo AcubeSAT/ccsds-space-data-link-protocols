@@ -18,7 +18,7 @@ TEST_CASE("Service Channel") {
     MasterChannel master_channel = MasterChannel(true, 0);
 	master_channel.addVC(0, true, 128, 20, true, 2, 2, 2, map_channels);
 
-    ServiceChannel serv_channel = ServiceChannel(master_channel);
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
 //    memset(reinterpret_cast<uint8_t*>(&master_channel), 0xff, sizeof(master_channel));
 

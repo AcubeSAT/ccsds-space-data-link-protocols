@@ -25,6 +25,7 @@ enum DataFieldContent {
  * @see Table 5-1 from TC SPACE DATA LINK PROTOCOL
  */
 struct PhysicalChannel {
+private:
     /**
      * @brief Maximum length of a single transfer frame
      */
@@ -54,11 +55,51 @@ struct PhysicalChannel {
      * @brief Maximum number of retransmissions for a data unit
      */
     const uint16_t repetitions;
-
+public:
     PhysicalChannel(const uint16_t maxFrameLength, const bool errorControlPresent, const uint16_t maxFramesPdu,
                     const uint16_t maxPduLength, const uint32_t bitrate, const uint16_t repetitions)
             : maxFrameLength(maxFrameLength), errorControlFieldPresent(errorControlPresent),
               maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength), bitrate(bitrate), repetitions(repetitions) {}
+
+    uint16_t getMaxFrameLength() const {
+		return maxFrameLength;
+	}
+
+    /**
+     * @brief Determines whether Error Control field is present
+     */
+    bool getErrorControlFieldPresent() const{
+		return errorControlFieldPresent;
+	}
+
+    /**
+     * @brief Sets the maximum number of transfer frames that can be transferred in a single data unit
+     */
+    uint16_t getMaxFramePdu() const{
+	    return maxFramePdu;
+	};
+
+    /**
+     * @brief Maximum length of a data unit
+     */
+    uint16_t getMaxPDULength() const{
+	    return maxPDULength;
+	};
+
+    /**
+     * @brief Maximum bit rate (bits per second)
+     */
+    uint32_t getBitrate() const{
+	    return bitrate;
+	};
+
+    /**
+     * @brief Maximum number of retransmissions for a data unit
+     */
+    uint16_t getRepetitions() const{
+		return repetitions;
+	}
+
 };
 
 /**
