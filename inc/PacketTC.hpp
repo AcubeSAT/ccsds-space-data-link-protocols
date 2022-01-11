@@ -61,7 +61,8 @@ public:
     }
 };
 
-struct PacketTC:public Packet {
+class PacketTC:public Packet {
+public:
     void setConfSignal(FDURequestType reqSignal) {
         confSignal = reqSignal;
         // TODO Maybe signal the higher procedures here instead of having them manually take care of them
@@ -315,7 +316,7 @@ struct PacketTC:public Packet {
     PacketTC(uint8_t *packet, uint16_t packetLength, uint8_t segHdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
              ServiceType serviceType, bool segHdrPresent, PacketType t=TC):  Packet(t, packetLength,packet),
 	         hdr(packet), segHdr(segHdr), gvcid(gvcid), mapid(mapid), sduid(sduid), serviceType(serviceType),
-	         transferFrameSeqNumber(0), ack(0), toBeRetransmitted(0), transferFrameVersionNumber(0)
+	         transferFrameSeqNumber(0), ack(false), toBeRetransmitted(false), transferFrameVersionNumber(0)
 	          {
 		data=&packet[5 + 1 * segHdrPresent];
 	}
@@ -343,11 +344,6 @@ private:
  */
 class CLCW {
 public:
-    void setConfSignal(FDURequestType reqSignal) {
-        confSignal = reqSignal;
-        // TODO Maybe signal the higher procedures here instead of having them manually take care of them
-    }
-
     /**
      * @brief Field status is mission-specific and not used in the CCSDS data link protocol
 	 * @return Bits 3-5 of the CLCW (the Status Field).
@@ -490,9 +486,8 @@ public:
     }
 
 private:
-    uint8_t clcwData[4];
+    uint8_t clcwData[4] = {0};
     // This is used by COP to signal the higher procedures
-    FDURequestType confSignal;
     uint8_t fieldStatus;
     uint8_t copInEffect;
     uint8_t vcId;

@@ -14,6 +14,7 @@ const uint16_t TM_TRANSFER_FRAME_SIZE = 128;
 const uint8_t TM_PRIMARY_HEADER_SIZE = 6;
 const uint8_t TM_SECONDARY_HEADER_SIZE = 0; // Size set to zero if the secondary header is not used
 
+[[maybe_unused]]
 const uint8_t TC_SYNCH_BITS_SIZE = 8;
 
 const bool TM_OPERATION_CONTROL_FIELD_EXISTS = false;
@@ -29,22 +30,19 @@ const uint16_t tm_frame_data_field_size =
 const uint16_t tm_frame_data_field_size =
     (tm_transfer_frame_size - tm_primary_header_size - tm_secondary_header_size - 2);
 #else
+[[maybe_unused]]
 const uint16_t TM_FRAME_DATA_FIELD_SIZE = (TM_TRANSFER_FRAME_SIZE - TM_PRIMARY_HEADER_SIZE - TM_SECONDARY_HEADER_SIZE);
 #endif
-
-#define TM_MAX_PACKET_SIZE 32768U // TODO: Check whether this is defined in ECSS of OBC
 
 /* TC Packet Definitions */
 const uint8_t TC_PRIMARY_HEADER_SIZE = 5;
 const bool TC_ERROR_CONTROL_FIELD_EXISTS = false;
 
-const bool TC_SEGMENT_HEADER_EXISTS = 0;
-
-const uint16_t TC_MAX_HEADER_SIZE = 1024;
-
 #if TC_ERROR_CONTROL_FIELD_EXISTS
-const uint16_t tc_max_data_field_size 1017;
+[[maybe_unused]]
+const uint16_t tc_max_data_field_size = 1017;
 #else
+[[maybe_unused]]
 const uint16_t TC_MAX_DATA_FIELD_SIZE = 1019;
 #endif
 
@@ -85,7 +83,9 @@ const uint8_t MAX_TX_IN_MASTER_CHANNEL = 200;
 const uint8_t MAX_RX_IN_MASTER_CHANNEL = 200;
 
 // Raw TX packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
+[[maybe_unused]]
 const uint8_t MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER = 6;
+[[maybe_unused]]
 const uint8_t MAX_RECEIVED_UNPROCESSED_TX_TM_IN_VIRT_BUFFER = 6;
 
 const uint8_t FOP_SLIDING_WINDOW_INITIAL = 255;

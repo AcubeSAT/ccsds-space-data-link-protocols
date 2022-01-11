@@ -20,12 +20,6 @@ enum FOPState {
     INITIAL = 6
 };
 
-
-enum Event {
-    VALID_CLCW_RECEIVED = 0,
-    INVALID_CLCW_RECEIVED = 1,
-};
-
 /**
  * @see p.4.3.2 from COP-1 CCSDS
  */
@@ -40,7 +34,6 @@ enum AlertEvent {
 };
 
 class VirtualChannel;
-class NasterChannel;
 class MAPChannel;
 
 class FrameOperationProcedure {

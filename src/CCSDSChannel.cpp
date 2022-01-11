@@ -45,7 +45,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(PacketTC *packet) {
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent,
                                          const uint16_t maxFrameLength, const uint8_t clcwRate, const bool blocking,
                                          const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                                         const uint8_t frameCount,
+                                         const uint8_t frameCountP,
                                          etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChan) {
     if (virtChannels.full()) {
 		ccsdsLog(Tx, TypeMasterChannelAlert, MAX_AMOUNT_OF_VIRT_CHANNELS);
@@ -54,5 +54,6 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 
     virtChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, clcwRate,
                                               blocking,
-	                                          repetitionTypeAFrame, repetitionCopCtrl, frameCount, mapChan));
+	                                          repetitionTypeAFrame, repetitionCopCtrl, frameCountP, mapChan));
+	return MasterChannelAlert::NO_MC_ALERT;
 }

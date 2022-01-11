@@ -80,7 +80,7 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 
     for (PacketTC*frame : *sentQueue) {
         if (frame->getServiceType() == ServiceType::TYPE_A) {
-			frame->setToBeRetransmitted(1);
+			frame->setToBeRetransmitted(true);
         }
     }
 }
@@ -100,7 +100,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num){
     for (PacketTC* pckt : *sentQueue){
         if (pckt->transferFrameSequenceNumber() == frame_seq_num){
-			pckt->setAcknowledgement(1);
+			pckt->setAcknowledgement(true);
             return;
         }
     }
@@ -136,7 +136,7 @@ void FrameOperationProcedure::lookForDirective() {
     if (bcOut == FlagState::READY) {
         for (PacketTC*frame : *sentQueue) {
             if (frame->getServiceType() == ServiceType::TYPE_B && frame->getToBeRetransmitted()) {
-                bcOut == FlagState::NOT_READY;
+                bcOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
             }
             // transmit_bc_frame();
@@ -188,11 +188,11 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
                 return COPDirectiveResponse::ACCEPT;
             }
         }
-    } else {
-        // TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
-		ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
-        return COPDirectiveResponse::REJECT;
     }
+    // TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
+    ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+    return COPDirectiveResponse::REJECT;
+
 }
 
 void FrameOperationProcedure::initialize() {
@@ -229,12 +229,12 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
                                 alert(AlertEvent::ALRT_SYNCH);
                                 state = FOPState::INITIAL;
                                 break;
-                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
+                            case FOPState::INITIALIZING_WITH_BC_FRAME:
                                 frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
                                 state = FOPState::ACTIVE;
                                 // cancel timer
                                 break;
-                            case FOPState::INITIALIZING_WITH_BC_FRAME:
+                            case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                                 frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
                                 // bc_accept()??
                                 //  cancel timer

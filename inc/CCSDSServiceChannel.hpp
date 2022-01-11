@@ -229,12 +229,12 @@ public:
     /**
      * @brief Read first packet of the MAP channel buffer (unprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(const uint8_t vid, const uint8_t mapid) const;
+    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(uint8_t vid, uint8_t mapid) const;
 
     /**
      * @brief Read first TC packet of the virtual channel buffer (txUnprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(const uint8_t vid) const;
+    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(uint8_t vid) const;
 
     /**
      * @brief Return the last stored packet from txMasterCopyTC

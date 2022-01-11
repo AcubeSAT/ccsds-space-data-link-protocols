@@ -70,7 +70,7 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t pac
         return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    TransferFrameHeaderTM hdr = TransferFrameHeaderTM(packet);
+    auto hdr = TransferFrameHeaderTM(packet);
 
     uint8_t *secondaryHeader = 0;
     if (hdr.transferFrameSecondaryHeaderFlag() == 1) {
@@ -163,7 +163,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 			virtChannel->storeVC(packet);
         } else {
             if (segmentationEnabled) {
-				packet->setSegmentationHeader((0xc0) | (mapid && 0x3F));
+				packet->setSegmentationHeader((0xc0) | (static_cast<bool>(mapid) && 0x3F));
             }
 			virtChannel->storeVC(packet);
         }
@@ -383,7 +383,8 @@ ServiceChannelNotification ServiceChannel::transmitFrame(uint8_t *pack) {
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::transmitAdFrame(uint8_t vid) {
+ServiceChannelNotification ServiceChannel::
+    transmitAdFrame(uint8_t vid) {
     VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
 	FOPNotification req;
     req = virt_channel->fop.transmitAdFrame();

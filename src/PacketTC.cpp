@@ -15,6 +15,6 @@ PacketTC::PacketTC(uint8_t *packet, uint16_t packetLength, PacketType t): Packet
     sduid = 0;
     serviceType = ServiceType::TYPE_A;
     transferFrameSeqNumber = packet[4];
-    ack = 0;
-    toBeRetransmitted = 0; // N/A
+    ack = false;
+    toBeRetransmitted = false; // N/A
 }

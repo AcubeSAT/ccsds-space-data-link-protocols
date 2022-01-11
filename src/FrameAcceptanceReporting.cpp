@@ -80,6 +80,8 @@ COPDirectiveResponse FarmAcceptanceReporting::frameArrives() {
             }
         }
     }
+	// Invalid Directive
+	return COPDirectiveResponse::REJECT;
 }
 
 COPDirectiveResponse FarmAcceptanceReporting::bufferRelease() {

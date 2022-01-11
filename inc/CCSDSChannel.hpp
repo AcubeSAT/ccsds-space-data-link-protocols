@@ -105,9 +105,10 @@ public:
 /**
  * @see Table 5-4 from TC SPACE DATA LINK PROTOCOL
  */
-struct MAPChannel {
+class MAPChannel {
     friend class ServiceChannel;
 
+private:
     /**
      * @brief MAP Channel Identifier
      */
@@ -118,6 +119,7 @@ struct MAPChannel {
      */
     const DataFieldContent dataFieldContent;
 
+public:
     void storeMAPChannel(Packet packet);
 
     /**
@@ -143,13 +145,15 @@ protected:
 /**
  * @see Table 5-3 from TC SPACE DATA LINK PROTOCOL
  */
-struct VirtualChannel {
+class VirtualChannel {
     friend class ServiceChannel;
 
     friend class MasterChannel;
 
     friend class FrameOperationProcedure;
 
+//@TODO: Those variables shouldn't be public
+public:
     /**
      * @brief Virtual Channel Identifier
      */
@@ -203,11 +207,13 @@ struct VirtualChannel {
         return txUnprocessedPacketListBufferTC.available();
     }
 
+
     /**
      *
      * @brief MAP channels of the virtual channel
      */
     etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChannels;
+
 
     VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
                    const bool segmentHeaderPresent, const uint16_t maxFrameLength, const uint8_t clcwRate,

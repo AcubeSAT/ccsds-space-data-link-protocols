@@ -108,7 +108,7 @@ struct PacketTM:public Packet {
 	/**
 	 * @see p. 4.1.2 from TM SPACE DATA LINK PROTOCOL
 	 */
-	const TransferFrameHeaderTM transferFrameHeader() const {
+	TransferFrameHeaderTM transferFrameHeader() const {
 		return hdr;
 	}
 	/**
