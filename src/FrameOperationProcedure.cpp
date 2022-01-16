@@ -1,7 +1,6 @@
 #include <FrameOperationProcedure.hpp>
 #include <CCSDSChannel.hpp>
-#include <CCSDS_Log.h>
-
+#include "CCSDSLoggerImpl.h"
 FOPNotification FrameOperationProcedure::purgeSentQueue() {
     etl::ilist<PacketTC*>::iterator cur_frame = sentQueue->begin();
 

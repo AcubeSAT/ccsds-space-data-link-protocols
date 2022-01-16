@@ -52,4 +52,20 @@ enum MasterChannelAlert: uint8_t{
     MAX_AMOUNT_OF_VIRT_CHANNELS = 0x04,
 };
 
+enum TxRx : uint8_t  {
+	Rx = 0x00,
+	Tx = 0x01
+};
+
+enum NotificationType: uint8_t {
+
+	TypeVirtualChannelAlert = 0x00,
+	TypeMasterChannelAlert = 0x01,
+	TypeServiceChannelNotif = 0x02,
+	TypeCOPDirectiveResponse = 0x03,
+	TypeFOPNotif = 0x04,
+	TypeFDURequestType = 0x05
+
+};
+
 #endif // CCSDS_ALERT_HPP

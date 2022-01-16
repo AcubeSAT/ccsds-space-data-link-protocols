@@ -1,18 +1,17 @@
 #include "Logger.hpp"
 #include "CCSDSChannel.hpp"
 #include "CCSDS_Log.h"
-#include <iostream>
+
 int main() {
 	LOG_DEBUG << "CCSDS Services test application";
 
 	// Set up Service Channel
-	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
-
-	LOG_DEBUG << "CCSDS Services test application";
-	ccsdsLog(Tx, TypeVirtualChannelAlert, MAP_CHANNEL_FRAME_BUFFER_FULL);
+PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+    ccsdsLog(Tx, TypeVirtualChannelAlert, MAP_CHANNEL_FRAME_BUFFER_FULL);
 	ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_BUFFER_FULL);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
+	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
 
 	ccsdsLog(Tx, TypeServiceChannelNotif, MAP_CHANNEL_FRAME_BUFFER_FULL);
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
@@ -35,6 +34,7 @@ int main() {
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 
 
+	LOG_DEBUG << "CCSDS Services test application";
 
 //	std::cout<<Tx_VirtualChannel_store_VirtualChannelAlert_NO_VC_ALERT<<std::endl;
 }

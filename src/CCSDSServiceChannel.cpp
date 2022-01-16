@@ -3,7 +3,7 @@
 #include <PacketTM.hpp>
 #include <etl/iterator.h>
 #include <Alert.hpp>
-#include <CCSDS_Log.h>
+#include <CCSDSLoggerImpl.h>
 
 ServiceChannelNotification ServiceChannel::store(uint8_t *packet, uint16_t packetLength) {
     if (masterChannel.rxMasterCopyTC.full()) {

@@ -13,10 +13,10 @@ COPDirectiveResponse FarmAcceptanceReporting::frameArrives() {
                     sentQueue->pop_front();
                     receiverFrameSeqNumber += 1;
                     retransmit = FlagState::NOT_READY;
-					ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+					ccsdsLog(Tx, TypeCOPDirectiveResponse,ACCEPT);
                     return COPDirectiveResponse::ACCEPT;
                 } else {
-					ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+					ccsdsLog(Tx, TypeCOPDirectiveResponse,REJECT);
                     return COPDirectiveResponse::REJECT;
                 }
             } else {

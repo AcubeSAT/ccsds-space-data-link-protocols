@@ -1,6 +1,6 @@
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
-#include "CCSDS_Log.h"
+#include "CCSDSLoggerImpl.h"
 // Virtual Channel
 
 VirtualChannelAlert VirtualChannel::storeVC(PacketTC *packet) {

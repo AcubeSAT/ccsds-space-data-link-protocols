@@ -95,5 +95,5 @@ enum FlagState {
     NOT_READY = 0, READY = 1
 };
 #define LOGGER_MAX_MESSAGE_SIZE 512
-#define LOG_VERBOSE 1
+#define LOG_VERBOSE 0
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP
