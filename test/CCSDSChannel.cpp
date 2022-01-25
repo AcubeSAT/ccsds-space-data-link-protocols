@@ -43,17 +43,17 @@ TEST_CASE("MAPP blocking") {
     CHECK(serv_channel.txAvailable(3) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 6);
     CHECK(serv_channel.txAvailable(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL);
 
-	ServiceChannelNotif err;
+	ServiceChannelNotification err;
 	err = serv_channel.mappRequest(3, 2);
-	CHECK(err == ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS);
+	CHECK(err == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
 
 	uint8_t data2[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0,0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
-	serv_channel.store(data2, 11, 3, 2, 10, ServiceType::TYPE_A);
+	serv_channel.storeTC(data2, 11, 3, 2, 10, ServiceType::TYPE_A);
 	CHECK(serv_channel.txAvailable(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 1);
 
 	err = serv_channel.mappRequest(3, 2);
-	CHECK(err == ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE);
+	CHECK(err == ServiceChannelNotification::PACKET_EXCEEDS_MAX_SIZE);
 }
 
 TEST_CASE("Virtual Channel Generation") {}

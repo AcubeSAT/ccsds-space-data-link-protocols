@@ -33,7 +33,7 @@ uint16_t TransferFrame::calculateCRC(const uint8_t *packet, uint16_t len) {
 	return crc;
 }
 
-void TransferFrame::append_crc() {
+void TransferFrame::appendCRC() {
 	uint16_t len = transferFrameLength - 2;
 	uint16_t crc = calculateCRC(transferFrame, len);
 

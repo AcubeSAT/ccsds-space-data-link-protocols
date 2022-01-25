@@ -1,8 +1,8 @@
 #include <FrameOperationProcedure.hpp>
 #include <CCSDSChannel.hpp>
-#include <CCSDS_Log.h>
+#include <CCSDSLoggerImpl.h>
 
-FOPNotif FrameOperationProcedure::purgeSentQueue() {
+FOPNotification FrameOperationProcedure::purgeSentQueue() {
     etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueue->begin();
 
     while (cur_frame != sentQueue->end()) {
@@ -213,7 +213,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	TransferFrameTC*frame = vchan->txUnprocessedPacketListBufferTC.front();
+	TransferFrameTC*frame = vchan->txUnprocessedTransferFrameListBufferTC.front();
 
     if (frame->lockout() == 0) {
         if (frame->reportValue() == expectedAcknowledgementSeqNumber) {
@@ -669,7 +669,7 @@ void FrameOperationProcedure::bdReject() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
-	TransferFrameTC*frame = vchan->txUnprocessedPacketListBufferTC.front();
+	TransferFrameTC*frame = vchan->txUnprocessedTransferFrameListBufferTC.front();
 
     if (frame->transferFrameHeader().bypassFlag() == 0) {
         if (frame->getServiceType() == ServiceType::TYPE_A) {

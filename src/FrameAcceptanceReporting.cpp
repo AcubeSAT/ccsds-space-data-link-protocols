@@ -1,5 +1,5 @@
 #include <FarmeAcceptanceReporting.hpp>
-#include "CCSDS_Log.h"
+#include <CCSDSLoggerImpl.h>
 
 COPDirectiveResponse FarmAcceptanceReporting::frameArrives() {
 	TransferFrameTC *frame = waitQueue->front();

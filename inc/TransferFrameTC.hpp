@@ -6,7 +6,7 @@
 #include <cstring>
 #include <cstdint>
 #include <etl/memory.h>
-#include "TransferFrame.hpp"
+#include <TransferFrame.hpp>
 
 class TransferFrameTC;
 
@@ -210,7 +210,7 @@ public:
 	 * @return Bits 22–31 of the Transfer Frame Primary Header (the Frame Length)
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
-	uint16_t transfer_frame_length() const {
+	uint16_t getTransferFrameLength() const {
 		return transferFrameLength;
 	}
 
@@ -283,7 +283,7 @@ public:
         return reps;
     }
 
-    uint8_t * transfer_frame_data() const {
+    uint8_t * transferFrameData() const {
         return transferFrame;
     }
 
@@ -297,7 +297,7 @@ public:
 		transferFrame = packt_data;
     }
 
-    void set_transfer_frame_length(uint16_t transfer_frame_len) {
+    void setTransferFrameLength(uint16_t transfer_frame_len) {
 		transferFrameLength = transfer_frame_len;
     }
 

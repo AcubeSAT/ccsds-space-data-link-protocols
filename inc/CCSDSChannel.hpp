@@ -12,8 +12,6 @@
 #include <FrameOperationProcedure.hpp>
 #include <TransferFrameTC.hpp>
 #include <TransferFrameTM.hpp>
-#include <PacketTC.hpp>
-#include <PacketTM.hpp>
 #include <iostream>
 
 class MasterChannel;
@@ -141,7 +139,7 @@ protected:
     /**
      * Store unprocessed received TCs
      */
-    etl::list<PacketTC*, MAX_RECEIVED_TC_IN_MAP_CHANNEL> unprocessedTransferFrameListBufferTC;
+    etl::list<TransferFrameTC*, MAX_RECEIVED_TC_IN_MAP_CHANNEL> unprocessedTransferFrameListBufferTC;
 };
 
 /**

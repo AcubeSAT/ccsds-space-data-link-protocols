@@ -1,4 +1,5 @@
 #include <logOperators.h>
+#include "TransferFrameTC.hpp"
 
 std::ostream& operator<<(std::ostream& out, const TxRx value)
 {

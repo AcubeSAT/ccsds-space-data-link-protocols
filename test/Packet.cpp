@@ -8,11 +8,11 @@ TEST_CASE("Transfer Frame TC Generation") {
 	TransferFrameTC pckt = TransferFrameTC(data, 5);
 
     CHECK(pckt.segmentationHeader() == 5);
-    CHECK(pckt.transfer_frame_data()[0] == 0);
-    CHECK(pckt.transfer_frame_data()[1] == 11);
-    CHECK(pckt.transfer_frame_data()[2] == 128);
-    CHECK(pckt.transfer_frame_data()[3] == 33);
-    CHECK(pckt.transfer_frame_data()[4] == 4);
+    CHECK(pckt.transferFrameData()[0] == 0);
+    CHECK(pckt.transferFrameData()[1] == 11);
+    CHECK(pckt.transferFrameData()[2] == 128);
+    CHECK(pckt.transferFrameData()[3] == 33);
+    CHECK(pckt.transferFrameData()[4] == 4);
     CHECK(pckt.globalVirtualChannelId() == 32);
 }
 
@@ -51,9 +51,9 @@ TEST_CASE("Transfer Frame TΜ Generation") {
     CHECK(transfer_frame.transfer_frame_data()[5] == 6);
     CHECK(transfer_frame.transfer_frame_pl_data()[0] == 0);
     CHECK(transfer_frame.transfer_frame_pl_data()[1] == 11);
-    CHECK(pckt.getOperationalControlField()[0] == 128);
-    CHECK(pckt.getOperationalControlField()[1] == 33);
-    CHECK(pckt.getOperationalControlField()[2] == 4);
-    CHECK(pckt.getOperationalControlField()[3] == 5);
-//	CHECK(pckt.global_virtual_channel_id() == 32);
+    CHECK(transfer_frame.getOperationalControlField()[0] == 128);
+    CHECK(transfer_frame.getOperationalControlField()[1] == 33);
+    CHECK(transfer_frame.getOperationalControlField()[2] == 4);
+    CHECK(transfer_frame.getOperationalControlField()[3] == 5);
+//	CHECK(transfer_frame.global_virtual_channel_id() == 32);
 }

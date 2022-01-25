@@ -42,20 +42,20 @@ TEST_CASE("Service Channel") {
 	serv_channel.storeTC(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 1);
     const TransferFrameTC *packet_a = serv_channel.txOutPacketTC().second;
-    CHECK(packet_a->transfer_frame_length() == 9);
+    CHECK(packet_a->getTransferFrameLength() == 9);
     CHECK(packet_a->getServiceType() == ServiceType::TYPE_A);
     CHECK((serv_channel.txOutPacket(0, 0).second == packet_a));
 
 	serv_channel.storeTC(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
     CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 2);
     const TransferFrameTC *packet_b = serv_channel.txOutPacketTC().second;
-    CHECK(packet_b->transfer_frame_length() == 10);
+    CHECK(packet_b->getTransferFrameLength() == 10);
     CHECK(packet_b->getServiceType() == ServiceType::TYPE_B);
 
 	serv_channel.storeTC(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 3);
     const TransferFrameTC *packet_c = serv_channel.txOutPacketTC().second;
-    CHECK(packet_c->transfer_frame_length() == 3);
+    CHECK(packet_c->getTransferFrameLength() == 3);
     CHECK(packet_c->getServiceType() == ServiceType::TYPE_A);
     CHECK((serv_channel.txOutPacket(0, 0).second == packet_a));
 
@@ -134,12 +134,12 @@ TEST_CASE("Service Channel") {
 
 	serv_channel.storeTM(pckt_TM, 9, 0, 0);
 
-    const TransferFrameTM *packet_TM = serv_channel.txOutPacketTM().second;
-    CHECK(packet_TM->packet_length() == 9);
+    const TransferFrameTM *transfer_frame_TM = serv_channel.txOutTransferFrameTM().second;
+    CHECK(transfer_frame_TM->getTransferFrameLength() == 9);
     CHECK(packet_a->getTransferFrameVersionNumber() == 0);
-    CHECK(packet_TM->getMasterChannelFrameCount() == 0);
-    CHECK(packet_TM->getVirtualChannelFrameCount() == 2);
-    CHECK(packet_TM->getTransferFrameDataFieldStatus() ==
+    CHECK(transfer_frame_TM->getMasterChannelFrameCount() == 0);
+    CHECK(transfer_frame_TM->getVirtualChannelFrameCount() == 2);
+    CHECK(transfer_frame_TM->getTransferFrameDataFieldStatus() ==
           (static_cast<uint16_t>(0x04) << 8U | (static_cast<uint16_t>(0xA2))));
 
 }

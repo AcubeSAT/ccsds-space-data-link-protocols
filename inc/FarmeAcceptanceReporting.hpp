@@ -67,7 +67,7 @@ public:
 	 */
     VirtualChannel *vchan;
 
-    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<PacketTC *, MAX_RECEIVED_RX_TC_IN_WAIT_QUEUE> *waitQueue,
+    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<TransferFrameTC *, MAX_RECEIVED_RX_TC_IN_WAIT_QUEUE> *waitQueue,
                             etl::list<TransferFrameTC *, MAX_RECEIVED_RX_TC_IN_SENT_QUEUE> *sentQueue,
                             const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
                             const uint8_t farmNegativeWinWidth)

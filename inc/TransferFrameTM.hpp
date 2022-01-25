@@ -173,7 +173,7 @@ struct TransferFrameTM :public TransferFrame {
 		return transferFrameDataFieldStatus;
 	}
 
-	uint16_t getPacketLength() const {
+	uint16_t getTransferFrameLength() const {
 		return transferFrameLength;
 	}
 

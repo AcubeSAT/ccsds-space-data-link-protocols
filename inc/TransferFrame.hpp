@@ -16,7 +16,7 @@ struct TransferFrameHeader {
     /**
      * @brief The ID of the spacecraft
      */
-    const uint16_t spacecraft_id(enum TransferFrameType transfer_frame_type) const {
+    const uint16_t spacecraftId(enum TransferFrameType transfer_frame_type) const {
         if (transfer_frame_type == TC) {
             return (static_cast<uint16_t>(transfer_frame_header[0] & 0x03) << 8U) | (static_cast<uint16_t>(transfer_frame_header[1]));
         } else {
@@ -53,13 +53,13 @@ public:
      * virtual channel)
 	 */
 
-	void append_crc();
+	void appendCRC();
 
 protected:
 	uint16_t transferFrameLength;
 	uint8_t * transferFrame;
 	uint8_t *data;
-	uint16_t calculate_crc(uint8_t *transferFrame, uint16_t len);
+	uint16_t calculateCRC(const uint8_t *transferFrame, uint16_t len);
 
 };
 

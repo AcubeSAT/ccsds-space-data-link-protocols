@@ -3,7 +3,7 @@
 #include "CCSDSLoggerImpl.h"
 // Virtual Channel
 
-VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* transfer_frame {
+VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* transfer_frame) {
     // Limit the amount of packets that can be stored at any given time
     if (txUnprocessedTransferFrameListBufferTC.full()) {
 		ccsdsLog(Tx, TypeVirtualChannelAlert, TX_WAIT_QUEUE_FULL);
@@ -26,7 +26,7 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* transfer_frame) {
         return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
     }
 	txOutFramesBeforeAllFramesGenerationList.push_back(transfer_frame);
-    uint8_t vid = packet->globalVirtualChannelId();
+    uint8_t vid = transfer_frame->globalVirtualChannelId();
     // virtChannels.at(0).fop.
 	ccsdsLog(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
     return MasterChannelAlert::NO_MC_ALERT;

@@ -102,7 +102,7 @@ public:
 	/**
 	 * @return The front TC Packet from txOutFramesBeforeAllFramesGenerationList
 	 */
-    std::optional<PacketTC> getTxProcessedPacket();
+    std::optional<TransferFrameTC> getTxProcessedPacket();
 
 	/**
 	 * @brief The All Frames Reception Function shall be used to reconstitute Transfer Frames
@@ -177,7 +177,7 @@ public:
      * packet
      * @param vid Virtual Channel ID
      */
-    const uint8_t transmitter_frame_seq_number(uint8_t vid) const;
+	uint8_t transmitterFrameSeqNumber(uint8_t vid) const;
 
     /**
      * @brief Returns the expected acknowledgement frame sequence number, NN(R). This is essentially the frame sequence
@@ -244,7 +244,7 @@ public:
     /**
  * @brief Return the last stored packet from txMasterCopyTM
  */
-    std::pair<ServiceChannelNotification, const TransferFrameTM *> txOutPacketTM() const;
+    std::pair<ServiceChannelNotification, const TransferFrameTM *> txOutTransferFrameTM() const;
 
     /**
      * @brief Return the last processed packet from txToBeTransmittedFramesAfterAllFramesGenerationList
