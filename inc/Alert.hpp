@@ -1,7 +1,7 @@
 #ifndef CCSDS_ALERT_HPP
 #define CCSDS_ALERT_HPP
 
-enum ServiceChannelNotif : int{
+enum ServiceChannelNotification : int{
     NO_SERVICE_EVENT = 0x01,
     MAP_CHANNEL_FRAME_BUFFER_FULL = 0x02,
     MASTER_CHANNEL_FRAME_BUFFER_FULL = 0x03,
@@ -27,7 +27,7 @@ enum ServiceChannelNotif : int{
 #endif
 };
 
-enum FOPNotif: uint8_t{
+enum FOPNotification : uint8_t{
     NO_FOP_EVENT = 0x01,
     SENT_QUEUE_FULL = 0x02,
     WAIT_QUEUE_EMPTY = 0x03,
@@ -36,11 +36,6 @@ enum FOPNotif: uint8_t{
 enum COPDirectiveResponse: uint8_t{
     ACCEPT = 0x01,
     REJECT = 0x02,
-};
-
-enum FOPConfirmResponse: uint8_t{
-    POSITIVE,
-    NEGATIVE,
 };
 
 enum VirtualChannelAlert: uint8_t{
@@ -55,6 +50,22 @@ enum MasterChannelAlert: uint8_t{
     OUT_FRAMES_LIST_FULL = 0x02,
     TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x03,
     MAX_AMOUNT_OF_VIRT_CHANNELS = 0x04,
+};
+
+enum TxRx : uint8_t  {
+	Rx = 0x00,
+	Tx = 0x01
+};
+
+enum NotificationType: uint8_t {
+
+	TypeVirtualChannelAlert = 0x00,
+	TypeMasterChannelAlert = 0x01,
+	TypeServiceChannelNotif = 0x02,
+	TypeCOPDirectiveResponse = 0x03,
+	TypeFOPNotif = 0x04,
+	TypeFDURequestType = 0x05
+
 };
 
 #endif // CCSDS_ALERT_HPP

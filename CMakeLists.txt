@@ -21,8 +21,9 @@ add_library(common OBJECT
         src/CCSDSServiceChannel.cpp
         src/CCSDSChannel.cpp
         src/FrameOperationProcedure.cpp
-        src/TransferFrameTC.cpp src/FrameAcceptanceReporting.cpp src/TransferFrameTM.cpp src/TransferFrame.cpp
-        src/CCSDS_Log.cpp inc/Packet.hpp)
+        src/PacketTC.cpp src/FrameAcceptanceReporting.cpp src/PacketTM.cpp src/Packet.cpp
+        src/logOperators.cpp
+        src/TransferFrameTC.cpp src/FrameAcceptanceReporting.cpp src/TransferFrameTM.cpp src/TransferFrame.cpp)
 
 # Specify the .cpp files for the executables
 file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
@@ -30,7 +31,7 @@ add_executable(ccsds_tm_packets
         src/main.cpp
         $<TARGET_OBJECTS:common>
         #        ${x86_main_SRC}
-        inc/Alert.hpp inc/TransferFrame.cpp inc/TransferFrame.hpp inc/TransferFrameTM.hpp inc/CCSDS_Configuration.h inc/Logger.hpp inc/CCSDS_Log.h inc/Packet.hpp)
+        inc/Alert.hpp inc/Packet.hpp inc/PacketTM.hpp inc/TransferFrame.cpp inc/TransferFrame.hpp inc/TransferFrameTM.hpp inc/Logger.hpp inc/CCSDS_Log.h inc/CCSDSLoggerImpl.h inc/logOperators.h)
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     # Gather all the .cpp files corresponding to tests
