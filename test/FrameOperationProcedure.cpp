@@ -6,7 +6,7 @@
 TEST_CASE("Initiate FOP Directives") {
     PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-    etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_channels_fop = {
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels_fop = {
             {2, MAPChannel(2, DataFieldContent::PACKET)},
             {3, MAPChannel(3, DataFieldContent::PACKET)}};
 
@@ -18,11 +18,11 @@ TEST_CASE("Initiate FOP Directives") {
 
 	serv_channel_fop.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
 
-    CHECK(serv_channel_fop.txAvailable(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 1);
+    CHECK(serv_channel_fop.txAvailable(3, 2) == MaxReceivedTcInMapChannel - 1);
 
 	serv_channel_fop.mappRequest(3, 2);
 
-    CHECK(serv_channel_fop.txAvailable(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL);
+    CHECK(serv_channel_fop.txAvailable(3, 2) == MaxReceivedTcInMapChannel);
 
     CHECK(serv_channel_fop.fopState(3) == FOPState::INITIAL);
 	serv_channel_fop.initiateAdNoClcw(3);
@@ -38,11 +38,11 @@ TEST_CASE("Initiate FOP Directives") {
 	serv_channel_fop.setTimeoutType(3, 1);
     CHECK(serv_channel_fop.timeoutType(3) == 1);
 
-    CHECK(serv_channel_fop.t1Timer(3) == FOP_TIMER_INITIAL);
+    CHECK(serv_channel_fop.t1Timer(3) == FopTimerInitial);
 	serv_channel_fop.setT1Initial(3, 55);
     CHECK(serv_channel_fop.t1Timer(3) == 55);
 
-    CHECK(serv_channel_fop.fopSlidingWindowWidth(3) == FOP_SLIDING_WINDOW_INITIAL);
+    CHECK(serv_channel_fop.fopSlidingWindowWidth(3) == FopSlidingWindowInitial);
 	serv_channel_fop.setFopWidth(3, 100);
     CHECK(serv_channel_fop.fopSlidingWindowWidth(3) == 100);
 }
