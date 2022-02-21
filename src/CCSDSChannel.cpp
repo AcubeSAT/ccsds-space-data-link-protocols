@@ -46,7 +46,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
                                          const uint16_t maxFrameLength, const uint8_t clcwRate, const bool blocking,
                                          const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                                          const uint8_t frameCountP,
-                                         etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChan) {
+                                         etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan) {
     if (virtChannels.full()) {
 		ccsdsLog(Tx, TypeMasterChannelAlert, MAX_AMOUNT_OF_VIRT_CHANNELS);
         return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;

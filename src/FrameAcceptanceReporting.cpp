@@ -91,4 +91,5 @@ COPDirectiveResponse FarmAcceptanceReporting::bufferRelease() {
     } else if (state == FARMState::WAIT) {
         wait = FlagState::NOT_READY;
     }
+    return COPDirectiveResponse::ACCEPT;
 }

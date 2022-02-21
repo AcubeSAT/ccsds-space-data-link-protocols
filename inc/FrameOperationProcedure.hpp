@@ -45,12 +45,12 @@ public:
 	 * @brief TC Packets stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
-    etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> *waitQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> *waitQueue;
 	/**
 	 * @brief TC Packets stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
-    etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_SENT_QUEUE> *sentQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInSentQueue> *sentQueue;
     VirtualChannel *vchan;
 
 private:
@@ -318,13 +318,13 @@ private:
     COPDirectiveResponse transferFdu();
 
 public:
-    FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> *waitQueue,
-                            etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_SENT_QUEUE> *sentQueue,
+    FrameOperationProcedure(VirtualChannel *vchan, etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> *waitQueue,
+                            etl::list<PacketTC*, MaxReceivedTxTcInSentQueue> *sentQueue,
                             const uint8_t repetitionCopCtrl)
             : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), state(FOPState::INITIAL),
               suspendState(FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(FlagState::READY), bdOut(FlagState::READY),
-              bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0), tiInitial(FOP_TIMER_INITIAL),
-              transmissionLimit(repetitionCopCtrl), transmissionCount(1), fopSlidingWindow(FOP_SLIDING_WINDOW_INITIAL),
+              bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0), tiInitial(FopTimerInitial),
+              transmissionLimit(repetitionCopCtrl), transmissionCount(1), fopSlidingWindow(FopSlidingWindowInitial),
               timeoutType(false) {};
 };
 

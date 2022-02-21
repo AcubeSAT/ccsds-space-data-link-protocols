@@ -139,7 +139,7 @@ protected:
     /**
      * Store unprocessed received TCs
      */
-    etl::list<PacketTC*, MAX_RECEIVED_TC_IN_MAP_CHANNEL> unprocessedPacketListBufferTC;
+    etl::list<PacketTC*, MaxReceivedTcInMapChannel> unprocessedPacketListBufferTC;
 };
 
 /**
@@ -212,13 +212,13 @@ public:
      *
      * @brief MAP channels of the virtual channel
      */
-    etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChannels;
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels;
 
 
     VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
                    const bool segmentHeaderPresent, const uint16_t maxFrameLength, const uint8_t clcwRate,
                    const bool blocking, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                   const uint8_t frameCount, etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChan)
+                   const uint8_t frameCount, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
             : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
               segmentHeaderPresent(segmentHeaderPresent), maxFrameLength(maxFrameLength), clcwRate(clcwRate),
               blocking(blocking), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
@@ -256,22 +256,22 @@ private:
     /**
      * @brief Buffer to storeOut incoming packets BEFORE being processed by COP
      */
-    etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> txWaitQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> txWaitQueue;
 
     /**
      * @brief Buffer to storeOut incoming packets AFTER being processed by COP
      */
-    etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> rxWaitQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> rxWaitQueue;
 
     /**
 	 * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
 	 */
-    etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_SENT_QUEUE> sentQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInSentQueue> sentQueue;
 
     /**
      * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
-    etl::list<PacketTC*, MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER> txUnprocessedPacketListBufferTC;
+    etl::list<PacketTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
 
     /**
      * @brief Holds the FOP state of the virtual channel
@@ -292,7 +292,7 @@ struct MasterChannel {
      * @brief Virtual channels of the master channel
      */
     // TODO: Type aliases because this is getting out of hand
-    etl::flat_map<uint8_t, VirtualChannel, MAX_VIRTUAL_CHANNELS> virtChannels;
+    etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtChannels;
     bool errorCtrlField;
     uint8_t frameCount{};
 
@@ -336,33 +336,33 @@ struct MasterChannel {
     MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength,
                               const uint8_t clcwRate, const bool blocking, const uint8_t repetitionTypeAFrame,
                               const uint8_t repetitionCopCtrl, const uint8_t frameCount,
-                              etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChan);
+                              etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<PacketTC*, MAX_RECEIVED_TX_TC_IN_MASTER_BUFFER> txOutFramesBeforeAllFramesGenerationList;
+    etl::list<PacketTC*, MaxReceivedTxTcInMasterBuffer> txOutFramesBeforeAllFramesGenerationList;
     // Packets ready to be transmitted having passed through the all frames generation service
-    etl::list<PacketTC*, MAX_RECEIVED_TX_TC_OUT_IN_MASTER_BUFFER> txToBeTransmittedFramesAfterAllFramesGenerationList;
+    etl::list<PacketTC*, MaxReceivedTxTcOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationList;
 
     // Packets that are received, before being received by the all frames reception service
-    etl::list<PacketTC*, MAX_RECEIVED_RX_TC_IN_MASTER_BUFFER> rxInFramesBeforeAllFramesReceptionList;
+    etl::list<PacketTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionList;
     // Packets that are ready to be transmitted to higher procedures following all frames generation service
-    etl::list<PacketTC*, MAX_RECEIVED_RX_TC_OUT_IN_MASTER_BUFFER> rxToBeTransmittedFramesAfterAllFramesReceptionList;
+    etl::list<PacketTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionList;
 
     /**
      * @brief Buffer holding the master copy of TX packets that are currently being processed
      */
-    etl::list<PacketTC, MAX_TX_IN_MASTER_CHANNEL> txMasterCopyTC;
+    etl::list<PacketTC, MaxTxInMasterChannel> txMasterCopyTC;
 
     /**
      * @brief Buffer holding the master copy of TX packets that are currently being processed
      */
-    etl::list<PacketTM, MAX_TX_IN_MASTER_CHANNEL> txMasterCopyTM;
+    etl::list<PacketTM, MaxTxInMasterChannel> txMasterCopyTM;
 
     /**
      * @brief Buffer holding the master copy of RX packets that are currently being processed
      */
-    etl::list<PacketTC, MAX_RX_IN_MASTER_CHANNEL> rxMasterCopyTC;
+    etl::list<PacketTC, MaxRxInMasterChannel> rxMasterCopyTC;
 };
 
 #endif // CCSDS_CHANNEL_HPP

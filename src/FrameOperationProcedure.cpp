@@ -711,4 +711,5 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
             return COPDirectiveResponse::REJECT;
         }
     }
+    return COPDirectiveResponse::ACCEPT;
 }
