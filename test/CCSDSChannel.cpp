@@ -8,24 +8,24 @@ TEST_CASE("CCSDS TC Channel Model") {
 
     PhysicalChannel phy_channel = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-    etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)},
-                                                                         {3, MAPChannel(3, DataFieldContent::VCA_SDU)}};
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)},
+                                                                       {3, MAPChannel(3, DataFieldContent::VCA_SDU)}};
 
     uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
     MasterChannel master_channel = MasterChannel(true, 0);
 	master_channel.addVC(3, true, 1024, 20, true, 32, 32, 32, map_channels);
 
     CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
-	PhysicalChannel physical_channel = PhysicalChannel(TM_TRANSFER_FRAME_SIZE, TC_ERROR_CONTROL_FIELD_EXISTS,
-	                                                   100, 50, 20000, 5);
+	PhysicalChannel physical_channel = PhysicalChannel(TmTransferFrameSize, TcErrorControlFieldExists,
+                                                       100, 50, 20000, 5);
     ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
 }
 
 TEST_CASE("MAPP blocking") {
-    PhysicalChannel physical_channel = PhysicalChannel(TM_TRANSFER_FRAME_SIZE, TC_ERROR_CONTROL_FIELD_EXISTS,
+    PhysicalChannel physical_channel = PhysicalChannel(TmTransferFrameSize, TcErrorControlFieldExists,
                                                        100, 50, 20000, 5);
 
-    etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)}};
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)}};
 
     MasterChannel master_channel = MasterChannel(true, 0);
 	master_channel.addVC(3, true, 8, 20, true, 32, 32, 32, map_channels);
@@ -36,12 +36,12 @@ TEST_CASE("MAPP blocking") {
     uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
 	serv_channel.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
-    CHECK(serv_channel.txAvailable(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 1);
+    CHECK(serv_channel.txAvailable(3, 2) == MaxReceivedTcInMapChannel - 1);
 
 	serv_channel.mappRequest(3, 2);
 
-    CHECK(serv_channel.txAvailable(3) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 6);
-    CHECK(serv_channel.txAvailable(3, 2) == MAX_RECEIVED_TC_IN_MAP_CHANNEL);
+    CHECK(serv_channel.txAvailable(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 6);
+    CHECK(serv_channel.txAvailable(3, 2) == MaxReceivedTcInMapChannel);
 }
 
 TEST_CASE("Virtual Channel Generation") {}

@@ -56,19 +56,19 @@ public:
 	/**
 	 * @brief Buffer for storing packets, BEFORE being processed by FARM.
 	 */
-    etl::list<PacketTC *, MAX_RECEIVED_RX_TC_IN_WAIT_QUEUE> *waitQueue;
+    etl::list<PacketTC *, MaxReceivedRxTcInWaitQueue> *waitQueue;
 	/**
 	 * @brief Buffer for storing packets, AFTER being processed by FARM.
 	 */
-    etl::list<PacketTC *, MAX_RECEIVED_RX_TC_IN_SENT_QUEUE> *sentQueue;
+    etl::list<PacketTC *, MaxReceivedRxTcInSentQueue> *sentQueue;
 
 	/**
 	 * @brief The Virtual Channel in which FOP is initialized
 	 */
     VirtualChannel *vchan;
 
-    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<PacketTC *, MAX_RECEIVED_RX_TC_IN_WAIT_QUEUE> *waitQueue,
-                            etl::list<PacketTC *, MAX_RECEIVED_RX_TC_IN_SENT_QUEUE> *sentQueue,
+    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<PacketTC *, MaxReceivedRxTcInWaitQueue> *waitQueue,
+                            etl::list<PacketTC *, MaxReceivedRxTcInSentQueue> *sentQueue,
                             const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
                             const uint8_t farmNegativeWinWidth)
             : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farmSlidingWinWidth),

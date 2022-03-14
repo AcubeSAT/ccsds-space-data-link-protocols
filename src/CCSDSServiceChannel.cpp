@@ -107,7 +107,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
     bool segmentationEnabled = virtChannel->segmentHeaderPresent;
     bool blocking_enabled = virtChannel->blocking;
 
-    const uint16_t maxPacketLength = maxFrameLength - (TC_PRIMARY_HEADER_SIZE + segmentationEnabled * 1U);
+    const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
     if (packet->getPacketLength() > maxPacketLength) {
         if (segmentationEnabled) {
@@ -172,7 +172,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-#if MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER > 0
+#if MaxReceivedUnprocessedTxTcInVirtBuffer > 0
 
 ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
     VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
@@ -309,7 +309,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequest() {
     }
 
     // Check for valid SCID
-    if (packet->spacecraftId() == SPACECRAFT_IDENTIFIER) {
+    if (packet->spacecraftId() == SpacecraftIdentifier) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
         return ServiceChannelNotification::RX_INVALID_SCID;
     }
@@ -515,7 +515,7 @@ uint8_t ServiceChannel::expectedFrameSeqNumber(uint8_t vid) const {
 
 std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::txOutPacket(const uint8_t vid,
                                                                                const uint8_t mapid) const {
-    const etl::list<PacketTC *, MAX_RECEIVED_TC_IN_MAP_CHANNEL> *mc =
+    const etl::list<PacketTC *, MaxReceivedTcInMapChannel> *mc =
             &(masterChannel.virtChannels.at(vid).mapChannels.at(mapid).unprocessedPacketListBufferTC);
     if (mc->empty()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
@@ -526,7 +526,7 @@ std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::txOutPac
 }
 
 std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::txOutPacket(const uint8_t vid) const {
-    const etl::list<PacketTC *, MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER> *vc =
+    const etl::list<PacketTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> *vc =
             &(masterChannel.virtChannels.at(vid).txUnprocessedPacketListBufferTC);
     if (vc->empty()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
