@@ -1,8 +1,6 @@
-//
-// Created by xrist on 23-Mar-22.
-//
+
 #include <cstdint>
-#include "etl_profile.h"
+#include "etl/vector.h"
 
 
 #ifndef CCSDS_TM_PACKETS_MEMORYPOOL_H
@@ -11,9 +9,10 @@
 
 class MemoryPool {
 private:
-    uint8_t mem[4096];
-    bool map[4096];
-    bool isFull;
+    static constexpr unsigned int memorySize = 8;   //a random power of 2
+    uint8_t memory[memorySize];                        //array that allocates statically memory to be used for the packet data
+    bool usedMemory[memorySize] = {0};                 //boolean array that show if each memory slot is used. False->empty and true-> used
+
 
 public:
     MemoryPool();
@@ -22,6 +21,5 @@ public:
     bool deletePacket(uint8_t* packet, uint16_t packetLength);
 
 };
-
 
 #endif //CCSDS_TM_PACKETS_MEMORYPOOL_H

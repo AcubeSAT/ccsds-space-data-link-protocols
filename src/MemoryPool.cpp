@@ -1,60 +1,75 @@
-//
-// Created by xrist on 23-Mar-22.
-//
+
 #include "iostream"
 #include "MemoryPool.h"
+#include "cstring"
+#include "Logger.hpp"
 
-MemoryPool::MemoryPool(){
-    for(unsigned int i=0 ; i<sizeof(mem)/sizeof (bool) ; i++){
-        map[i] = false;
-    }
+
+MemoryPool::MemoryPool() {
+
 }
-
+/**
+ * Method that copies the packet data to the first available chunk of memory of the memory pool.
+ * Calls the findFit method in order to find the index of the array that is first available.
+ * @param packet pointer to the packet data.
+ * @param packetLength the length of the packet data.
+ * @return an uint8_t pointer to the packet data in the memory pool.
+ */
 
 uint8_t *MemoryPool::allocatePacket(uint8_t *packet, uint16_t packetLength) {
     int start = findFit(packetLength);
-    if(start == -1) {
-        std::cout<<"Not enough space";
+    if (start == -1) {
+        LOG_ERROR << "There is no room in memory pool for the packet";
+        std::cout<<"There is no room in memory pool for the packet\n";
         return NULL;
-    }
-    else{
-        for(unsigned int i =0 ; i< packetLength ; i++){
-            mem[start+i] = packet[i];
-            map[start+i] = true;
-        }
-        return &mem[start];
+    } else {
+            std::memcpy(&memory[start], packet, packetLength * sizeof(uint8_t));
+            for(unsigned int i = start ; i<start + packetLength ; i++){
+                usedMemory[i] = true;
+            }
+        return &memory[start];
     }
 }
 
+/**
+ * This method is called when we want to delete the data of a packet.
+ * @param packet pointer to the packet data in the pool.
+ * @param packetLength length of the data.
+ * @return true if the delete was successful and false if the packet was not found.
+ */
 bool MemoryPool::deletePacket(uint8_t *packet, uint16_t packetLength) {
-    for(unsigned int i =0 ; i< sizeof(mem)/sizeof(uint8_t); i++){
-        if(packet==&mem[i]){
-            for(unsigned int j = i ; j<packetLength ; j++){
-                map[j] = false;
-            }
-            return true;
+    int i = packet - &memory[0];
+    if(i>=0 && i<=memorySize-1){
+        for (unsigned int j = i; j < i + packetLength; j++) {
+            usedMemory[j] = false; // deletion of data happens by setting the slot as empty, so it can be overwritten later
         }
-
+        return true;
     }
+    //LOG<Logger::error>()<<"Packet not found, index is out of bounds";
+    std::cout<<"Packet not found, index is out of bounds";
     return false;
 }
 
-
+/**
+ * This methods finds the first empty space in the memory pool that can fit the data
+ * @param packetLength length of the data.
+ * @return -1 if there was not enough space for the data else returns the index of the first memory
+ * where the data will be stored.
+ */
 int MemoryPool::findFit(uint16_t packetLength) {
-    bool fit;
     int start = -1;
-    for(unsigned int i =0 ; i<sizeof(mem)/sizeof(bool) - packetLength ; i++){
-        fit = true;
-        for(unsigned int j = i ; j<packetLength; j++){
-            if (map[j]){
-                fit = false;
-                break;
-            }
+    unsigned int currentWindow = 0;
+    for (unsigned int i = 0; i < sizeof(memory) / sizeof(uint8_t); i++) {
+        if (!usedMemory[i]) {
+            currentWindow++;
+        } else if (usedMemory[i]) {
+            currentWindow = 0;
         }
-        if (fit){
-           start = i;
-           return start;
+        if (currentWindow == packetLength) {
+            start = i - packetLength + 1;
+            return start;
         }
+
     }
     return start;
 }
