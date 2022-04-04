@@ -71,6 +71,7 @@ public:
 	const uint16_t packetDataLength() const{
 		return (static_cast<uint16_t>((packet_header[4])) << 8U | (static_cast<uint16_t>((packet_header[5]))));
 	}
+
 protected:
 	uint8_t *packet_header;
 
@@ -78,7 +79,7 @@ protected:
 
 struct Packet {
 
-	const uint8_t * packetData() const {
+	uint8_t * packetData() const {
 		return data;
 	}
 
@@ -106,7 +107,9 @@ struct Packet {
 	Packet(uint8_t *packet_data, uint16_t packet_length, PacketPrimaryHeader packet_header,
 	       uint8_t packet_version_number, uint16_t packet_identification, uint16_t packet_sequence_control):
 	      data(packet_data), hdr(packet_header),packetDataLength(packet_length), packetVersionNumber(packet_version_number),
-	      packetIdentification(packet_identification), packetSequenceControl(packet_sequence_control) {};
+	      packetIdentification(packet_identification), packetSequenceControl(packet_sequence_control) {}
+
+	Packet(uint8_t* packet_data, uint16_t packet_length, PacketPrimaryHeader hdr);
 
 protected:
 	uint8_t *data;

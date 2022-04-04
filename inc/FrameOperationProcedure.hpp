@@ -172,7 +172,7 @@ private:
     void lookForDirective();
 
 	/**
-	 * @brief stores TC Packets, that have being processed by the FOP service, to the txOutFramesBeforeAllFramesGenerationList
+	 * @brief stores TC transfer frames, that have being processed by the FOP service, to the txOutFramesBeforeAllFramesGenerationList
 	 * list, in order to be processed by All Frames Generation Service
 	 */
     COPDirectiveResponse pushSentQueue();
@@ -210,7 +210,7 @@ private:
     void invalidClcwArrival();
 
 	/**
-	 * @brief acknowledges TC Packets with frame_seq_num, that have being processed by the FOP service and that have
+	 * @brief acknowledges TC Transfer Frames with frame_seq_num, that have being processed by the FOP service and that have
 	 * @param frame_seq_num
 	 */
     void acknowledgeFrame(uint8_t frame_seq_num);

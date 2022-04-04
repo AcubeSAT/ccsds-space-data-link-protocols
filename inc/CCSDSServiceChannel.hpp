@@ -70,6 +70,11 @@ public:
      */
 	ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid);
 
+	/**
+	 * @brief stores packets to unprocessedPacketListBuffer in order to be processed by MAP request
+	 */
+	ServiceChannelNotification storePacketBuffer(uint8_t vid, uint8_t mapid, uint8_t *packet, uint16_t packet_length);
+
 #if maxReceivedUnprocessedTcInVirtBuffer > 0
 
     /**
@@ -102,13 +107,18 @@ public:
 	/**
 	 * @return The front TC Packet from txOutFramesBeforeAllFramesGenerationList
 	 */
-    std::optional<TransferFrameTC> getTxProcessedPacket();
+    std::optional<TransferFrameTC> getTxProcessedTransferFrame();
 
 	/**
 	 * @brief The All Frames Reception Function shall be used to reconstitute Transfer Frames
 	 * from the data stream provided by the Channel Coding Sublayer and to perform checks to
 	 * determine whether the reconstituted Transfer Frames are valid or not.
-	 * @see p.4.4.8 from TC SPACE DATA LINK PROTOCOL
+	 *
+	 * The receiving end of this protocol shall receive as an input from the Channel
+	 * Coding Sublayer a series of data octets, corresponding to the decoded Transfer Frame(s),
+	 * which have been declared ‘clean’ by the Channel Coding Sublayer insofar as they contain no
+     * detected errors.
+	 * @see p.4.4.9 from TC SPACE DATA LINK PROTOCOL
 	 */
 	ServiceChannelNotification allFramesReceptionRequest();
 
@@ -226,28 +236,36 @@ public:
         return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
     }
 
-    /**
-     * @brief Read first packet of the MAP channel buffer (unprocessedPacketListBufferTC)
-     */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacket(uint8_t vid, uint8_t mapid) const;
+	/**
+     * @brief Available space in MAP channel PACKET buffer
+	 */
+	uint16_t txAvailablePacket(const uint8_t vid, const uint8_t mapid) const {
+		return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).availablePacketBuffer();
+	}
 
     /**
-     * @brief Read first TC packet of the virtual channel buffer (txUnprocessedPacketListBufferTC)
+     * @brief Read first transfer frame of the MAP channel buffer (unprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacket(uint8_t vid) const;
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutTransferFrameTC(const uint8_t vid,
+	                                                                                   const uint8_t mapid) const;
 
     /**
-     * @brief Return the last stored packet from txMasterCopyTC
+     * @brief Read first TC transfer frame of the virtual channel buffer (txUnprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const TransferFrameTC *> txOutPacketTC() const;
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutTransferFrameTC(const uint8_t vid) const;
 
     /**
- * @brief Return the last stored packet from txMasterCopyTM
+     * @brief Return the last stored transfer frame from txMasterCopyTC
+     */
+    std::pair<ServiceChannelNotification, const TransferFrameTC *> txOutTransferFrameTC() const;
+
+    /**
+ * @brief Return the last stored transfer frame from txMasterCopyTM
  */
     std::pair<ServiceChannelNotification, const TransferFrameTM *> txOutTransferFrameTM() const;
 
     /**
-     * @brief Return the last processed packet from txToBeTransmittedFramesAfterAllFramesGenerationList
+     * @brief Return the last processed transfer frame from txToBeTransmittedFramesAfterAllFramesGenerationList
      */
     std::pair<ServiceChannelNotification, const TransferFrameTC *> txOutProcessedPacket() const;
 

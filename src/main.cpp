@@ -18,10 +18,10 @@ PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000,
 	ccsdsLog(Tx, TypeServiceChannelNotif, MASTER_CHANNEL_FRAME_BUFFER_FULL);
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 
-	ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
+	ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_TRANSFER_FRAMES_TO_PROCESS);
 	ccsdsLog(Tx, TypeServiceChannelNotif, VC_MC_FRAME_BUFFER_FULL);
 	ccsdsLog(Tx, TypeServiceChannelNotif, PACKET_EXCEEDS_MAX_SIZE);
-	ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
+	ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_TRANSFER_FRAMES_TO_PROCESS);
 	ccsdsLog(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
 	ccsdsLog(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
 

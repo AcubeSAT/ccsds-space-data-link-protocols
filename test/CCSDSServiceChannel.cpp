@@ -41,52 +41,59 @@ TEST_CASE("Service Channel") {
 
 	serv_channel.storeTC(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 1);
-    const TransferFrameTC *packet_a = serv_channel.txOutPacketTC().second;
-    CHECK(packet_a->getTransferFrameLength() == 9);
-    CHECK(packet_a->getServiceType() == ServiceType::TYPE_A);
-    CHECK((serv_channel.txOutPacket(0, 0).second == packet_a));
+	const TransferFrameTC* transfer_frame_a = serv_channel.txOutTransferFrameTC().second;
+    CHECK(transfer_frame_a->getTransferFrameLength() == 9);
+    CHECK(transfer_frame_a->getServiceType() == ServiceType::TYPE_A);
+    CHECK((serv_channel.txOutTransferFrameTC(0, 0).second == transfer_frame_a));
 
 	serv_channel.storeTC(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
     CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 2);
-    const TransferFrameTC *packet_b = serv_channel.txOutPacketTC().second;
-    CHECK(packet_b->getTransferFrameLength() == 10);
-    CHECK(packet_b->getServiceType() == ServiceType::TYPE_B);
+    const TransferFrameTC * transfer_frame_b = serv_channel.txOutTransferFrameTC().second;
+    CHECK(transfer_frame_b->getTransferFrameLength() == 10);
+    CHECK(transfer_frame_b->getServiceType() == ServiceType::TYPE_B);
 
 	serv_channel.storeTC(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_A);
     CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 3);
-    const TransferFrameTC *packet_c = serv_channel.txOutPacketTC().second;
-    CHECK(packet_c->getTransferFrameLength() == 3);
-    CHECK(packet_c->getServiceType() == ServiceType::TYPE_A);
-    CHECK((serv_channel.txOutPacket(0, 0).second == packet_a));
+    const TransferFrameTC * transfer_frame_c = serv_channel.txOutTransferFrameTC().second;
+    CHECK(transfer_frame_c->getTransferFrameLength() == 3);
+    CHECK(transfer_frame_c->getServiceType() == ServiceType::TYPE_A);
 
     CHECK(serv_channel.txAvailable(0) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER);
+	CHECK(serv_channel.txAvailablePacket(0,0) == MAX_RECEIVED_PACKETS_IN_MAP_CHANNEL);
+
+	//store packets in unprocessedPacketListBuffer
+	serv_channel.storePacketBuffer(0,0, pckt_type_a, 9);
+	serv_channel.storePacketBuffer(0,0, pckt_type_b, 10);
+	serv_channel.storePacketBuffer(0,0, pckt_type_a2, 3);
+
+	CHECK(serv_channel.txAvailablePacket(0, 0) == MAX_RECEIVED_PACKETS_IN_MAP_CHANNEL - 3);
+
 	ServiceChannelNotification err;
     err = serv_channel.mappRequest(0, 0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 2);
+    CHECK(serv_channel.txAvailablePacket(0, 0) == MAX_RECEIVED_PACKETS_IN_MAP_CHANNEL - 2);
     CHECK(serv_channel.txAvailable(0) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 1);
-
-    CHECK((serv_channel.txOutPacket(0, 0).second == packet_b));
+	
+    err = serv_channel.mappRequest(0, 0);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.txAvailablePacket(0, 0) == MAX_RECEIVED_PACKETS_IN_MAP_CHANNEL - 1);
+	CHECK(serv_channel.txAvailable(0) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 2);
 
     err = serv_channel.mappRequest(0, 0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL - 1);
-
-    CHECK((serv_channel.txOutPacket(0, 0).second == packet_c));
-
-    err = serv_channel.mappRequest(0, 0);
-    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.txAvailable(0, 0) == MAX_RECEIVED_TC_IN_MAP_CHANNEL);
+	CHECK(serv_channel.txAvailablePacket(0, 0) == MAX_RECEIVED_PACKETS_IN_MAP_CHANNEL);
+	CHECK(serv_channel.txAvailable(0) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 3);
     CHECK(serv_channel.mappRequest(0, 0) == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
 
+
     // VC Generation Service
-    CHECK(serv_channel.txOutPacket(0).second == packet_a);
+    CHECK(serv_channel.txOutTransferFrameTC(0).second == transfer_frame_a);
     CHECK(serv_channel.txAvailable(0) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 3U);
 
     // Process first type-A packet
     err = serv_channel.vcGenerationRequest(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.txOutPacket(0).second == packet_b);
+    CHECK(serv_channel.txOutTransferFrameTC(0).second == transfer_frame_b);
     CHECK(serv_channel.txAvailable(0) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 2U);
     err = serv_channel.pushSentQueue(0);
 
@@ -95,21 +102,21 @@ TEST_CASE("Service Channel") {
     err = serv_channel.allFramesGenerationRequest();
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	TransferFrameTC packet = *serv_channel.getTxProcessedPacket();
+	TransferFrameTC transfer_frame = *serv_channel.getTxProcessedTransferFrame();
 
-    CHECK(serv_channel.txOutProcessedPacket().second == packet_a);
+    CHECK(serv_channel.txOutProcessedPacket().second == transfer_frame_a);
 
-    CHECK(packet_a->acknowledged() == false);
-    CHECK(packet_a->transferFrameSequenceNumber() == 0);
+    CHECK(transfer_frame_a->acknowledged() == false);
+    CHECK(transfer_frame_a->transferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(0, 0);
-    CHECK(packet_a->acknowledged() == true);
+    CHECK(transfer_frame_a->acknowledged() == true);
 
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
     // Process first type-B packet
     err = serv_channel.vcGenerationRequest(0);
     CHECK(serv_channel.txAvailable(0) == MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER - 1U);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.txOutPacket(0).second == packet_c);
+    CHECK(serv_channel.txOutTransferFrameTC(0).second == transfer_frame_c);
 
 
     // Process second type-A packet
@@ -130,13 +137,13 @@ TEST_CASE("Service Channel") {
 //    CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
 
     //TM store function
-    uint8_t pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x21, 0xA1};
+    uint8_t tf_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x21, 0xA1};
 
-	serv_channel.storeTM(pckt_TM, 9, 0, 0);
+	serv_channel.storeTM(tf_TM, 9, 0, 0);
 
     const TransferFrameTM *transfer_frame_TM = serv_channel.txOutTransferFrameTM().second;
     CHECK(transfer_frame_TM->getTransferFrameLength() == 9);
-    CHECK(packet_a->getTransferFrameVersionNumber() == 0);
+    CHECK(transfer_frame_a->getTransferFrameVersionNumber() == 0);
     CHECK(transfer_frame_TM->getMasterChannelFrameCount() == 0);
     CHECK(transfer_frame_TM->getVirtualChannelFrameCount() == 2);
     CHECK(transfer_frame_TM->getTransferFrameDataFieldStatus() ==

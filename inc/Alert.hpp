@@ -7,7 +7,7 @@ enum ServiceChannelNotification : int{
     MASTER_CHANNEL_FRAME_BUFFER_FULL = 0x03,
     VC_MC_FRAME_BUFFER_FULL = 0x04,
     TX_MC_FRAME_BUFFER_FULL = 0x05,
-    NO_TX_PACKETS_TO_PROCESS = 0x06,
+	NO_TX_TRANSFER_FRAMES_TO_PROCESS = 0x06,
     NO_RX_PACKETS_TO_PROCESS = 0x07,
     PACKET_EXCEEDS_MAX_SIZE = 0x08,
     FOP_SENT_QUEUE_FULL = 0x09,
@@ -22,6 +22,9 @@ enum ServiceChannelNotification : int{
     RX_INVALID_LENGTH = 0x12,
     VC_RX_WAIT_QUEUE_FULL = 0x13,
     TX_FOP_REJECTED = 0x14,
+	NO_TX_PACKETS_TO_PROCESS = 0x15,
+	MAP_CHANNEL_PACKET_BUFFER_FULL = 0x16,
+
 #if tc_error_control_field_exists
     RX_INVALID_CRC,
 #endif

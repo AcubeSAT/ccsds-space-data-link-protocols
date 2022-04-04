@@ -45,7 +45,7 @@ TEST_CASE("MAPP blocking") {
 
 	ServiceChannelNotification err;
 	err = serv_channel.mappRequest(3, 2);
-	CHECK(err == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
+	CHECK(err == ServiceChannelNotification::NO_TX_TRANSFER_FRAMES_TO_PROCESS);
 
 	uint8_t data2[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0,0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 

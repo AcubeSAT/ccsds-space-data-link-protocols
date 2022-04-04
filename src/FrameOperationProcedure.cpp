@@ -98,9 +98,9 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 }
 
 void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num){
-    for (TransferFrameTC* pckt : *sentQueue){
-        if (pckt->transferFrameSequenceNumber() == frame_seq_num){
-			pckt->setAcknowledgement(true);
+    for (TransferFrameTC* transfer_frame : *sentQueue){
+        if (transfer_frame->transferFrameSequenceNumber() == frame_seq_num){
+			transfer_frame->setAcknowledgement(true);
             return;
         }
     }
@@ -153,9 +153,9 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue(){
         return COPDirectiveResponse::REJECT;
     }
 
-	TransferFrameTC* pckt = sentQueue->front();
+	TransferFrameTC* transfer_frame = sentQueue->front();
 
-    MasterChannelAlert err = vchan->master_channel().storeOut(pckt);
+    MasterChannelAlert err = vchan->master_channel().storeOut(transfer_frame);
 
     if (err == MasterChannelAlert::NO_MC_ALERT){
         //sentQueue->pop_front();

@@ -12,6 +12,7 @@
 #include <FrameOperationProcedure.hpp>
 #include <TransferFrameTC.hpp>
 #include <TransferFrameTM.hpp>
+#include <Packet.hpp>
 #include <iostream>
 
 class MasterChannel;
@@ -129,10 +130,18 @@ public:
         return unprocessedTransferFrameListBufferTC.available();
     }
 
+	/**
+     * @brief Returns available Buffer space in the MAP Channel Packet buffer
+	 */
+	uint16_t availablePacketBuffer() const {
+		return unprocessedPacketListBuffer.available();
+	}
+
     MAPChannel(const uint8_t mapid, const DataFieldContent dataFieldContent)
             : MAPID(mapid), dataFieldContent(dataFieldContent) {
         uint8_t d = unprocessedTransferFrameListBufferTC.size();
 		unprocessedTransferFrameListBufferTC.full();
+		unprocessedPacketListBuffer.full();
     };
 
 protected:
@@ -140,6 +149,12 @@ protected:
      * Store unprocessed received TCs
      */
     etl::list<TransferFrameTC*, MAX_RECEIVED_TC_IN_MAP_CHANNEL> unprocessedTransferFrameListBufferTC;
+
+	/**
+	 * Store unprocessed packets before Segmentation/Blocking
+	 */
+	etl::list<Packet*, MAX_RECEIVED_PACKETS_IN_MAP_CHANNEL> unprocessedPacketListBuffer;
+
 };
 
 /**
@@ -254,22 +269,22 @@ public:
 
 private:
     /**
-     * @brief Buffer to storeOut incoming packets BEFORE being processed by COP
+     * @brief Buffer to storeOut incoming transfer frames BEFORE being processed by COP
      */
     etl::list<TransferFrameTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> txWaitQueue;
 
     /**
-     * @brief Buffer to storeOut incoming packets AFTER being processed by COP
+     * @brief Buffer to storeOut incoming transfer frames AFTER being processed by COP
      */
     etl::list<TransferFrameTC*, MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE> rxWaitQueue;
 
     /**
-	 * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
+	 * @brief Buffer to storeOut outcoming transfer frames AFTER being processed by COP
 	 */
     etl::list<TransferFrameTC*, MAX_RECEIVED_TX_TC_IN_SENT_QUEUE> sentQueue;
 
     /**
-     * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
+     * @brief Buffer to storeOut unprocessed transfer frames that are directly processed in the virtual instead of MAP channel
      */
     etl::list<TransferFrameTC*, MAX_RECEIVED_UNPROCESSED_TX_TC_IN_VIRT_BUFFER> txUnprocessedTransferFrameListBufferTC;
 
@@ -311,15 +326,15 @@ struct MasterChannel {
 
 	/**
 	 *
-	 * @param packet TC
-	 * @brief stores TC packet in txOutFramesBeforeAllFramesGenerationList in order to be processed by the All Frames Generation Service
+	 * @param transfer_frame TC
+	 * @brief stores TC transfer frame in txOutFramesBeforeAllFramesGenerationList in order to be processed by the All Frames Generation Service
 	 */
     MasterChannelAlert storeOut(TransferFrameTC* transfer_frame);
 
 	/**
 	 *
-	 * @param packet TC
-	 * @brief stores TC packet in txToBeTransmittedFramesAfterAllFramesGenerationList after it has been processed by the All Frames Generation Service
+	 * @param transfer_frame TC
+	 * @brief stores TC transfer frame in txToBeTransmittedFramesAfterAllFramesGenerationList after it has been processed by the All Frames Generation Service
 	 */
     MasterChannelAlert storeTransmittedOut(TransferFrameTC* transfer_frame);
 
@@ -339,28 +354,28 @@ struct MasterChannel {
                               etl::flat_map<uint8_t, MAPChannel, MAX_MAP_CHANNELS> mapChan);
 
 private:
-    // Packets stored in frames list, before being processed by the all frames generation service
+    // Transfer frames stored in frames list, before being processed by the all frames generation service
     etl::list<TransferFrameTC*, MAX_RECEIVED_TX_TC_IN_MASTER_BUFFER> txOutFramesBeforeAllFramesGenerationList;
-    // Packets ready to be transmitted having passed through the all frames generation service
+    // Transfer frames ready to be transmitted having passed through the all frames generation service
     etl::list<TransferFrameTC*, MAX_RECEIVED_TX_TC_OUT_IN_MASTER_BUFFER> txToBeTransmittedFramesAfterAllFramesGenerationList;
 
     // Packets that are received, before being received by the all frames reception service
     etl::list<TransferFrameTC*, MAX_RECEIVED_RX_TC_IN_MASTER_BUFFER> rxInFramesBeforeAllFramesReceptionList;
-    // Packets that are ready to be transmitted to higher procedures following all frames generation service
+    // Transfer frames that are ready to be transmitted to higher procedures following all frames reception service
     etl::list<TransferFrameTC*, MAX_RECEIVED_RX_TC_OUT_IN_MASTER_BUFFER> rxToBeTransmittedFramesAfterAllFramesReceptionList;
 
     /**
-     * @brief Buffer holding the master copy of TX packets that are currently being processed
+     * @brief Buffer holding the master copy of TX transfer frames that are currently being processed
      */
     etl::list<TransferFrameTC, MAX_TX_IN_MASTER_CHANNEL> txMasterCopyTC;
 
     /**
-     * @brief Buffer holding the master copy of TX packets that are currently being processed
+     * @brief Buffer holding the master copy of TX transfer frames that are currently being processed
      */
     etl::list<TransferFrameTM, MAX_TX_IN_MASTER_CHANNEL> txMasterCopyTM;
 
     /**
-     * @brief Buffer holding the master copy of RX packets that are currently being processed
+     * @brief Buffer holding the master copy of RX transfer frames that are currently being processed
      */
     etl::list<TransferFrameTC, MAX_RX_IN_MASTER_CHANNEL> rxMasterCopyTC;
 };

@@ -51,6 +51,9 @@ const uint16_t MCID = SPACECRAFT_IDENTIFIER;
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
 const uint8_t MAX_RECEIVED_TC_IN_MAP_CHANNEL = 5;
 
+// Maximum received packets in MAP channel buffer before segmentation/blocking
+const uint8_t MAX_RECEIVED_PACKETS_IN_MAP_CHANNEL = 10;
+
 // Maximum received TX TCs in wait queue (before COP checks).
 const uint8_t MAX_RECEIVED_TX_TC_IN_WAIT_QUEUE = 10;
 // Maximum received RX TCs in wait queue (before COP checks).

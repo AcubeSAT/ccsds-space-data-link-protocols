@@ -23,7 +23,7 @@ add_library(common OBJECT
         src/FrameOperationProcedure.cpp
         src/FrameAcceptanceReporting.cpp
         src/logOperators.cpp
-        src/TransferFrameTC.cpp src/FrameAcceptanceReporting.cpp src/TransferFrameTM.cpp src/TransferFrame.cpp)
+        src/TransferFrameTC.cpp src/FrameAcceptanceReporting.cpp src/TransferFrameTM.cpp src/TransferFrame.cpp src/Packet.cpp)
 
 # Specify the .cpp files for the executables
 file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
