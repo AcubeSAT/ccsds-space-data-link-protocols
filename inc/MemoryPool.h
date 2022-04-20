@@ -16,9 +16,16 @@ private:
 
 public:
     MemoryPool();
+
     int findFit(uint16_t packetLength);
+
     uint8_t *allocatePacket(uint8_t *packet, uint16_t packetLength);
-    bool deletePacket(uint8_t* packet, uint16_t packetLength);
+
+    bool deletePacket(uint8_t *packet, uint16_t packetLength);
+
+    uint8_t *getMemory();
+
+    bool *getUsedMemory();
 
 };
 
