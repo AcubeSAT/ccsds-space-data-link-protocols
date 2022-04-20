@@ -114,11 +114,7 @@ public:
 		 * @return The current Logger::LogEntry where the value has been appended
 		 */
 		template <class T>
-		Logger::LogEntry& operator<<(const T value) {
-			etl::to_string(value, message, format, true);
-
-			return *this;
-		}
+		Logger::LogEntry& operator<<(const T value);
 
 		Logger::LogEntry& operator<<(const std::string& value);
 	};
