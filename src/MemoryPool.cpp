@@ -8,6 +8,7 @@
 MemoryPool::MemoryPool() {
 
 }
+
 /**
  * Method that copies the packet data to the first available chunk of memory of the memory pool.
  * Calls the findFit method in order to find the index of the array that is first available.
@@ -20,13 +21,10 @@ uint8_t *MemoryPool::allocatePacket(uint8_t *packet, uint16_t packetLength) {
     int start = findFit(packetLength);
     if (start == -1) {
         LOG_ERROR << "There is no room in memory pool for the packet";
-        std::cout<<"There is no room in memory pool for the packet\n";
         return NULL;
     } else {
-            std::memcpy(&memory[start], packet, packetLength * sizeof(uint8_t));
-            for(unsigned int i = start ; i<start + packetLength ; i++){
-                usedMemory[i] = true;
-            }
+        std::memcpy(&memory[start], packet, packetLength * sizeof(uint8_t));
+        memset(&usedMemory[start], 1, packetLength);
         return &memory[start];
     }
 }
@@ -39,14 +37,11 @@ uint8_t *MemoryPool::allocatePacket(uint8_t *packet, uint16_t packetLength) {
  */
 bool MemoryPool::deletePacket(uint8_t *packet, uint16_t packetLength) {
     int i = packet - &memory[0];
-    if(i>=0 && i<=memorySize-1){
-        for (unsigned int j = i; j < i + packetLength; j++) {
-            usedMemory[j] = false; // deletion of data happens by setting the slot as empty, so it can be overwritten later
-        }
+    if (i >= 0 && i <= memorySize - 1) {
+        memset(&usedMemory[i], 0, packetLength);
         return true;
     }
-    //LOG<Logger::error>()<<"Packet not found, index is out of bounds";
-    std::cout<<"Packet not found, index is out of bounds";
+    LOG<Logger::error>() << "Packet not found, index is out of bounds";
     return false;
 }
 
@@ -72,4 +67,12 @@ int MemoryPool::findFit(uint16_t packetLength) {
 
     }
     return start;
+}
+
+uint8_t *MemoryPool::getMemory() {
+    return &memory[0];
+}
+
+bool *MemoryPool::getUsedMemory() {
+    return &usedMemory[0];
 }
