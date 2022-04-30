@@ -50,6 +50,7 @@ enum MasterChannelAlert: uint8_t{
     OUT_FRAMES_LIST_FULL = 0x02,
     TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x03,
     MAX_AMOUNT_OF_VIRT_CHANNELS = 0x04,
+    NO_SPACE = 0x05
 };
 
 enum TxRx : uint8_t  {
