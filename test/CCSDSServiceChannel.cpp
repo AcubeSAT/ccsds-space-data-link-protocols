@@ -91,26 +91,24 @@ TEST_CASE("Service Channel") {
     err = serv_channel.pushSentQueue(0);
 
     // All Frames Generation Service
-//    CHECK(serv_channel.tx_out_processed_packet().second == nullptr);
-    err = serv_channel.allFramesGenerationRequest();
+    err = serv_channel.allFramesGenerationRequestTC();
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
     PacketTC packet = *serv_channel.getTxProcessedPacket();
 
-    CHECK(serv_channel.txOutProcessedPacket().second == packet_a);
+    CHECK(serv_channel.txOutProcessedPacketTC().second == packet_a);
 
     CHECK(packet_a->acknowledged() == false);
     CHECK(packet_a->transferFrameSequenceNumber() == 0);
-	serv_channel.acknowledgeFrame(0, 0);
-    CHECK(packet_a->acknowledged() == true);
+    serv_channel.acknowledgeFrame(0, 0);
 
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
     // Process first type-B packet
     err = serv_channel.vcGenerationRequest(0);
     CHECK(serv_channel.txAvailable(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
     CHECK(serv_channel.txOutPacket(0).second == packet_c);
-
 
     // Process second type-A packet
     err = serv_channel.vcGenerationRequest(0);
@@ -141,5 +139,15 @@ TEST_CASE("Service Channel") {
     CHECK(packet_TM->getVirtualChannelFrameCount() == 2);
     CHECK(packet_TM->getTransferFrameDataFieldStatus() ==
           (static_cast<uint16_t>(0x04) << 8U | (static_cast<uint16_t>(0xA2))));
+
+	// All Frames Generation Service TM
+	CHECK(serv_channel.txOutProcessedPacketTM().second == nullptr);
+	err = serv_channel.allFramesGenerationTMInbufferStore(const_cast<PacketTM*>(packet_TM));
+	err = serv_channel.allFramesGenerationRequestTM();
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	//PacketTC packet = *serv_channel.get_tx_processed_packet();
+
+	CHECK(serv_channel.txOutProcessedPacketTM().second == packet_TM);
 
 }

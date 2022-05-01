@@ -80,7 +80,6 @@ public:
     ServiceChannelNotif vcpp_request(uint8_t vid);
 
 #endif
-
 	/**
 	 * @brief The  Virtual  Channel  Generation  Function  shall  perform  the  following  two
 	 * procedures in the following order:
@@ -97,20 +96,23 @@ public:
 	 * rate to the Channel Coding Sublayer.
 	 * @see p. 4.3.8 from TC SPACE DATA LINK PROTOCOL
 	 */
-	ServiceChannelNotification allFramesGenerationRequest();
+	ServiceChannelNotification allFramesGenerationRequestTC();
 
+    /**
+	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
+	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
+	 * rate to the Channel Coding Sublayer.
+	 * @see p. 4.2.7 from TC SPACE DATA LINK PROTOCOL
+	 */
+    ServiceChannelNotification allFramesGenerationRequestTM();
+
+    ServiceChannelNotification allFramesGenerationTMInbufferStore(PacketTM *packet);
+
+    ServiceChannelNotification allFramesReceptionRequest();
 	/**
-	 * @return The front TC Packet from txOutFramesBeforeAllFramesGenerationList
+	 * @return The front TC Packet from txOutFramesBeforeAllFramesGenerationListTC
 	 */
     std::optional<PacketTC> getTxProcessedPacket();
-
-	/**
-	 * @brief The All Frames Reception Function shall be used to reconstitute Transfer Frames
-	 * from the data stream provided by the Channel Coding Sublayer and to perform checks to
-	 * determine whether the reconstituted Transfer Frames are valid or not.
-	 * @see p.4.4.8 from TC SPACE DATA LINK PROTOCOL
-	 */
-	ServiceChannelNotification allFramesReceptionRequest();
 
 	// COP Directives
 
@@ -195,14 +197,14 @@ public:
      * @brief Available number of incoming frames in master channel buffer
      */
     uint16_t inAvailable() const {
-        return masterChannel.txOutFramesBeforeAllFramesGenerationList.available();
+        return masterChannel.txOutFramesBeforeAllFramesGenerationListTC.available();
     }
 
     /**
      * @brief Available number of outcoming TX frames in master channel buffer
      */
     uint16_t txOutAvailable() const {
-        return masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.available();
+        return masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.available();
     }
 
     /**
@@ -247,9 +249,14 @@ public:
     std::pair<ServiceChannelNotification, const PacketTM *> txOutPacketTM() const;
 
     /**
-     * @brief Return the last processed packet from txToBeTransmittedFramesAfterAllFramesGenerationList
+     * @brief Return the last processed packet from txToBeTransmittedFramesAfterAllFramesGenerationListTC
      */
-    std::pair<ServiceChannelNotification, const PacketTC *> txOutProcessedPacket() const;
+
+	/**
+     * @brief Return the last processed packet
+	 */
+	std::pair<ServiceChannelNotification, const PacketTM *> txOutProcessedPacketTM() const;
+    std::pair<ServiceChannelNotification, const PacketTC *> txOutProcessedPacketTC() const;
 
     // This is honestly a bit confusing
     ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel) : masterChannel(masterChannel),

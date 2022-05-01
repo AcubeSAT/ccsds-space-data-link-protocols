@@ -78,9 +78,8 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t pac
     }
 
     PacketTM packet_s =
-            PacketTM(packet, packetLength, vchan->frameCount, scid, vid, masterChannel.frameCount,
+        PacketTM(packet, packetLength, vchan->frameCount, scid, vid, masterChannel.frameCount,
                      secondaryHeader, hdr.transferFrameDataFieldStatus(), TM);
-
 
     masterChannel.txMasterCopyTM.push_back(packet_s);
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
@@ -253,7 +252,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequest(uint8_t vid) {
         return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.txOutFramesBeforeAllFramesGenerationList.full()) {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.full()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
         return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
     }
@@ -335,28 +334,30 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequest() {
 }
 
 std::optional<PacketTC> ServiceChannel::getTxProcessedPacket() {
-    if (masterChannel.txOutFramesBeforeAllFramesGenerationList.empty()) {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.empty()) {
         return {};
     }
 
-    PacketTC packet = *masterChannel.txOutFramesBeforeAllFramesGenerationList.front();
+    PacketTC packet = *masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
+
     // TODO: Here the packet should probably be deleted from the master buffer
     return packet;
 }
 
-ServiceChannelNotification ServiceChannel::allFramesGenerationRequest() {
-    if (masterChannel.txOutFramesBeforeAllFramesGenerationList.empty()) {
+
+ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTC() {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.empty()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
         return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
     }
 
-    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.full()) {
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.full()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
         return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
 
-    PacketTC *packet = masterChannel.txOutFramesBeforeAllFramesGenerationList.front();
-    masterChannel.txOutFramesBeforeAllFramesGenerationList.pop_front();
+    PacketTC *packet = masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
+    masterChannel.txOutFramesBeforeAllFramesGenerationListTC.pop_front();
 
     if (masterChannel.errorCtrlField) {
         packet->append_crc();
@@ -367,16 +368,42 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationRequest() {
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
+ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTM() {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationListTM.empty()) {
+        return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
+    }
+
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.full()) {
+        return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
+    }
+
+    PacketTM *packet = masterChannel.txOutFramesBeforeAllFramesGenerationListTM.front();
+    masterChannel.txOutFramesBeforeAllFramesGenerationListTM.pop_front();
+
+    if (masterChannel.errorCtrlField) {
+        packet->append_crc();
+    }
+
+    masterChannel.storeTransmittedOut(packet);
+
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotification ServiceChannel::allFramesGenerationTMInbufferStore(PacketTM *packet){
+    masterChannel.storeOut(packet);
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
+}
+
 ServiceChannelNotification ServiceChannel::transmitFrame(uint8_t *pack) {
-    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.empty()) {
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.empty()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY);
         return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY;
     }
 
-    PacketTC *packet = masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.front();
+    PacketTC *packet = masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.front();
 	packet->setRepetitions(packet->repetitions() - 1);
     if (packet->repetitions() == 0) {
-        masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.pop_front();
+        masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.pop_front();
 		ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     }
     memcpy(pack, packet, packet->getPacketLength());
@@ -553,11 +580,20 @@ std::pair<ServiceChannelNotification, const PacketTM *> ServiceChannel::txOutPac
     return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, &(masterChannel.txMasterCopyTM.back()));
 }
 
-std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::txOutProcessedPacket() const {
-    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.empty()) {
+std::pair<ServiceChannelNotification, const PacketTC *> ServiceChannel::txOutProcessedPacketTC() const {
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.empty()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
         return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationList.front());
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.front());
+}
+
+std::pair<ServiceChannelNotification, const PacketTM *> ServiceChannel::txOutProcessedPacketTM() const {
+    if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.empty()) {
+        ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
+        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
+    }
+    ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.front());
 }

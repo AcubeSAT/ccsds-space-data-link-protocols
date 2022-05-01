@@ -172,7 +172,7 @@ private:
     void lookForDirective();
 
 	/**
-	 * @brief stores TC Packets, that have being processed by the FOP service, to the txOutFramesBeforeAllFramesGenerationList
+	 * @brief stores TC Packets, that have being processed by the FOP service, to the txOutFramesBeforeAllFramesGenerationListTC
 	 * list, in order to be processed by All Frames Generation Service
 	 */
     COPDirectiveResponse pushSentQueue();

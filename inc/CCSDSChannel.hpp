@@ -297,29 +297,45 @@ struct MasterChannel {
     uint8_t frameCount{};
 
     MasterChannel(bool errorCtrlField, uint8_t frameCount)
-            : virtChannels(), txOutFramesBeforeAllFramesGenerationList(),
-	      txToBeTransmittedFramesAfterAllFramesGenerationList(), errorCtrlField(errorCtrlField) {}
+            : virtChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField) {}
 
     MasterChannel(const MasterChannel &m)
             : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField),
-              frameCount(m.frameCount), txOutFramesBeforeAllFramesGenerationList(m.txOutFramesBeforeAllFramesGenerationList),
-	      txToBeTransmittedFramesAfterAllFramesGenerationList(m.txToBeTransmittedFramesAfterAllFramesGenerationList) {
+              frameCount(m.frameCount),
+	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(m.txToBeTransmittedFramesAfterAllFramesGenerationListTC) {
+
         for (auto &vc: virtChannels) {
             vc.second.masterChannel = *this;
         }
     }
 
-	/**
-	 *
-	 * @param packet TC
-	 * @brief stores TC packet in txOutFramesBeforeAllFramesGenerationList in order to be processed by the All Frames Generation Service
-	 */
-    MasterChannelAlert storeOut(PacketTC*packet);
+    /**
+     *
+     * @param packet TM
+     * @brief stores TM packet in order to be processed by the All Frames Generation Service
+     */
+    MasterChannelAlert storeOut(PacketTM *packet);
+
+    /**
+     *
+     * @param packet TM
+     * @brief stores TM packet after it has been processed by the All Frames Generation Service
+     */
+	MasterChannelAlert storeTransmittedOut(PacketTM *packet);
 
 	/**
 	 *
 	 * @param packet TC
-	 * @brief stores TC packet in txToBeTransmittedFramesAfterAllFramesGenerationList after it has been processed by the All Frames Generation Service
+	 * @brief stores TC packet in order to be processed by the All Frames Generation Service
+	 */
+    MasterChannelAlert storeOut(PacketTC *packet);
+
+	/**
+	 *
+	 * @param packet TC
+	 * @brief stores TC packet after it has been processed by the All Frames Generation Service
 	 */
     MasterChannelAlert storeTransmittedOut(PacketTC*packet);
 
@@ -340,9 +356,13 @@ struct MasterChannel {
 
 private:
     // Packets stored in frames list, before being processed by the all frames generation service
-    etl::list<PacketTC*, MaxReceivedTxTcInMasterBuffer> txOutFramesBeforeAllFramesGenerationList;
+    etl::list<PacketTC*, MaxReceivedTxTcInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTC;
     // Packets ready to be transmitted having passed through the all frames generation service
-    etl::list<PacketTC*, MaxReceivedTxTcOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationList;
+    etl::list<PacketTC*, MaxReceivedTxTcOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationListTC;
+    // Packets stored in frames list, before being processed by the all frames generation service
+    etl::list<PacketTM*, MaxReceivedTxTmInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTM;
+    // Packets ready to be transmitted having passed through the all frames generation service
+    etl::list<PacketTM*, MaxReceivedTxTmOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationListTM;
 
     // Packets that are received, before being received by the all frames reception service
     etl::list<PacketTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionList;
