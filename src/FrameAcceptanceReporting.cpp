@@ -1,10 +1,11 @@
 #include <FarmeAcceptanceReporting.hpp>
+#include "CCSDS_Log.h"
 
-COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
+COPDirectiveResponse FarmAcceptanceReporting::frameArrives() {
     PacketTC *frame = waitQueue->front();
 
-    if (frame->service_type() == ServiceType::TYPE_A && frame->transfer_frame_header().ctrl_and_cmd_flag()) {
-        if (frame->transfer_frame_sequence_number() == receiverFrameSeqNumber) {
+    if (frame->getServiceType() == ServiceType::TYPE_A && frame->transferFrameHeader().ctrlAndCmdFlag()) {
+        if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
             if (!sentQueue->empty()) {
                 // E1
                 if (state == FARMState::OPEN) {
@@ -12,8 +13,10 @@ COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
                     sentQueue->pop_front();
                     receiverFrameSeqNumber += 1;
                     retransmit = FlagState::NOT_READY;
+					ccsdsLog(Tx, TypeCOPDirectiveResponse,ACCEPT);
                     return COPDirectiveResponse::ACCEPT;
                 } else {
+					ccsdsLog(Tx, TypeCOPDirectiveResponse,REJECT);
                     return COPDirectiveResponse::REJECT;
                 }
             } else {
@@ -23,32 +26,37 @@ COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
                     wait = FlagState::READY;
                     state = FARMState::WAIT;
                 }
+				ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
                 return COPDirectiveResponse::REJECT;
             }
-        } else if ((frame->transfer_frame_sequence_number() > receiverFrameSeqNumber) &&
-                   (frame->transfer_frame_sequence_number() <= receiverFrameSeqNumber + farmPositiveWinWidth - 1)) {
+        } else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber) &&
+                   (frame->transferFrameSequenceNumber() <= receiverFrameSeqNumber + farmPositiveWinWidth - 1)) {
             // E3
             if (state == FARMState::OPEN) {
                 retransmit = FlagState::READY;
             }
+			ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
             return COPDirectiveResponse::REJECT;
-        } else if ((frame->transfer_frame_sequence_number() < receiverFrameSeqNumber) &&
-                   (frame->transfer_frame_sequence_number() >= receiverFrameSeqNumber - farmNegativeWidth)) {
+        } else if ((frame->transferFrameSequenceNumber() < receiverFrameSeqNumber) &&
+                   (frame->transferFrameSequenceNumber() >= receiverFrameSeqNumber - farmNegativeWidth)) {
             // E4
+			ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
             return COPDirectiveResponse::REJECT;
-        } else if ((frame->transfer_frame_sequence_number() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
-                   (frame->transfer_frame_sequence_number() < farmPositiveWinWidth - farmNegativeWidth)) {
+        } else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
+                   (frame->transferFrameSequenceNumber() < farmPositiveWinWidth - farmNegativeWidth)) {
             // E5
             state = FARMState::LOCKOUT;
+			ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
             return COPDirectiveResponse::REJECT;
         }
-    } else if (frame->service_type() == ServiceType::TYPE_B && !frame->transfer_frame_header().ctrl_and_cmd_flag()) {
+    } else if (frame->getServiceType() == ServiceType::TYPE_B && !frame->transferFrameHeader().ctrlAndCmdFlag()) {
         // E6
         farmBCount += 1;
+		ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
         return COPDirectiveResponse::ACCEPT;
-    } else if (frame->service_type() == ServiceType::TYPE_B && frame->transfer_frame_header().ctrl_and_cmd_flag()) {
-        if (frame->control_word_type() == 0) {
-            if (frame->packet_pl_data()[4] == 0) {
+    } else if (frame->getServiceType() == ServiceType::TYPE_B && frame->transferFrameHeader().ctrlAndCmdFlag()) {
+        if (frame->controlWordType() == 0) {
+            if (frame->packetPlData()[4] == 0) {
                 // E7
                 farmBCount += 1;
                 retransmit = FlagState::NOT_READY;
@@ -60,23 +68,28 @@ COPDirectiveResponse FarmAcceptanceReporting::frame_arrives() {
                     lockout = FlagState::NOT_READY;
                 }
                 state = FARMState::OPEN;
+				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
                 return COPDirectiveResponse::ACCEPT;
-            } else if (frame->packet_pl_data()[4] == 130 && frame->packet_pl_data()[5] == 0) {
+            } else if (frame->packetPlData()[4] == 130 && frame->packetPlData()[5] == 0) {
                 // E8
                 farmBCount += 1;
                 retransmit = FlagState::NOT_READY;
-                receiverFrameSeqNumber = frame->packet_pl_data()[6];
+                receiverFrameSeqNumber = frame->packetPlData()[6];
+				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
                 return COPDirectiveResponse::ACCEPT;
             }
         }
     }
+	// Invalid Directive
+	return COPDirectiveResponse::REJECT;
 }
 
-COPDirectiveResponse FarmAcceptanceReporting::buffer_release() {
+COPDirectiveResponse FarmAcceptanceReporting::bufferRelease() {
     if (state == FARMState::LOCKOUT) {
         state = FARMState::OPEN;
         wait = FlagState::NOT_READY;
     } else if (state == FARMState::WAIT) {
         wait = FlagState::NOT_READY;
     }
+    return COPDirectiveResponse::ACCEPT;
 }

@@ -8,6 +8,9 @@
 #include <etl/list.h>
 #include <Alert.hpp>
 
+/**
+ * @see p. 6.1.2 from COP-1 CCSDS
+ */
 enum FARMState {
     OPEN = 1,
     WAIT = 2,
@@ -18,6 +21,9 @@ class VirtualChannel;
 
 class MAPChannel;
 
+/**
+ * @see p. 6 from COP-1 CCSDS
+ */
 class FarmAcceptanceReporting {
     friend class ServiceChannel;
 
@@ -34,20 +40,39 @@ private:
 
 public:
     /* Directives */
-    COPDirectiveResponse frame_arrives();
 
-    COPDirectiveResponse buffer_release();
+	/**
+	 * @brief FARM actions according to the table 6-1
+	 * @see p. 6.2-6.3 and table 6-1 from COP-1 CCSDS
+	 */
+    COPDirectiveResponse frameArrives();
 
-    etl::list<PacketTC *, max_received_rx_tc_in_wait_queue> *waitQueue;
-    etl::list<PacketTC *, max_received_rx_tc_in_sent_queue> *sentQueue;
+	/**
+	 * @brief signals when sufficient buffer space becomes available for at least one more maximum-size Frame.
+	 * @see p. 6.3.2.3 from COP-1 CCSDS
+	 */
+    COPDirectiveResponse bufferRelease();
+
+	/**
+	 * @brief Buffer for storing packets, BEFORE being processed by FARM.
+	 */
+    etl::list<PacketTC *, MaxReceivedRxTcInWaitQueue> *waitQueue;
+	/**
+	 * @brief Buffer for storing packets, AFTER being processed by FARM.
+	 */
+    etl::list<PacketTC *, MaxReceivedRxTcInSentQueue> *sentQueue;
+
+	/**
+	 * @brief The Virtual Channel in which FOP is initialized
+	 */
     VirtualChannel *vchan;
 
-    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<PacketTC *, max_received_rx_tc_in_wait_queue> *waitQueue,
-                            etl::list<PacketTC *, max_received_rx_tc_in_sent_queue> *sentQueue,
-                            const uint8_t farm_sliding_win_width, const uint8_t farm_positive_win_width,
-                            const uint8_t farm_negative_win_width)
-            : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farm_sliding_win_width),
-              farmNegativeWidth(farm_negative_win_width), farmPositiveWinWidth(farm_positive_win_width),
+    FarmAcceptanceReporting(VirtualChannel *vchan, etl::list<PacketTC *, MaxReceivedRxTcInWaitQueue> *waitQueue,
+                            etl::list<PacketTC *, MaxReceivedRxTcInSentQueue> *sentQueue,
+                            const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
+                            const uint8_t farmNegativeWinWidth)
+            : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farmSlidingWinWidth),
+              farmNegativeWidth(farmNegativeWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
               receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY), wait(FlagState::NOT_READY),
               retransmit(FlagState::NOT_READY) {};
 };
