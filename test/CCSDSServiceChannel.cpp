@@ -84,7 +84,7 @@ TEST_CASE("Service Channel") {
     CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 3U);
 
     // Process first type-A packet
-    err = serv_channel.vcGenerationRequest(0);
+    err = serv_channel.vcGenerationRequestTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
     CHECK(serv_channel.txOutPacketTC(0).second == packet_b);
     CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2U);
@@ -105,13 +105,13 @@ TEST_CASE("Service Channel") {
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
     // Process first type-B packet
-    err = serv_channel.vcGenerationRequest(0);
+    err = serv_channel.vcGenerationRequestTC(0);
     CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
     CHECK(serv_channel.txOutPacketTC(0).second == packet_c);
 
     // Process second type-A packet
-    err = serv_channel.vcGenerationRequest(0);
+    err = serv_channel.vcGenerationRequestTC(0);
     CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 

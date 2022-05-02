@@ -86,21 +86,30 @@ public:
     ServiceChannelNotif vcpp_request(uint8_t vid);
 
 #endif
-	/**
+
+    /**
+     * @brief The Master Channel Generation Function shall be used to insert Transfer Frame
+     * Secondary Header and/or Operational Control Field service data units into Transfer Frames
+     * of a Master Channel.
+     @see p. 4.2.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
+     */
+    ServiceChannelNotification mcGenerationRequestTC();
+
+    /**
 	 * @brief The  Virtual  Channel  Generation  Function  shall  perform  the  following  two
 	 * procedures in the following order:
 	 * 		a) the  Frame  Operation  Procedure  (FOP),  which  is  a  sub-procedure  of  the
 	 * 		Communications Operation Procedure (COP); and
 	 * 		b) the Frame Generation Procedure in this order.
-	 * @see p. 4.3.5 from TC SPACE DATA LINK PROTOCOL
+	 * @see p. 4.3.5 from TC Space Data Link Protocol
 	 */
-	ServiceChannelNotification vcGenerationRequest(uint8_t vid);
+	ServiceChannelNotification vcGenerationRequestTC(uint8_t vid);
 
 	/**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer.
-	 * @see p. 4.3.8 from TC SPACE DATA LINK PROTOCOL
+	 * @see p. 4.3.8 from TC Space Data Link Protocol
 	 */
 	ServiceChannelNotification allFramesGenerationTCRequest();
 
@@ -108,7 +117,7 @@ public:
 	 * @brief The  All  Frames  Reception  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer.
-	 * @see p. 4.3.7 from TM SPACE DATA LINK PROTOCOL (CCSDS 132.0-B-3)
+	 * @see p. 4.3.7 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
 	 */
 	 ServiceChannelNotification allFramesReceptionTMRequest();
 
@@ -117,7 +126,7 @@ public:
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer.
-	 * @see p. 4.2.7 from TC SPACE DATA LINK PROTOCOL
+	 * @see p. 4.2.7 from TC Space Data Link Protocol
 	 */
     ServiceChannelNotification allFramesGenerationTMRequest();
 
