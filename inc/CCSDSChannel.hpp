@@ -209,7 +209,7 @@ public:
 	 * Determines the number of TM Transfer Frames transmitted
 	 */
 	// I am not sure if this should be here or part of the PacketTM struct
-	const uint8_t frameCount;
+	const uint8_t frameCountTM;
 
 	/**
 	 * @brief Returns availableVCBufferTC space in the VC TC buffer
@@ -250,7 +250,7 @@ public:
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLength(maxFrameLength), clcwRate(clcwRate),
 	      blocking(blocking), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
-	      frameCount(frameCount), txWaitQueueTC(), sentQueueTC(),
+	      frameCountTM(frameCount), txWaitQueueTC(), sentQueueTC(),
 	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent),
 	      fop(FrameOperationProcedure(this, &txWaitQueueTC, &sentQueueTC, repetitionCopCtrl)) {
@@ -260,7 +260,7 @@ public:
 	VirtualChannel(const VirtualChannel& v)
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent), maxFrameLength(v.maxFrameLength),
 	      clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame), repetitionCOPCtrl(v.repetitionCOPCtrl),
-	      frameCount(v.frameCount), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
+	      frameCountTM(v.frameCountTM), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC),
 	      txUnprocessedPacketListBufferTM(v.txUnprocessedPacketListBufferTM), fop(v.fop),
 	      masterChannel(v.masterChannel), blocking(v.blocking),
@@ -331,8 +331,9 @@ struct MasterChannel {
 	bool errorCtrlField;
 	uint8_t frameCount{};
 
-	MasterChannel(bool errorCtrlField, uint8_t frameCount)
+	MasterChannel(bool errorCtrlField, bool secondaryHeaderTMPresent, uint8_t frameCount)
 	    : virtChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
+          secondaryHeaderTMPresent(secondaryHeaderTMPresent),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField) {}
 
 	MasterChannel(const MasterChannel& m)
@@ -340,6 +341,7 @@ struct MasterChannel {
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
+          secondaryHeaderTMPresent(m.secondaryHeaderTMPresent),
 	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM) {
 		for (auto& vc : virtChannels) {
 			vc.second.masterChannel = *this;
@@ -412,6 +414,11 @@ private:
 	etl::list<PacketTM*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTM;
 	// TM packets that are ready to be transmitted to higher procedures following all frames generation service
 	etl::list<PacketTM*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTM;
+
+	/**
+	 * @brief Indicates whether the secondary header is present for the given master channel
+	 */
+    const bool secondaryHeaderTMPresent;
 
 	/**
 	 * @brief Buffer holding the master copy of TC TX packets that are currently being processed

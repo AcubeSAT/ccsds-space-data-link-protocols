@@ -56,6 +56,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
+// It is expected for space to be reserved for the Primary and Secondary header (if present) beforehand
 ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid,
                                                    uint16_t scid) {
 	uint8_t vid = gvcid & 0x3F;
@@ -71,14 +72,18 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
 	}
 
+	// Implement VC Generation
+
 	auto hdr = TransferFrameHeaderTM(packet);
 
 	uint8_t* secondaryHeader = 0;
-	if (hdr.transferFrameSecondaryHeaderFlag() == 1) {
+
+	if (vchan->segmentHeaderPresent) {
 		secondaryHeader = &packet[7];
 	}
 
-	PacketTM packet_s = PacketTM(packet, packetLength, vchan->frameCount, scid, vid, masterChannel.frameCount,
+
+	PacketTM packet_s = PacketTM(packet, packetLength, vchan->frameCountTM, scid, vid, masterChannel.frameCount,
 	                             secondaryHeader, hdr.transferFrameDataFieldStatus(), TM);
 
 	masterChannel.txMasterCopyTM.push_back(packet_s);
@@ -285,8 +290,6 @@ ServiceChannelNotification ServiceChannel::vcGenerationTMRequest(uint8_t vid) {
 	}
 
 	PacketTM* frame = virt_channel->txUnprocessedPacketListBufferTM.front();
-
-	// TODO: Implement VC generation service
 
 	virt_channel->txUnprocessedPacketListBufferTM.pop_front();
 	masterChannel.txOutFramesBeforeMCGenerationListTM.push_back(frame);
