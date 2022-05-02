@@ -46,7 +46,6 @@ protected:
 
 class Packet {
 private:
-
     PacketType type;
 
 public:
@@ -58,21 +57,18 @@ public:
      * virtual channel)
      * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-
 	void append_crc();
+
+    /**
+     * @brief Calculates the CRC code
+     * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+     */
+    static uint16_t calculateCRC(const uint8_t *packet, uint16_t len);
 
 protected:
 	uint16_t packetLength;
 	uint8_t *packet;
 	uint8_t *data;
-
-	/**
-     * @brief Calculates the CRC code
-     * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-
-	static uint16_t calculateCRC(const uint8_t *packet, uint16_t len);
-
 };
 
 #endif // CCSDS_TM_PACKETS_PACKET_H

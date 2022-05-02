@@ -107,7 +107,7 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t pac
     }
 
     masterChannel.rxMasterCopyTM.push_back(pckt);
-    PacketTM * masterPckt = &(masterChannel.rxMasterCopyTM.front());
+    PacketTM* masterPckt = &(masterChannel.rxMasterCopyTM.back());
     masterChannel.rxInFramesBeforeAllFramesReceptionListTM.push_back(masterPckt);
     ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return ServiceChannelNotification::NO_SERVICE_EVENT;
@@ -482,7 +482,38 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest() {
 }
 
 ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(){
+    if (masterChannel.rxInFramesBeforeAllFramesReceptionListTM.empty()) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
+        return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+    }
 
+    if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.full()) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, RX_OUT_BUFFER_FULL);
+        return ServiceChannelNotification::RX_OUT_BUFFER_FULL;
+    }
+
+    PacketTM *packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTM.front();
+
+#if tm_error_control_field_exists
+    uint16_t len = packet->getPacketLength() - 2;
+    uint16_t crc = packet->calculateCRC(packet->packetData(), len);
+
+    uint16_t packet_crc =
+        ((static_cast<uint16_t>(packet->packetData()[len]) << 8) & 0xFF00) | packet->packetData()[len + 1];
+	if (crc != packet_crc) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
+		// Invalid packet is discarded
+        masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
+        masterChannel.removeMcTM(packet);
+
+        return ServiceChannelNotification::RX_INVALID_CRC;
+    }
+#endif
+
+    masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.push_back(packet);
+    masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
+    ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
 ServiceChannelNotification ServiceChannel::transmitFrame(uint8_t *pack) {

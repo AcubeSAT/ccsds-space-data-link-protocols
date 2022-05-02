@@ -325,8 +325,9 @@ struct MasterChannel {
             : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField),
               frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(m.txToBeTransmittedFramesAfterAllFramesGenerationListTC) {
-
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
+	      rxMasterCopyTC(m.rxMasterCopyTC),rxMasterCopyTM(m.rxMasterCopyTM)
+	{
         for (auto &vc: virtChannels) {
             vc.second.masterChannel = *this;
         }
@@ -360,12 +361,6 @@ struct MasterChannel {
 	 */
     MasterChannelAlert storeTransmittedOut(PacketTC*packet);
 
-	/**
-	 * @return
-	 */
-    uint16_t availableSpaceBufferTM() const {
-        return txMasterCopyTM.available();
-    }
 
     /**
      * @brief Add virtual channel to master channel
@@ -410,6 +405,19 @@ private:
      */
     etl::list<PacketTM, MaxTxInMasterChannel> txMasterCopyTM;
 
+	/**
+	 * @brief Removes TM frames from the master buffer
+	 */
+	void removeMcTM(PacketTM *packet_ptr){
+		etl::list<PacketTM, MaxRxInMasterChannel>::iterator it;
+		for (it = rxMasterCopyTM.begin();it != rxMasterCopyTM.end(); ++it){
+            if (&it == packet_ptr){
+				rxMasterCopyTM.erase(it);
+				return;
+			}
+		}
+	}
+
     /**
      * @brief Buffer holding the master copy of TC RX packets that are currently being processed
      */
@@ -419,6 +427,7 @@ private:
      * @brief Buffer holding the master copy of TM RX packets that are currently being processed
      */
     etl::list<PacketTM, MaxRxInMasterChannel> rxMasterCopyTM;
+
 };
 
 #endif // CCSDS_CHANNEL_HPP

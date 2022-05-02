@@ -23,9 +23,7 @@ enum ServiceChannelNotification : int{
     VC_RX_WAIT_QUEUE_FULL = 0x13,
     TX_FOP_REJECTED = 0x14,
     VC_MC_FRAME_BUFFER_EMPTY = 0x15,
-#if tc_error_control_field_exists
     RX_INVALID_CRC,
-#endif
 };
 
 enum FOPNotification : uint8_t{

@@ -128,6 +128,8 @@ TEST_CASE("Service Channel") {
 //    CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
 
     //TM store function
+
+	/*
     uint8_t pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x21, 0xA1};
 
 	serv_channel.storeTM(pckt_TM, 9, 0, 0);
@@ -142,9 +144,31 @@ TEST_CASE("Service Channel") {
 
 	// All Frames Generation Service TM
 	CHECK(serv_channel.txOutProcessedPacketTM().second == nullptr);
+    */
 
+    uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
+    uint8_t invalid_pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54};
 	// TM Reception
-    CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTcInMasterBuffer);
-    serv_channel.storeTM(pckt_TM, 9);
-    CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTcInMasterBuffer - 1);
+    CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
+	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
+
+	serv_channel.storeTM(valid_pckt_TM, 9);
+    CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
+    CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
+
+    serv_channel.storeTM(invalid_pckt_TM, 9);
+    CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 2);
+    CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
+
+    err = serv_channel.allFramesReceptionTMRequest();
+	// Valid packet passes to lower procedures
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+    CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
+    CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
+
+    err = serv_channel.allFramesReceptionTMRequest();
+	// Invalid CRC is logged and the packet is deleted from the master buffer
+	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
+    CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
+    CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 }

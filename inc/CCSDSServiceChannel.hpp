@@ -86,6 +86,14 @@ public:
      */
 	ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid);
 
+    uint16_t availableSpaceBufferTxTM() const {
+        return masterChannel.txMasterCopyTM.available();
+    }
+
+    uint16_t availableSpaceBufferRxTM() const {
+        return masterChannel.rxMasterCopyTM.available();
+    }
+
 #if maxReceivedUnprocessedTcInVirtBuffer > 0
 
     /**
