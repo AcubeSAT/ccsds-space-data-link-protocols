@@ -22,6 +22,7 @@ const uint16_t MCID = SpacecraftIdentifier;
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
 const uint8_t MaxReceivedTcInMapChannel = 5;
+const uint8_t MaxReceivedTmInMapChannel = 5;
 
 // Maximum received TX TCs in wait queue (before COP checks).
 const uint8_t MaxReceivedTxTcInWaitQueue = 10;

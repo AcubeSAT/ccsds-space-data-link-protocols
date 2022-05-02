@@ -129,6 +129,13 @@ public:
         return unprocessedPacketListBufferTC.available();
     }
 
+    /**
+     * @brief Returns availableBufferTM space in the MAP Channel buffer
+     */
+    uint16_t availableBufferTM() const {
+        return unprocessedPacketListBufferTM.available();
+    }
+
     MAPChannel(const uint8_t mapid, const DataFieldContent dataFieldContent)
             : MAPID(mapid), dataFieldContent(dataFieldContent) {
         uint8_t d = unprocessedPacketListBufferTC.size();
@@ -140,6 +147,10 @@ protected:
      * Store unprocessed received TCs
      */
     etl::list<PacketTC*, MaxReceivedTcInMapChannel> unprocessedPacketListBufferTC;
+    /**
+     * Store unprocessed received TMs
+     */
+    etl::list<PacketTC*, MaxReceivedTmInMapChannel> unprocessedPacketListBufferTM;
 };
 
 /**
@@ -207,6 +218,13 @@ public:
         return txUnprocessedPacketListBufferTC.available();
     }
 
+    /**
+     * @brief Returns availableVCBufferTM space in the VC TM buffer
+     */
+    uint16_t availableBufferTM() const {
+        return txUnprocessedPacketListBufferTM.available();
+    }
+
 
     /**
      *
@@ -232,9 +250,8 @@ public:
               maxFrameLength(v.maxFrameLength),
               clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
               repetitionCOPCtrl(v.repetitionCOPCtrl), frameCount(v.frameCount), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
-	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC),
-              fop(v.fop),
-              masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
+	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), txUnprocessedPacketListBufferTM(v.txUnprocessedPacketListBufferTM),
+              fop(v.fop), masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
         fop.vchan = this;
         fop.sentQueue = &sentQueueTC;
         fop.waitQueue = &txWaitQueueTC;
@@ -271,6 +288,11 @@ private:
      * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
      */
     etl::list<PacketTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
+
+    /**
+     * @brief Buffer to storeOut unprocessed TM packets that are directly processed in a virtual channel
+     */
+    etl::list<PacketTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txUnprocessedPacketListBufferTM;
 
     /**
      * @brief Holds the FOP state of the virtual channel

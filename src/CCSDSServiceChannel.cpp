@@ -82,6 +82,8 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t pac
                      secondaryHeader, hdr.transferFrameDataFieldStatus(), TM);
 
     masterChannel.txMasterCopyTM.push_back(packet_s);
+    vchan->txUnprocessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
+
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
@@ -270,7 +272,29 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
 #endif
 
-ServiceChannelNotification ServiceChannel::mcGenerationRequestTC() {
+ServiceChannelNotification ServiceChannel::mcGenerationRequestTM() {
+    if (masterChannel.rxInFramesBeforeAllFramesReceptionListTM.empty()) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
+        return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+    }
+
+    if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.full()){
+        ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
+        return ServiceChannelNotification::RX_IN_MC_FULL;
+    }
+    PacketTM *packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTM.front();
+
+    // Check if need to add secondary header and act accordingly
+    // TODO: Process secondary headers
+
+    masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.push_back(packet);
+    masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
+
+    ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotification ServiceChannel::mcReceptionRequestTM() {
     if (masterChannel.rxInFramesBeforeAllFramesReceptionListTM.empty()) {
         ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
         return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;

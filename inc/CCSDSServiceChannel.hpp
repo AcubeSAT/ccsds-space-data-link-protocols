@@ -88,13 +88,20 @@ public:
 #endif
 
     /**
-     * @brief The Master Channel Generation Function shall be used to insert Transfer Frame
+     * @brief The Master Channel Reception Function shall be used to extract service data units
+     * contained in the Transfer Frame Secondary Header and Operational Control Field from
+     * Transfer Frames of a Master Channel.
+     @see p. 4.3.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
+     */
+    ServiceChannelNotification mcReceptionRequestTM();
+
+    /**
+     * @brief The Master Channel Generation Service shall be used to insert Transfer Frame
      * Secondary Header and/or Operational Control Field service data units into Transfer Frames
      * of a Master Channel.
      @see p. 4.2.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
      */
-    ServiceChannelNotification mcGenerationRequestTC();
-
+	ServiceChannelNotification mcGenerationRequestTM();
     /**
 	 * @brief The  Virtual  Channel  Generation  Function  shall  perform  the  following  two
 	 * procedures in the following order:
