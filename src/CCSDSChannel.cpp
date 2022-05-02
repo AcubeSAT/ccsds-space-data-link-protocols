@@ -78,3 +78,43 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 	                                          repetitionTypeAFrame, repetitionCopCtrl, frameCountP, mapChan));
 	return MasterChannelAlert::NO_MC_ALERT;
 }
+
+void MasterChannel::removeMasterTx(PacketTC *packet_ptr){
+    etl::list<PacketTC, MaxTxInMasterChannel>::iterator it;
+    for (it = txMasterCopyTC.begin();it != txMasterCopyTC.end(); ++it){
+        if (&it == packet_ptr){
+            txMasterCopyTC.erase(it);
+            return;
+        }
+    }
+}
+
+void MasterChannel::removeMasterTx(PacketTM *packet_ptr){
+    etl::list<PacketTM, MaxTxInMasterChannel>::iterator it;
+    for (it = txMasterCopyTM.begin();it != txMasterCopyTM.end(); ++it){
+        if (&it == packet_ptr){
+            txMasterCopyTM.erase(it);
+            return;
+        }
+    }
+}
+
+void MasterChannel::removeMasterRx(PacketTC *packet_ptr){
+    etl::list<PacketTC, MaxRxInMasterChannel>::iterator it;
+    for (it = rxMasterCopyTC.begin();it != rxMasterCopyTC.end(); ++it){
+        if (&it == packet_ptr){
+            rxMasterCopyTC.erase(it);
+            return;
+        }
+    }
+}
+
+void MasterChannel::removeMasterRx(PacketTM *packet_ptr){
+    etl::list<PacketTM, MaxRxInMasterChannel>::iterator it;
+    for (it = rxMasterCopyTM.begin();it != rxMasterCopyTM.end(); ++it){
+        if (&it == packet_ptr){
+            rxMasterCopyTM.erase(it);
+            return;
+        }
+    }
+}

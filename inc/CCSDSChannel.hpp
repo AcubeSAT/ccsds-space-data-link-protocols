@@ -406,22 +406,19 @@ private:
     etl::list<PacketTC, MaxTxInMasterChannel> txMasterCopyTC;
 
     /**
+     * @brief Removes TC frames from the Tx master buffer
+     */
+    void removeMasterTx(PacketTC *packet_ptr);
+
+    /**
      * @brief Buffer holding the master copy of TM TX packets that are currently being processed
      */
     etl::list<PacketTM, MaxTxInMasterChannel> txMasterCopyTM;
 
-	/**
-	 * @brief Removes TM frames from the master buffer
-	 */
-	void removeMcTM(PacketTM *packet_ptr){
-		etl::list<PacketTM, MaxRxInMasterChannel>::iterator it;
-		for (it = rxMasterCopyTM.begin();it != rxMasterCopyTM.end(); ++it){
-            if (&it == packet_ptr){
-				rxMasterCopyTM.erase(it);
-				return;
-			}
-		}
-	}
+    /**
+     * @brief Removes TM frames from the Tx master buffer
+     */
+    void removeMasterTx(PacketTM *packet_ptr);
 
     /**
      * @brief Buffer holding the master copy of TC RX packets that are currently being processed
@@ -429,9 +426,19 @@ private:
     etl::list<PacketTC, MaxRxInMasterChannel> rxMasterCopyTC;
 
     /**
+     * @brief Removes TM frames from the Rx master buffer
+     */
+    void removeMasterRx(PacketTC *packet_ptr);
+
+    /**
      * @brief Buffer holding the master copy of TM RX packets that are currently being processed
      */
     etl::list<PacketTM, MaxRxInMasterChannel> rxMasterCopyTM;
+
+    /**
+     * @brief Removes TM frames from the RX master buffer
+     */
+    void removeMasterRx(PacketTM *packet_ptr);
 
 };
 

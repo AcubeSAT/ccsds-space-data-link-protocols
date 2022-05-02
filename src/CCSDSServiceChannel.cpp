@@ -504,7 +504,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(){
         ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
 		// Invalid packet is discarded
         masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
-        masterChannel.removeMcTM(packet);
+		masterChannel.removeMasterRx(packet);
 
         return ServiceChannelNotification::RX_INVALID_CRC;
     }
