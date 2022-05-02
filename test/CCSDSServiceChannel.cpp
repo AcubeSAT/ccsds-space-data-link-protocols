@@ -16,7 +16,7 @@ TEST_CASE("Service Channel") {
     };
 
     MasterChannel master_channel = MasterChannel(true, 0);
-	master_channel.addVC(0, true, 128, 20, true, 2, 2, 2, map_channels);
+	master_channel.addVC(0, true, 128, 20, true, 2, 2, 2, true, true, map_channels);
 
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 

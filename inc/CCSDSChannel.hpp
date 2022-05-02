@@ -219,6 +219,16 @@ public:
     }
 
     /**
+	 * @brief Defines whether the OCF service is present
+	 */
+    const bool operationalControlFieldTMPresent;
+
+    /**
+     * @brief Defines whether the ECF service is present
+     */
+	const bool frameErrorControlFieldTMPresent;
+
+    /**
      * @brief Returns availableVCBufferTM space in the VC TM buffer
      */
     uint16_t availableBufferTM() const {
@@ -236,11 +246,13 @@ public:
     VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
                    const bool segmentHeaderPresent, const uint16_t maxFrameLength, const uint8_t clcwRate,
                    const bool blocking, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                   const uint8_t frameCount, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
+                   const uint8_t frameCount, const bool operationalControlFieldTMPresent,
+	               const bool frameErrorControlFieldTMPresent, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
             : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
               segmentHeaderPresent(segmentHeaderPresent), maxFrameLength(maxFrameLength), clcwRate(clcwRate),
               blocking(blocking), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
-              frameCount(frameCount), txWaitQueueTC(), sentQueueTC(),
+              frameCount(frameCount), txWaitQueueTC(), sentQueueTC(), frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
+              operationalControlFieldTMPresent(operationalControlFieldTMPresent),
               fop(FrameOperationProcedure(this, &txWaitQueueTC, &sentQueueTC, repetitionCopCtrl)) {
         mapChannels = mapChan;
     }
@@ -251,7 +263,9 @@ public:
               clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
               repetitionCOPCtrl(v.repetitionCOPCtrl), frameCount(v.frameCount), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), txUnprocessedPacketListBufferTM(v.txUnprocessedPacketListBufferTM),
-              fop(v.fop), masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
+	      fop(v.fop), masterChannel(v.masterChannel), blocking(v.blocking),
+	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
+	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
         fop.vchan = this;
         fop.sentQueue = &sentQueueTC;
         fop.waitQueue = &txWaitQueueTC;
@@ -368,6 +382,8 @@ struct MasterChannel {
     MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength,
                               const uint8_t clcwRate, const bool blocking, const uint8_t repetitionTypeAFrame,
                               const uint8_t repetitionCopCtrl, const uint8_t frameCount,
+                              const bool frameErrorControlFieldTMPresent,
+                              const bool operationalControlFieldTMPresent,
                               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 private:
