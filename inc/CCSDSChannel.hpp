@@ -363,10 +363,14 @@ private:
     // Packets ready to be transmitted having passed through the all frames generation service
     etl::list<PacketTM*, MaxReceivedTxTmOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationListTM;
 
-    // Packets that are received, before being received by the all frames reception service
-    etl::list<PacketTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionList;
-    // Packets that are ready to be transmitted to higher procedures following all frames generation service
-    etl::list<PacketTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionList;
+    // TC packets that are received, before being received by the all frames reception service
+    etl::list<PacketTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTC;
+    // TM packets that are ready to be transmitted to higher procedures following all frames generation service
+    etl::list<PacketTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTC;
+    // TC packets that are received, before being received by the all frames reception service
+    etl::list<PacketTM*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTM;
+    // TM packets that are ready to be transmitted to higher procedures following all frames generation service
+    etl::list<PacketTM*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTM;
 
     /**
      * @brief Buffer holding the master copy of TC TX packets that are currently being processed
@@ -386,7 +390,7 @@ private:
     /**
      * @brief Buffer holding the master copy of TM RX packets that are currently being processed
      */
-    etl::list<PacketTC, MaxRxInMasterChannel> rxMasterCopyTM;
+    etl::list<PacketTM, MaxRxInMasterChannel> rxMasterCopyTM;
 };
 
 #endif // CCSDS_CHANNEL_HPP

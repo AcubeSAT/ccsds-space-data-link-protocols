@@ -18,11 +18,11 @@ TEST_CASE("Initiate FOP Directives") {
 
 	serv_channel_fop.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
 
-    CHECK(serv_channel_fop.txAvailable(3, 2) == MaxReceivedTcInMapChannel - 1);
+    CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel - 1);
 
 	serv_channel_fop.mappRequest(3, 2);
 
-    CHECK(serv_channel_fop.txAvailable(3, 2) == MaxReceivedTcInMapChannel);
+    CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
 
     CHECK(serv_channel_fop.fopState(3) == FOPState::INITIAL);
 	serv_channel_fop.initiateAdNoClcw(3);

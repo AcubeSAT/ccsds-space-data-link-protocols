@@ -44,11 +44,14 @@ const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
 // repetitions)
 const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100;
 
-
 // Maximum received TC in the master buffer, before being passed to the all frames reception service
 const uint8_t MaxReceivedRxTcInMasterBuffer = 100;
 // Maximum received TC in the master buffer, ready to be transmitted to the higher procedures
 const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100;
+// Maximum received TM in the master buffer, before being passed to the all frames reception service
+const uint8_t MaxReceivedRxTmInMasterBuffer = 100;
+// Maximum received TM in the master buffer, ready to be transmitted to the higher procedures
+const uint8_t MaxReceivedRxTmOutInMasterBuffer = 100;
 
 const uint8_t MaxVirtualChannels = 10;
 const uint8_t MaxMapChannels = 3;

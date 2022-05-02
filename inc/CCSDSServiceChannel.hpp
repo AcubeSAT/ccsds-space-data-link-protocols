@@ -55,6 +55,12 @@ public:
 
 	ServiceChannelNotification storeTM(uint8_t *packet, uint16_t packetLength, uint8_t gvcid, uint16_t scid);
 
+    /**
+     * @brief This service is used for storing incoming TM packets in the master channel
+     * @param packet Raw packet data
+     * @param packetLength The length of the packet
+     */
+    ServiceChannelNotification storeTM(uint8_t *packet, uint16_t packetLength);
 
     /**
      * @brief This service is used for storing incoming TC packets in the master channel
@@ -201,12 +207,12 @@ public:
     void process();
 
     /**
-     * @brief Available number of incoming frames in master channel buffer
+     * @brief Available number of incoming TM frames in master channel buffer
      */
-    uint16_t inAvailable() const {
-        return masterChannel.txOutFramesBeforeAllFramesGenerationListTC.available();
-    }
 
+	uint16_t rxInAvailableTM() const {
+		return masterChannel.rxInFramesBeforeAllFramesReceptionListTM.available();
+	}
     /**
      * @brief Available number of outcoming TX frames in master channel buffer
      */
@@ -215,35 +221,35 @@ public:
     }
 
     /**
-     * @brief Available number of outcoming RX frames in master channel buffer
+     * @brief Available number of outcoming TC RX frames in master channel buffer
      */
-    uint16_t rxOutAvailable() const {
-        return masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionList.available();
+    uint16_t rxOutAvailableTC() const {
+        return masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTC.available();
     }
 
     /**
-     * @brief Available space in virtual channel buffer
+     * @brief Available space in TC virtual channel buffer
      */
-    uint16_t txAvailable(const uint8_t vid) const {
+    uint16_t txAvailableTC(const uint8_t vid) const {
         return masterChannel.virtChannels.at(vid).availableBufferTC();
     }
 
     /**
-     * @brief Available space in MAP channel buffer
+     * @brief Available space in TC MAP channel buffer
      */
-    uint16_t txAvailable(const uint8_t vid, const uint8_t mapid) const {
+    uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
         return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
     }
 
     /**
-     * @brief Read first packet of the MAP channel buffer (unprocessedPacketListBufferTC)
+     * @brief Read first packet of the TC MAP channel buffer (unprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(uint8_t vid, uint8_t mapid) const;
+    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
 
     /**
      * @brief Read first TC packet of the virtual channel buffer (txUnprocessedPacketListBufferTC)
      */
-    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacket(uint8_t vid) const;
+    std::pair<ServiceChannelNotification, const PacketTC*> txOutPacketTC(uint8_t vid) const;
 
     /**
      * @brief Return the last stored packet from txMasterCopyTC
@@ -251,13 +257,9 @@ public:
     std::pair<ServiceChannelNotification, const PacketTC *> txOutPacketTC() const;
 
     /**
- * @brief Return the last stored packet from txMasterCopyTM
- */
-    std::pair<ServiceChannelNotification, const PacketTM *> txOutPacketTM() const;
-
-    /**
-     * @brief Return the last processed packet from txToBeTransmittedFramesAfterAllFramesGenerationListTC
+     * @brief Return the last stored packet from txMasterCopyTM
      */
+    std::pair<ServiceChannelNotification, const PacketTM *> txOutPacketTM() const;
 
 	/**
      * @brief Return the last processed packet
