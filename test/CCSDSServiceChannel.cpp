@@ -91,7 +91,7 @@ TEST_CASE("Service Channel") {
     err = serv_channel.pushSentQueue(0);
 
     // All Frames Generation Service
-    err = serv_channel.allFramesGenerationRequestTC();
+    err = serv_channel.allFramesGenerationTCRequest();
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
     PacketTC packet = *serv_channel.getTxProcessedPacket();
@@ -142,12 +142,5 @@ TEST_CASE("Service Channel") {
 
 	// All Frames Generation Service TM
 	CHECK(serv_channel.txOutProcessedPacketTM().second == nullptr);
-	err = serv_channel.allFramesGenerationTMInbufferStore(const_cast<PacketTM*>(packet_TM));
-	err = serv_channel.allFramesGenerationRequestTM();
-	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-
-	//PacketTC packet = *serv_channel.get_tx_processed_packet();
-
-	CHECK(serv_channel.txOutProcessedPacketTM().second == packet_TM);
 
 }

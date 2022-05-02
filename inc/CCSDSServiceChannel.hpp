@@ -57,11 +57,11 @@ public:
 
 
     /**
-     * @brief This service is used for storing incoming packets in the master channel
+     * @brief This service is used for storing incoming TC packets in the master channel
      * @param packet Raw packet data
      * @param packetLength The length of the packet
      */
-	ServiceChannelNotification store(uint8_t *packet, uint16_t packetLength);
+	ServiceChannelNotification storeTC(uint8_t *packet, uint16_t packetLength);
 
     /**
      * @brief Requests to process the last packet stored in the buffer of the specific MAPP channel
@@ -96,7 +96,16 @@ public:
 	 * rate to the Channel Coding Sublayer.
 	 * @see p. 4.3.8 from TC SPACE DATA LINK PROTOCOL
 	 */
-	ServiceChannelNotification allFramesGenerationRequestTC();
+	ServiceChannelNotification allFramesGenerationTCRequest();
+
+	/**
+	 * @brief The  All  Frames  Reception  Function  shall  be  used  to  perform  error  control
+	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
+	 * rate to the Channel Coding Sublayer.
+	 * @see p. 4.3.7 from TM SPACE DATA LINK PROTOCOL (CCSDS 132.0-B-3)
+	 */
+	 ServiceChannelNotification allFramesReceptionTMRequest();
+
 
     /**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
@@ -104,9 +113,7 @@ public:
 	 * rate to the Channel Coding Sublayer.
 	 * @see p. 4.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
-    ServiceChannelNotification allFramesGenerationRequestTM();
-
-    ServiceChannelNotification allFramesGenerationTMInbufferStore(PacketTM *packet);
+    ServiceChannelNotification allFramesGenerationTMRequest();
 
     ServiceChannelNotification allFramesReceptionRequest();
 	/**

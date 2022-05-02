@@ -147,7 +147,7 @@ void FrameOperationProcedure::lookForDirective() {
 
 // TODO: Sent Queue as-is is pretty much tx
 COPDirectiveResponse FrameOperationProcedure::pushSentQueue(){
-    if (vchan->sentQueue.empty()){
+    if (vchan->sentQueueTC.empty()){
 		ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
         return COPDirectiveResponse::REJECT;
     }
@@ -157,7 +157,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue(){
     MasterChannelAlert err = vchan->master_channel().storeOut(pckt);
 
     if (err == MasterChannelAlert::NO_MC_ALERT){
-        //sentQueue->pop_front();
+        //sentQueueTC->pop_front();
 		ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
         return COPDirectiveResponse::ACCEPT;
     }

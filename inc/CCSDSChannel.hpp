@@ -222,8 +222,8 @@ public:
             : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
               segmentHeaderPresent(segmentHeaderPresent), maxFrameLength(maxFrameLength), clcwRate(clcwRate),
               blocking(blocking), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
-              frameCount(frameCount), txWaitQueue(), sentQueue(),
-              fop(FrameOperationProcedure(this, &txWaitQueue, &sentQueue, repetitionCopCtrl)) {
+              frameCount(frameCount), txWaitQueueTC(), sentQueueTC(),
+              fop(FrameOperationProcedure(this, &txWaitQueueTC, &sentQueueTC, repetitionCopCtrl)) {
         mapChannels = mapChan;
     }
 
@@ -231,14 +231,13 @@ public:
             : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
               maxFrameLength(v.maxFrameLength),
               clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame),
-              repetitionCOPCtrl(v.repetitionCOPCtrl), frameCount(v.frameCount),
-              txWaitQueue(v.txWaitQueue), sentQueue(v.sentQueue),
+              repetitionCOPCtrl(v.repetitionCOPCtrl), frameCount(v.frameCount), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC),
               fop(v.fop),
               masterChannel(v.masterChannel), blocking(v.blocking), mapChannels(v.mapChannels) {
         fop.vchan = this;
-        fop.sentQueue = &sentQueue;
-        fop.waitQueue = &txWaitQueue;
+        fop.sentQueue = &sentQueueTC;
+        fop.waitQueue = &txWaitQueueTC;
     }
 
     VirtualChannelAlert storeVC(PacketTC*packet);
@@ -256,17 +255,17 @@ private:
     /**
      * @brief Buffer to storeOut incoming packets BEFORE being processed by COP
      */
-    etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> txWaitQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> txWaitQueueTC;
 
     /**
      * @brief Buffer to storeOut incoming packets AFTER being processed by COP
      */
-    etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> rxWaitQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInWaitQueue> rxWaitQueueTC;
 
     /**
 	 * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
 	 */
-    etl::list<PacketTC*, MaxReceivedTxTcInSentQueue> sentQueue;
+    etl::list<PacketTC*, MaxReceivedTxTcInSentQueue> sentQueueTC;
 
     /**
      * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
@@ -370,19 +369,24 @@ private:
     etl::list<PacketTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionList;
 
     /**
-     * @brief Buffer holding the master copy of TX packets that are currently being processed
+     * @brief Buffer holding the master copy of TC TX packets that are currently being processed
      */
     etl::list<PacketTC, MaxTxInMasterChannel> txMasterCopyTC;
 
     /**
-     * @brief Buffer holding the master copy of TX packets that are currently being processed
+     * @brief Buffer holding the master copy of TM TX packets that are currently being processed
      */
     etl::list<PacketTM, MaxTxInMasterChannel> txMasterCopyTM;
 
     /**
-     * @brief Buffer holding the master copy of RX packets that are currently being processed
+     * @brief Buffer holding the master copy of TC RX packets that are currently being processed
      */
     etl::list<PacketTC, MaxRxInMasterChannel> rxMasterCopyTC;
+
+    /**
+     * @brief Buffer holding the master copy of TM RX packets that are currently being processed
+     */
+    etl::list<PacketTC, MaxRxInMasterChannel> rxMasterCopyTM;
 };
 
 #endif // CCSDS_CHANNEL_HPP
