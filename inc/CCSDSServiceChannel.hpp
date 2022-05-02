@@ -69,6 +69,16 @@ public:
      */
 	ServiceChannelNotification storeTC(uint8_t *packet, uint16_t packetLength);
 
+   /**
+    * @brief The Virtual Channel Generation Function is used to build the basic structure of
+    * Transfer Frames. It is also used to build the structure and the Primary Header of
+    * the Transfer Frames for transmission on each Virtual Channel. There is an instance of the
+    * Virtual Channel Generation Function for each Virtual Channel.
+    *
+    * @see p. 4.3.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
+    */
+    ServiceChannelNotification vcGenerationTMRequest(uint8_t vid);
+
     /**
      * @brief Requests to process the last packet stored in the buffer of the specific MAPP channel
      * (possible more if blocking is enabled). The packets are segmented or blocked together
@@ -93,7 +103,7 @@ public:
      * Transfer Frames of a Master Channel.
      @see p. 4.3.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
      */
-    ServiceChannelNotification mcReceptionRequestTM();
+    ServiceChannelNotification mcReceptionTMRequest();
 
     /**
      * @brief The Master Channel Generation Service shall be used to insert Transfer Frame
@@ -101,7 +111,7 @@ public:
      * of a Master Channel.
      @see p. 4.2.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
      */
-	ServiceChannelNotification mcGenerationRequestTM();
+	ServiceChannelNotification mcGenerationTMRequest();
     /**
 	 * @brief The  Virtual  Channel  Generation  Function  shall  perform  the  following  two
 	 * procedures in the following order:
@@ -137,7 +147,7 @@ public:
 	 */
     ServiceChannelNotification allFramesGenerationTMRequest();
 
-    ServiceChannelNotification allFramesReceptionRequest();
+    ServiceChannelNotification allFramesReceptionTCRequest();
 	/**
 	 * @return The front TC Packet from txOutFramesBeforeAllFramesGenerationListTC
 	 */

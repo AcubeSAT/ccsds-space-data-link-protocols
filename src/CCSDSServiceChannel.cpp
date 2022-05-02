@@ -65,9 +65,9 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t pac
         return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
 
-    if (masterChannel.txMasterCopyTM.full()) {
-		ccsdsLog(Tx, TypeServiceChannelNotif, MASTER_CHANNEL_FRAME_BUFFER_FULL);
-        return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+    if (vchan->txUnprocessedPacketListBufferTM.full()) {
+		ccsdsLog(Tx, TypeServiceChannelNotif, VC_MC_FRAME_BUFFER_FULL);
+        return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
     }
 
     auto hdr = TransferFrameHeaderTM(packet);
@@ -272,29 +272,51 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
 #endif
 
-ServiceChannelNotification ServiceChannel::mcGenerationRequestTM() {
-    if (masterChannel.rxInFramesBeforeAllFramesReceptionListTM.empty()) {
+ServiceChannelNotification ServiceChannel::vcGenerationTMRequest(uint8_t vid){
+    VirtualChannel *virt_channel = &(masterChannel.virtChannels.at(vid));
+    if (virt_channel->txUnprocessedPacketListBufferTM.empty()) {
+        ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
+        return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
+    }
+
+    if (masterChannel.txOutFramesBeforeMCGenerationListTM.full()) {
+        ccsdsLog(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
+        return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
+    }
+
+    PacketTM *frame = virt_channel->txUnprocessedPacketListBufferTM.front();
+
+	// TODO: Implement VC generation service
+
+    virt_channel->txUnprocessedPacketListBufferTM.pop_front();
+    masterChannel.txOutFramesBeforeMCGenerationListTM.push_back(frame);
+
+    ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
+    if (masterChannel.txOutFramesBeforeMCGenerationListTM.empty()) {
         ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
         return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
     }
-
-    if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.full()){
-        ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
-        return ServiceChannelNotification::RX_IN_MC_FULL;
+    if (masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.full()){
+        ccsdsLog(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
+        return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
     }
-    PacketTM *packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTM.front();
+    PacketTM *packet = masterChannel.txOutFramesBeforeMCGenerationListTM.front();
 
     // Check if need to add secondary header and act accordingly
     // TODO: Process secondary headers
 
-    masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.push_back(packet);
-    masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
+    masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.push_back(packet);
+    masterChannel.txOutFramesBeforeMCGenerationListTM.pop_front();
 
     ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::mcReceptionRequestTM() {
+ServiceChannelNotification ServiceChannel::mcReceptionTMRequest() {
     if (masterChannel.rxInFramesBeforeAllFramesReceptionListTM.empty()) {
         ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
         return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
@@ -347,7 +369,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::allFramesReceptionRequest() {
+ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
     if (masterChannel.rxInFramesBeforeAllFramesReceptionListTC.empty()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
         return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;

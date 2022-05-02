@@ -41,8 +41,16 @@ const uint8_t MaxReceivedTxTcInMasterBuffer = 100;
 const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
 // Maximum received TM in the master buffer, before being passed to the all frames generation service
 const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
+
+
+const uint8_t MaxReceivedTxTmOutInVCBuffer = 100;
+// Maximum received TM in the master buffer, before being passed to the all frames generation service
+const uint8_t MaxReceivedTxTmInVCBuffer = 100;
+
+
 // Maximum received TM in the master buffer, ready to be transmitted to the lower procedures (doesn't include
 // repetitions)
+
 const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100;
 
 // Maximum received TC in the master buffer, before being passed to the all frames reception service
