@@ -322,7 +322,7 @@ ServiceChannelNotification ServiceChannel::mcReceptionTMRequest() {
         return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
     }
 
-	if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.full()){
+	if (masterChannel.txToBeTransmittedFramesAfterMCReceptionListTM.full()){
         ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
         return ServiceChannelNotification::RX_IN_MC_FULL;
     }
@@ -331,7 +331,7 @@ ServiceChannelNotification ServiceChannel::mcReceptionTMRequest() {
 	// Check if need to add secondary header and act accordingly
 	// TODO: Process secondary headers
 
-    masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.push_back(packet);
+    masterChannel.txToBeTransmittedFramesAfterMCReceptionListTM.push_back(packet);
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
 
     ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);

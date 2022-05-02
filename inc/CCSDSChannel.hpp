@@ -381,6 +381,11 @@ private:
     // Packets ready to be transmitted having passed through the vc generation service
     etl::list<PacketTM*, MaxReceivedTxTmOutInVCBuffer> txToBeTransmittedFramesAfterMCGenerationListTM;
 
+    // TM packets stored in frames list, before being processed by the vc reception service
+    etl::list<PacketTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCReceptionListTM;
+    // Packets ready to be transmitted having passed through the vc reception service
+    etl::list<PacketTM*, MaxReceivedTxTmOutInVCBuffer> txToBeTransmittedFramesAfterMCReceptionListTM;
+
     // Packets stored in frames list, before being processed by the all frames generation service
     etl::list<PacketTM*, MaxReceivedTxTmInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTM;
     // Packets ready to be transmitted having passed through the all frames generation service
