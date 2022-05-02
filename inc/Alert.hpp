@@ -26,6 +26,7 @@ enum ServiceChannelNotification : int {
 	RX_INVALID_CRC,
 };
 
+enum SynchronizationFlag : bool { OCTET = 0, FORWARD_ORDERED = 1 };
 enum FOPNotification : uint8_t {
 	NO_FOP_EVENT = 0x01,
 	SENT_QUEUE_FULL = 0x02,

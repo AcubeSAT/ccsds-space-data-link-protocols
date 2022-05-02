@@ -1,6 +1,7 @@
 #ifndef CCSDS_TM_PACKETS_PACKETTM_HPP
 #define CCSDS_TM_PACKETS_PACKETTM_HPP
 #include "Packet.hpp"
+#include "Alert.hpp"
 
 struct TransferFrameHeaderTM : public TransferFrameHeader {
 public:
@@ -216,12 +217,22 @@ struct PacketTM : public Packet {
 	}
 
 	PacketTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint8_t scid, uint16_t vcid,
-	         uint8_t masterChannelFrameCount, uint8_t* secondaryHeader, uint16_t transferFrameDataFieldStatus,
-	         PacketType t = TM)
-	    : Packet(t, packetLength, packet), hdr(packet), masterChannelFrameCount(masterChannelFrameCount),
-	      virtualChannelFrameCount(virtualChannelFrameCount), scid(scid), vcid(vcid),
-	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
-	      secondaryHeader(secondaryHeader), firstHeaderPointer(firstHeaderPointer) {}
+	         uint8_t* secondaryHeader, uint16_t transferFrameDataFieldStatus, bool ocfPresent,
+	         bool transferFrameSecondaryHeaderPresent, SynchronizationFlag syncFlag, PacketType t = TM)
+	    : Packet(t, packetLength, packet), hdr(packet), virtualChannelFrameCount(virtualChannelFrameCount), scid(scid),
+	      vcid(vcid), transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
+	      secondaryHeader(secondaryHeader), firstHeaderPointer(firstHeaderPointer) {
+		// TFVN + SC Id
+		packet[0] = spacecraftId() & 0xFC >> 4;
+		// SC Id + VC ID + OCF
+		packet[1] = ((spacecraftId() & 0x0F) << 4) | ((vcid & 0x7) << 1) | ocfPresent;
+		// MC Frame Count is set by the MC Generation Service
+		packet[2] = 0;
+		packet[3] = virtualChannelFrameCount;
+		// Data field status. Packet Order Flag and Segment Length ID are unused
+		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
+		packet[5] = firstHeaderPointer & 0xFF;
+	}
 
 	PacketTM(uint8_t* packet, uint16_t packet_length, PacketType t = TM);
 

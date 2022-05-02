@@ -67,9 +67,9 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
 	}
 
-	if (vchan->txUnprocessedPacketListBufferTM.full()) {
-		ccsdsLog(Tx, TypeServiceChannelNotif, VC_MC_FRAME_BUFFER_FULL);
-		return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
+	if (masterChannel.txProcessedPacketListBufferTM.full()) {
+		ccsdsLog(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
+		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
 
 	// Implement VC Generation
@@ -78,16 +78,19 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 
 	uint8_t* secondaryHeader = 0;
 
-	if (vchan->segmentHeaderPresent) {
+	if (masterChannel.secondaryHeaderTMPresent) {
 		secondaryHeader = &packet[7];
 	}
 
+	PacketTM packet_s = PacketTM(packet, packetLength, vchan->frameCountTM, scid, vid, secondaryHeader,
+	                             hdr.transferFrameDataFieldStatus(), vchan->operationalControlFieldTMPresent,
+	                             masterChannel.secondaryHeaderTMPresent, vchan->synchronization);
 
-	PacketTM packet_s = PacketTM(packet, packetLength, vchan->frameCountTM, scid, vid, masterChannel.frameCount,
-	                             secondaryHeader, hdr.transferFrameDataFieldStatus(), TM);
+	// Increment VC frame count. The MC counter is incremented in the Master Channel
+	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
 
 	masterChannel.txMasterCopyTM.push_back(packet_s);
-	vchan->txUnprocessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
+	masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
 
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
@@ -277,29 +280,8 @@ ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
 
 #endif
 
-ServiceChannelNotification ServiceChannel::vcGenerationTMRequest(uint8_t vid) {
-	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
-	if (virt_channel->txUnprocessedPacketListBufferTM.empty()) {
-		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
-		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
-	}
-
-	if (masterChannel.txOutFramesBeforeMCGenerationListTM.full()) {
-		ccsdsLog(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
-		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
-	}
-
-	PacketTM* frame = virt_channel->txUnprocessedPacketListBufferTM.front();
-
-	virt_channel->txUnprocessedPacketListBufferTM.pop_front();
-	masterChannel.txOutFramesBeforeMCGenerationListTM.push_back(frame);
-
-	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-	return ServiceChannelNotification::NO_SERVICE_EVENT;
-}
-
 ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
-	if (masterChannel.txOutFramesBeforeMCGenerationListTM.empty()) {
+	if (masterChannel.txProcessedPacketListBufferTM.empty()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
 		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
 	}
@@ -307,13 +289,13 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 		ccsdsLog(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
 		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
-	PacketTM* packet = masterChannel.txOutFramesBeforeMCGenerationListTM.front();
+	PacketTM* packet = masterChannel.txProcessedPacketListBufferTM.front();
 
 	// Check if need to add secondary header and act accordingly
 	// TODO: Process secondary headers
 
 	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.push_back(packet);
-	masterChannel.txOutFramesBeforeMCGenerationListTM.pop_front();
+	masterChannel.txProcessedPacketListBufferTM.pop_front();
 
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;

@@ -208,8 +208,7 @@ public:
 	/**
 	 * Determines the number of TM Transfer Frames transmitted
 	 */
-	// I am not sure if this should be here or part of the PacketTM struct
-	const uint8_t frameCountTM;
+	uint8_t frameCountTM;
 
 	/**
 	 * @brief Returns availableVCBufferTC space in the VC TC buffer
@@ -229,11 +228,9 @@ public:
 	const bool frameErrorControlFieldTMPresent;
 
 	/**
-	 * @brief Returns availableVCBufferTM space in the VC TM buffer
+	 * @brief Defines whether octet or forward-ordered synchronization is used
 	 */
-	uint16_t availableBufferTM() const {
-		return txUnprocessedPacketListBufferTM.available();
-	}
+	const SynchronizationFlag synchronization;
 
 	/**
 	 *
@@ -245,14 +242,14 @@ public:
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const uint8_t clcwRate,
 	               const bool blocking, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	               const uint8_t frameCount, const bool operationalControlFieldTMPresent,
-	               const bool frameErrorControlFieldTMPresent,
+	               const bool frameErrorControlFieldTMPresent, const SynchronizationFlag synchronization,
 	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLength(maxFrameLength), clcwRate(clcwRate),
 	      blocking(blocking), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
 	      frameCountTM(frameCount), txWaitQueueTC(), sentQueueTC(),
 	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
-	      operationalControlFieldTMPresent(operationalControlFieldTMPresent),
+	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
 	      fop(FrameOperationProcedure(this, &txWaitQueueTC, &sentQueueTC, repetitionCopCtrl)) {
 		mapChannels = mapChan;
 	}
@@ -261,9 +258,8 @@ public:
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent), maxFrameLength(v.maxFrameLength),
 	      clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame), repetitionCOPCtrl(v.repetitionCOPCtrl),
 	      frameCountTM(v.frameCountTM), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
-	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC),
-	      txUnprocessedPacketListBufferTM(v.txUnprocessedPacketListBufferTM), fop(v.fop),
-	      masterChannel(v.masterChannel), blocking(v.blocking),
+	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop),
+	      masterChannel(v.masterChannel), blocking(v.blocking), synchronization(v.synchronization),
 	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
 		fop.vchan = this;
@@ -304,11 +300,6 @@ private:
 	etl::list<PacketTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
 
 	/**
-	 * @brief Buffer to storeOut unprocessed TM packets that are directly processed in a virtual channel
-	 */
-	etl::list<PacketTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txUnprocessedPacketListBufferTM;
-
-	/**
 	 * @brief Holds the FOP state of the virtual channel
 	 */
 	FrameOperationProcedure fop;
@@ -333,16 +324,16 @@ struct MasterChannel {
 
 	MasterChannel(bool errorCtrlField, bool secondaryHeaderTMPresent, uint8_t frameCount)
 	    : virtChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
-          secondaryHeaderTMPresent(secondaryHeaderTMPresent),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField) {}
+	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), txToBeTransmittedFramesAfterAllFramesGenerationListTC(),
+	      errorCtrlField(errorCtrlField) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
-          secondaryHeaderTMPresent(m.secondaryHeaderTMPresent),
-	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM) {
+	      secondaryHeaderTMPresent(m.secondaryHeaderTMPresent), rxMasterCopyTC(m.rxMasterCopyTC),
+	      rxMasterCopyTM(m.rxMasterCopyTM) {
 		for (auto& vc : virtChannels) {
 			vc.second.masterChannel = *this;
 		}
@@ -383,6 +374,7 @@ struct MasterChannel {
 	                         const uint8_t clcwRate, const bool blocking, const uint8_t repetitionTypeAFrame,
 	                         const uint8_t repetitionCopCtrl, const uint8_t frameCount,
 	                         const bool frameErrorControlFieldTMPresent, const bool operationalControlFieldTMPresent,
+	                         const SynchronizationFlag synchronizationFlag,
 	                         etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 private:
@@ -393,7 +385,7 @@ private:
 
 	// TM packets stored in frames list, before being processed by the vc generation service
 	etl::list<PacketTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCGenerationListTM;
-	// Packets ready to be transmitted having passed through the vc generation service
+	// Packets ready to be transmitted having passed through the vc generatiooperationalControlFieldTMPresentn service
 	etl::list<PacketTM*, MaxReceivedTxTmOutInVCBuffer> txToBeTransmittedFramesAfterMCGenerationListTM;
 
 	// TM packets stored in frames list, before being processed by the vc reception service
@@ -415,10 +407,13 @@ private:
 	// TM packets that are ready to be transmitted to higher procedures following all frames generation service
 	etl::list<PacketTM*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTM;
 
+	// Buffer to store TM packets that are processed by the packet and VC Generation services
+	etl::list<PacketTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedPacketListBufferTM;
+
 	/**
 	 * @brief Indicates whether the secondary header is present for the given master channel
 	 */
-    const bool secondaryHeaderTMPresent;
+	const bool secondaryHeaderTMPresent;
 
 	/**
 	 * @brief Buffer holding the master copy of TC TX packets that are currently being processed
