@@ -1,7 +1,7 @@
 # Doxygen dark theme
 
-Theme implements dark colors implementation for doxygen documentation generator.
-Selected colors are inspiration from Sublime Text syntax highligher for C language.
+Theme implements dark colors implementation for doxygen documentation generator. Selected colors are inspiration from
+Sublime Text syntax highligher for C language.
 
 ## Demo
 

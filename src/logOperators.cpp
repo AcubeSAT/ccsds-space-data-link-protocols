@@ -1,21 +1,19 @@
 #include <logOperators.h>
 
-std::ostream& operator<<(std::ostream& out, const TxRx value)
-{
+std::ostream& operator<<(std::ostream& out, const TxRx value) {
 	static std::map<TxRx, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(Tx);
 		INSERT_ELEMENT(Rx);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const NotificationType value)
-{
+std::ostream& operator<<(std::ostream& out, const NotificationType value) {
 	static std::map<NotificationType, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(TypeVirtualChannelAlert);
 		INSERT_ELEMENT(TypeMasterChannelAlert);
@@ -25,13 +23,12 @@ std::ostream& operator<<(std::ostream& out, const NotificationType value)
 		INSERT_ELEMENT(TypeFDURequestType);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification value)
-{
+std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification value) {
 	static std::map<ServiceChannelNotification, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(NO_SERVICE_EVENT);
 		INSERT_ELEMENT(MAP_CHANNEL_FRAME_BUFFER_FULL);
@@ -55,38 +52,35 @@ std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification val
 		INSERT_ELEMENT(TX_FOP_REJECTED);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const COPDirectiveResponse value)
-{
+std::ostream& operator<<(std::ostream& out, const COPDirectiveResponse value) {
 	static std::map<COPDirectiveResponse, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(ACCEPT);
 		INSERT_ELEMENT(REJECT);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const FOPNotification value)
-{
+std::ostream& operator<<(std::ostream& out, const FOPNotification value) {
 	static std::map<FOPNotification, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(NO_FOP_EVENT);
 		INSERT_ELEMENT(SENT_QUEUE_FULL);
 		INSERT_ELEMENT(WAIT_QUEUE_EMPTY);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const MasterChannelAlert value)
-{
+std::ostream& operator<<(std::ostream& out, const MasterChannelAlert value) {
 	static std::map<MasterChannelAlert, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(NO_MC_ALERT);
 		INSERT_ELEMENT(OUT_FRAMES_LIST_FULL);
@@ -94,13 +88,12 @@ std::ostream& operator<<(std::ostream& out, const MasterChannelAlert value)
 		INSERT_ELEMENT(MAX_AMOUNT_OF_VIRT_CHANNELS);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const VirtualChannelAlert value)
-{
+std::ostream& operator<<(std::ostream& out, const VirtualChannelAlert value) {
 	static std::map<VirtualChannelAlert, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(NO_VC_ALERT);
 		INSERT_ELEMENT(UNPROCESSED_PACKET_LIST_FULL);
@@ -108,19 +101,17 @@ std::ostream& operator<<(std::ostream& out, const VirtualChannelAlert value)
 		INSERT_ELEMENT(RX_WAIT_QUEUE_FULL);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const FDURequestType value)
-{
+std::ostream& operator<<(std::ostream& out, const FDURequestType value) {
 	static std::map<FDURequestType, std::string> strings;
-	if (strings.empty()){
+	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
 		INSERT_ELEMENT(REQUEST_PENDING);
 		INSERT_ELEMENT(REQUEST_POSITIVE_CONFIRM);
 		INSERT_ELEMENT(REQUEST_NEGATIVE_CONFIRM);
 #undef INSERT_ELEMENT
 	}
-	return out  << strings[value];
+	return out << strings[value];
 }
-

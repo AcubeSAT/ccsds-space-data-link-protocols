@@ -45,11 +45,9 @@ const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
 // Maximum received TM in the master buffer, before being passed to the all frames generation service
 const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
 
-
 const uint8_t MaxReceivedTxTmOutInVCBuffer = 100;
 // Maximum received TM in the master buffer, before being passed to the all frames generation service
 const uint8_t MaxReceivedTxTmInVCBuffer = 100;
-
 
 // Maximum received TM in the master buffer, ready to be transmitted to the lower procedures (doesn't include
 // repetitions)
@@ -76,17 +74,13 @@ const uint8_t MaxTxInMasterChannel = 200;
 const uint8_t MaxRxInMasterChannel = 200;
 
 // Raw TX packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
-[[maybe_unused]]
-const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 6;
-[[maybe_unused]]
-const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6;
+[[maybe_unused]] const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 6;
+[[maybe_unused]] const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6;
 
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
 
-enum FlagState {
-    NOT_READY = 0, READY = 1
-};
+enum FlagState { NOT_READY = 0, READY = 1 };
 #define LOGGER_MAX_MESSAGE_SIZE 512
 #define LOG_VERBOSE 0
 #endif // CCSDS_TCCSDS_DEFINITIONS_HPP
