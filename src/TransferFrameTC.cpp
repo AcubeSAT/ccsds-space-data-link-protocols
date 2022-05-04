@@ -1,7 +1,7 @@
-#include <PacketTC.hpp>
+#include <TransferFrameTC.hpp>
 
-PacketTC::PacketTC(uint8_t* packet, uint16_t packetLength, PacketType t)
-    : Packet(t, packetLength, packet), hdr(packet) {
+TransferFrameTC::TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t)
+    : TransferFrame(t, packetLength, packet), hdr(packet) {
 	// Segment header may be unavailable in virtual channels, here we treat it as if it's there sinc it's existence is
 	// dependent on the channel. We deal with it's existence afterwards
 	segHdr = packet[5];

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <cstdint>
-#include <PacketTC.hpp>
+#include <TransferFrameTC.hpp>
 #include <etl/list.h>
 #include <Alert.hpp>
 
@@ -56,19 +56,19 @@ public:
 	/**
 	 * @brief Buffer for storing packets, BEFORE being processed by FARM.
 	 */
-	etl::list<PacketTC*, MaxReceivedRxTcInWaitQueue>* waitQueue;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue;
 	/**
 	 * @brief Buffer for storing packets, AFTER being processed by FARM.
 	 */
-	etl::list<PacketTC*, MaxReceivedRxTcInSentQueue>* sentQueue;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInSentQueue>* sentQueue;
 
 	/**
 	 * @brief The Virtual Channel in which FOP is initialized
 	 */
 	VirtualChannel* vchan;
 
-	FarmAcceptanceReporting(VirtualChannel* vchan, etl::list<PacketTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
-	                        etl::list<PacketTC*, MaxReceivedRxTcInSentQueue>* sentQueue,
+	FarmAcceptanceReporting(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
+	                        etl::list<TransferFrameTC*, MaxReceivedRxTcInSentQueue>* sentQueue,
 	                        const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
 	                        const uint8_t farmNegativeWinWidth)
 	    : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farmSlidingWinWidth),

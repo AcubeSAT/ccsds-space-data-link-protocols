@@ -4,7 +4,7 @@
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
 #include <optional>
-#include <PacketTC.hpp>
+#include <TransferFrameTC.hpp>
 #include <utility>
 
 
@@ -38,7 +38,7 @@ public:
     /**
      * @brief Fetch packet in the top of the MC buffer
      */
-    const PacketTM *packetMasterChannel() const{
+    const TransferFrameTM*packetMasterChannel() const{
         return masterChannel.txProcessedPacketListBufferTM.front();
     }
 
@@ -50,7 +50,7 @@ public:
 	 * @brief Stores an incoming  TC packet in the ring buffer
 	 *
 	 * @param packet Data of the packet
-	 * @param packetLength PacketTC length
+	 * @param packetLength TransferFrameTC length
 	 * @param gvcid Global Virtual Channel ID
 	 * @param mapid MAP ID
 	 * @param sduid SDU ID
@@ -64,7 +64,7 @@ public:
 	 * Virtual Channel Generation Service
 	 *
 	 * @param packet Data of the packet
-	 * @param packetLength PacketTC length
+	 * @param packetLength TransferFrameTC length
 	 * @param gvcid Global Virtual Channel ID
 	 * @param scid Spacecraft ID
 	 */
@@ -163,9 +163,9 @@ public:
 
 	ServiceChannelNotification allFramesReceptionTCRequest();
 	/**
-	 * @return The front TC Packet from txOutFramesBeforeAllFramesGenerationListTC
+	 * @return The front TC TransferFrame from txOutFramesBeforeAllFramesGenerationListTC
 	 */
-	std::optional<PacketTC> getTxProcessedPacket();
+	std::optional<TransferFrameTC> getTxProcessedPacket();
 
 	// COP Directives
 
@@ -288,28 +288,28 @@ public:
 	/**
 	 * @brief Read first packet of the TC MAP channel buffer (unprocessedPacketListBufferTC)
 	 */
-	std::pair<ServiceChannelNotification, const PacketTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
+	std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
 
 	/**
 	 * @brief Read first TC packet of the virtual channel buffer (txUnprocessedPacketListBufferTC)
 	 */
-	std::pair<ServiceChannelNotification, const PacketTC*> txOutPacketTC(uint8_t vid) const;
+	std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid) const;
 
 	/**
 	 * @brief Return the last stored packet from txMasterCopyTC
 	 */
-	std::pair<ServiceChannelNotification, const PacketTC*> txOutPacketTC() const;
+	std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC() const;
 
 	/**
 	 * @brief Return the last stored packet from txMasterCopyTM
 	 */
-	std::pair<ServiceChannelNotification, const PacketTM*> txOutPacketTM() const;
+	std::pair<ServiceChannelNotification, const TransferFrameTM*> txOutPacketTM() const;
 
 	/**
 	 * @brief Return the last processed packet
 	 */
-	std::pair<ServiceChannelNotification, const PacketTM*> txOutProcessedPacketTM() const;
-	std::pair<ServiceChannelNotification, const PacketTC*> txOutProcessedPacketTC() const;
+	std::pair<ServiceChannelNotification, const TransferFrameTM*> txOutProcessedPacketTM() const;
+	std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutProcessedPacketTC() const;
 
 	// This is honestly a bit confusing
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)

@@ -6,9 +6,9 @@
 #include <cstring>
 #include <cstdint>
 #include <etl/memory.h>
-#include "Packet.hpp"
+#include "TransferFrame.hpp"
 
-class PacketTC;
+class TransferFrameTC;
 
 /**
  * @brief The packet's service type
@@ -58,7 +58,7 @@ public:
 	}
 };
 
-class PacketTC : public Packet {
+class TransferFrameTC : public TransferFrame {
 public:
 	void setConfSignal(FDURequestType reqSignal) {
 		confSignal = reqSignal;
@@ -70,7 +70,7 @@ public:
 	// undesired behavior if we're to delete different packets that share a frame sequence number for some reason.
 	// This is normally not allowed, but we have to cross-check if it is compatible with FARM checks
 
-	friend bool operator==(const PacketTC& pack1, const PacketTC& pack2) {
+	friend bool operator==(const TransferFrameTC& pack1, const TransferFrameTC& pack2) {
 		return (pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber);
 	}
 
@@ -309,15 +309,15 @@ public:
 		transferFrameSeqNumber = frame_seq_number;
 	}
 
-	PacketTC(uint8_t* packet, uint16_t packetLength, uint8_t segHdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
+	TransferFrameTC(uint8_t* packet, uint16_t packetLength, uint8_t segHdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
 	         ServiceType serviceType, bool segHdrPresent, PacketType t = TC)
-	    : Packet(t, packetLength, packet), hdr(packet), segHdr(segHdr), gvcid(gvcid), mapid(mapid), sduid(sduid),
+	    : TransferFrame(t, packetLength, packet), hdr(packet), segHdr(segHdr), gvcid(gvcid), mapid(mapid), sduid(sduid),
 	      serviceType(serviceType), transferFrameSeqNumber(0), ack(false), toBeRetransmitted(false),
 	      transferFrameVersionNumber(0) {
 		data = &packet[5 + 1 * segHdrPresent];
 	}
 
-	PacketTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC);
+	TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC);
 
 private:
 	bool toBeRetransmitted;

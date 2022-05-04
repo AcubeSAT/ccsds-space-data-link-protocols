@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 #include <CCSDSChannel.hpp>
-#include <PacketTC.hpp>
+#include <TransferFrameTC.hpp>
 #include <CCSDSServiceChannel.hpp>
 
 TEST_CASE("Initiate FOP Directives") {

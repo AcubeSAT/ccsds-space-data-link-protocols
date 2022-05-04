@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include <CCSDSChannel.hpp>
-#include <PacketTC.hpp>
-#include <PacketTM.hpp>
+#include <TransferFrameTC.hpp>
+#include <TransferFrameTM.hpp>
 #include <CCSDSServiceChannel.hpp>
 #include <iostream>
 
@@ -42,20 +42,20 @@ TEST_CASE("Service Channel") {
 
 	serv_channel.storeTC(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 1);
-	const PacketTC* packet_a = serv_channel.txOutPacketTC().second;
+	const TransferFrameTC* packet_a = serv_channel.txOutPacketTC().second;
 	CHECK(packet_a->getPacketLength() == 9);
 	CHECK(packet_a->getServiceType() == ServiceType::TYPE_A);
 	CHECK((serv_channel.txOutPacketTC(0, 0).second == packet_a));
 
 	serv_channel.storeTC(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 2);
-	const PacketTC* packet_b = serv_channel.txOutPacketTC().second;
+	const TransferFrameTC* packet_b = serv_channel.txOutPacketTC().second;
 	CHECK(packet_b->getPacketLength() == 10);
 	CHECK(packet_b->getServiceType() == ServiceType::TYPE_B);
 
 	serv_channel.storeTC(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_A);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 3);
-	const PacketTC* packet_c = serv_channel.txOutPacketTC().second;
+	const TransferFrameTC* packet_c = serv_channel.txOutPacketTC().second;
 	CHECK(packet_c->getPacketLength() == 3);
 	CHECK(packet_c->getServiceType() == ServiceType::TYPE_A);
 	CHECK((serv_channel.txOutPacketTC(0, 0).second == packet_a));
@@ -95,7 +95,7 @@ TEST_CASE("Service Channel") {
 	err = serv_channel.allFramesGenerationTCRequest();
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	PacketTC packet = *serv_channel.getTxProcessedPacket();
+	TransferFrameTC packet = *serv_channel.getTxProcessedPacket();
 
 	CHECK(serv_channel.txOutProcessedPacketTC().second == packet_a);
 
@@ -124,7 +124,7 @@ TEST_CASE("Service Channel") {
 	//    err = serv_channel.all_frames_generation_request();
 	//    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
 	//
-	//    //PacketTC packet = *serv_channel.get_tx_processed_packet();
+	//    //TransferFrameTC packet = *serv_channel.get_tx_processed_packet();
 	//
 	//    CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
 
@@ -135,7 +135,7 @@ TEST_CASE("Service Channel") {
 
 	serv_channel.storeTM(pckt_TM, 9, 0, 0);
 
-	const PacketTM *packet_TM = serv_channel.txOutPacketTM().second;
+	const TransferFrameTM *packet_TM = serv_channel.txOutPacketTM().second;
 	CHECK(packet_TM->getPacketLength() == 9);
 	CHECK(packet_a->getTransferFrameVersionNumber() == 0);
 	CHECK(packet_TM->getMasterChannelFrameCount() == 0);
@@ -180,7 +180,7 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
     CHECK(serv_channel.availableMcTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
 
-	const PacketTM *packet_tm_mc = serv_channel.packetMasterChannel();
+	const TransferFrameTM*packet_tm_mc = serv_channel.packetMasterChannel();
     CHECK(serv_channel.getFrameCountTM(0) == 1);
 
 	CHECK(packet_tm_mc->packetData()[0] == 0x06);

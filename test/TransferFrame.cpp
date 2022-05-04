@@ -1,10 +1,10 @@
 #include <catch2/catch.hpp>
-#include <PacketTC.hpp>
-#include <PacketTM.hpp>
+#include <TransferFrameTC.hpp>
+#include <TransferFrameTM.hpp>
 
-TEST_CASE("PacketTC Generation") {
+TEST_CASE("TransferFrameTC Generation") {
 	uint8_t data[] = {0, 11, 128, 33, 4, 5};
-	PacketTC pckt = PacketTC(data, 5);
+	TransferFrameTC pckt = TransferFrameTC(data, 5);
 
 	CHECK(pckt.segmentationHeader() == 5);
 	CHECK(pckt.packetData()[0] == 0);
@@ -41,7 +41,7 @@ TEST_CASE("TM Header Generation") {
 
 TEST_CASE("PacketTΜ Generation") {
 	uint8_t data[] = {200, 185, 99, 23, 40, 6, 0, 11, 128, 33, 4, 5, 9, 10};
-	PacketTM pckt = PacketTM(data, 14);
+	TransferFrameTM pckt = TransferFrameTM(data, 14);
 	CHECK(pckt.packetData()[0] == 200);
 	CHECK(pckt.packetData()[1] == 185);
 	CHECK(pckt.packetData()[2] == 99);

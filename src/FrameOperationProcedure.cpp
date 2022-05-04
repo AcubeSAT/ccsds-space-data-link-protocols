@@ -2,7 +2,7 @@
 #include <CCSDSChannel.hpp>
 #include "CCSDSLoggerImpl.h"
 FOPNotification FrameOperationProcedure::purgeSentQueue() {
-	etl::ilist<PacketTC*>::iterator cur_frame = sentQueue->begin();
+	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueue->begin();
 
 	while (cur_frame != sentQueue->end()) {
 		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
@@ -13,7 +13,7 @@ FOPNotification FrameOperationProcedure::purgeSentQueue() {
 }
 
 FOPNotification FrameOperationProcedure::purgeWaitQueue() {
-	etl::ilist<PacketTC*>::iterator cur_frame = waitQueue->begin();
+	etl::ilist<TransferFrameTC*>::iterator cur_frame = waitQueue->begin();
 
 	while (cur_frame != waitQueue->end()) {
 		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
@@ -33,7 +33,7 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 		transmissionCount = 1;
 	}
 
-	PacketTC* ad_frame = waitQueue->front();
+	TransferFrameTC* ad_frame = waitQueue->front();
 	if (waitQueue->empty()) {
 		ccsdsLog(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
 		return FOPNotification::WAIT_QUEUE_EMPTY;
@@ -54,7 +54,7 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitBcFrame(PacketTC* bc_frame) {
+FOPNotification FrameOperationProcedure::transmitBcFrame(TransferFrameTC* bc_frame) {
 	bc_frame->setToBeRetransmitted(0);
 	transmissionCount = 1;
 
@@ -64,7 +64,7 @@ FOPNotification FrameOperationProcedure::transmitBcFrame(PacketTC* bc_frame) {
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitBdFrame(PacketTC* bd_frame) {
+FOPNotification FrameOperationProcedure::transmitBdFrame(TransferFrameTC* bd_frame) {
 	bdOut = NOT_READY;
 	// Pass frame to all frames generation service
 	vchan->master_channel().storeOut(bd_frame);
@@ -77,7 +77,7 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (PacketTC* frame : *sentQueue) {
+	for (TransferFrameTC* frame : *sentQueue) {
 		if (frame->getServiceType() == ServiceType::TYPE_A) {
 			frame->setToBeRetransmitted(true);
 		}
@@ -89,7 +89,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (PacketTC* frame : *sentQueue) {
+	for (TransferFrameTC* frame : *sentQueue) {
 		if (frame->getServiceType() == ServiceType::TYPE_B) {
 			frame->setToBeRetransmitted(1);
 		}
@@ -97,7 +97,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 }
 
 void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
-	for (PacketTC* pckt : *sentQueue) {
+	for (TransferFrameTC* pckt : *sentQueue) {
 		if (pckt->transferFrameSequenceNumber() == frame_seq_num) {
 			pckt->setAcknowledgement(true);
 			return;
@@ -106,7 +106,7 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
 }
 
 void FrameOperationProcedure::removeAcknowledgedFrames() {
-	etl::ilist<PacketTC*>::iterator cur_frame = sentQueue->begin();
+	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueue->begin();
 
 	while (cur_frame != sentQueue->end()) {
 		if ((*cur_frame)->acknowledged()) {
@@ -118,7 +118,7 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 	}
 
 	// Also remove acknowledged frames from Master TX Buffer
-	etl::ilist<PacketTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
+	etl::ilist<TransferFrameTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
 
 	while (cur_packet != vchan->master_channel().txMasterCopyTC.end()) {
 		if ((*cur_packet).acknowledged()) {
@@ -133,7 +133,7 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 
 void FrameOperationProcedure::lookForDirective() {
 	if (bcOut == FlagState::READY) {
-		for (PacketTC* frame : *sentQueue) {
+		for (TransferFrameTC* frame : *sentQueue) {
 			if (frame->getServiceType() == ServiceType::TYPE_B && frame->getToBeRetransmitted()) {
 				bcOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
@@ -152,7 +152,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 		return COPDirectiveResponse::REJECT;
 	}
 
-	PacketTC* pckt = sentQueue->front();
+	TransferFrameTC* pckt = sentQueue->front();
 
 	MasterChannelAlert err = vchan->master_channel().storeOut(pckt);
 
@@ -167,7 +167,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	if (adOut == FlagState::READY) {
-		for (PacketTC* frame : *sentQueue) {
+		for (TransferFrameTC* frame : *sentQueue) {
 			if (frame->getServiceType() == ServiceType::TYPE_A) {
 				// adOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
@@ -179,7 +179,7 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 		// Search the wait queue for a suitable FDU
 		// The wait queue is supposed to have a maximum capacity of one
 		if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
-			PacketTC* frame = waitQueue->front();
+			TransferFrameTC* frame = waitQueue->front();
 			if (frame->getServiceType() == ServiceType::TYPE_A) {
 				sentQueue->push_back(frame);
 				waitQueue->pop_front();
@@ -211,7 +211,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	PacketTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
+	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
 	if (frame->lockout() == 0) {
 		if (frame->reportValue() == expectedAcknowledgementSeqNumber) {
@@ -667,7 +667,7 @@ void FrameOperationProcedure::bdReject() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
-	PacketTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
+	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
 	if (frame->transferFrameHeader().bypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_A) {

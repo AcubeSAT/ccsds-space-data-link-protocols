@@ -1,6 +1,6 @@
-#ifndef CCSDS_TM_PACKETS_PACKETTM_HPP
-#define CCSDS_TM_PACKETS_PACKETTM_HPP
-#include "Packet.hpp"
+#ifndef CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
+#define CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
+#include "TransferFrame.hpp"
 #include "Alert.hpp"
 #include "CCSDS_Definitions.hpp"
 
@@ -61,9 +61,9 @@ public:
 	}
 
 	/**
-	 * @brief If the Synchronization Flag is set to ‘0’,t he Packet Order Flag is reserved for
+	 * @brief If the Synchronization Flag is set to ‘0’,t he TransferFrame Order Flag is reserved for
 	            future use by the CCSDS and shall be set to ‘0’. If the Synchronization Flag is
-	            set to ‘1’, the use of the Packet Order Flag is undefined.
+	            set to ‘1’, the use of the TransferFrame Order Flag is undefined.
 	 * @details Bit 34 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.4 from TM SPACE DATA LINK PROTOCOL
 	 */
@@ -72,7 +72,7 @@ public:
 	}
 	/**
 	 * @brief If the Synchronization Flag is set to ‘0’, the First Header Pointer shall contain
-	 *		the position of the first octet of the first Packet that starts in the Transfer Frame Data Field.
+	 *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field.
 	 *		Otherwise it is undefined.
 	 * @details Bits 37–47 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
@@ -84,7 +84,7 @@ public:
 	/**
 	 * @brief Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
 	 *							b) Synchronization Flag (1 bit)
-	 *							c) Packet Order Flag (1 bit)
+	 *							c) TransferFrame Order Flag (1 bit)
 	 *							d) Segment Length Identifier (2 bits)
 	 *							e) First Header Pointer (11 bits)
 	 * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
@@ -95,7 +95,7 @@ public:
 	}
 };
 
-struct PacketTM : public Packet {
+struct TransferFrameTM : public TransferFrame {
 	// TODO: Instead of saving the values separately, the methods below shall just parse the packets
 
 	/**
@@ -166,7 +166,7 @@ struct PacketTM : public Packet {
 	 *
 	 * @brief Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
 	 *                      b) Synchronization Flag (1 bit)
-	 *                      c) Packet Order Flag (1 bit)
+	 *                      c) TransferFrame Order Flag (1 bit)
 	 *                      d) Segment Length Identifier (2 bits)
 	 *                      e) First Header Pointer (11 bits)
 	 * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
@@ -193,7 +193,7 @@ struct PacketTM : public Packet {
 
 	/**
 	 * @brief If  the  Synchronization  Flag  is  set  to  ‘0’,  the  First  Header  Pointer  shall  contain
-	 *		the position of the first octet of the first Packet that starts in the Transfer Frame Data Field.
+	 *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field.
 	 *		Otherwise it is undefined.
 	 * @details Bits 37–47 of the Transfer Frame Primary Header.
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
@@ -224,10 +224,10 @@ struct PacketTM : public Packet {
 		packet[2] = mcfc;
 	}
 
-	PacketTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
+	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
 	         uint8_t* secondaryHeader, uint16_t transferFrameDataFieldStatus, bool ocfPresent,
 	         bool transferFrameSecondaryHeaderPresent, SynchronizationFlag syncFlag, PacketType t = TM)
-	    : Packet(t, packetLength, packet), hdr(packet), virtualChannelFrameCount(virtualChannelFrameCount), scid(scid),
+	    : TransferFrame(t, packetLength, packet), hdr(packet), virtualChannelFrameCount(virtualChannelFrameCount), scid(scid),
 	      vcid(vcid), transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
 	      secondaryHeader(secondaryHeader), firstHeaderPointer(firstHeaderPointer) {
 		// TFVN + SC Id
@@ -237,12 +237,12 @@ struct PacketTM : public Packet {
 		// MC Frame Count is set by the MC Generation Service
 		packet[2] = 0;
 		packet[3] = virtualChannelFrameCount;
-		// Data field status. Packet Order Flag and Segment Length ID are unused
+		// Data field status. TransferFrame Order Flag and Segment Length ID are unused
 		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
 		packet[5] = firstHeaderPointer & 0xFF;
 	}
 
-	PacketTM(uint8_t* packet, uint16_t packet_length, PacketType t = TM);
+	TransferFrameTM(uint8_t* packet, uint16_t packet_length, PacketType t = TM);
 
 private:
 	TransferFrameHeaderTM hdr;
@@ -257,4 +257,4 @@ private:
 	uint8_t* operationalControlField{};
 };
 
-#endif // CCSDS_TM_PACKETS_PACKETTM_HPP
+#endif // CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP

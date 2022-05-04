@@ -3,7 +3,7 @@
 #include "CCSDSLoggerImpl.h"
 // Virtual Channel
 
-VirtualChannelAlert VirtualChannel::storeVC(PacketTC* packet) {
+VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
 	// Limit the amount of packets that can be stored at any given time
 	if (txUnprocessedPacketListBufferTC.full()) {
 		ccsdsLog(Tx, TypeVirtualChannelAlert, TX_WAIT_QUEUE_FULL);
@@ -19,7 +19,7 @@ VirtualChannelAlert VirtualChannel::storeVC(PacketTC* packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-MasterChannelAlert MasterChannel::storeOut(PacketTC* packet) {
+MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* packet) {
 	if (txOutFramesBeforeAllFramesGenerationListTC.full()) {
 		// Log that buffer is full
 		ccsdsLog(Tx, TypeMasterChannelAlert, OUT_FRAMES_LIST_FULL);
@@ -32,7 +32,7 @@ MasterChannelAlert MasterChannel::storeOut(PacketTC* packet) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::storeOut(PacketTM* packet) {
+MasterChannelAlert MasterChannel::storeOut(TransferFrameTM* packet) {
 	if (txOutFramesBeforeAllFramesGenerationListTM.full()) {
 		// Log that buffer is full
 		ccsdsLog(Tx, TypeMasterChannelAlert, OUT_FRAMES_LIST_FULL);
@@ -43,7 +43,7 @@ MasterChannelAlert MasterChannel::storeOut(PacketTM* packet) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::storeTransmittedOut(PacketTC* packet) {
+MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTC* packet) {
 	if (txToBeTransmittedFramesAfterAllFramesGenerationListTC.full()) {
 		ccsdsLog(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
@@ -53,7 +53,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(PacketTC* packet) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::storeTransmittedOut(PacketTM* packet) {
+MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* packet) {
 	if (txToBeTransmittedFramesAfterAllFramesGenerationListTM.full()) {
 		ccsdsLog(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
@@ -82,8 +82,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-void MasterChannel::removeMasterTx(PacketTC* packet_ptr) {
-	etl::list<PacketTC, MaxTxInMasterChannel>::iterator it;
+void MasterChannel::removeMasterTx(TransferFrameTC* packet_ptr) {
+	etl::list<TransferFrameTC, MaxTxInMasterChannel>::iterator it;
 	for (it = txMasterCopyTC.begin(); it != txMasterCopyTC.end(); ++it) {
 		if (&it == packet_ptr) {
 			txMasterCopyTC.erase(it);
@@ -92,8 +92,8 @@ void MasterChannel::removeMasterTx(PacketTC* packet_ptr) {
 	}
 }
 
-void MasterChannel::removeMasterTx(PacketTM* packet_ptr) {
-	etl::list<PacketTM, MaxTxInMasterChannel>::iterator it;
+void MasterChannel::removeMasterTx(TransferFrameTM* packet_ptr) {
+	etl::list<TransferFrameTM, MaxTxInMasterChannel>::iterator it;
 	for (it = txMasterCopyTM.begin(); it != txMasterCopyTM.end(); ++it) {
 		if (&it == packet_ptr) {
 			txMasterCopyTM.erase(it);
@@ -102,8 +102,8 @@ void MasterChannel::removeMasterTx(PacketTM* packet_ptr) {
 	}
 }
 
-void MasterChannel::removeMasterRx(PacketTC* packet_ptr) {
-	etl::list<PacketTC, MaxRxInMasterChannel>::iterator it;
+void MasterChannel::removeMasterRx(TransferFrameTC* packet_ptr) {
+	etl::list<TransferFrameTC, MaxRxInMasterChannel>::iterator it;
 	for (it = rxMasterCopyTC.begin(); it != rxMasterCopyTC.end(); ++it) {
 		if (&it == packet_ptr) {
 			rxMasterCopyTC.erase(it);
@@ -112,8 +112,8 @@ void MasterChannel::removeMasterRx(PacketTC* packet_ptr) {
 	}
 }
 
-void MasterChannel::removeMasterRx(PacketTM* packet_ptr) {
-	etl::list<PacketTM, MaxRxInMasterChannel>::iterator it;
+void MasterChannel::removeMasterRx(TransferFrameTM* packet_ptr) {
+	etl::list<TransferFrameTM, MaxRxInMasterChannel>::iterator it;
 	for (it = rxMasterCopyTM.begin(); it != rxMasterCopyTM.end(); ++it) {
 		if (&it == packet_ptr) {
 			rxMasterCopyTM.erase(it);

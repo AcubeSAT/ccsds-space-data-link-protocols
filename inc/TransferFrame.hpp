@@ -42,12 +42,12 @@ protected:
 	uint8_t* packetHeader;
 };
 
-class Packet {
+class TransferFrame {
 private:
 	PacketType type;
 
 public:
-	Packet(PacketType t, uint16_t packetLength, uint8_t* packet)
+	TransferFrame(PacketType t, uint16_t packetLength, uint8_t* packet)
 	    : type(t), packetLength(packetLength), packet(packet), data(nullptr){};
 
 	/**

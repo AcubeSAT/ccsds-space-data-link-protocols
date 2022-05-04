@@ -12,12 +12,12 @@ const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assign
 
 // TODO? See if some of those constants don't need to be global and can be defined in the class instead
 
-/* TM Packet Definitions */
+/* TM TransferFrame Definitions */
 const uint16_t TmTransferFrameSize = 128;
 const uint8_t TmPrimaryHeaderSize = 6;
 const uint8_t TmSecondaryHeaderSize = 0; // Size set to zero if the secondary header is not used
 
-/* TC Packet Definitions */
+/* TC TransferFrame Definitions */
 const uint8_t TcPrimaryHeaderSize = 5;
 const bool TcErrorControlFieldExists = false;
 
