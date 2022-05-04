@@ -66,7 +66,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(PacketTM* packet) {
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent,
                                         const uint16_t maxFrameLength, const uint8_t clcwRate, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                                        const uint8_t frameCountP, const bool frameErrorControlFieldTMPresent,
+                                        const bool frameErrorControlFieldTMPresent,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization,
                                         etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan) {
@@ -76,7 +76,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 	}
 
 	virtChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, clcwRate, blocking,
-	                                          repetitionTypeAFrame, repetitionCopCtrl, frameCountP,
+	                                          repetitionTypeAFrame, repetitionCopCtrl,
 	                                          frameErrorControlFieldTMPresent, operationalControlFieldTMPresent,
 	                                          synchronization, mapChan));
 	return MasterChannelAlert::NO_MC_ALERT;

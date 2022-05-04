@@ -16,7 +16,7 @@ TEST_CASE("Service Channel") {
 	};
 
 	MasterChannel master_channel = MasterChannel(true, true, 0);
-	master_channel.addVC(0, true, 128, 20, true, 2, 2, 2, true, true, SynchronizationFlag::FORWARD_ORDERED,
+	master_channel.addVC(0, true, 128, 20, true, 2, 2, true, true, SynchronizationFlag::FORWARD_ORDERED,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -172,4 +172,21 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
+
+	// TM Transmission
+    CHECK(serv_channel.getFrameCountTM(0) == 0);
+    uint8_t pck_tm_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
+	err = serv_channel.storeTM(pck_tm_data, 15, 0);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+    CHECK(serv_channel.availableMcTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
+
+	const PacketTM *packet_tm_mc = serv_channel.packetMasterChannel();
+    CHECK(serv_channel.getFrameCountTM(0) == 1);
+
+	CHECK(packet_tm_mc->packetData()[0] == 0x06);
+	CHECK(packet_tm_mc->packetData()[1] == 0x71);
+	CHECK(packet_tm_mc->packetData()[2] == 0x00);
+    CHECK(packet_tm_mc->packetData()[3] ==  0x00);
+
+	//packet_tm_tx->spacecraftId();
 }

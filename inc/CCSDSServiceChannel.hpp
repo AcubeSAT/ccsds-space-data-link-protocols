@@ -7,6 +7,7 @@
 #include <PacketTC.hpp>
 #include <utility>
 
+
 /**
  * @brief This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
  * bidirectional interface between the receiving and transmitting parties
@@ -29,8 +30,21 @@ private:
 	// @todo Think about whether we need to keep the size of the packets in a queue. Technically, we can determine this
 	// from the header of the frame. Not sure what makes more sense
 
+	uint8_t packetCountTM;
+
 public:
 	// Public methods that are called by the scheduler
+
+    /**
+     * @brief Fetch packet in the top of the MC buffer
+     */
+    const PacketTM *packetMasterChannel() const{
+        return masterChannel.txProcessedPacketListBufferTM.front();
+    }
+
+    uint16_t availableMcTM() const{
+		return masterChannel.txProcessedPacketListBufferTM.available();
+	}
 
 	/**
 	 * @brief Stores an incoming  TC packet in the ring buffer
@@ -55,13 +69,14 @@ public:
 	 * @param scid Spacecraft ID
 	 */
 
-	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint16_t scid);
+	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
 
 	/**
 	 * @brief This service is used for storing incoming TM packets in the master channel
 	 * @param packet Raw packet data
 	 * @param packetLength The length of the packet
 	 */
+	 
 	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength);
 
 	/**
@@ -159,6 +174,10 @@ public:
 	ServiceChannelNotification transmitAdFrame(uint8_t vid);
 
 	ServiceChannelNotification pushSentQueue(uint8_t vid);
+
+	uint8_t getFrameCountTM(uint8_t vid);
+
+    uint8_t getFrameCountTM();
 
 	// TODO: Properly handle Notifications
 	void acknowledgeFrame(uint8_t vid, uint8_t frameSeqNumber);

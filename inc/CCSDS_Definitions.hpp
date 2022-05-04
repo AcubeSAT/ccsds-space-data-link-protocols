@@ -8,9 +8,9 @@
 #define CCSDS_CCSDS_DEFINITIONS_HPP
 
 #define tm_error_control_field_exists 1
+const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those constants don't need to be global and can be defined in the class instead
-const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
 /* TM Packet Definitions */
 const uint16_t TmTransferFrameSize = 128;

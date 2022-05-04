@@ -1,9 +1,8 @@
 #include <CCSDSServiceChannel.hpp>
-#include <PacketTC.hpp>
 #include <PacketTM.hpp>
 #include <etl/iterator.h>
-#include <Alert.hpp>
 #include <CCSDSLoggerImpl.h>
+
 
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength) {
 	if (masterChannel.rxMasterCopyTC.full()) {
@@ -57,8 +56,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 }
 
 // It is expected for space to be reserved for the Primary and Secondary header (if present) beforehand
-ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid,
-                                                   uint16_t scid) {
+ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid) {
 	uint8_t vid = gvcid & 0x3F;
 	VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
 
@@ -72,8 +70,6 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
 
-	// Implement VC Generation
-
 	auto hdr = TransferFrameHeaderTM(packet);
 
 	uint8_t* secondaryHeader = 0;
@@ -82,7 +78,7 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 		secondaryHeader = &packet[7];
 	}
 
-	PacketTM packet_s = PacketTM(packet, packetLength, vchan->frameCountTM, scid, vid, secondaryHeader,
+	PacketTM packet_s = PacketTM(packet, packetLength, vchan->frameCountTM, vid, secondaryHeader,
 	                             hdr.transferFrameDataFieldStatus(), vchan->operationalControlFieldTMPresent,
 	                             masterChannel.secondaryHeaderTMPresent, vchan->synchronization);
 
@@ -643,6 +639,15 @@ uint8_t ServiceChannel::transmitterFrameSeqNumber(uint8_t vid) const {
 
 uint8_t ServiceChannel::expectedFrameSeqNumber(uint8_t vid) const {
 	return masterChannel.virtChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
+}
+
+
+uint8_t ServiceChannel::getFrameCountTM(uint8_t vid){
+    return masterChannel.virtChannels.at(vid).frameCountTM;
+}
+
+uint8_t ServiceChannel::getFrameCountTM(){
+    return masterChannel.frameCountTM;
 }
 
 std::pair<ServiceChannelNotification, const PacketTC*> ServiceChannel::txOutPacketTC(uint8_t vid, uint8_t mapid) const {
