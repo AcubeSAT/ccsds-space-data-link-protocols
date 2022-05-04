@@ -290,6 +290,11 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 	// Check if need to add secondary header and act accordingly
 	// TODO: Process secondary headers
 
+	// set master channel frame counter
+    packet->setMasterChannelFrameCount(masterChannel.frameCountTM);
+
+	// increment master channel frame counter
+	masterChannel.frameCountTM = masterChannel.frameCountTM <= 254 ? masterChannel.frameCountTM : 0;
 	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.push_back(packet);
 	masterChannel.txProcessedPacketListBufferTM.pop_front();
 

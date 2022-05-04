@@ -96,6 +96,8 @@ public:
 };
 
 struct PacketTM : public Packet {
+	// TODO: Instead of saving the values separately, the methods below shall just parse the packets
+
 	/**
 	 * @note this function is the same with uint8_t *packetData() const.
 	 * it is duplicated
@@ -159,6 +161,7 @@ struct PacketTM : public Packet {
 		return virtualChannelFrameCount;
 	}
 
+
 	/**
 	 *
 	 * @brief Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
@@ -215,6 +218,10 @@ struct PacketTM : public Packet {
 
 	void setPacketLength(uint16_t packt_len) {
 		packetLength = packt_len;
+	}
+
+	void setMasterChannelFrameCount(uint8_t mcfc){
+		packet[2] = mcfc;
 	}
 
 	PacketTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
