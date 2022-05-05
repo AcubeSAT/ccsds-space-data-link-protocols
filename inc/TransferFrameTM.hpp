@@ -191,6 +191,10 @@ struct TransferFrameTM : public TransferFrame {
 		return secondaryHeader;
 	}
 
+	bool operationalControlFieldExists() const{
+		return data[1] & 0x1;
+	}
+
 	/**
 	 * @brief If  the  Synchronization  Flag  is  set  to  ‘0’,  the  First  Header  Pointer  shall  contain
 	 *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field.

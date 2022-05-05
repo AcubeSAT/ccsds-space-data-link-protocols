@@ -446,23 +446,41 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTCRequest() {
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest() {
-	if (masterChannel.txOutFramesBeforeAllFramesGenerationListTM.empty()) {
+ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t* packet_data, uint16_t packet_length) {
+	if (masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.empty()) {
 		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
 	}
 
-	if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.full()) {
-		return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
-	}
-
-	TransferFrameTM* packet = masterChannel.txOutFramesBeforeAllFramesGenerationListTM.front();
-	masterChannel.txOutFramesBeforeAllFramesGenerationListTM.pop_front();
+	TransferFrameTM* packet = masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.front();
 
 	if (masterChannel.errorCtrlField) {
 		packet->append_crc();
 	}
 
-	masterChannel.storeTransmittedOut(packet);
+	if (packet->getPacketLength() > packet_length){
+		return ServiceChannelNotification::RX_INVALID_LENGTH;
+	}
+
+	uint8_t vid = packet->virtualChannelId();
+    VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+
+	uint16_t frameSize = packet->getPacketLength();
+	uint16_t idleDataSize = TmTransferFrameSize - frameSize;
+    uint8_t trailerSize = 4*packet->operationalControlFieldExists() + 2*vchan->frameErrorControlFieldTMPresent;
+
+    masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
+
+	// Copy frame without the trailer
+	memcpy(packet_data, packet->packetData(), frameSize - trailerSize);
+
+	// Append idle data
+	memcpy(packet_data + frameSize - trailerSize, idle_data, idleDataSize);
+
+	// Append trailer
+    memcpy(packet_data + TmTransferFrameSize - trailerSize, packet->packetData() + packet_length - trailerSize + 1, trailerSize);
+
+    // Finally, remove master copy
+	masterChannel.removeMasterTx(packet);
 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }

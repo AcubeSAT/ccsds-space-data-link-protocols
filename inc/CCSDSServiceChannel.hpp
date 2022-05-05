@@ -159,7 +159,7 @@ public:
 	 * rate to the Channel Coding Sublayer.
 	 * @see p. 4.2.7 from TC Space Data Link Protocol
 	 */
-	ServiceChannelNotification allFramesGenerationTMRequest();
+	ServiceChannelNotification allFramesGenerationTMRequest(uint8_t* packet_data, uint16_t packet_length=TmTransferFrameSize);
 
 	ServiceChannelNotification allFramesReceptionTCRequest();
 	/**
