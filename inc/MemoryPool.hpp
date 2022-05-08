@@ -1,22 +1,19 @@
-
 #include <cstdint>
 #include "etl/vector.h"
 #include "Alert.hpp"
 
-
 #ifndef CCSDS_TM_PACKETS_MEMORYPOOL_H
 #define CCSDS_TM_PACKETS_MEMORYPOOL_H
 
-
 /**
- * @class MemoryPool This class defines a custom memory pool which is a statically allocated block of memory,
- * where the TM and TC packet data will be stored.
- * This helps better keep track of the packet data and reduce the memory needed for storing them.
+ * @class MemoryPool This class defines a custom memory pool which is a statically allocated block of memory.
+ * This helps better keep track of data and reduce the memory needed for storing them.
  */
+
 class MemoryPool {
 private:
     /**
-     * @var The size of the block of memory, a random power of 2
+     * @var The size of the block of memory(byte), a random power of 2 as a memory convention (Can be changed to anything)
      */
     static constexpr uint8_t memorySize = 8;
 
@@ -28,16 +25,16 @@ private:
     /**
      * @var boolean array that shows if each memory slot is used. False -> empty and true-> used
      */
-    bool usedMemory[memorySize] = {0};
+    bool usedMemory[memorySize] = {false};
 
 
 public:
-    MemoryPool();
+	MemoryPool();
 
     /**
-    * This methods finds the first empty space in the memory pool that can fit the data
+    * This method finds the first empty space in the memory pool that can fit the data
     * @param packetLength length of the data.
-    * @return -1 if there was not enough space for the data else returns the index of the first memory
+    * @return A MasterChannelAlert if there was not enough space for the data else returns the index of the first memory
     * where the data will be stored.
     */
     std::pair<uint16_t, MasterChannelAlert> findFit(uint16_t packetLength);
@@ -59,8 +56,14 @@ public:
     */
     bool deletePacket(uint8_t *packet, uint16_t packetLength);
 
+	/**
+	 * @return pointer to the array that stores the data.
+	 */
     uint8_t *getMemory();
 
+	/**
+	 * @return pointer to the array that shows if each memory slot is used.
+	 */
     bool *getUsedMemory();
 
 };
