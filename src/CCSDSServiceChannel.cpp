@@ -74,13 +74,13 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 
 	uint8_t* secondaryHeader = 0;
 
-	if (masterChannel.secondaryHeaderTMPresent) {
+	if (vchan->secondaryHeaderTMPresent) {
 		secondaryHeader = &packet[7];
 	}
 
 	TransferFrameTM packet_s = TransferFrameTM(packet, packetLength, vchan->frameCountTM, vid, secondaryHeader,
 	                             hdr.transferFrameDataFieldStatus(), vchan->operationalControlFieldTMPresent,
-	                             masterChannel.secondaryHeaderTMPresent, vchan->synchronization);
+	                             vchan->secondaryHeaderTMPresent, vchan->synchronization);
 
 	// Increment VC frame count. The MC counter is incremented in the Master Channel
 	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
@@ -468,8 +468,6 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	uint16_t idleDataSize = TmTransferFrameSize - frameSize;
     uint8_t trailerSize = 4*packet->operationalControlFieldExists() + 2*vchan->frameErrorControlFieldTMPresent;
 
-    masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
-
 	// Copy frame without the trailer
 	memcpy(packet_data, packet->packetData(), frameSize - trailerSize);
 
@@ -479,44 +477,56 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	// Append trailer
     memcpy(packet_data + TmTransferFrameSize - trailerSize, packet->packetData() + packet_length - trailerSize + 1, trailerSize);
 
+	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
     // Finally, remove master copy
 	masterChannel.removeMasterTx(packet);
 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest() {
+ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* packet_data) {
 	if (masterChannel.rxInFramesBeforeAllFramesReceptionListTM.empty()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
 		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
 	}
 
-	if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.full()) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, RX_OUT_BUFFER_FULL);
-		return ServiceChannelNotification::RX_OUT_BUFFER_FULL;
-	}
-
 	TransferFrameTM* packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTM.front();
+    uint8_t vid = packet->virtualChannelId();
 
-#if tm_error_control_field_exists
-	uint16_t len = packet->getPacketLength() - 2;
-	uint16_t crc = packet->calculateCRC(packet->packetData(), len);
+    VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+	bool eccFieldExists = vchan->frameErrorControlFieldTMPresent;
 
-	uint16_t packet_crc =
-	    ((static_cast<uint16_t>(packet->packetData()[len]) << 8) & 0xFF00) | packet->packetData()[len + 1];
-	if (crc != packet_crc) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
-		// Invalid packet is discarded
-		masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
-		masterChannel.removeMasterRx(packet);
+    if(eccFieldExists) {
+		uint16_t len = packet->getPacketLength() - 2;
+		uint16_t crc = packet->calculateCRC(packet->packetData(), len);
 
-		return ServiceChannelNotification::RX_INVALID_CRC;
+		uint16_t packet_crc =
+		    ((static_cast<uint16_t>(packet->packetData()[len]) << 8) & 0xFF00) | packet->packetData()[len + 1];
+		if (crc != packet_crc) {
+			ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
+			// Invalid packet is discarded
+			masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
+			masterChannel.removeMasterRx(packet);
+
+			return ServiceChannelNotification::RX_INVALID_CRC;
+		}
 	}
-#endif
 
-	masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTM.push_back(packet);
-	masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
-	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+	// Copy packet to target pointers. CCSDS headers and footers are stripped
+
+
+    // TODO: Should we also return the size or is the caller aware of it?
+    masterChannel.rxInFramesBeforeAllFramesReceptionListTM.pop_front();
+
+    uint16_t frameSize = packet->getPacketLength();
+	uint8_t headerSize = 5 + vchan->secondaryHeaderTMLength;
+    uint8_t trailerSize = 4*packet->operationalControlFieldExists() + 2*vchan->frameErrorControlFieldTMPresent;
+	memcpy(packet_data, packet + headerSize + 1, frameSize - headerSize - trailerSize);
+	
+    // Finally, remove master copy
+    masterChannel.removeMasterRx(packet);
+
+    ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 

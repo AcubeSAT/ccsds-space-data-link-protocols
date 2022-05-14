@@ -10,8 +10,8 @@ TEST_CASE("Initiate FOP Directives") {
 	    {2, MAPChannel(2, DataFieldContent::PACKET)}, {3, MAPChannel(3, DataFieldContent::PACKET)}};
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-	MasterChannel master_channel_fop = MasterChannel(true, true, 0);
-	master_channel_fop.addVC(3, true, 1024, 20, true, 32, 32, true, true, SynchronizationFlag::FORWARD_ORDERED,
+	MasterChannel master_channel_fop = MasterChannel(true, 0);
+	master_channel_fop.addVC(3, true, 1024, 20, true, 32, 32, true, true, true, 32, SynchronizationFlag::FORWARD_ORDERED,
 	                         map_channels_fop);
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);

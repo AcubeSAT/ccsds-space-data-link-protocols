@@ -138,7 +138,7 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t virtualChannelId() const {
-		return vcid;
+		return data[2] & 0xE >> 1;
 	}
 
 	/**
@@ -232,7 +232,7 @@ struct TransferFrameTM : public TransferFrame {
 	         uint8_t* secondaryHeader, uint16_t transferFrameDataFieldStatus, bool ocfPresent,
 	         bool transferFrameSecondaryHeaderPresent, SynchronizationFlag syncFlag, PacketType t = TM)
 	    : TransferFrame(t, packetLength, packet), hdr(packet), virtualChannelFrameCount(virtualChannelFrameCount), scid(scid),
-	      vcid(vcid), transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
+	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
 	      secondaryHeader(secondaryHeader), firstHeaderPointer(firstHeaderPointer) {
 		// TFVN + SC Id
 		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
@@ -253,7 +253,6 @@ private:
 	uint8_t masterChannelFrameCount;
 	uint8_t virtualChannelFrameCount;
 	uint8_t scid;
-	uint16_t vcid;
 	uint16_t transferFrameDataFieldStatus;
 	uint8_t transferFrameVersionNumber;
 	uint8_t* secondaryHeader;
