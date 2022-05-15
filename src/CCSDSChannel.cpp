@@ -1,6 +1,7 @@
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
 #include "CCSDSLoggerImpl.h"
+#include "MemoryPool.hpp"
 // Virtual Channel
 
 VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
@@ -15,31 +16,64 @@ VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
 }
 
 etl::queue<std::pair<uint8_t *, uint16_t>, PacketBufferTmSize> VirtualChannel::getPacketPtrBufferTm() {
-    return packetPtrBufferTm;
+    return packetPtrBufferTmTx;
 }
 
 etl::queue<uint8_t, PacketBufferTmSize> VirtualChannel::getPacketBufferTm() {
-    return packetBufferTm;
+    return packetBufferTmTx;
 }
 
 void VirtualChannel::setPacketPtrBufferTm(etl::queue<std::pair<uint8_t *, uint16_t>, PacketBufferTmSize> &packetPtrBuffer) {
-    this->packetPtrBufferTm = packetPtrBuffer;
+    this->packetPtrBufferTmTx = packetPtrBuffer;
 }
 
 void VirtualChannel::setPacketBufferTm(etl::queue<uint8_t, PacketBufferTmSize> &packetBuffer) {
-    this->packetBufferTm = packetBuffer;
+    this->packetBufferTmTx = packetBuffer;
 }
 
-void VirtualChannel::storePacketInPacketBufferTm(uint8_t *packet, uint16_t packetLength) {
+void VirtualChannel::storePacektTm(uint8_t *packet, uint16_t packetLength) {
     packet = virtualChannelPool.allocatePacket(packet, packetLength);
     if (packet != nullptr) {
         std::pair<uint8_t *, uint16_t> packetPtr;
         packetPtr.first = packet;
         packetPtr.second = packetLength;
-        packetPtrBufferTm.push(packetPtr);
+        packetPtrBufferTmTx.push(packetPtr);
         for (uint16_t i = 0; i < packetLength; i++) {
-            packetBufferTm.push(packet[i]);
+            packetBufferTmTx.push(packet[i]);
         }
+    }
+}
+/*
+void VirtualChannel::vcGenerationService(MasterChannel* mc) {
+    mc->vcGenerationService(this, 1000);
+    uint8_t * transferFramePacket = mc->getMasterTransferFramePtrBuffer().front();
+    frameCountTM++;
+    mc->frameCount++;
+    uint8_t masterChannelFrameCount = mc->frameCountTM;
+    uint8_t transferFrameVersionNumber = 0;
+    bool secondaryHeaderTMPresent = mc->getSecondaryHeaderTMPresent();
+    TransferFrameTM transferFrameTm = TransferFrameTM(transferFramePacket, 1000, TM);
+}*/
+
+void VirtualChannel::vcGenerationService(uint16_t maxTransferFrameDataLength){
+    uint16_t transferFrameDataLength = 0;
+    uint16_t packetLength = packetPtrBufferTmTx.front().second;
+    uint8_t* transferFrameData = packetPtrBufferTmTx.front().first;
+    while (transferFrameDataLength + packetLength <= maxTransferFrameDataLength) {
+        transferFrameDataLength += packetLength;
+        for (uint16_t i = 0; i < packetLength; i++) {
+            packetBufferTmTx.pop();
+        }
+        packetPtrBufferTmTx.pop();
+        packetLength = packetPtrBufferTmTx.front().second;
+    }
+    if(transferFrameDataLength != 0 ){
+        transferFrameData = master_channel().masterChannelPool.allocatePacket(transferFrameData, transferFrameDataLength);
+        frameCountTM++;
+        master_channel().frameCount++;
+        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData, transferFrameDataLength, TM);
+        master_channel().rxMasterCopyTM.push_back(transferFrameTm);
+        master_channel().masterTransferFramePtrBufferTm.push(transferFrameData);
     }
 }
 
@@ -150,25 +184,7 @@ void MasterChannel::removeMasterRx(TransferFrameTM* packet_ptr) {
 		}
 	}
 }
-void MasterChannel::mergePacketsToTransferFrame(VirtualChannel *vc, uint16_t maxTransferFrameDataLength) {
-    uint16_t transferFrameDataLength = 0;
-    etl::queue<std::pair<uint8_t *, uint16_t>, PacketBufferTmSize> packetPtrBufferTm = vc->getPacketPtrBufferTm();
-    etl::queue<uint8_t, PacketBufferTmSize> packetBufferTm = vc->getPacketBufferTm();
-    uint16_t packetLength = packetPtrBufferTm.front().second;
-    while (transferFrameDataLength + packetLength <= maxTransferFrameDataLength) {
-        transferFrameDataLength += packetLength;
-        for (uint16_t i = 0; i < packetLength; i++) {
-            masterTransferFrameDataBufferTm.push(packetBufferTm.front());
-            packetBufferTm.pop();
-        }
-        packetPtrBufferTm.pop();
-        packetLength = packetPtrBufferTm.front().second;
-    }
-    //Add padding
-    for (uint16_t i = 0; i < maxTransferFrameDataLength - transferFrameDataLength; i++) {
-        masterTransferFrameDataBufferTm.push(idle_data[i]);
-    }
-    masterTransferFramePtrBufferTm.push(&masterTransferFrameDataBufferTm.back() - maxTransferFrameDataLength);
-    vc->setPacketPtrBufferTm(packetPtrBufferTm);
-    vc->setPacketBufferTm(packetBufferTm);
+
+uint8_t MasterChannel::getSecondaryHeaderTMPresent(){
+    return secondaryHeaderTMPresent;
 }

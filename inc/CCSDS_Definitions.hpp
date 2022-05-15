@@ -82,7 +82,7 @@ const uint8_t FopTimerInitial = 60; // sec
 
 enum FlagState { NOT_READY = 0, READY = 1 };
 
-const uint16_t PacketBufferTmSize = 64;
+const uint16_t PacketBufferTmSize = 512;
 const uint16_t MasterTransferFrameBufferTmSize = 512;
 
 const uint8_t idle_data[] = {
