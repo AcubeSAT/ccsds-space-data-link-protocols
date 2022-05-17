@@ -284,11 +284,11 @@ public:
     }
 
     /**
-     * Method that stores a TM packet pointer and the TM  packet data to the packetPtrBufferTmTx and packetBufferTmTx queues
+     * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx queues
      * @param packet pointer to the packet data
      * @param packetLength length of the packet
      */
-    void storePacektTm(uint8_t *packet, uint16_t packetLength);
+    void storePacketTm(uint8_t *packet, uint16_t packetLength);
 
     void vcGenerationService(uint16_t maxTransferFrameDataLength);
 
@@ -326,7 +326,7 @@ private:
     /**
     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
     */
-    etl::queue<std::pair<uint8_t *, uint16_t>, PacketBufferTmSize> packetPtrBufferTmTx;
+    etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTmTx;
 
     /**
      * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data

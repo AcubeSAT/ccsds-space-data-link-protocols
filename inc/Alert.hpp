@@ -24,6 +24,8 @@ enum ServiceChannelNotification : int {
     TX_FOP_REJECTED = 0x14,
     VC_MC_FRAME_BUFFER_EMPTY = 0x15,
     RX_INVALID_CRC,
+    PACKET_BUFFER_EMPTY = 0x16,
+    NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x17,
 };
 
 enum SynchronizationFlag : bool {

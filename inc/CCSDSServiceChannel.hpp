@@ -71,13 +71,30 @@ public:
 
 	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
 
+    /**
+     * Service that generates a transfer frame by combining the packet data to transfer frame data and initializes the transfer frame primary header
+     * @param maxTransferFrameDataLength the maximum transfer frame data legnth
+     * @param gvcid the global virtual channel id
+     * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
+     * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
+     * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
+     */
+    ServiceChannelNotification vcGenerationService (uint16_t maxTransferFrameDataLength, uint8_t gvcid);
+
+    /**
+     * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx queues
+     * @param packet pointer to the packet data
+     * @param packetLength length of the packet
+     * @param gvcid the global virtual channel id
+     */
+	ServiceChannelNotification storePacketTm(uint8_t *packet, uint16_t packetLength, uint8_t gvcid);
+
 	/**
 	 * @brief This service is used for storing incoming TM packets in the master channel
 	 * @param packet Raw packet data
 	 * @param packetLength The length of the packet
 	 */
-	 
-	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength);
+    ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength);
 
 	/**
 	 * @brief This service is used for storing incoming TC packets in the master channel

@@ -15,68 +15,14 @@ VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
 	return VirtualChannelAlert::NO_VC_ALERT;
 }
 
-etl::queue<std::pair<uint8_t *, uint16_t>, PacketBufferTmSize> VirtualChannel::getPacketPtrBufferTm() {
-    return packetPtrBufferTmTx;
-}
-
-etl::queue<uint8_t, PacketBufferTmSize> VirtualChannel::getPacketBufferTm() {
-    return packetBufferTmTx;
-}
-
-void VirtualChannel::setPacketPtrBufferTm(etl::queue<std::pair<uint8_t *, uint16_t>, PacketBufferTmSize> &packetPtrBuffer) {
-    this->packetPtrBufferTmTx = packetPtrBuffer;
-}
-
-void VirtualChannel::setPacketBufferTm(etl::queue<uint8_t, PacketBufferTmSize> &packetBuffer) {
-    this->packetBufferTmTx = packetBuffer;
-}
-
-void VirtualChannel::storePacektTm(uint8_t *packet, uint16_t packetLength) {
-    packet = virtualChannelPool.allocatePacket(packet, packetLength);
-    if (packet != nullptr) {
-        std::pair<uint8_t *, uint16_t> packetPtr;
-        packetPtr.first = packet;
-        packetPtr.second = packetLength;
-        packetPtrBufferTmTx.push(packetPtr);
+void VirtualChannel::storePacketTm(uint8_t *packet, uint16_t packetLength) {
+    if (packetLength <= packetBufferTmTx.available()) {
+        packetLengthBufferTmTx.push(packetLength);
         for (uint16_t i = 0; i < packetLength; i++) {
             packetBufferTmTx.push(packet[i]);
         }
     }
 }
-/*
-void VirtualChannel::vcGenerationService(MasterChannel* mc) {
-    mc->vcGenerationService(this, 1000);
-    uint8_t * transferFramePacket = mc->getMasterTransferFramePtrBuffer().front();
-    frameCountTM++;
-    mc->frameCount++;
-    uint8_t masterChannelFrameCount = mc->frameCountTM;
-    uint8_t transferFrameVersionNumber = 0;
-    bool secondaryHeaderTMPresent = mc->getSecondaryHeaderTMPresent();
-    TransferFrameTM transferFrameTm = TransferFrameTM(transferFramePacket, 1000, TM);
-}*/
-
-void VirtualChannel::vcGenerationService(uint16_t maxTransferFrameDataLength){
-    uint16_t transferFrameDataLength = 0;
-    uint16_t packetLength = packetPtrBufferTmTx.front().second;
-    uint8_t* transferFrameData = packetPtrBufferTmTx.front().first;
-    while (transferFrameDataLength + packetLength <= maxTransferFrameDataLength) {
-        transferFrameDataLength += packetLength;
-        for (uint16_t i = 0; i < packetLength; i++) {
-            packetBufferTmTx.pop();
-        }
-        packetPtrBufferTmTx.pop();
-        packetLength = packetPtrBufferTmTx.front().second;
-    }
-    if(transferFrameDataLength != 0 ){
-        transferFrameData = master_channel().masterChannelPool.allocatePacket(transferFrameData, transferFrameDataLength);
-        frameCountTM++;
-        master_channel().frameCount++;
-        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData, transferFrameDataLength, TM);
-        master_channel().rxMasterCopyTM.push_back(transferFrameTm);
-        master_channel().masterTransferFramePtrBufferTm.push(transferFrameData);
-    }
-}
-
 // Master Channel
 
 // Technically not a packet, but it has identical information
@@ -183,8 +129,4 @@ void MasterChannel::removeMasterRx(TransferFrameTM* packet_ptr) {
 			return;
 		}
 	}
-}
-
-uint8_t MasterChannel::getSecondaryHeaderTMPresent(){
-    return secondaryHeaderTMPresent;
 }
