@@ -23,7 +23,6 @@ add_library(common OBJECT
         src/FrameOperationProcedure.cpp
         src/TransferFrameTC.cpp
         src/FrameAcceptanceReporting.cpp
-        src/TransferFrameTM.cpp
         src/Packet.cpp
         src/logOperators.cpp)
 
