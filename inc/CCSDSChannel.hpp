@@ -283,15 +283,6 @@ public:
         return masterChannel;
     }
 
-    /**
-     * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx queues
-     * @param packet pointer to the packet data
-     * @param packetLength length of the packet
-     */
-    void storePacketTm(uint8_t *packet, uint16_t packetLength);
-
-    void vcGenerationService(uint16_t maxTransferFrameDataLength);
-
 private:
     /**
      * @brief Buffer to storeOut incoming packets BEFORE being processed by COP

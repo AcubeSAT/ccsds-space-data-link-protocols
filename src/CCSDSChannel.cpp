@@ -14,15 +14,6 @@ VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
 	ccsdsLog(Tx, TypeVirtualChannelAlert, NO_VC_ALERT);
 	return VirtualChannelAlert::NO_VC_ALERT;
 }
-
-void VirtualChannel::storePacketTm(uint8_t *packet, uint16_t packetLength) {
-    if (packetLength <= packetBufferTmTx.available()) {
-        packetLengthBufferTmTx.push(packetLength);
-        for (uint16_t i = 0; i < packetLength; i++) {
-            packetBufferTmTx.push(packet[i]);
-        }
-    }
-}
 // Master Channel
 
 // Technically not a packet, but it has identical information
