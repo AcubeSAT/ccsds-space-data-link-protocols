@@ -486,6 +486,8 @@ private:
 	 * @brief Removes TM frames from the RX master buffer
 	 */
 	void removeMasterRx(TransferFrameTM* packet_ptr);
+
+    MemoryPool masterChannelPool = MemoryPool();
 };
 
 #endif // CCSDS_CHANNEL_HPP
