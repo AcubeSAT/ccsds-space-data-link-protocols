@@ -15,8 +15,8 @@ TEST_CASE("Service Channel") {
 	    {2, MAPChannel(2, DataFieldContent::PACKET)},
 	};
 
-	MasterChannel master_channel = MasterChannel(true, true, 0);
-	master_channel.addVC(0, true, 128, 20, true, 2, 2, true, true, SynchronizationFlag::FORWARD_ORDERED,
+	MasterChannel master_channel = MasterChannel(true, 0);
+	master_channel.addVC(0, true, 128, 20, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -149,7 +149,12 @@ TEST_CASE("Service Channel") {
 
 	uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
 	uint8_t invalid_pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54};
-	// TM Reception
+
+    // TM Reception
+
+    // TODO: This should take the output of TM RX called previously. Proper functional tests should include two service
+    //  channels to simulate communication between GS and SC
+
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
@@ -161,24 +166,26 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 2);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
 
-	err = serv_channel.allFramesReceptionTMRequest();
+    uint8_t resulting_tm_packet[12] = {0};
+
+	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
 	// Valid packet passes to lower procedures
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
-	err = serv_channel.allFramesReceptionTMRequest();
+	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
 	// Invalid CRC is logged and the packet is deleted from the master buffer
 	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel);
 
 	// TM Transmission
     CHECK(serv_channel.getFrameCountTM(0) == 0);
     uint8_t pck_tm_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
 	err = serv_channel.storeTM(pck_tm_data, 15, 0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.availableMcTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
+    CHECK(serv_channel.availableMcTxTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
 
 	const TransferFrameTM*packet_tm_mc = serv_channel.packetMasterChannel();
     CHECK(serv_channel.getFrameCountTM(0) == 1);
@@ -188,5 +195,4 @@ TEST_CASE("Service Channel") {
 	CHECK(packet_tm_mc->packetData()[2] == 0x00);
     CHECK(packet_tm_mc->packetData()[3] ==  0x00);
 
-	//packet_tm_tx->spacecraftId();
 }

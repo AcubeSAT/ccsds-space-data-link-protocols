@@ -12,8 +12,8 @@ TEST_CASE("CCSDS TC Channel Model") {
 	                                                                   {3, MAPChannel(3, DataFieldContent::VCA_SDU)}};
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-	MasterChannel master_channel = MasterChannel(true, true, 0);
-	master_channel.addVC(3, true, 1024, 20, true, 32, 32, true, true, SynchronizationFlag::FORWARD_ORDERED,
+	MasterChannel master_channel = MasterChannel(true, 0);
+	master_channel.addVC(3, true, 1024, 20, true, 32, 32, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
 	                     map_channels);
 
 	CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
@@ -28,8 +28,8 @@ TEST_CASE("MAPP blocking") {
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, DataFieldContent::PACKET)}};
 
-	MasterChannel master_channel = MasterChannel(true, true, 0);
-	master_channel.addVC(3, true, 8, 20, true, 32, 32, true, true, SynchronizationFlag::FORWARD_ORDERED,
+	MasterChannel master_channel = MasterChannel(true, 0);
+	master_channel.addVC(3, true, 8, 20, true, 32, 32, true, true, true, 11, SynchronizationFlag::FORWARD_ORDERED,
 	                     map_channels);
 
 	CHECK(master_channel.virtChannels.at(3).VCID == 3);
