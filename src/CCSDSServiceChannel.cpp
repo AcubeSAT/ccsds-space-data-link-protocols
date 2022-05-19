@@ -126,7 +126,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
 	}
 
-	if (virtChannel->txWaitQueueTC.full()) {
+	if (virtChannel->waitQueueTxTC.full()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, VC_MC_FRAME_BUFFER_FULL);
 		return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
 	}
@@ -145,7 +145,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 			uint8_t tf_n =
 			    (packet->getPacketLength() / maxPacketLength) + (packet->getPacketLength() % maxPacketLength != 0);
 
-			if (virtChannel->txWaitQueueTC.available() >= tf_n) {
+			if (virtChannel->waitQueueTxTC.available() >= tf_n) {
 				// Break up packet
 				mapChannel->unprocessedPacketListBufferTC.pop_front();
 
@@ -370,7 +370,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	TransferFrameTC* packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTC.front();
 	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(packet->virtualChannelId()));
 
-	if (virt_channel->rxWaitQueueTC.full()) {
+	if (virt_channel->waitQueueRxTC.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	}
@@ -406,7 +406,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 		return ServiceChannelNotif::RX_INVALID_CRC;
 	}
 #endif
-	virt_channel->rxWaitQueueTC.push_back(packet);
+	virt_channel->waitQueueRxTC.push_back(packet);
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;

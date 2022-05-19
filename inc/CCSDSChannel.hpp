@@ -10,6 +10,7 @@
 
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
+#include <FrameAcceptanceReporting.hpp>
 #include <TransferFrameTC.hpp>
 #include <TransferFrameTM.hpp>
 #include <iostream>
@@ -242,17 +243,20 @@ public:
 	               const bool blockingTC, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
 	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldTMPresent,
-	               const SynchronizationFlag synchronization,
-	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
+	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
+                   const uint8_t farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength),
 	      blockingTC(blockingTC), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
-	      txWaitQueueTC(), sentQueueTC(),
+	      waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
           frameCountTM(0),
-	      fop(FrameOperationProcedure(this, &txWaitQueueTC, &sentQueueTC, repetitionCopCtrl)) {
+	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+          farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth,
+	                                    farmPositiveWinWidth, farmNegativeWinWidth))
+    {
 		mapChannels = mapChan;
 	}
 
@@ -260,17 +264,20 @@ public:
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
 	      maxFrameLengthTC(v.maxFrameLengthTC),
 	      repetitionTypeAFrame(v.repetitionTypeAFrame), repetitionCOPCtrl(v.repetitionCOPCtrl),
-	      frameCountTM(v.frameCountTM), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
-	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop),
+	      frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
+	      sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC), sentQueueRxTC(v.waitQueueRxTC),
+	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop), farm(v.farm),
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels)
 	{
 		fop.vchan = this;
-		fop.sentQueue = &sentQueueTC;
-		fop.waitQueue = &txWaitQueueTC;
-	}
+		fop.sentQueueFOP = &sentQueueTxTC;
+		fop.waitQueueFOP = &waitQueueTxTC;
+        fop.sentQueueFARM = &sentQueueRxTC;
+        fop.waitQueueFARM = &sentQueueRxTC;
+    }
 
 	VirtualChannelAlert storeVC(TransferFrameTC* packet);
 
@@ -285,21 +292,26 @@ public:
 
 private:
 	/**
-	 * @brief Buffer to storeOut incoming packets BEFORE being processed by COP
+	 * @brief Buffer to store incoming packets BEFORE being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> txWaitQueueTC;
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueTxTC;
 
 	/**
-	 * @brief Buffer to storeOut incoming packets AFTER being processed by COP
+	 * @brief Buffer to store incoming packets AFTER being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> rxWaitQueueTC;
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueRxTC;
 
 	/**
-	 * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
+	 * @brief Buffer to store outcoming packets AFTER being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInSentQueue> sentQueueTC;
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue> sentQueueTxTC;
 
-	/**
+    /**
+     * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
+     */
+    etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue> sentQueueRxTC;
+
+    /**
 	 * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
@@ -308,6 +320,11 @@ private:
 	 * @brief Holds the FOP state of the virtual channel
 	 */
 	FrameOperationProcedure fop;
+
+    /**
+    * @brief Holds the FARM state of the virtual channel
+    */
+    FrameAcceptanceReporting farm;
 
 	/**
 	 * @brief The Master Channel the Virtual Channel belongs in
@@ -318,6 +335,7 @@ private:
 struct MasterChannel {
 	friend class ServiceChannel;
 	friend class FrameOperationProcedure;
+	friend class FrameAcceptanceReporting;
 
 	/**
 	 * @brief Virtual channels of the master channel
@@ -383,7 +401,8 @@ struct MasterChannel {
                              const bool frameErrorControlFieldTMPresent,
                              const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
                              const bool operationalControlFieldTMPresent,
-                             SynchronizationFlag synchronization,
+                             SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+                             const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
                              etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 private:

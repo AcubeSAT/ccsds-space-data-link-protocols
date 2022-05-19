@@ -1,7 +1,7 @@
-#include <FarmeAcceptanceReporting.hpp>
+#include <FrameAcceptanceReporting.hpp>
 #include "CCSDS_Log.h"
 
-COPDirectiveResponse FarmAcceptanceReporting::frameArrives() {
+COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
 
 	if (frame->getServiceType() == ServiceType::TYPE_A && frame->transferFrameHeader().ctrlAndCmdFlag()) {
@@ -84,7 +84,7 @@ COPDirectiveResponse FarmAcceptanceReporting::frameArrives() {
 	return COPDirectiveResponse::REJECT;
 }
 
-COPDirectiveResponse FarmAcceptanceReporting::bufferRelease() {
+COPDirectiveResponse FrameAcceptanceReporting::bufferRelease() {
 	if (state == FARMState::LOCKOUT) {
 		state = FARMState::OPEN;
 		wait = FlagState::NOT_READY;

@@ -14,7 +14,7 @@ TEST_CASE("CCSDS TC Channel Model") {
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
 	MasterChannel master_channel = MasterChannel(true);
 	master_channel.addVC(3, true, 1024, true, 32, 32, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
-	                     map_channels);
+                         255, 10, 10, map_channels);
 
 	CHECK(master_channel.virtChannels.at(3).VCID == 0x03);
 	PhysicalChannel physical_channel =
@@ -30,7 +30,7 @@ TEST_CASE("MAPP blocking") {
 
 	MasterChannel master_channel = MasterChannel(true);
 	master_channel.addVC(3, true, 8, true, 32, 32, true, true, true, 11, SynchronizationFlag::FORWARD_ORDERED,
-	                     map_channels);
+                         255, 10, 10, map_channels);
 
 	CHECK(master_channel.virtChannels.at(3).VCID == 3);
 	ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
