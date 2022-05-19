@@ -10,13 +10,13 @@ TEST_CASE("Service Channel") {
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-	    {0, MAPChannel(0, DataFieldContent::PACKET)},
-	    {1, MAPChannel(1, DataFieldContent::PACKET)},
-	    {2, MAPChannel(2, DataFieldContent::PACKET)},
+	    {0, MAPChannel(0, true, true)},
+	    {1, MAPChannel(1, false, false)},
+	    {2, MAPChannel(2, true, false)},
 	};
 
-	MasterChannel master_channel = MasterChannel(true, 0);
-	master_channel.addVC(0, true, 128, 20, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
+	MasterChannel master_channel = MasterChannel(true);
+	master_channel.addVC(0, true, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);

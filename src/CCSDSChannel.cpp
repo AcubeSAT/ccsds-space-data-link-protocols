@@ -64,7 +64,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* packet) {
 }
 
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent,
-                                        const uint16_t maxFrameLength, const uint8_t clcwRate, const bool blocking,
+                                        const uint16_t maxFrameLength, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                                         const bool frameErrorControlFieldTMPresent,
                                         const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
@@ -76,7 +76,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, clcwRate, blocking,
+	virtChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blocking,
 	                                          repetitionTypeAFrame, repetitionCopCtrl,
 	                                          frameErrorControlFieldTMPresent,
                                               secondaryHeaderTMPresent, secondaryHeaderTMLength,

@@ -16,11 +16,6 @@
 
 class MasterChannel;
 
-enum DataFieldContent {
-	PACKET = 0,
-	VCA_SDU = 1 // Not currently supported
-};
-
 /**
  * @see Table 5-1 from TC SPACE DATA LINK PROTOCOL
  */
@@ -114,11 +109,6 @@ private:
 	 */
 	const uint8_t MAPID; // 6 bits
 
-	/**
-	 * @brief Determines whether the incoming data content type (TransferFrameTC/MAP SDU)
-	 */
-	const DataFieldContent dataFieldContent;
-
 public:
 	void storeMAPChannel(TransferFrame packet);
 
@@ -136,13 +126,16 @@ public:
 		return unprocessedPacketListBufferTM.available();
 	}
 
-	MAPChannel(const uint8_t mapid, const DataFieldContent dataFieldContent)
-	    : MAPID(mapid), dataFieldContent(dataFieldContent) {
+	MAPChannel(const uint8_t mapid, bool blockingTC, bool segmentationTC)
+	    : MAPID(mapid), blockingTC(blockingTC), segmentationTC(segmentationTC) {
 		uint8_t d = unprocessedPacketListBufferTC.size();
 		unprocessedPacketListBufferTC.full();
 	};
 
 protected:
+    bool blockingTC;
+	bool segmentationTC;
+
 	/**
 	 * Store unprocessed received TCs
 	 */
@@ -183,17 +176,12 @@ public:
 	/**
 	 * @brief Maximum length of a single transfer frame
 	 */
-	const uint16_t maxFrameLength;
-
-	/**
-	 * @brief CLCW report rate (number per second)
-	 */
-	const uint8_t clcwRate;
+	const uint16_t maxFrameLengthTC;
 
 	/**
 	 * @brief Determines whether smaller data units can be combined into a single transfer frame
 	 */
-	const bool blocking;
+	const bool blockingTC;
 
 	/**
 	 * Determines the number of times Type A frames will be re-transmitted
@@ -250,16 +238,16 @@ public:
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels;
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
-	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const uint8_t clcwRate,
-	               const bool blocking, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	               const bool segmentHeaderPresent, const uint16_t maxFrameLength,
+	               const bool blockingTC, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-	               const bool operationalControlFieldTMPresent,
-	               const bool frameErrorControlFieldTMPresent, const SynchronizationFlag synchronization,
+	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldTMPresent,
+	               const SynchronizationFlag synchronization,
 	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLength(maxFrameLength), clcwRate(clcwRate),
-	      blocking(blocking), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
+	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength),
+	      blockingTC(blockingTC), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
 	      txWaitQueueTC(), sentQueueTC(),
 	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
@@ -269,11 +257,12 @@ public:
 	}
 
 	VirtualChannel(const VirtualChannel& v)
-	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent), maxFrameLength(v.maxFrameLength),
-	      clcwRate(v.clcwRate), repetitionTypeAFrame(v.repetitionTypeAFrame), repetitionCOPCtrl(v.repetitionCOPCtrl),
+	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
+	      maxFrameLengthTC(v.maxFrameLengthTC),
+	      repetitionTypeAFrame(v.repetitionTypeAFrame), repetitionCOPCtrl(v.repetitionCOPCtrl),
 	      frameCountTM(v.frameCountTM), txWaitQueueTC(v.txWaitQueueTC), sentQueueTC(v.sentQueueTC),
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop),
-	      masterChannel(v.masterChannel), blocking(v.blocking), synchronization(v.synchronization),
+	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels)
@@ -288,7 +277,7 @@ public:
 	/**
 	 * @bried Add MAP channel to virtual channel
 	 */
-	VirtualChannelAlert add_map(const uint8_t mapid, const DataFieldContent dataFieldContent);
+	VirtualChannelAlert add_map(const uint8_t mapid);
 
 	MasterChannel& master_channel() {
 		return masterChannel;
@@ -338,7 +327,7 @@ struct MasterChannel {
 	bool errorCtrlField;
 	uint8_t frameCount{};
 
-	MasterChannel(bool errorCtrlField, uint8_t frameCount)
+	MasterChannel(bool errorCtrlField)
 	    : virtChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(),
 	      errorCtrlField(errorCtrlField), frameCountTM(0) {}
@@ -389,7 +378,7 @@ struct MasterChannel {
 	 * @brief Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent,
-                             const uint16_t maxFrameLength, const uint8_t clcwRate, const bool blocking,
+                             const uint16_t maxFrameLength, const bool blocking,
                              const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                              const bool frameErrorControlFieldTMPresent,
                              const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,

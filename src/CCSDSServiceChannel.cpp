@@ -133,9 +133,9 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
 	TransferFrameTC* packet = mapChannel->unprocessedPacketListBufferTC.front();
 
-	const uint16_t maxFrameLength = virtChannel->maxFrameLength;
+	const uint16_t maxFrameLength = virtChannel->maxFrameLengthTC;
 	bool segmentationEnabled = virtChannel->segmentHeaderPresent;
-	bool blocking_enabled = virtChannel->blocking;
+	bool blocking_enabled = virtChannel->blockingTC;
 
 	const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
