@@ -6,17 +6,17 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 
 	if (frame->getServiceType() == ServiceType::TYPE_A && frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
-			if (!sentQueue->empty()) {
+			if (!sentQueue->full()) {
 				// E1
 				if (state == FARMState::OPEN) {
 					sentQueue->push_back(frame);
-					sentQueue->pop_front();
+					waitQueue->pop_front();
 					receiverFrameSeqNumber += 1;
 					retransmit = FlagState::NOT_READY;
-					ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+					ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
 					return COPDirectiveResponse::ACCEPT;
 				} else {
-					ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+					ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
 					return COPDirectiveResponse::REJECT;
 				}
 			} else {
@@ -26,7 +26,7 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 					wait = FlagState::READY;
 					state = FARMState::WAIT;
 				}
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+				ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
 				return COPDirectiveResponse::REJECT;
 			}
 		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber) &&
@@ -35,26 +35,35 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 			if (state == FARMState::OPEN) {
 				retransmit = FlagState::READY;
 			}
-			ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+			ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		} else if ((frame->transferFrameSequenceNumber() < receiverFrameSeqNumber) &&
 		           (frame->transferFrameSequenceNumber() >= receiverFrameSeqNumber - farmNegativeWidth)) {
 			// E4
-			ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+			ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
-		           (frame->transferFrameSequenceNumber() < farmPositiveWinWidth - farmNegativeWidth)) {
+		           (frame->transferFrameSequenceNumber() < receiverFrameSeqNumber - farmNegativeWidth)) {
 			// E5
+			if (state == FARMState::OPEN || state == FARMState::WAIT){
+				lockout = FlagState::READY;
+			}
 			state = FARMState::LOCKOUT;
-			ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+			ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		}
 	} else if (frame->getServiceType() == ServiceType::TYPE_B && !frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		// E6
+        sentQueue->push_back(frame);
+		// TODO: This is not exactly accurate, BD frames should be passed to a separate queue and
+		//  directly processed from higher procedures
+        waitQueue->pop_front();
 		farmBCount += 1;
-		ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+		ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
 	} else if (frame->getServiceType() == ServiceType::TYPE_B && frame->transferFrameHeader().ctrlAndCmdFlag()) {
+        // TODO: Define what user data BD frames will include and how they're identified (E6 state number)
+		// TODO: Those depend on the pending CLCW implementation
 		if (frame->controlWordType() == 0) {
 			if (frame->packetPlData()[4] == 0) {
 				// E7
@@ -68,19 +77,20 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 					lockout = FlagState::NOT_READY;
 				}
 				state = FARMState::OPEN;
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			} else if (frame->packetPlData()[4] == 130 && frame->packetPlData()[5] == 0) {
 				// E8
 				farmBCount += 1;
 				retransmit = FlagState::NOT_READY;
 				receiverFrameSeqNumber = frame->packetPlData()[6];
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			}
 		}
 	}
 	// Invalid Directive
+    ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
 
@@ -91,5 +101,7 @@ COPDirectiveResponse FrameAcceptanceReporting::bufferRelease() {
 	} else if (state == FARMState::WAIT) {
 		wait = FlagState::NOT_READY;
 	}
+	// TODO: Will this use the logger reporting mechanism. If so, logger would need to also give the option
+	//  to accept a simple string stream
 	return COPDirectiveResponse::ACCEPT;
 }

@@ -9,7 +9,8 @@
 #include <Alert.hpp>
 
 /**
- * @see p. 6.1.2 from COP-1 CCSDS
+ * @brief Current state of the FARM State machine
+ *@see p. 6.1.2 from COP-1 CCSDS
  */
 enum FARMState {
 	OPEN = 1,
