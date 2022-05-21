@@ -337,7 +337,6 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
 
-
 	TransferFrameTC* frame = virt_channel->txUnprocessedPacketListBufferTC.front();
 	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
@@ -353,20 +352,6 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 	}
 
 	virt_channel->txUnprocessedPacketListBufferTC.pop_front();
-	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-	return ServiceChannelNotification::NO_SERVICE_EVENT;
-}
-
-ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
-	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
-	if (virt_channel->txWaitQueueTC.full()) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
-		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
-	}
-
-	TransferFrameTC* frame = virt_channel->rxWaitQueueTC.front();
-
-	virt_channel->rxWaitQueueTC.pop_front();
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
