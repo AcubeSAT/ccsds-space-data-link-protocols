@@ -1,5 +1,5 @@
-#ifndef CCSDS_TM_PACKETS_FARMEACCEPTANCEREPORTING_HPP
-#define CCSDS_TM_PACKETS_FARMEACCEPTANCEREPORTING_HPP
+#ifndef CCSDS_TM_PACKETS_FRAMEACCEPTANCEREPORTING_HPP
+#define CCSDS_TM_PACKETS_FRAMEACCEPTANCEREPORTING_HPP
 
 #pragma once
 
@@ -24,7 +24,7 @@ class MAPChannel;
 /**
  * @see p. 6 from COP-1 CCSDS
  */
-class FarmAcceptanceReporting {
+class FrameAcceptanceReporting {
 	friend class ServiceChannel;
 
 private:
@@ -60,15 +60,15 @@ public:
 	/**
 	 * @brief Buffer for storing packets, AFTER being processed by FARM.
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInSentQueue>* sentQueue;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue;
 
 	/**
 	 * @brief The Virtual Channel in which FOP is initialized
 	 */
 	VirtualChannel* vchan;
 
-	FarmAcceptanceReporting(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
-	                        etl::list<TransferFrameTC*, MaxReceivedRxTcInSentQueue>* sentQueue,
+	FrameAcceptanceReporting(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
+	                        etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue,
 	                        const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
 	                        const uint8_t farmNegativeWinWidth)
 	    : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farmSlidingWinWidth),
@@ -77,4 +77,4 @@ public:
 	      retransmit(FlagState::NOT_READY){};
 };
 
-#endif // CCSDS_TM_PACKETS_FARMEACCEPTANCEREPORTING_HPP
+#endif // CCSDS_TM_PACKETS_FRAMEACCEPTANCEREPORTING_HPP

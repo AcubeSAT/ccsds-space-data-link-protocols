@@ -21,7 +21,10 @@ add_library(common OBJECT
         src/CCSDSServiceChannel.cpp
         src/CCSDSChannel.cpp
         src/FrameOperationProcedure.cpp
-        src/TransferFrameTC.cpp src/FrameAcceptanceReporting.cpp src/TransferFrameTM.cpp src/Packet.cpp
+        src/TransferFrameTC.cpp
+        src/FrameAcceptanceReporting.cpp
+        src/TransferFrameTM.cpp
+        src/Packet.cpp
         src/logOperators.cpp)
 
 # Specify the .cpp files for the executables

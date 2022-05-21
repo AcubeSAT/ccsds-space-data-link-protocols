@@ -42,7 +42,7 @@ public:
         return masterChannel.txProcessedPacketListBufferTM.front();
     }
 
-    uint16_t availableMcTM() const{
+    uint16_t availableMcTxTM() const{
 		return masterChannel.txProcessedPacketListBufferTM.available();
 	}
 
@@ -156,10 +156,10 @@ public:
 	/**
 	 * @brief The  All  Frames  Reception  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
-	 * rate to the Channel Coding Sublayer.
+	 * rate to the Channel Coding Sublayer. Also writes the received packet to the provided pointer.
 	 * @see p. 4.3.7 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
 	 */
-	ServiceChannelNotification allFramesReceptionTMRequest();
+	ServiceChannelNotification allFramesReceptionTMRequest(uint8_t* packet_destination);
 
 	/**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
