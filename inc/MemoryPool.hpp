@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <bitset>
 #include "etl/vector.h"
 #include "Alert.hpp"
 
@@ -13,7 +14,7 @@
 class MemoryPool {
 private:
     /**
-     * @var The size of the block of memory(byte), a random power of 2 as a memory convention (Can be changed to anything)
+     * @var The size of the block of memory in bytes
      */
     static constexpr uint8_t memorySize = 8;
 
@@ -23,9 +24,10 @@ private:
     uint8_t memory[memorySize];
 
     /**
-     * @var boolean array that shows if each memory slot is used. False -> empty and true-> used
+     * @var a bitset that shows if each memory slot is used. If bit in place "i" is False(0) -> memory slot "i" is empty
+     * and if bit is true(1) -> the corresponding memory slot is used.
      */
-    bool usedMemory[memorySize] = {false};
+	std::bitset<memorySize> usedMemory = std::bitset<memorySize>(0);
 
 
 public:
@@ -44,9 +46,9 @@ public:
     * Calls the findFit method in order to find the index of the array that is first available.
     * @param packet pointer to the packet data.
     * @param packetLength the length of the packet data.
-    * @return an uint8_t pointer to the packet data in the memory pool.
+    * @return an uint8_t pointer to the packet data in the memory pool or nullptr if packet could not be allocated.
     */
-    uint8_t *allocatePacket(uint8_t *packet, uint16_t packetLength);
+    uint8_t* allocatePacket(uint8_t *packet, uint16_t packetLength);
 
     /**
     * This method is called when we want to delete the data of a packet.
@@ -59,12 +61,12 @@ public:
 	/**
 	 * @return pointer to the array that stores the data.
 	 */
-    uint8_t *getMemory();
+    uint8_t* getMemory();
 
 	/**
-	 * @return pointer to the array that shows if each memory slot is used.
+	 * @return the bitset that shows if each memory slot is used.
 	 */
-    bool *getUsedMemory();
+    std::bitset<memorySize> getUsedMemory();
 
 };
 

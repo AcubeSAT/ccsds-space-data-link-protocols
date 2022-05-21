@@ -63,6 +63,8 @@ const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6;
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
 
+const uint8_t MemoryPoolMemorySize = 8; //Size of memory pool
+
 enum FlagState {
     NOT_READY = 0, READY = 1
 };
