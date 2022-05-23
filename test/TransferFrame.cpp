@@ -41,15 +41,13 @@ TEST_CASE("TM Header Generation") {
 
 TEST_CASE("PacketTΜ Generation") {
 	uint8_t data[] = {200, 185, 99, 23, 40, 6, 0, 11, 128, 33, 4, 5, 9, 10};
-	TransferFrameTM pckt = TransferFrameTM(data, 14);
+	TransferFrameTM pckt = TransferFrameTM(data, 14, true);
 	CHECK(pckt.packetData()[0] == 200);
 	CHECK(pckt.packetData()[1] == 185);
 	CHECK(pckt.packetData()[2] == 99);
 	CHECK(pckt.packetData()[3] == 23);
 	CHECK(pckt.packetData()[4] == 40);
 	CHECK(pckt.packetData()[5] == 6);
-	CHECK(pckt.packetPlData()[0] == 0);
-	CHECK(pckt.packetPlData()[1] == 11);
 	CHECK(pckt.getOperationalControlField()[0] == 128);
 	CHECK(pckt.getOperationalControlField()[1] == 33);
 	CHECK(pckt.getOperationalControlField()[2] == 4);

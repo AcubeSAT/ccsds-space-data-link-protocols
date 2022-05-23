@@ -147,8 +147,8 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txOutProcessedPacketTM().second == nullptr);
 	*/
 
-	uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
-	uint8_t invalid_pckt_TM[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54};
+	uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t invalid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
     // TM Reception
 
@@ -158,15 +158,15 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
-	serv_channel.storeTM(valid_pckt_TM, 9);
+	serv_channel.storeTM(valid_pckt_TM, 14);
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
-	serv_channel.storeTM(invalid_pckt_TM, 9);
+	serv_channel.storeTM(invalid_pckt_TM, 14);
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 2);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
 
-    uint8_t resulting_tm_packet[12] = {0};
+    uint8_t resulting_tm_packet[14] = {0};
 
 	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
 	// Valid packet passes to lower procedures

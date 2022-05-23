@@ -78,9 +78,10 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 		secondaryHeader = &packet[7];
 	}
 
-	TransferFrameTM packet_s = TransferFrameTM(packet, packetLength, vchan->frameCountTM, vid, secondaryHeader,
-	                             hdr.transferFrameDataFieldStatus(), vchan->operationalControlFieldTMPresent,
-	                             vchan->secondaryHeaderTMPresent, vchan->synchronization);
+	TransferFrameTM packet_s = TransferFrameTM(packet, packetLength, vchan->frameCountTM, vid,
+	                                           vchan->operationalControlFieldTMPresent,
+	                                           vchan->frameErrorControlFieldTMPresent,
+	                                           vchan->secondaryHeaderTMPresent, vchan->synchronization);
 
 	// Increment VC frame count. The MC counter is incremented in the Master Channel
 	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
@@ -103,12 +104,9 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::RX_IN_BUFFER_FULL;
 	}
 
-	TransferFrameTM pckt = TransferFrameTM(packet, packetLength);
-
-	if (pckt.getPacketLength() != packetLength) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
-		return ServiceChannelNotification::RX_INVALID_LENGTH;
-	}
+	uint8_t vid = (packet[1] >> 1) & 0x7;
+    VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
+	TransferFrameTM pckt = TransferFrameTM(packet, packetLength, virtChannel->frameErrorControlFieldTMPresent);
 
 	masterChannel.rxMasterCopyTM.push_back(pckt);
 	TransferFrameTM* masterPckt = &(masterChannel.rxMasterCopyTM.back());
@@ -535,7 +533,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
     uint16_t frameSize = packet->getPacketLength();
 	uint8_t headerSize = 5 + vchan->secondaryHeaderTMLength;
     uint8_t trailerSize = 4*packet->operationalControlFieldExists() + 2*vchan->frameErrorControlFieldTMPresent;
-	memcpy(packet_data, packet + headerSize + 1, frameSize - headerSize - trailerSize);
+	memcpy(packet_data, packet->packetData() + headerSize + 1, frameSize - headerSize - trailerSize);
 	
     // Finally, remove master copy
     masterChannel.removeMasterRx(packet);

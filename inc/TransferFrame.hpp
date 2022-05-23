@@ -48,7 +48,7 @@ private:
 
 public:
 	TransferFrame(PacketType t, uint16_t packetLength, uint8_t* packet)
-	    : type(t), packetLength(packetLength), packet(packet), data(nullptr){};
+	    : type(t), packetLength(packetLength), packet(packet){};
 
 	/**
 	 * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
@@ -66,7 +66,6 @@ public:
 protected:
 	uint16_t packetLength;
 	uint8_t* packet;
-	uint8_t* data;
 };
 
 #endif // CCSDS_TM_PACKETS_PACKET_H
