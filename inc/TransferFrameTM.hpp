@@ -96,49 +96,13 @@ public:
 };
 
 struct TransferFrameTM : public TransferFrame {
-	// TODO: Instead of saving the values separately, the methods below shall just parse the packets
-
-	/**
-	 * @note this function is the same with uint8_t *packetData() const.
-	 * it is duplicated
-	 */
-
-	const uint8_t* packetPlData() const {
-		return data;
-	}
-
-	/**
-	 * @see p. 4.1.2 from TM SPACE DATA LINK PROTOCOL
-	 */
-	TransferFrameHeaderTM transferFrameHeader() const {
-		return hdr;
-	}
-	/**
-	 * @brief Bits  0–1  of  the  Transfer  Frame  Secondary  Header.
-	 * 			(shall be set to ‘00’)
-	 * @see p. 4.1.2.2.2 from TM SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t getTransferFrameVersionNumber() const {
-		return transferFrameVersionNumber;
-	}
-
-	/**
-	 * @brief The Spacecraft Identifier shall provide the identification of the spacecraft which
-	 *		is associated with the data contained in the Transfer Frame.
-	 * @details Bits  2–11  of  the  Transfer  Frame  Primary  Header.
-	 * @see p. 4.1.2.2.3 from TM SPACE DATA LINK PROTOCOL
-	 */
-	uint16_t spacecraftId() const {
-		return scid;
-	}
-
 	/**
 	 * @brief The Virtual Channel Identifier provides the identification of the Virtual Channel.
 	 * @details Bits 12–14 of the Transfer Frame Primary Header.
 	 * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t virtualChannelId() const {
-		return data[2] & 0xE >> 1;
+		return (packet[1] & 0xE) >> 1U;
 	}
 
 	/**
@@ -148,7 +112,7 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t getMasterChannelFrameCount() const {
-		return masterChannelFrameCount;
+		return packet[2];
 	}
 
 	/**
@@ -158,7 +122,7 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t getVirtualChannelFrameCount() const {
-		return virtualChannelFrameCount;
+		return packet[3];
 	}
 
 
@@ -173,7 +137,7 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t getTransferFrameDataFieldStatus() const {
-		return transferFrameDataFieldStatus;
+		return static_cast<uint16_t>((packet[4]) << 8) | packet[5];
 	}
 
 	uint16_t getPacketLength() const {
@@ -184,44 +148,18 @@ struct TransferFrameTM : public TransferFrame {
 		return packet;
 	}
 
-	/**
-	 * @see p. 4.1.3 from TM DATA LINK PROTOCOL
-	 */
-	uint8_t* getSecondaryHeader() const {
-		return secondaryHeader;
-	}
 
 	bool operationalControlFieldExists() const{
-		return data[1] & 0x1;
+		return packet[1] & 0x1;
 	}
 
-	/**
-	 * @brief If  the  Synchronization  Flag  is  set  to  ‘0’,  the  First  Header  Pointer  shall  contain
-	 *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field.
-	 *		Otherwise it is undefined.
-	 * @details Bits 37–47 of the Transfer Frame Primary Header.
-	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
-	 */
-	uint16_t getFirstHeaderPointer() const {
-		return firstHeaderPointer;
-	}
 
 	/**
 	 * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t* getOperationalControlField() const {
-		return operationalControlField;
-	}
-
-	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
-	// generation services when segmenting or blocking transfer frames.
-
-	void setPacketData(uint8_t* packt_data) {
-		packet = packt_data;
-	}
-
-	void setPacketLength(uint16_t packt_len) {
-		packetLength = packt_len;
+		if(!operationalControlFieldExists()){return packet;}
+		return packet + packetLength - 4 - 2*eccFieldExists;
 	}
 
 	void setMasterChannelFrameCount(uint8_t mcfc){
@@ -229,11 +167,10 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
-	         uint8_t* secondaryHeader, uint16_t transferFrameDataFieldStatus, bool ocfPresent,
-	         bool transferFrameSecondaryHeaderPresent, SynchronizationFlag syncFlag, PacketType t = TM)
-	    : TransferFrame(t, packetLength, packet), hdr(packet), virtualChannelFrameCount(virtualChannelFrameCount), scid(scid),
-	      transferFrameDataFieldStatus(transferFrameDataFieldStatus), transferFrameVersionNumber(0),
-	      secondaryHeader(secondaryHeader), firstHeaderPointer(firstHeaderPointer) {
+	                bool ocfPresent, bool eccFieldExists, bool transferFrameSecondaryHeaderPresent,
+	                SynchronizationFlag syncFlag, PacketType t = TM)
+	    : TransferFrame(t, packetLength, packet), hdr(packet), scid(scid),
+	      eccFieldExists(eccFieldExists), firstHeaderPointer(firstHeaderPointer) {
 		// TFVN + SC Id
 		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// SC Id + VC ID + OCF
@@ -246,18 +183,14 @@ struct TransferFrameTM : public TransferFrame {
 		packet[5] = firstHeaderPointer & 0xFF;
 	}
 
-	TransferFrameTM(uint8_t* packet, uint16_t packet_length, PacketType t = TM);
+    TransferFrameTM(uint8_t* packet, uint16_t packet_length, bool eccFieldExists)
+        : TransferFrame(PacketType::TM, packet_length, packet), hdr(packet), eccFieldExists(eccFieldExists) {}
 
 private:
 	TransferFrameHeaderTM hdr;
-	uint8_t masterChannelFrameCount;
-	uint8_t virtualChannelFrameCount;
 	uint8_t scid;
-	uint16_t transferFrameDataFieldStatus;
-	uint8_t transferFrameVersionNumber;
-	uint8_t* secondaryHeader;
+	bool eccFieldExists;
 	uint16_t firstHeaderPointer;
-	uint8_t* operationalControlField{};
 };
 
 #endif // CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
