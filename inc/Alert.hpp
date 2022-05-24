@@ -46,11 +46,12 @@ enum VirtualChannelAlert : uint8_t {
 	RX_WAIT_QUEUE_FULL = 0x04,
 };
 
-enum MasterChannelAlert : uint8_t {
-	NO_MC_ALERT = 0x01,
-	OUT_FRAMES_LIST_FULL = 0x02,
-	TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x03,
-	MAX_AMOUNT_OF_VIRT_CHANNELS = 0x04,
+enum MasterChannelAlert: uint8_t{
+    NO_MC_ALERT = 0x01,
+    OUT_FRAMES_LIST_FULL = 0x02,
+    TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x03,
+    MAX_AMOUNT_OF_VIRT_CHANNELS = 0x04,
+    NO_SPACE = 0x05
 };
 
 enum TxRx : uint8_t { Rx = 0x00, Tx = 0x01 };
