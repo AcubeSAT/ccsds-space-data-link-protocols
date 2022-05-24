@@ -6,7 +6,7 @@
 #include <iomanip>
 
 // The implementation of this function appends ANSI codes that should add colours to a compatible terminal
-void Logger::log(Logger::LogLevel level, etl::istring & message) {
+void Logger::log(Logger::LogLevel level, etl::istring& message) {
 	// Get the current time & date
 	std::time_t t = std::time(nullptr);
 	std::tm tm = *std::localtime(&t);
@@ -42,16 +42,27 @@ void Logger::log(Logger::LogLevel level, etl::istring & message) {
 	}
 
 	std::ostringstream ss; // A string stream to create the log message
-	ss << "\033" "[0;90m" << std::put_time(&tm, "%FT%T%z") << "\033" "[0m "; // The date
-	ss << "[\033" "[1;" << colour << "m" << std::setfill(' ') << std::setw(7) << std::right // Ignore-MISRA
-		<< name << std::setw(0) << "\033" "[0m] "; // The log level // Ignore-MISRA
+	ss << "\033"
+	      "[0;90m"
+	   << std::put_time(&tm, "%FT%T%z")
+	   << "\033"
+	      "[0m "; // The date
+	ss << "[\033"
+	      "[1;"
+	   << colour << "m" << std::setfill(' ') << std::setw(7) << std::right // Ignore-MISRA
+	   << name << std::setw(0)
+	   << "\033"
+	      "[0m] "; // The log level // Ignore-MISRA
 
 	if (keepColour) {
-		ss << "\033" "[0;" << colour << "m"; // Ignore-MISRA
+		ss << "\033"
+		      "[0;"
+		   << colour << "m"; // Ignore-MISRA
 	}
 	ss << message.c_str(); // The message itself
 	if (keepColour) {
-		ss << "\033" "[0m";
+		ss << "\033"
+		      "[0m";
 	}
 
 	ss << "\n";
@@ -60,7 +71,7 @@ void Logger::log(Logger::LogLevel level, etl::istring & message) {
 
 // Reimplementation of the log function for C++ strings
 // This is kept in the Platform files, since we don't want to mess with std::strings in the microcontroller
-Logger::LogEntry& Logger::LogEntry::operator<<(const std::string & value) {
+Logger::LogEntry& Logger::LogEntry::operator<<(const std::string& value) {
 	message.append(value.c_str());
 
 	return *this;

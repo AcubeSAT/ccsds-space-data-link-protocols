@@ -23,12 +23,12 @@
 #define LOGLEVEL Logger::disabled // Ignore-MISRA
 #endif
 
-#define LOG_TRACE     (LOG<Logger::trace>())     ///< @see LOG @relates Logger
-#define LOG_DEBUG     (LOG<Logger::debug>())     ///< @see LOG @relates Logger
-#define LOG_INFO      (LOG<Logger::info>())      ///< @see LOG @relates Logger
-#define LOG_NOTICE    (LOG<Logger::notice>())    ///< @see LOG @relates Logger
-#define LOG_WARNING   (LOG<Logger::warning>())   ///< @see LOG @relates Logger
-#define LOG_ERROR     (LOG<Logger::error>())     ///< @see LOG @relates Logger
+#define LOG_TRACE (LOG<Logger::trace>()) ///< @see LOG @relates Logger
+#define LOG_DEBUG (LOG<Logger::debug>()) ///< @see LOG @relates Logger
+#define LOG_INFO (LOG<Logger::info>()) ///< @see LOG @relates Logger
+#define LOG_NOTICE (LOG<Logger::notice>()) ///< @see LOG @relates Logger
+#define LOG_WARNING (LOG<Logger::warning>()) ///< @see LOG @relates Logger
+#define LOG_ERROR (LOG<Logger::error>()) ///< @see LOG @relates Logger
 #define LOG_EMERGENCY (LOG<Logger::emergency>()) ///< @see LOG @relates Logger
 
 /**
@@ -87,7 +87,8 @@ public:
 	 * @internal
 	 */
 	struct LogEntry {
-		etl::string<LOGGER_MAX_MESSAGE_SIZE> message =""; ///< The current log message itself, starting from a blank slate
+		etl::string<LOGGER_MAX_MESSAGE_SIZE> message =
+		    ""; ///< The current log message itself, starting from a blank slate
 		LogLevel level; ///< The log level of this message
 
 		explicit LogEntry(LogLevel level); ///< Create a new LogEntry
@@ -110,7 +111,7 @@ public:
 		 *
 		 * @tparam T The type of value to append
 		 * @param value The new value to add
-         * @todo See if noexcept can be added here without triggering warnings
+		 * @todo See if noexcept can be added here without triggering warnings
 		 * @return The current Logger::LogEntry where the value has been appended
 		 */
 		template <class T>
@@ -131,7 +132,7 @@ public:
 	/**
 	 * Store a new log message
 	 */
-	static void log(LogLevel level, etl::istring & message);
+	static void log(LogLevel level, etl::istring& message);
 };
 
 /**
@@ -216,4 +217,4 @@ template <typename T>
 	return noLogEntry;
 }
 
-#endif //ECSS_SERVICES_LOGGER_HPP
+#endif // ECSS_SERVICES_LOGGER_HPP

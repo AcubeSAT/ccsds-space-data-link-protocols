@@ -6,8 +6,8 @@ int main() {
 	LOG_DEBUG << "CCSDS Services test application";
 
 	// Set up Service Channel
-PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
-    ccsdsLog(Tx, TypeVirtualChannelAlert, MAP_CHANNEL_FRAME_BUFFER_FULL);
+	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+	ccsdsLog(Tx, TypeVirtualChannelAlert, MAP_CHANNEL_FRAME_BUFFER_FULL);
 	ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_BUFFER_FULL);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
@@ -33,8 +33,7 @@ PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000,
 	ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 
-
 	LOG_DEBUG << "CCSDS Services test application";
 
-//	std::cout<<Tx_VirtualChannel_store_VirtualChannelAlert_NO_VC_ALERT<<std::endl;
+	//	std::cout<<Tx_VirtualChannel_store_VirtualChannelAlert_NO_VC_ALERT<<std::endl;
 }
