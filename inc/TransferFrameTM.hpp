@@ -3,6 +3,7 @@
 #include "TransferFrame.hpp"
 #include "Alert.hpp"
 #include "CCSDS_Definitions.hpp"
+#include "optional"
 
 struct TransferFrameHeaderTM : public TransferFrameHeader {
 public:
@@ -157,9 +158,13 @@ struct TransferFrameTM : public TransferFrame {
 	/**
 	 * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
 	 */
-	uint8_t* getOperationalControlField() const {
-		if(!operationalControlFieldExists()){return packet;}
-		return packet + packetLength - 4 - 2*eccFieldExists;
+	std::optional<uint32_t> getOperationalControlField() const {
+        uint32_t operationalControlField = 0;
+        uint8_t* ocfPtr;
+		if(!operationalControlFieldExists()){return {};}
+		ocfPtr = packet + packetLength - 4 - 2*eccFieldExists;
+        operationalControlField = operationalControlField | (ocfPtr[0] << 24U) | (ocfPtr[1] << 16U) | (ocfPtr[2] << 8U) | ocfPtr[3];
+        return operationalControlField;
 	}
 
 	void setMasterChannelFrameCount(uint8_t mcfc){

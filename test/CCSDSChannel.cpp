@@ -2,6 +2,7 @@
 #include <CCSDSChannel.hpp>
 #include <TransferFrameTC.hpp>
 #include <CCSDSServiceChannel.hpp>
+#include "CLCW.hpp"
 
 TEST_CASE("CCSDS TC Channel Model") {
 	// @todo add more and better test cases :)
@@ -48,45 +49,3 @@ TEST_CASE("MAPP blocking") {
 
 TEST_CASE("Virtual Channel Generation") {}
 
-TEST_CASE("CLCW parsing") {
-	// Parse CLCW from raw data
-	uint8_t clcw_data[] = {0x09, 0xA8, 0xAA, 0x52};
-	CLCW clcw = CLCW(clcw_data);
-
-	const uint8_t field_status = clcw.getFieldStatus();
-	const uint8_t cop_in_effect = clcw.getCopInEffect();
-	const uint8_t virtual_channel = clcw.vcid();
-	const bool no_rf_avail = clcw.getNoRFAvail();
-	const bool no_bit_lock = clcw.getNoBitLock();
-	const bool lockout = clcw.lockout();
-	const bool wait = clcw.wait();
-	const bool retransmit = clcw.retransmission();
-	const uint8_t farm_b_counter = clcw.getFarmBCounter();
-	const uint8_t report_value = clcw.getReportValue();
-
-	CHECK(field_status == 2);
-	CHECK(cop_in_effect == 1);
-	CHECK(virtual_channel == 42);
-	CHECK(no_rf_avail == true);
-	CHECK(no_bit_lock == false);
-	CHECK(lockout == true);
-	CHECK(wait == false);
-	CHECK(retransmit == true);
-	CHECK(farm_b_counter == 1);
-	CHECK(report_value == 0x52);
-
-	// Construct CLCW from the individual fields
-	CLCW parsed_clcw = CLCW(field_status, cop_in_effect, virtual_channel, no_rf_avail, no_bit_lock, lockout, wait,
-	                        retransmit, farm_b_counter, report_value);
-
-	CHECK(parsed_clcw.getFieldStatus() == clcw.getFieldStatus());
-	CHECK(parsed_clcw.getCopInEffect() == clcw.getCopInEffect());
-	CHECK(parsed_clcw.vcid() == clcw.vcid());
-	CHECK(parsed_clcw.getNoRFAvail() == clcw.getNoRFAvail());
-	CHECK(parsed_clcw.getNoBitLock() == clcw.getNoBitLock());
-	CHECK(parsed_clcw.lockout() == clcw.lockout());
-	CHECK(parsed_clcw.wait() == clcw.wait());
-	CHECK(parsed_clcw.retransmission() == clcw.retransmission());
-	CHECK(parsed_clcw.getFarmBCounter() == clcw.getFarmBCounter());
-	CHECK(parsed_clcw.getReportValue() == clcw.getReportValue());
-}
