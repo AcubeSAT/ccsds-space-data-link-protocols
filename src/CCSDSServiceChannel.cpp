@@ -361,6 +361,11 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	}
 
+	if (virt_channel->waitQueueRxTC.empty()) {
+		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_EMPTY);
+		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_EMPTY;
+	}
+
 	TransferFrameTC* frame = virt_channel->waitQueueRxTC.front();
 
 	virt_channel->waitQueueRxTC.pop_front();
