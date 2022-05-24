@@ -77,7 +77,7 @@ public:
 	// TODO: Handle CLCWs without any ambiguities
 
 	const uint8_t* packetPlData() const {
-		return data;
+		return packet;
 	}
 
 	// see p. 4.2.1.1.2 from TC SPACE DATA LINK PROTOCOL
@@ -88,7 +88,7 @@ public:
 	 * @see p. 4.2.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t controlWordType() const {
-		return (data[0] & 0x80 >> 7U);
+		return (packet[0] & 0x80 >> 7U);
 	}
 
 	/**
@@ -97,7 +97,7 @@ public:
 	 *
 	 */
 	uint8_t statusField() const {
-		return (data[0] & 0x1C) >> 2U;
+		return (packet[0] & 0x1C) >> 2U;
 	}
 
 	/**
@@ -106,7 +106,7 @@ public:
 	 * @see p. 4.2.1.5 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t copInEffect() const {
-		return data[0] & 0x03;
+		return packet[0] & 0x03;
 	}
 
 	/**
@@ -115,7 +115,7 @@ public:
 	 * @see p. 4.2.1.6 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t vcIdentification() const {
-		return (data[1] & 0xFC) >> 2U;
+		return (packet[1] & 0xFC) >> 2U;
 	}
 
 	/**
@@ -125,7 +125,7 @@ public:
 	 * @see p. 4.2.1.8.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t noRfAvail() const {
-		return (data[2] & 0x80) >> 7U;
+		return (packet[2] & 0x80) >> 7U;
 	}
 
 	/**
@@ -133,7 +133,7 @@ public:
 	 * @see p. 4.2.1.8.3 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t noBitLock() const {
-		return (data[2] & 0x20) >> 5U;
+		return (packet[2] & 0x20) >> 5U;
 	}
 
 	/**
@@ -141,7 +141,7 @@ public:
 	 * @see p. 4.2.1.8.4 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t lockout() const {
-		return (data[2] & 0x20) >> 5U;
+		return (packet[2] & 0x20) >> 5U;
 	}
 
 	/**
@@ -149,7 +149,7 @@ public:
 	 * @see p. 4.1.2.8.5 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t wait() const {
-		return (data[2] & 0x10) >> 4U;
+		return (packet[2] & 0x10) >> 4U;
 	}
 
 	/**
@@ -157,7 +157,7 @@ public:
 	 * @see p. 4.2.1.8.6 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t retransmit() const {
-		return (data[2] & 0x08) >> 3U;
+		return (packet[2] & 0x08) >> 3U;
 	}
 
 	/**
@@ -165,7 +165,7 @@ public:
 	 * @see p. 4.2.1.9 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t farmBCounter() const {
-		return (data[2] & 0x06) >> 1U;
+		return (packet[2] & 0x06) >> 1U;
 	}
 
 	/**
@@ -173,7 +173,7 @@ public:
 	 * @see p. 4.2.11.1 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t reportValue() const {
-		return data[3];
+		return packet[3];
 	}
 
 	/**
@@ -313,9 +313,7 @@ public:
 	         ServiceType serviceType, bool segHdrPresent, PacketType t = TC)
 	    : TransferFrame(t, packetLength, packet), hdr(packet), segHdr(segHdr), gvcid(gvcid), mapid(mapid), sduid(sduid),
 	      serviceType(serviceType), transferFrameSeqNumber(0), ack(false), toBeRetransmitted(false),
-	      transferFrameVersionNumber(0) {
-		data = &packet[5 + 1 * segHdrPresent];
-	}
+	      transferFrameVersionNumber(0) {}
 
 	TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC);
 

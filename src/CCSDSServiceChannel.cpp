@@ -78,9 +78,10 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 		secondaryHeader = &packet[7];
 	}
 
-	TransferFrameTM packet_s = TransferFrameTM(packet, packetLength, vchan->frameCountTM, vid, secondaryHeader,
-	                             hdr.transferFrameDataFieldStatus(), vchan->operationalControlFieldTMPresent,
-	                             vchan->secondaryHeaderTMPresent, vchan->synchronization);
+	TransferFrameTM packet_s = TransferFrameTM(packet, packetLength, vchan->frameCountTM, vid,
+	                                           vchan->operationalControlFieldTMPresent,
+	                                           vchan->frameErrorControlFieldTMPresent,
+	                                           vchan->secondaryHeaderTMPresent, vchan->synchronization);
 
 	// Increment VC frame count. The MC counter is incremented in the Master Channel
 	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
@@ -92,69 +93,20 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t maxTransferFrameDataLength, uint8_t gvcid) {
-    uint8_t vid = gvcid & 0x3F;
-    VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
-
-    uint16_t transferFrameDataLength = 0;
-    if (vchan->packetLengthBufferTmTx.empty()) {
-        return PACKET_BUFFER_EMPTY;
-    }
-    uint16_t packetLength = vchan->packetLengthBufferTmTx.front();
-    uint8_t tmpData[maxTransferFrameDataLength];
-    while (transferFrameDataLength + packetLength <= maxTransferFrameDataLength &&
-           !vchan->packetLengthBufferTmTx.empty()) {
-        for (uint16_t i = transferFrameDataLength; i < transferFrameDataLength + packetLength; i++) {
-            tmpData[i] = vchan->packetBufferTmTx.front();
-            vchan->packetBufferTmTx.pop();
-        }
-        transferFrameDataLength += packetLength;
-        vchan->packetLengthBufferTmTx.pop();
-        packetLength = vchan->packetLengthBufferTmTx.front();
-    }
-    if (transferFrameDataLength != 0) {
-        uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData, transferFrameDataLength);
-        vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
-        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData, transferFrameDataLength, TM);
-        masterChannel.rxMasterCopyTM.push_back(transferFrameTm);
-        masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
-        return NO_SERVICE_EVENT;
-    }
-    return NO_TX_PACKETS_TO_TRANSFER_FRAME;
-
-}
-
-ServiceChannelNotification ServiceChannel::storePacketTm(uint8_t *packet, uint16_t packetLength, uint8_t gvcid) {
-    uint8_t vid = gvcid & 0x3F;
-    VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
-
-    if (packetLength <= vchan->packetBufferTmTx.available()) {
-        vchan->packetLengthBufferTmTx.push(packetLength);
-        for (uint16_t i = 0; i < packetLength; i++) {
-            vchan->packetBufferTmTx.push(packet[i]);
-        }
-        return NO_SERVICE_EVENT;
-    }
-    return VC_MC_FRAME_BUFFER_FULL;
-}
-
-ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t packetLength) {
-    if (masterChannel.rxMasterCopyTM.full()) {
-        ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
-        return ServiceChannelNotification::RX_IN_MC_FULL;
-    }
+ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t packetLength) {
+	if (masterChannel.rxMasterCopyTM.full()) {
+		ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
+		return ServiceChannelNotification::RX_IN_MC_FULL;
+	}
 
 	if (masterChannel.rxInFramesBeforeAllFramesReceptionListTM.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_BUFFER_FULL);
 		return ServiceChannelNotification::RX_IN_BUFFER_FULL;
 	}
 
-	TransferFrameTM pckt = TransferFrameTM(packet, packetLength);
-
-	if (pckt.getPacketLength() != packetLength) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
-		return ServiceChannelNotification::RX_INVALID_LENGTH;
-	}
+	uint8_t vid = (packet[1] >> 1) & 0x7;
+    VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
+	TransferFrameTM pckt = TransferFrameTM(packet, packetLength, virtChannel->frameErrorControlFieldTMPresent);
 
 	masterChannel.rxMasterCopyTM.push_back(pckt);
 	TransferFrameTM* masterPckt = &(masterChannel.rxMasterCopyTM.back());
@@ -172,16 +124,16 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
 	}
 
-	if (virtChannel->txWaitQueueTC.full()) {
+	if (virtChannel->waitQueueTxTC.full()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, VC_MC_FRAME_BUFFER_FULL);
 		return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
 	}
 
 	TransferFrameTC* packet = mapChannel->unprocessedPacketListBufferTC.front();
 
-	const uint16_t maxFrameLength = virtChannel->maxFrameLength;
+	const uint16_t maxFrameLength = virtChannel->maxFrameLengthTC;
 	bool segmentationEnabled = virtChannel->segmentHeaderPresent;
-	bool blocking_enabled = virtChannel->blocking;
+	bool blocking_enabled = virtChannel->blockingTC;
 
 	const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
@@ -191,7 +143,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 			uint8_t tf_n =
 			    (packet->getPacketLength() / maxPacketLength) + (packet->getPacketLength() % maxPacketLength != 0);
 
-			if (virtChannel->txWaitQueueTC.available() >= tf_n) {
+			if (virtChannel->waitQueueTxTC.available() >= tf_n) {
 				// Break up packet
 				mapChannel->unprocessedPacketListBufferTC.pop_front();
 
@@ -416,7 +368,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	TransferFrameTC* packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTC.front();
 	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(packet->virtualChannelId()));
 
-	if (virt_channel->rxWaitQueueTC.full()) {
+	if (virt_channel->waitQueueRxTC.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	}
@@ -452,7 +404,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 		return ServiceChannelNotif::RX_INVALID_CRC;
 	}
 #endif
-	virt_channel->rxWaitQueueTC.push_back(packet);
+	virt_channel->waitQueueRxTC.push_back(packet);
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
@@ -523,6 +475,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	// Append trailer
     memcpy(packet_data + TmTransferFrameSize - trailerSize, packet->packetData() + packet_length - trailerSize + 1, trailerSize);
 
+	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
     // Finally, remove master copy
 	masterChannel.removeMasterTx(packet);
 
@@ -566,8 +519,8 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
     uint16_t frameSize = packet->getPacketLength();
 	uint8_t headerSize = 5 + vchan->secondaryHeaderTMLength;
     uint8_t trailerSize = 4*packet->operationalControlFieldExists() + 2*vchan->frameErrorControlFieldTMPresent;
-	memcpy(packet_data, packet + headerSize + 1, frameSize - headerSize - trailerSize);
-
+	memcpy(packet_data, packet->packetData() + headerSize + 1, frameSize - headerSize - trailerSize);
+	
     // Finally, remove master copy
     masterChannel.removeMasterRx(packet);
 

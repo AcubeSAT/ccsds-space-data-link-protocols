@@ -2,39 +2,39 @@
 #include <CCSDSChannel.hpp>
 #include "CCSDSLoggerImpl.h"
 FOPNotification FrameOperationProcedure::purgeSentQueue() {
-	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueue->begin();
+	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
-	while (cur_frame != sentQueue->end()) {
+	while (cur_frame != sentQueueFOP->end()) {
 		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
-		sentQueue->erase(cur_frame++);
+		sentQueueFOP->erase(cur_frame++);
 	}
 	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
 FOPNotification FrameOperationProcedure::purgeWaitQueue() {
-	etl::ilist<TransferFrameTC*>::iterator cur_frame = waitQueue->begin();
+	etl::ilist<TransferFrameTC*>::iterator cur_frame = waitQueueFOP->begin();
 
-	while (cur_frame != waitQueue->end()) {
+	while (cur_frame != waitQueueFOP->end()) {
 		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
-		waitQueue->erase(cur_frame++);
+		waitQueueFOP->erase(cur_frame++);
 	}
 	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
 FOPNotification FrameOperationProcedure::transmitAdFrame() {
-	if (sentQueue->full()) {
+	if (sentQueueFOP->full()) {
 		ccsdsLog(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
 		return FOPNotification::SENT_QUEUE_FULL;
 	}
 
-	if (sentQueue->empty()) {
+	if (sentQueueFOP->empty()) {
 		transmissionCount = 1;
 	}
 
-	TransferFrameTC* ad_frame = waitQueue->front();
-	if (waitQueue->empty()) {
+	TransferFrameTC* ad_frame = waitQueueFOP->front();
+	if (waitQueueFOP->empty()) {
 		ccsdsLog(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
 		return FOPNotification::WAIT_QUEUE_EMPTY;
 	}
@@ -43,13 +43,13 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 
 	ad_frame->setToBeRetransmitted(0);
 
-	sentQueue->push_back(ad_frame);
+	sentQueueFOP->push_back(ad_frame);
 	adOut = false;
 
 	// TODO start the timer
 	// pass the frame into the all frames generation service
 	vchan->master_channel().storeOut(ad_frame);
-	waitQueue->pop_front();
+	waitQueueFOP->pop_front();
 	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
@@ -77,7 +77,7 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC* frame : *sentQueue) {
+	for (TransferFrameTC* frame : *sentQueueFOP) {
 		if (frame->getServiceType() == ServiceType::TYPE_A) {
 			frame->setToBeRetransmitted(true);
 		}
@@ -89,7 +89,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC* frame : *sentQueue) {
+	for (TransferFrameTC* frame : *sentQueueFOP) {
 		if (frame->getServiceType() == ServiceType::TYPE_B) {
 			frame->setToBeRetransmitted(1);
 		}
@@ -97,7 +97,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 }
 
 void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
-	for (TransferFrameTC* pckt : *sentQueue) {
+	for (TransferFrameTC* pckt : *sentQueueFOP) {
 		if (pckt->transferFrameSequenceNumber() == frame_seq_num) {
 			pckt->setAcknowledgement(true);
 			return;
@@ -106,12 +106,12 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
 }
 
 void FrameOperationProcedure::removeAcknowledgedFrames() {
-	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueue->begin();
+	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
-	while (cur_frame != sentQueue->end()) {
+	while (cur_frame != sentQueueFOP->end()) {
 		if ((*cur_frame)->acknowledged()) {
 			expectedAcknowledgementSeqNumber = (*cur_frame)->transferFrameSequenceNumber();
-			sentQueue->erase(cur_frame++);
+			sentQueueFOP->erase(cur_frame++);
 		} else {
 			++cur_frame;
 		}
@@ -133,7 +133,7 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 
 void FrameOperationProcedure::lookForDirective() {
 	if (bcOut == FlagState::READY) {
-		for (TransferFrameTC* frame : *sentQueue) {
+		for (TransferFrameTC* frame : *sentQueueFOP) {
 			if (frame->getServiceType() == ServiceType::TYPE_B && frame->getToBeRetransmitted()) {
 				bcOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
@@ -147,12 +147,12 @@ void FrameOperationProcedure::lookForDirective() {
 
 // TODO: Sent Queue as-is is pretty much tx
 COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
-	if (vchan->sentQueueTC.empty()) {
+	if (vchan->sentQueueTxTC.empty()) {
 		ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
 		return COPDirectiveResponse::REJECT;
 	}
 
-	TransferFrameTC* pckt = sentQueue->front();
+	TransferFrameTC* pckt = sentQueueFOP->front();
 
 	MasterChannelAlert err = vchan->master_channel().storeOut(pckt);
 
@@ -167,7 +167,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	if (adOut == FlagState::READY) {
-		for (TransferFrameTC* frame : *sentQueue) {
+		for (TransferFrameTC* frame : *sentQueueFOP) {
 			if (frame->getServiceType() == ServiceType::TYPE_A) {
 				// adOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
@@ -179,10 +179,10 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 		// Search the wait queue for a suitable FDU
 		// The wait queue is supposed to have a maximum capacity of one
 		if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
-			TransferFrameTC* frame = waitQueue->front();
+			TransferFrameTC* frame = waitQueueFOP->front();
 			if (frame->getServiceType() == ServiceType::TYPE_A) {
-				sentQueue->push_back(frame);
-				waitQueue->pop_front();
+				sentQueueFOP->push_back(frame);
+				waitQueueFOP->pop_front();
 				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			}
@@ -671,13 +671,13 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 
 	if (frame->transferFrameHeader().bypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_A) {
-			if (!waitQueue->full()) {
+			if (!waitQueueFOP->full()) {
 				// E19
 				if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT) {
-					waitQueue->push_back(frame);
+					waitQueueFOP->push_back(frame);
 					lookForFdu();
 				} else if (state == FOPState::RETRANSMIT_WITH_WAIT) {
-					waitQueue->push_back(frame);
+					waitQueueFOP->push_back(frame);
 				} else {
 					ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
 					return COPDirectiveResponse::REJECT;
