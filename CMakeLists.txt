@@ -25,7 +25,7 @@ add_library(common OBJECT
         src/FrameAcceptanceReporting.cpp
         src/Packet.cpp
         src/logOperators.cpp
-        src/CLCW.cpp)
+        src/CLCW.cpp src/MemoryPool.cpp)
 
 # Specify the .cpp files for the executables
 file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
@@ -34,7 +34,7 @@ add_executable(ccsds_tm_packets
         $<TARGET_OBJECTS:common>
         #        ${x86_main_SRC}
         inc/Alert.hpp inc/TransferFrame.hpp inc/TransferFrameTM.hpp inc/Logger.hpp inc/CCSDS_Log.h inc/CCSDSLoggerImpl.h inc/logOperators.h
-        inc/CLCW.hpp)
+        inc/CLCW.hpp inc/MemoryPool.hpp)
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     # Gather all the .cpp files corresponding to tests

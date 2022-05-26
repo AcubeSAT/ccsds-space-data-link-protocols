@@ -49,3 +49,44 @@ TEST_CASE("MAPP blocking") {
 
 TEST_CASE("Virtual Channel Generation") {}
 
+TEST_CASE("CLCW parsing"){
+    uint32_t operationalControlField = 0xD342269;
+    bool operationalControlFieldExists = true;
+    CLCW clcw = CLCW(operationalControlFieldExists, operationalControlField);
+    bool controlWordType = clcw.getControlWordType();
+    uint8_t clcwVersion = clcw.getClcwVersion();
+    uint8_t statusField = clcw.getStatusField();
+    uint8_t copInEffect = clcw.getCopInEffect();
+    uint8_t vcId = clcw.getVcId();
+    uint8_t spare = clcw.getSpare();
+    bool noRfAvailable = clcw.getNoRfAvailable();
+    bool bitLock = clcw.getNoBitLock();
+    bool lockout = clcw.getLockout();
+    bool wait = clcw.getWait();
+    bool retransmit = clcw.getRetransmit();
+    uint8_t farmBCounter = clcw.getFarmBCounter();
+    bool spare2 = clcw.getSpare2();
+    uint8_t reportValue = clcw.getReportValue();
+
+
+    CHECK(controlWordType == 0);
+    CHECK(clcwVersion == 0);
+    CHECK(statusField == 3);
+    CHECK(copInEffect == 1);
+    CHECK(vcId == 13);
+    CHECK(spare == 0);
+    CHECK(noRfAvailable == 0);
+    CHECK(bitLock == 0);
+    CHECK(lockout == 1);
+    CHECK(wait == 0);
+    CHECK(retransmit == 0);
+    CHECK(farmBCounter == 1);
+    CHECK(spare2 == 0);
+    CHECK(reportValue == 105);
+
+    CLCW parsedClcw = CLCW(controlWordType, clcwVersion, statusField, copInEffect, vcId,
+                           spare, noRfAvailable, bitLock, lockout, wait,
+                           retransmit, farmBCounter, spare2, reportValue);
+
+    CHECK(operationalControlField == parsedClcw.getClcw());
+}
