@@ -747,8 +747,3 @@ std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::tx
 	return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT,
 	                 masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.front());
 }
-
-void ServiceChannel::vcReceptionService(TransferFrameTM* transferFrame) {
-    VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
-    virtChannel->
-}
