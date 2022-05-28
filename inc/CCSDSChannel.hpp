@@ -290,6 +290,14 @@ public:
 		return masterChannel;
 	}
 
+	/**
+	 * For testing purposes only
+	 * @return the waitQueueRxTCBeforeFARM buffer 
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> getWaitQueueRxTCBeforeFARM(){
+		return waitQueueRxTCBeforeFARM;
+	}
+
 private:
 	/**
 	 * @brief Buffer to store incoming packets BEFORE being processed by COP
@@ -300,6 +308,16 @@ private:
 	 * @brief Buffer to store incoming packets AFTER being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueRxTC;
+
+	/**
+	 * @brief Buffer to store incoming packets BEFORE being processed by FARM
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue> waitQueueRxTCBeforeFARM;
+
+	/**
+	 * @brief Buffer to store incoming packets AFTER being processed by FARM
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue> waitQueueRxTCAfterFARM;
 
 	/**
 	 * @brief Buffer to store outcoming packets AFTER being processed by COP

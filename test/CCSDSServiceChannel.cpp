@@ -195,4 +195,34 @@ TEST_CASE("Service Channel") {
 	CHECK(packet_tm_mc->packetData()[2] == 0x00);
     CHECK(packet_tm_mc->packetData()[3] ==  0x00);
 
+	SECTION("vcReceptionTC test"){
+		// Set up Service Channel
+		PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+
+		etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+		    {0, MAPChannel(0, true, true)},
+		    {1, MAPChannel(1, false, false)},
+		    {2, MAPChannel(2, true, false)},
+		};
+
+		MasterChannel master_channel = MasterChannel(true);
+		master_channel.addVC(0, true, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
+		                     255, 10, 10, map_channels);
+
+		ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+		VirtualChannel* virt_channel = &(master_channel.virtChannels.at(0));
+		uint8_t pckt1[] = {0xE1, 0x32, 0x12};
+		//serv_channel.storeTC(pckt_type_a2, 3, 0, 1, 1, ServiceType::TYPE_A);
+
+		//Empty Buffer
+		ServiceChannelNotification notif = serv_channel.vcReceptionTC(0);
+		CHECK(notif == ServiceChannelNotification::VC_RX_WAIT_QUEUE_EMPTY);
+
+
+		TransferFrameTC* frame = new TransferFrameTC(pckt1, 3, TC);
+		virt_channel->getWaitQueueRxTCBeforeFARM().push_back(new TransferFrameTC(pckt1, 3, TC));
+
+		int size = virt_channel->getWaitQueueRxTCBeforeFARM().size();
+		CHECK(size == 0);
+	}
 }
