@@ -6,7 +6,7 @@
 struct CLCW {
     uint32_t clcw;
 
-    CLCW(bool operationalControlFieldExists, uint32_t operationalControlField);
+    CLCW(uint32_t operationalControlField);
 
     CLCW(bool controlWordType, uint8_t clcwVersion, uint8_t statusField, uint8_t copInEffect, uint8_t vcId, uint8_t spare,
          bool noRfAvailalbe, bool noBitLock, bool lockout, bool wait, bool retransmit, uint8_t farmBCounter,

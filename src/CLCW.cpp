@@ -2,11 +2,8 @@
 #include "CLCW.hpp"
 
 
-CLCW::CLCW(bool operationalControlFieldExists, uint32_t operationalControlField) {
-    clcw = 0;
-    if (operationalControlFieldExists && ((operationalControlField >> 31U) == 0)) {
-        clcw = operationalControlField;
-    }
+CLCW::CLCW(uint32_t operationalControlField) {
+    clcw = operationalControlField;
 }
 
 CLCW::CLCW(bool controlWordType, uint8_t clcwVersion, uint8_t statusField, uint8_t copInEffect, uint8_t vcId,
