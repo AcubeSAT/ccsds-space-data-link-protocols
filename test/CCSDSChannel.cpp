@@ -52,7 +52,7 @@ TEST_CASE("Virtual Channel Generation") {}
 TEST_CASE("CLCW parsing"){
     uint32_t operationalControlField = 0xD342269;
     bool operationalControlFieldExists = true;
-    CLCW clcw = CLCW(operationalControlFieldExists, operationalControlField);
+    CLCW clcw = CLCW(operationalControlField);
     bool controlWordType = clcw.getControlWordType();
     uint8_t clcwVersion = clcw.getClcwVersion();
     uint8_t statusField = clcw.getStatusField();
