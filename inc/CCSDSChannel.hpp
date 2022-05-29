@@ -291,8 +291,8 @@ public:
 	}
 
 	/**
-	 * For testing purposes only
-	 * @return the waitQueueRxTCBeforeFARM buffer 
+	 * For testing purposes only (It will be deleted before merge).
+	 * @return the waitQueueRxTCBeforeFARM buffer
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> getWaitQueueRxTCBeforeFARM(){
 		return waitQueueRxTCBeforeFARM;

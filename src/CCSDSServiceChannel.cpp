@@ -356,14 +356,10 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 
 ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
-	if (virt_channel->waitQueueRxTCBeforeFARM.full()) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
-		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
-	}
 
 	if (virt_channel->waitQueueRxTCBeforeFARM.empty()) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_EMPTY);
-		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_EMPTY;
+		ccsdsLog(Rx, TypeServiceChannelNotif, VC_WAIT_QUEUE_BEFORE_FARM_EMPTY);
+		return ServiceChannelNotification::VC_WAIT_QUEUE_BEFORE_FARM_EMPTY;
 	}
 	TransferFrameTC* frame = virt_channel->waitQueueRxTCBeforeFARM.front();
 	// FARM procedures
@@ -371,8 +367,8 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	virt_channel->waitQueueRxTCBeforeFARM.pop_front();
 
 	if (virt_channel->waitQueueRxTCAfterFARM.full()){
-		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
-		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
+		ccsdsLog(Rx, TypeServiceChannelNotif, VC_WAIT_QUEUE_AFTER_FARM_FULL);
+		return ServiceChannelNotification::VC_WAIT_QUEUE_AFTER_FARM_FULL;
 	}
 
 	virt_channel->waitQueueRxTCAfterFARM.push_back(frame);

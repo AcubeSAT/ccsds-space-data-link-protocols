@@ -216,13 +216,13 @@ TEST_CASE("Service Channel") {
 
 		//Empty Buffer
 		ServiceChannelNotification notif = serv_channel.vcReceptionTC(0);
-		CHECK(notif == ServiceChannelNotification::VC_RX_WAIT_QUEUE_EMPTY);
+		CHECK(notif == ServiceChannelNotification::VC_WAIT_QUEUE_BEFORE_FARM_EMPTY);
 
 
 		TransferFrameTC* frame = new TransferFrameTC(pckt1, 3, TC);
 		virt_channel->getWaitQueueRxTCBeforeFARM().push_back(new TransferFrameTC(pckt1, 3, TC));
 
-		int size = virt_channel->getWaitQueueRxTCBeforeFARM().size();
+		uint8_t size = virt_channel->getWaitQueueRxTCBeforeFARM().size();
 		CHECK(size == 0);
 	}
 }
