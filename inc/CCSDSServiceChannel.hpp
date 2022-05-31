@@ -56,7 +56,7 @@ public:
 	 * @param sduid SDU ID
 	 * @param serviceType Service Type - Type-A or Type-B
 	 */
-	ServiceChannelNotification storeTC(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid,
+    ServiceChannelNotification storeTC(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid,
 	                                   uint16_t sduid, ServiceType serviceType);
 
 	/**
@@ -79,7 +79,7 @@ public:
      * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
      * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
      */
-    ServiceChannelNotification vcGenerationService (uint16_t maxTransferFrameDataLength, uint8_t gvcid);
+    ServiceChannelNotification vcGenerationService(uint16_t maxTransferFrameDataLength, uint8_t gvcid);
 
     /**
      * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx queues
@@ -87,7 +87,7 @@ public:
      * @param packetLength length of the packet
      * @param gvcid the global virtual channel id
      */
-	ServiceChannelNotification storePacketTm(uint8_t *packet, uint16_t packetLength, uint8_t gvcid);
+    ServiceChannelNotification storePacketTm(uint8_t *packet, uint16_t packetLength, uint8_t gvcid);
 
 	/**
 	 * @brief This service is used for storing incoming TM packets in the master channel

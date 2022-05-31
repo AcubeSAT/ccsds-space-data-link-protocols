@@ -58,14 +58,14 @@ TEST_CASE("CLCW parsing"){
     uint8_t statusField = clcw.getStatusField();
     uint8_t copInEffect = clcw.getCopInEffect();
     uint8_t vcId = clcw.getVcId();
-    uint8_t spare = clcw.getSpare();
+    uint8_t spare = 0;
     bool noRfAvailable = clcw.getNoRfAvailable();
     bool bitLock = clcw.getNoBitLock();
     bool lockout = clcw.getLockout();
     bool wait = clcw.getWait();
     bool retransmit = clcw.getRetransmit();
     uint8_t farmBCounter = clcw.getFarmBCounter();
-    bool spare2 = clcw.getSpare2();
+    bool spare2 = 0;
     uint8_t reportValue = clcw.getReportValue();
 
 

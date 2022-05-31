@@ -159,11 +159,11 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
 	 */
 	std::optional<uint32_t> getOperationalControlField() const {
-        uint32_t operationalControlField = 0;
+        uint32_t operationalControlField;
         uint8_t* ocfPtr;
 		if(!operationalControlFieldExists()){return {};}
 		ocfPtr = packet + packetLength - 4 - 2*eccFieldExists;
-        operationalControlField = operationalControlField | (ocfPtr[0] << 24U) | (ocfPtr[1] << 16U) | (ocfPtr[2] << 8U) | ocfPtr[3];
+        operationalControlField = (ocfPtr[0] << 24U) | (ocfPtr[1] << 16U) | (ocfPtr[2] << 8U) | ocfPtr[3];
         return operationalControlField;
 	}
 
