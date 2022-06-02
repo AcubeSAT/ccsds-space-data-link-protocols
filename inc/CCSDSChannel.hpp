@@ -348,7 +348,7 @@ struct MasterChannel {
 	MasterChannel(bool errorCtrlField)
 	    : virtChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(),
-	      errorCtrlField(errorCtrlField), frameCountTM(0) {}
+	      errorCtrlField(errorCtrlField), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
@@ -356,7 +356,7 @@ struct MasterChannel {
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
 	      rxMasterCopyTC(m.rxMasterCopyTC),
-	      rxMasterCopyTM(m.rxMasterCopyTM), frameCountTM(m.frameCountTM) {
+	      rxMasterCopyTM(m.rxMasterCopyTM), currFrameCountTM(m.currFrameCountTM) {
 		for (auto& vc : virtChannels) {
 			vc.second.masterChannel = *this;
 		}
@@ -376,7 +376,10 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTM* packet);
 
-    uint8_t frameCountTM;
+    // Keeps track of last master channel frame count. If lost frames in a master channel is detected, then a warning
+    // is logged. However, this isn't considered a reason for raising a warning as per CCSDS TM Data Link
+    // Upon initialization of the channel, a mc count of 0 is expected
+	uint8_t currFrameCountTM;
 
 	/**
 	 *

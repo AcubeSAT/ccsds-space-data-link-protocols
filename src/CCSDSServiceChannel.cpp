@@ -290,10 +290,10 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 	// TODO: Process secondary headers
 
 	// set master channel frame counter
-    packet->setMasterChannelFrameCount(masterChannel.frameCountTM);
+    packet->setMasterChannelFrameCount(masterChannel.currFrameCountTM);
 
 	// increment master channel frame counter
-	masterChannel.frameCountTM = masterChannel.frameCountTM <= 254 ? masterChannel.frameCountTM : 0;
+	masterChannel.currFrameCountTM = masterChannel.currFrameCountTM <= 254 ? masterChannel.currFrameCountTM : 0;
 	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.push_back(packet);
 	masterChannel.txProcessedPacketListBufferTM.pop_front();
 
@@ -312,6 +312,16 @@ ServiceChannelNotification ServiceChannel::mcReceptionTMRequest() {
 		return ServiceChannelNotification::RX_IN_MC_FULL;
 	}
 	TransferFrameTM* packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTM.front();
+    uint8_t mc_counter = packet->getMasterChannelFrameCount();
+
+	// Check if master channel frames have been lost
+	uint8_t mc_counter_diff = (mc_counter - masterChannel.currFrameCountTM) % 0xFF;
+
+	if (mc_counter_diff > 1){
+        // An error is raised to let the transmitter know that some frames have been lost. However, the processing
+		// isn't aborted
+		ccsdsLog<uint8_t>(Rx, TypeServiceChannelNotif, MC_RX_INVALID_COUNT, mc_counter_diff);
+	}
 
 	// Check if need to add secondary header and act accordingly
 	// TODO: Process secondary headers
@@ -679,7 +689,7 @@ uint8_t ServiceChannel::getFrameCountTM(uint8_t vid){
 }
 
 uint8_t ServiceChannel::getFrameCountTM(){
-    return masterChannel.frameCountTM;
+    return masterChannel.currFrameCountTM;
 }
 
 std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::txOutPacketTC(uint8_t vid, uint8_t mapid) const {
