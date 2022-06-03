@@ -24,6 +24,7 @@ TEST_CASE("CCSDS TC Channel Model") {
 }
 
 TEST_CASE("MAPP blocking") {
+	ServiceChannelNotification err;
 	PhysicalChannel physical_channel =
 	    PhysicalChannel(TmTransferFrameSize, TcErrorControlFieldExists, 100, 50, 20000, 5);
 
@@ -38,7 +39,8 @@ TEST_CASE("MAPP blocking") {
 
 	uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
-	serv_channel.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
+	err = serv_channel.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
+
 	CHECK(serv_channel.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel - 1);
 
 	serv_channel.mappRequest(3, 2);

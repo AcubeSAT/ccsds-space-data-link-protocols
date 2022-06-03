@@ -23,8 +23,28 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
 
+	uint8_t vid = pckt.virtualChannelId();
+	uint8_t mapid = pckt.mapId();
+
+    // Check if virtual channel ID is valid
+    if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+        // If it isn't, abort operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
+    VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+
+    // Check if MAP Id is valid
+    if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
+        // If it isn't, abort operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+        return ServiceChannelNotification::INVALID_MAP_ID;
+    }
+
 	masterChannel.rxMasterCopyTC.push_back(pckt);
 	TransferFrameTC* masterPckt = &(masterChannel.rxMasterCopyTC.front());
+
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(masterPckt);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
@@ -33,7 +53,23 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid,
                                                    uint16_t sduid, ServiceType serviceType) {
 	uint8_t vid = gvcid & 0x3F;
-	VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+
+    // Check if virtual channel ID is valid
+    if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+        // If it isn't, abort operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
+    VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+
+	// Check if MAP Id is valid
+    if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
+        // If it isn't, abort operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+        return ServiceChannelNotification::INVALID_MAP_ID;
+    }
+
 	MAPChannel* mapChannel = &(vchan->mapChannels.at(mapid));
 
 	if (mapChannel->unprocessedPacketListBufferTC.full()) {
@@ -59,6 +95,13 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 // It is expected for space to be reserved for the Primary and Secondary header (if present) beforehand
 ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid) {
 	uint8_t vid = gvcid & 0x3F;
+
+    // Check if virtual channel ID is valid
+	if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+		// If it isn't, abort operation
+		ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+		return ServiceChannelNotification::INVALID_VC_ID;
+	}
 	VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
 
 	if (masterChannel.txMasterCopyTM.full()) {
@@ -106,6 +149,13 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	}
 
 	uint8_t vid = (packet[1] >> 1) & 0x7;
+    // Check if virtual channel ID is valid
+    if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+        // If it isn't, abort operation
+        ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
     VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
 	TransferFrameTM pckt = TransferFrameTM(packet, packetLength, virtChannel->frameErrorControlFieldTMPresent);
 
