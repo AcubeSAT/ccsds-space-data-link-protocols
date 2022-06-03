@@ -195,19 +195,27 @@ TEST_CASE("Service Channel") {
 	CHECK(packet_tm_mc->packetData()[2] == 0x00);
     CHECK(packet_tm_mc->packetData()[3] ==  0x00);
 
+	//new service channel created so as not to interfere with the previous one
+	ServiceChannel serv_channel2 = ServiceChannel(master_channel, phy_channel_fop);
+
+	CHECK(serv_channel2.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel);
 	//new packet
 	uint8_t pckt[] = {0xE1, 0x32, 0x12};
-	serv_channel.storeTC(pckt, 3, 0, 0, 0, ServiceType::TYPE_A);
+	serv_channel2.storeTC(pckt, 3, 0, 0, 0, ServiceType::TYPE_A);
+	CHECK(serv_channel2.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 1);
 
 	//mapp request
-	err = serv_channel.mappRequest(0, 0);
+	err = serv_channel2.mappRequest(0, 0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel2.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel);
 
 	//VC reception
-	err = serv_channel.vcReceptionTC(0);
+	CHECK(serv_channel2.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+	err = serv_channel2.vcReceptionTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel2.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 
 	//All frames generation
-	err = serv_channel.allFramesGenerationTCRequest();
+	err = serv_channel2.allFramesGenerationTCRequest();
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 }

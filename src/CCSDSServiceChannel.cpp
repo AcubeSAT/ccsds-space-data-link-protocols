@@ -371,7 +371,7 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 
 	virt_channel->txUnprocessedPacketListBufferTC.pop_front();
 
-	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(frame);
+	masterChannel.txOutFramesBeforeAllFramesGenerationListTC.push_back(frame);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
