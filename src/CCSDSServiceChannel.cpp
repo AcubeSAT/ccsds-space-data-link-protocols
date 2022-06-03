@@ -90,12 +90,6 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	masterChannel.txMasterCopyTM.push_back(packet_s);
 	masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
 
-    //CLCW construction
-    std::optional<uint32_t> operationalControlField = packet_s.getOperationalControlField();
-    if(operationalControlField.has_value() && operationalControlField.value() >> 31 == 0){
-        CLCW clcw = CLCW(operationalControlField.value());
-    }
-
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
@@ -115,7 +109,12 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
     VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
 	TransferFrameTM pckt = TransferFrameTM(packet, packetLength, virtChannel->frameErrorControlFieldTMPresent);
 
-	masterChannel.rxMasterCopyTM.push_back(pckt);
+    //CLCW extraction
+    std::optional<uint32_t> operationalControlField = pckt.getOperationalControlField();
+    if(operationalControlField.has_value() && operationalControlField.value() >> 31 == 0){
+        CLCW clcw = CLCW(operationalControlField.value());
+    }
+    masterChannel.rxMasterCopyTM.push_back(pckt);
 	TransferFrameTM* masterPckt = &(masterChannel.rxMasterCopyTM.back());
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTM.push_back(masterPckt);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
