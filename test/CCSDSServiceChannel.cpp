@@ -155,30 +155,25 @@ TEST_CASE("Service Channel") {
     // TODO: This should take the output of TM RX called previously. Proper functional tests should include two service
     //  channels to simulate communication between GS and SC
 
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
-	serv_channel.storeTM(valid_pckt_TM, 14);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
+	err = serv_channel.allFramesReceptionTMRequest(valid_pckt_TM, 14);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
-	serv_channel.storeTM(invalid_pckt_TM, 14);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 2);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
+	err = serv_channel.allFramesReceptionTMRequest(invalid_pckt_TM, 14);
+	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
     uint8_t resulting_tm_packet[14] = {0};
 
-	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
+	err = serv_channel.packetExtractionTM(0, resulting_tm_packet);
 	// Valid packet passes to lower procedures
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
-
-	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
-	// Invalid CRC is logged and the packet is deleted from the master buffer
-	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
 
 	// TM Transmission
     CHECK(serv_channel.getFrameCountTM(0) == 0);

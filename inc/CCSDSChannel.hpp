@@ -206,6 +206,13 @@ public:
 		return txUnprocessedPacketListBufferTC.available();
 	}
 
+    /**
+     * @brief Returns availableVCBufferTC space in the VC TC buffer
+     */
+    uint16_t rxInAvailableTM() const {
+        return rxInFramesAfterMCReception.available();
+    }
+
 	/**
 	 * @brief Defines whether the OCF service is present
 	 */
@@ -291,7 +298,12 @@ public:
 	}
 
 private:
-	/**
+    /**
+     * @brief TM packets after being processed by the MasterChannelReception Service
+     */
+    etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> rxInFramesAfterMCReception;
+
+    /**
 	 * @brief Buffer to store incoming packets BEFORE being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueTxTC;
@@ -432,8 +444,6 @@ private:
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTC;
 	// TM packets that are ready to be transmitted to higher procedures following all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTC;
-	// TC packets that are received, before being received by the all frames reception service
-	etl::list<TransferFrameTM*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTM;
 
 	// Buffer to store TM packets that are processed by the packet and VC Generation services
 	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedPacketListBufferTM;
