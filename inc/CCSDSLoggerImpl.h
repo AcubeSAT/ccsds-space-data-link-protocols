@@ -12,8 +12,9 @@ template <typename T, class myNotif>
 void ccsdsLog(TxRx txRx, NotificationType notificationType, myNotif Notif, T message){
     std::ostringstream ss;
     ss << txRx << ":" << notificationType << ":" << Notif << ":" << message;
-    LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif << ":" << message;
+    LOG_NOTICE << ss.str();
 }
+
 template <class myNotif>
 void ccsdsLog(TxRx txRx, NotificationType notificationType, myNotif Notif) {
 	std::ostringstream ss;

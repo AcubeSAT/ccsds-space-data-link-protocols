@@ -312,10 +312,10 @@ ServiceChannelNotification ServiceChannel::mcReceptionTMRequest() {
 		return ServiceChannelNotification::RX_IN_MC_FULL;
 	}
 	TransferFrameTM* packet = masterChannel.rxInFramesBeforeAllFramesReceptionListTM.front();
-    uint8_t mc_counter = packet->getMasterChannelFrameCount();
+    uint8_t mc_lost_frames = packet->getMasterChannelFrameCount();
 
 	// Check if master channel frames have been lost
-	uint8_t mc_counter_diff = (mc_counter - masterChannel.currFrameCountTM) % 0xFF;
+	uint8_t mc_counter_diff = (mc_lost_frames - masterChannel.currFrameCountTM) % 0xFF;
 
 	if (mc_counter_diff > 1) {
        // Log error that frames have been lost, but don't abort processing
