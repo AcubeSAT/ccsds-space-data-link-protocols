@@ -1,6 +1,7 @@
 #include <CCSDSServiceChannel.hpp>
 #include <TransferFrameTM.hpp>
 #include <etl/iterator.h>
+#include "CLCW.hpp"
 #include <CCSDSLoggerImpl.h>
 
 
@@ -108,7 +109,12 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
     VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
 	TransferFrameTM pckt = TransferFrameTM(packet, packetLength, virtChannel->frameErrorControlFieldTMPresent);
 
-	masterChannel.rxMasterCopyTM.push_back(pckt);
+    //CLCW extraction
+    std::optional<uint32_t> operationalControlField = pckt.getOperationalControlField();
+    if(operationalControlField.has_value() && operationalControlField.value() >> 31 == 0){
+        CLCW clcw = CLCW(operationalControlField.value());
+    }
+    masterChannel.rxMasterCopyTM.push_back(pckt);
 	TransferFrameTM* masterPckt = &(masterChannel.rxMasterCopyTM.back());
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTM.push_back(masterPckt);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
