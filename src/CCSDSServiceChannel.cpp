@@ -317,9 +317,8 @@ ServiceChannelNotification ServiceChannel::mcReceptionTMRequest() {
 	// Check if master channel frames have been lost
 	uint8_t mc_counter_diff = (mc_counter - masterChannel.currFrameCountTM) % 0xFF;
 
-	if (mc_counter_diff > 1){
-        // An error is raised to let the transmitter know that some frames have been lost. However, the processing
-		// isn't aborted
+	if (mc_counter_diff > 1) {
+       // Log error that frames have been lost, but don't abort processing
 		ccsdsLog<uint8_t>(Rx, TypeServiceChannelNotif, MC_RX_INVALID_COUNT, mc_counter_diff);
 	}
 
