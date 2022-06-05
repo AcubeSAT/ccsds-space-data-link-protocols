@@ -26,18 +26,18 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	uint8_t vid = pckt.virtualChannelId();
 	uint8_t mapid = pckt.mapId();
 
-    // Check if virtual channel ID is valid
+    // Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
     if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
-        // If it isn't, abort operation
+        // If it doesn't, abort operation
         ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
     }
 
     VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
 
-    // Check if MAP Id is valid
+    // Check if MAP channel Id does not exist in the relevant MAP Channels map
     if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
-        // If it isn't, abort operation
+        // If it doesn't, abort the operation
         ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
         return ServiceChannelNotification::INVALID_MAP_ID;
     }
@@ -54,18 +54,18 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
                                                    uint16_t sduid, ServiceType serviceType) {
 	uint8_t vid = gvcid & 0x3F;
 
-    // Check if virtual channel ID is valid
+    // Check if Virtual channel Id does not exist in the relevant Virtual Channels map
     if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
-        // If it isn't, abort operation
+        // If it doesn't, abort operation
         ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
     }
 
     VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
 
-	// Check if MAP Id is valid
+	// Check if MAP Channel Id does not exist in the relevant MAP chanels map
     if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
-        // If it isn't, abort operation
+        // If it doesn't, abort the operation
         ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
         return ServiceChannelNotification::INVALID_MAP_ID;
     }
@@ -96,9 +96,9 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid) {
 	uint8_t vid = gvcid & 0x3F;
 
-    // Check if virtual channel ID is valid
+    // Check if Virtual Channel Id does not exist in the relevant Virtual chanels map
 	if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
-		// If it isn't, abort operation
+		// If it does't, abort operation
 		ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
 		return ServiceChannelNotification::INVALID_VC_ID;
 	}
@@ -149,7 +149,7 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	}
 
 	uint8_t vid = (packet[1] >> 1) & 0x7;
-    // Check if virtual channel ID is valid
+    // Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
     if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
         // If it isn't, abort operation
         ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
