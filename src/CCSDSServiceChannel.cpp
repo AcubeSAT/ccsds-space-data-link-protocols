@@ -35,8 +35,8 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 
     VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
 
-    // Check if MAP channel Id does not exist in the relevant MAP Channels map
-    if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
+    // If Segment Header present, check if MAP channel Id does not exist in the relevant MAP Channels map
+    if (vchan->segmentHeaderPresent && (vchan->mapChannels.find(mapid) == vchan->mapChannels.end())){
         // If it doesn't, abort the operation
         ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
         return ServiceChannelNotification::INVALID_MAP_ID;
@@ -63,7 +63,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 
     VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
 
-	// Check if MAP Channel Id does not exist in the relevant MAP chanels map
+	// Check if MAP Channel Id does not exist in the relevant MAP channels map
     if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
         // If it doesn't, abort the operation
         ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
