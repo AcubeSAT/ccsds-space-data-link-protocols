@@ -294,17 +294,17 @@ public:
 	}
 
 	/**
-	 * @brief size of waitQueueRxTCSize buffer
+	 * @brief available space for packets at waitQueueRxTC buffer
 	 */
-	uint16_t getWaitQueueRxTCSize(uint8_t vid) const {
-		return masterChannel.virtChannels.at(vid).waitQueueRxTC.size();
+	uint16_t getAvailableWaitQueueRxTC(uint8_t vid) const {
+		return masterChannel.virtChannels.at(vid).waitQueueRxTC.available();
 	}
 
 	/**
-	 * @brief size of rxInFramesAfterVCReception buffer
+	 * @brief available space for packets at rxInFramesAfterVCReception buffer
 	 */
-	uint16_t getRxInFramesAfterVCReception(uint8_t vid) const {
-		return masterChannel.virtChannels.at(vid).rxInFramesAfterVCReception.size();
+	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
+		return masterChannel.virtChannels.at(vid).rxInFramesAfterVCReception.available();
 	}
 
 	/**

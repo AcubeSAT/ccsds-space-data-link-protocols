@@ -361,13 +361,14 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM);
 		return ServiceChannelNotification::NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM;
 	}
-	TransferFrameTC* frame = virt_channel->waitQueueRxTC.front();
-	// FARM procedures
 
 	if (virt_channel->rxInFramesAfterVCReception.full()){
 		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RECEPTION_BUFFER_AFTER_FARM_FULL);
 		return ServiceChannelNotification::VC_RECEPTION_BUFFER_AFTER_FARM_FULL;
 	}
+
+	TransferFrameTC* frame = virt_channel->waitQueueRxTC.front();
+	// FARM procedures
 
 	virt_channel->waitQueueRxTC.pop_front();
 
