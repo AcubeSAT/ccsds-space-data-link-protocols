@@ -16,8 +16,8 @@ TEST_CASE("Service Channel") {
 	};
 
 	MasterChannel master_channel = MasterChannel(true);
-	master_channel.addVC(0, true, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
-                         255, 10, 10, map_channels);
+	master_channel.addVC(0, true, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
+	                     10, map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
@@ -150,10 +150,10 @@ TEST_CASE("Service Channel") {
 	uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
 	uint8_t invalid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
-    // TM Reception
+	// TM Reception
 
-    // TODO: This should take the output of TM RX called previously. Proper functional tests should include two service
-    //  channels to simulate communication between GS and SC
+	// TODO: This should take the output of TM RX called previously. Proper functional tests should include two service
+	//  channels to simulate communication between GS and SC
 
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
@@ -166,7 +166,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 2);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
 
-    uint8_t resulting_tm_packet[14] = {0};
+	uint8_t resulting_tm_packet[14] = {0};
 
 	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
 	// Valid packet passes to lower procedures
@@ -181,41 +181,38 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel);
 
 	// TM Transmission
-    CHECK(serv_channel.getFrameCountTM(0) == 0);
-    uint8_t pck_tm_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
+	CHECK(serv_channel.getFrameCountTM(0) == 0);
+	uint8_t pck_tm_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
 	err = serv_channel.storeTM(pck_tm_data, 15, 0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.availableMcTxTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
+	CHECK(serv_channel.availableMcTxTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
 
-	const TransferFrameTM*packet_tm_mc = serv_channel.packetMasterChannel();
-    CHECK(serv_channel.getFrameCountTM(0) == 1);
+	const TransferFrameTM* packet_tm_mc = serv_channel.packetMasterChannel();
+	CHECK(serv_channel.getFrameCountTM(0) == 1);
 
 	CHECK(packet_tm_mc->packetData()[0] == 0x06);
 	CHECK(packet_tm_mc->packetData()[1] == 0x71);
 	CHECK(packet_tm_mc->packetData()[2] == 0x00);
-    CHECK(packet_tm_mc->packetData()[3] ==  0x00);
+	CHECK(packet_tm_mc->packetData()[3] == 0x00);
 
-	//new service channel created so as not to interfere with the previous one
+	// new service channel created so as not to interfere with the previous one
 	ServiceChannel serv_channel2 = ServiceChannel(master_channel, phy_channel_fop);
 
-	CHECK(serv_channel2.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel);
-	//new packet
-	uint8_t pckt[] = {0xE1, 0x32, 0x12};
-	serv_channel2.storeTC(pckt, 3, 0, 0, 0, ServiceType::TYPE_A);
-	CHECK(serv_channel2.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 1);
+	// new packet
+	uint8_t pckt[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	serv_channel2.storeTC(pckt, 14);
 
-	//mapp request
-	err = serv_channel2.mappRequest(0, 0);
+	// All frames reception
+	CHECK(serv_channel2.getWaitQueueRxTCSize(0) == 0);
+	err = serv_channel2.allFramesReceptionTCRequest();
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel2.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel);
+	CHECK(serv_channel2.getWaitQueueRxTCSize(0) == 1);
 
-	//VC reception
-	CHECK(serv_channel2.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+	// VC reception
+	CHECK(serv_channel2.getRxInFramesAfterVCReception(0) == 0);
 	err = serv_channel2.vcReceptionTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel2.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	CHECK(serv_channel2.getWaitQueueRxTCSize(0) == 0);
+	CHECK(serv_channel2.getRxInFramesAfterVCReception(0) == 1);
 
-	//All frames generation
-	err = serv_channel2.allFramesGenerationTCRequest();
-	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 }

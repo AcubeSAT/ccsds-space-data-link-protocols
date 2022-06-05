@@ -311,6 +311,11 @@ private:
      */
     etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue> sentQueueRxTC;
 
+	/**
+     * @brief Buffer to store incoming packets AFTER being processed by FARM
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesAfterVCReception;
+
     /**
 	 * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
 	 */

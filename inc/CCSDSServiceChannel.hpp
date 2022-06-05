@@ -294,6 +294,20 @@ public:
 	}
 
 	/**
+	 * @brief size of waitQueueRxTCSize buffer
+	 */
+	uint16_t getWaitQueueRxTCSize(uint8_t vid) const {
+		return masterChannel.virtChannels.at(vid).waitQueueRxTC.size();
+	}
+
+	/**
+	 * @brief size of rxInFramesAfterVCReception buffer
+	 */
+	uint16_t getRxInFramesAfterVCReception(uint8_t vid) const {
+		return masterChannel.virtChannels.at(vid).rxInFramesAfterVCReception.size();
+	}
+
+	/**
 	 * @brief Read first packet of the TC MAP channel buffer (unprocessedPacketListBufferTC)
 	 */
 	std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
