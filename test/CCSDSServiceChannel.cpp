@@ -120,6 +120,24 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
+	// Rx side
+	// new packet
+	uint8_t pckt[] = {0x00, 0x01, 0x02, 0x00, 0x01, 0x01, 0x07, 0x08, 0x09};
+	serv_channel.storeTC(pckt, 9);
+
+	// All frames reception
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	err = serv_channel.allFramesReceptionTCRequest();
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue - 1);
+
+	// VC reception
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer);
+	err = serv_channel.vcReceptionTC(0);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer - 1);
+
 	/**
 	 * the next commented lines are duplicated (line 93) . I don't know why. It won't work if uncommented
 	 */
@@ -202,22 +220,5 @@ TEST_CASE("Service Channel") {
 	CHECK(packet_tm_mc->packetData()[1] == 0x71);
 	CHECK(packet_tm_mc->packetData()[2] == 0x00);
 	CHECK(packet_tm_mc->packetData()[3] == 0x00);
-
-	// new packet
-	uint8_t pckt[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
-	serv_channel.storeTC(pckt, 14);
-
-	// All frames reception
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
-	err = serv_channel.allFramesReceptionTCRequest();
-	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue - 1);
-
-	// VC reception
-	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer);
-	err = serv_channel.vcReceptionTC(0);
-	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
-	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer - 1);
 
 }
