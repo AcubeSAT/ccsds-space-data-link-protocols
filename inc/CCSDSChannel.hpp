@@ -134,7 +134,7 @@ public:
 	};
 
 protected:
-    bool blockingTC;
+	bool blockingTC;
 	bool segmentationTC;
 
 	/**
@@ -239,45 +239,42 @@ public:
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels;
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
-	               const bool segmentHeaderPresent, const uint16_t maxFrameLength,
-	               const bool blockingTC, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                   const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
+	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
+	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
 	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldTMPresent,
-	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
-                   const uint8_t farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
+	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
+	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength),
-	      blockingTC(blockingTC), repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl),
-	      waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
+	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
+	      repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl), waitQueueTxTC(),
+	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-          frameCountTM(0),
-	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
-          farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth,
-	                                    farmPositiveWinWidth, farmNegativeWinWidth))
-    {
+	      frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
+	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
 	}
 
 	VirtualChannel(const VirtualChannel& v)
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
-	      maxFrameLengthTC(v.maxFrameLengthTC),
-	      repetitionTypeAFrame(v.repetitionTypeAFrame), repetitionCOPCtrl(v.repetitionCOPCtrl),
-	      frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
+	      maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
+	      repetitionCOPCtrl(v.repetitionCOPCtrl), frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
 	      sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC), sentQueueRxTC(v.waitQueueRxTC),
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop), farm(v.farm),
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
-	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels)
-	{
+	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
 		fop.waitQueueFOP = &waitQueueTxTC;
-        fop.sentQueueFARM = &sentQueueRxTC;
-        fop.waitQueueFARM = &sentQueueRxTC;
-    }
+		fop.sentQueueFARM = &sentQueueRxTC;
+		fop.waitQueueFARM = &sentQueueRxTC;
+	}
 
 	VirtualChannelAlert storeVC(TransferFrameTC* packet);
 
@@ -306,17 +303,17 @@ private:
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue> sentQueueTxTC;
 
-    /**
-     * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
-     */
-    etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue> sentQueueRxTC;
+	/**
+	 * @brief Buffer to storeOut outcoming packets AFTER being processed by COP
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue> sentQueueRxTC;
 
 	/**
      * @brief Buffer to store incoming packets AFTER being processed by FARM
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesAfterVCReception;
 
-    /**
+	/**
 	 * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
@@ -326,10 +323,10 @@ private:
 	 */
 	FrameOperationProcedure fop;
 
-    /**
-    * @brief Holds the FARM state of the virtual channel
-    */
-    FrameAcceptanceReporting farm;
+	/**
+	 * @brief Holds the FARM state of the virtual channel
+	 */
+	FrameAcceptanceReporting farm;
 
 	/**
 	 * @brief The Master Channel the Virtual Channel belongs in
@@ -352,16 +349,14 @@ struct MasterChannel {
 
 	MasterChannel(bool errorCtrlField)
 	    : virtChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(),
-	      errorCtrlField(errorCtrlField), frameCountTM(0) {}
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField), frameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
-	      rxMasterCopyTC(m.rxMasterCopyTC),
-	      rxMasterCopyTM(m.rxMasterCopyTM), frameCountTM(m.frameCountTM) {
+	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), frameCountTM(m.frameCountTM) {
 		for (auto& vc : virtChannels) {
 			vc.second.masterChannel = *this;
 		}
@@ -381,7 +376,7 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTM* packet);
 
-    uint8_t frameCountTM;
+	uint8_t frameCountTM;
 
 	/**
 	 *
@@ -400,20 +395,16 @@ struct MasterChannel {
 	/**
 	 * @brief Add virtual channel to master channel
 	 */
-	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent,
-                             const uint16_t maxFrameLength, const bool blocking,
-                             const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                             const bool frameErrorControlFieldTMPresent,
-                             const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-                             const bool operationalControlFieldTMPresent,
-                             SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-                             const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-                             etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
+	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength,
+	                         const bool blocking, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
+	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
+	                         etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 private:
-
-
-    // Packets stored in frames list, before being processed by the all frames generation service
+	// Packets stored in frames list, before being processed by the all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTC;
 	// Packets ready to be transmitted having passed through the all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedTxTcOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationListTC;

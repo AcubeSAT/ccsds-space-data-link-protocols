@@ -48,7 +48,7 @@ private:
 
 public:
 	TransferFrame(PacketType t, uint16_t packetLength, uint8_t* packet)
-	    : type(t), packetLength(packetLength), packet(packet){};
+	    : type(t), frameLength(packetLength), packet(packet){};
 
 	/**
 	 * @brief Appends the CRC code (given that the corresponding Error Correction field is present in the given
@@ -64,7 +64,7 @@ public:
 	static uint16_t calculateCRC(const uint8_t* packet, uint16_t len);
 
 protected:
-	uint16_t packetLength;
+	uint16_t frameLength;
 	uint8_t* packet;
 };
 

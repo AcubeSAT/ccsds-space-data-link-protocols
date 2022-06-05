@@ -7,7 +7,6 @@
 #include <TransferFrameTC.hpp>
 #include <utility>
 
-
 /**
  * @brief This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
  * bidirectional interface between the receiving and transmitting parties
@@ -35,14 +34,14 @@ private:
 public:
 	// Public methods that are called by the scheduler
 
-    /**
-     * @brief Fetch packet in the top of the MC buffer
-     */
-    const TransferFrameTM*packetMasterChannel() const{
-        return masterChannel.txProcessedPacketListBufferTM.front();
-    }
+	/**
+	 * @brief Fetch packet in the top of the MC buffer
+	 */
+	const TransferFrameTM* packetMasterChannel() const {
+		return masterChannel.txProcessedPacketListBufferTM.front();
+	}
 
-    uint16_t availableMcTxTM() const{
+	uint16_t availableMcTxTM() const {
 		return masterChannel.txProcessedPacketListBufferTM.available();
 	}
 
@@ -56,7 +55,7 @@ public:
 	 * @param sduid SDU ID
 	 * @param serviceType Service Type - Type-A or Type-B
 	 */
-    ServiceChannelNotification storeTC(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid,
+	ServiceChannelNotification storeTC(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid,
 	                                   uint16_t sduid, ServiceType serviceType);
 
 	/**
@@ -71,30 +70,32 @@ public:
 
 	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
 
-    /**
-     * Service that generates a transfer frame by combining the packet data to transfer frame data and initializes the transfer frame primary header
-     * @param maxTransferFrameDataLength the maximum transfer frame data legnth
-     * @param gvcid the global virtual channel id
-     * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
-     * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
-     * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
-     */
-    ServiceChannelNotification vcGenerationService(uint16_t maxTransferFrameDataLength, uint8_t gvcid);
+	/**
+	 * Service that generates a transfer frame by combining the packet data to transfer frame data and initializes the
+	 * transfer frame primary header
+	 * @param maxTransferFrameDataLength the maximum transfer frame data legnth
+	 * @param gvcid the global virtual channel id
+	 * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
+	 * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
+	 * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
+	 */
+	ServiceChannelNotification vcGenerationService(uint16_t maxTransferFrameDataLength, uint8_t gvcid);
 
-    /**
-     * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx queues
-     * @param packet pointer to the packet data
-     * @param packetLength length of the packet
-     * @param gvcid the global virtual channel id
-     */
-    ServiceChannelNotification storePacketTm(uint8_t *packet, uint16_t packetLength, uint8_t gvcid);
+	/**
+	 * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx
+	 * queues
+	 * @param packet pointer to the packet data
+	 * @param packetLength length of the packet
+	 * @param gvcid the global virtual channel id
+	 */
+	ServiceChannelNotification storePacketTm(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
 
 	/**
 	 * @brief This service is used for storing incoming TM packets in the master channel
 	 * @param packet Raw packet data
 	 * @param packetLength The length of the packet
 	 */
-    ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength);
+	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength);
 
 	/**
 	 * @brief This service is used for storing incoming TC packets in the master channel
@@ -184,7 +185,8 @@ public:
 	 * rate to the Channel Coding Sublayer.
 	 * @see p. 4.2.7 from TC Space Data Link Protocol
 	 */
-	ServiceChannelNotification allFramesGenerationTMRequest(uint8_t* packet_data, uint16_t packet_length=TmTransferFrameSize);
+	ServiceChannelNotification allFramesGenerationTMRequest(uint8_t* packet_data,
+	                                                        uint16_t packet_length = TmTransferFrameSize);
 
 	ServiceChannelNotification allFramesReceptionTCRequest();
 	/**
@@ -202,7 +204,7 @@ public:
 
 	uint8_t getFrameCountTM(uint8_t vid);
 
-    uint8_t getFrameCountTM();
+	uint8_t getFrameCountTM();
 
 	// TODO: Properly handle Notifications
 	void acknowledgeFrame(uint8_t vid, uint8_t frameSeqNumber);
