@@ -1,6 +1,7 @@
 #include <CCSDSServiceChannel.hpp>
 #include <TransferFrameTM.hpp>
 #include <etl/iterator.h>
+#include "CLCW.hpp"
 #include <CCSDSLoggerImpl.h>
 
 
@@ -22,8 +23,28 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
 
+	uint8_t vid = pckt.virtualChannelId();
+	uint8_t mapid = pckt.mapId();
+
+    // Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
+    if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+        // If it doesn't, abort operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
+    VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+
+    // Check if MAP channel Id does not exist in the relevant MAP Channels map
+    if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
+        // If it doesn't, abort the operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+        return ServiceChannelNotification::INVALID_MAP_ID;
+    }
+
 	masterChannel.rxMasterCopyTC.push_back(pckt);
 	TransferFrameTC* masterPckt = &(masterChannel.rxMasterCopyTC.front());
+
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(masterPckt);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
@@ -32,7 +53,23 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid,
                                                    uint16_t sduid, ServiceType serviceType) {
 	uint8_t vid = gvcid & 0x3F;
-	VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+
+    // Check if Virtual channel Id does not exist in the relevant Virtual Channels map
+    if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+        // If it doesn't, abort operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
+    VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
+
+	// Check if MAP Channel Id does not exist in the relevant MAP chanels map
+    if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()){
+        // If it doesn't, abort the operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+        return ServiceChannelNotification::INVALID_MAP_ID;
+    }
+
 	MAPChannel* mapChannel = &(vchan->mapChannels.at(mapid));
 
 	if (mapChannel->unprocessedPacketListBufferTC.full()) {
@@ -58,6 +95,13 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 // It is expected for space to be reserved for the Primary and Secondary header (if present) beforehand
 ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid) {
 	uint8_t vid = gvcid & 0x3F;
+
+    // Check if Virtual Channel Id does not exist in the relevant Virtual chanels map
+	if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+		// If it does't, abort operation
+		ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+		return ServiceChannelNotification::INVALID_VC_ID;
+	}
 	VirtualChannel* vchan = &(masterChannel.virtChannels.at(vid));
 
 	if (masterChannel.txMasterCopyTM.full()) {
@@ -105,10 +149,22 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	}
 
 	uint8_t vid = (packet[1] >> 1) & 0x7;
+    // Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
+    if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+        // If it isn't, abort operation
+        ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
     VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
 	TransferFrameTM pckt = TransferFrameTM(packet, packetLength, virtChannel->frameErrorControlFieldTMPresent);
 
-	masterChannel.rxMasterCopyTM.push_back(pckt);
+    //CLCW extraction
+    std::optional<uint32_t> operationalControlField = pckt.getOperationalControlField();
+    if(operationalControlField.has_value() && operationalControlField.value() >> 31 == 0){
+        CLCW clcw = CLCW(operationalControlField.value());
+    }
+    masterChannel.rxMasterCopyTM.push_back(pckt);
 	TransferFrameTM* masterPckt = &(masterChannel.rxMasterCopyTM.back());
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTM.push_back(masterPckt);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);

@@ -85,7 +85,12 @@ const uint8_t MaxRxInMasterChannel = 200;
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
 
+const uint8_t MemoryPoolMemorySize = 8; //Size of memory pool
+
 enum FlagState { NOT_READY = 0, READY = 1 };
+
+const uint16_t PacketBufferTmSize = 512;
+const uint16_t MasterTransferFrameBufferTmSize = 512;
 
 const uint8_t idle_data[] = {
     0x53, 0x45, 0x24, 0x3,  0xce, 0xf0, 0xd2, 0x75, 0x50, 0xb9, 0x57, 0x24, 0x70, 0x83, 0xa8, 0x4e, 0x44,    0xd4, 0xa6,

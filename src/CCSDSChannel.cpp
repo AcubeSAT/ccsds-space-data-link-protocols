@@ -1,6 +1,7 @@
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
 #include "CCSDSLoggerImpl.h"
+#include "MemoryPool.hpp"
 // Virtual Channel
 
 VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
@@ -13,7 +14,6 @@ VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
 	ccsdsLog(Tx, TypeVirtualChannelAlert, NO_VC_ALERT);
 	return VirtualChannelAlert::NO_VC_ALERT;
 }
-
 // Master Channel
 
 // Technically not a packet, but it has identical information
