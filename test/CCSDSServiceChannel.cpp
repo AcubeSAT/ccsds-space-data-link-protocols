@@ -42,27 +42,27 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txAvailableTC(0, 1) == MaxReceivedTcInMapChannel);
 	CHECK(serv_channel.txAvailableTC(0, 2) == MaxReceivedTcInMapChannel);
 
-    err = serv_channel.storeTC(pckt_type_a, 9, 8, 0, 0, ServiceType::TYPE_A);
+    err = serv_channel.storeTC(pckt_type_a, 9, 8, 0, 0, ServiceType::TYPE_AD);
 	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
 
-	serv_channel.storeTC(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
+	serv_channel.storeTC(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_AD);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 1);
 	const TransferFrameTC* packet_a = serv_channel.txOutPacketTC().second;
-	CHECK(packet_a->getPacketLength() == 9);
-	CHECK(packet_a->getServiceType() == ServiceType::TYPE_A);
+	CHECK(packet_a->getFrameLength() == 9);
+	CHECK(packet_a->getServiceType() == ServiceType::TYPE_AD);
 	CHECK((serv_channel.txOutPacketTC(0, 0).second == packet_a));
 
-	serv_channel.storeTC(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_B);
+	serv_channel.storeTC(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_BC);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 2);
 	const TransferFrameTC* packet_b = serv_channel.txOutPacketTC().second;
-	CHECK(packet_b->getPacketLength() == 10);
-	CHECK(packet_b->getServiceType() == ServiceType::TYPE_B);
+	CHECK(packet_b->getFrameLength() == 10);
+	CHECK(packet_b->getServiceType() == ServiceType::TYPE_BC);
 
-	serv_channel.storeTC(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_A);
+	serv_channel.storeTC(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_AD);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 3);
 	const TransferFrameTC* packet_c = serv_channel.txOutPacketTC().second;
-	CHECK(packet_c->getPacketLength() == 3);
-	CHECK(packet_c->getServiceType() == ServiceType::TYPE_A);
+	CHECK(packet_c->getFrameLength() == 3);
+	CHECK(packet_c->getServiceType() == ServiceType::TYPE_AD);
 	CHECK((serv_channel.txOutPacketTC(0, 0).second == packet_a));
 
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
@@ -104,7 +104,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txOutProcessedPacketTC().second == packet_a);
 
 	CHECK(packet_a->acknowledged() == false);
-	CHECK(packet_a->transferFrameSequenceNumber() == 0);
+	CHECK(packet_a->transferFrameSequenceNumber() == 4);
 	serv_channel.acknowledgeFrame(0, 0);
 
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);

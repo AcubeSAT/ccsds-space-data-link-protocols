@@ -26,7 +26,7 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* packet) {
 		return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
 	}
 	txOutFramesBeforeAllFramesGenerationListTC.push_back(packet);
-	uint8_t vid = packet->globalVirtualChannelId();
+	uint8_t vid = packet->virtualChannelId();
 	// virtChannels.at(0).fop.
 	ccsdsLog(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
 	return MasterChannelAlert::NO_MC_ALERT;

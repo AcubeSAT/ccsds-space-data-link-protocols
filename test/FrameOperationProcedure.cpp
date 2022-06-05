@@ -16,7 +16,7 @@ TEST_CASE("Initiate FOP Directives") {
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 
-	serv_channel_fop.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_A);
+	serv_channel_fop.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_AD);
 
 	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel - 1);
 

@@ -12,7 +12,6 @@ TEST_CASE("TransferFrameTC Generation") {
 	CHECK(pckt.packetData()[2] == 128);
 	CHECK(pckt.packetData()[3] == 33);
 	CHECK(pckt.packetData()[4] == 4);
-	CHECK(pckt.globalVirtualChannelId() == 32);
 }
 
 TEST_CASE("TC Header Generation") {

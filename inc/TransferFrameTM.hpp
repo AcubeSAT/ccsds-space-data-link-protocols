@@ -142,7 +142,7 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	uint16_t getPacketLength() const {
-		return packetLength;
+		return frameLength;
 	}
 
 	uint8_t* packetData() const {
@@ -162,7 +162,7 @@ struct TransferFrameTM : public TransferFrame {
         uint32_t operationalControlField;
         uint8_t* ocfPtr;
 		if(!operationalControlFieldExists()){return {};}
-		ocfPtr = packet + packetLength - 4 - 2*eccFieldExists;
+		ocfPtr = packet + frameLength - 4 - 2*eccFieldExists;
         operationalControlField = (ocfPtr[0] << 24U) | (ocfPtr[1] << 16U) | (ocfPtr[2] << 8U) | ocfPtr[3];
         return operationalControlField;
 	}

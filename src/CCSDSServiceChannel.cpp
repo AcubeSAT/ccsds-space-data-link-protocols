@@ -18,7 +18,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 
 	TransferFrameTC pckt = TransferFrameTC(packet, packetLength);
 
-	if (pckt.getPacketLength() != packetLength) {
+	if (pckt.getFrameLength() != packetLength) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
@@ -80,9 +80,9 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	TransferFrameTC packet_s =
 	    TransferFrameTC(packet, packetLength, 0, gvcid, mapid, sduid, serviceType, vchan->segmentHeaderPresent);
 
-	if (serviceType == ServiceType::TYPE_A) {
+	if (serviceType == ServiceType::TYPE_AD) {
 		packet_s.setRepetitions(vchan->repetitionTypeAFrame);
-	} else if (serviceType == ServiceType::TYPE_B) {
+	} else if ((serviceType == ServiceType::TYPE_BC) || (serviceType == ServiceType::TYPE_BD)) {
 		packet_s.setRepetitions(vchan->repetitionCOPCtrl);
 	}
 
@@ -193,11 +193,11 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
 	const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
-	if (packet->getPacketLength() > maxPacketLength) {
+	if (packet->getFrameLength() > maxPacketLength) {
 		if (segmentationEnabled) {
 			// Check if there is enough space in the buffer of the virtual channel to store_out all the segments
 			uint8_t tf_n =
-			    (packet->getPacketLength() / maxPacketLength) + (packet->getPacketLength() % maxPacketLength != 0);
+			    (packet->getFrameLength() / maxPacketLength) + (packet->getFrameLength() % maxPacketLength != 0);
 
 			if (virtChannel->waitQueueTxTC.available() >= tf_n) {
 				// Break up packet
@@ -208,7 +208,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
 				TransferFrameTC t_packet =
 				    TransferFrameTC(packet->packetData(), maxPacketLength, seg_header,
-				                             packet->globalVirtualChannelId(), packet->mapId(), packet->spacecraftId(),
+				                             packet->virtualChannelId(), packet->mapId(), packet->spacecraftId(),
 				                             packet->getServiceType(), virtChannel->segmentHeaderPresent);
 				virtChannel->storeVC(&t_packet);
 
@@ -222,7 +222,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 				// Last portion
 				t_packet.setSegmentationHeader(mapid | 0x80);
 				t_packet.setPacketData(&packet->packetData()[(tf_n - 1) * maxPacketLength]);
-				t_packet.setPacketLength(packet->getPacketLength() % maxPacketLength);
+				t_packet.setPacketLength(packet->getFrameLength() % maxPacketLength);
 				virtChannel->storeVC(&t_packet);
 			}
 		} else {
@@ -596,7 +596,7 @@ ServiceChannelNotification ServiceChannel::transmitFrame(uint8_t* pack) {
 		masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.pop_front();
 		ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	}
-	memcpy(pack, packet, packet->getPacketLength());
+	memcpy(pack, packet, packet->getFrameLength());
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
