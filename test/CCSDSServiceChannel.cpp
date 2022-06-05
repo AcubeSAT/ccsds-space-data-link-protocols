@@ -6,6 +6,8 @@
 #include <iostream>
 
 TEST_CASE("Service Channel") {
+    ServiceChannelNotification err;
+
 	// Set up Service Channel
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
@@ -40,6 +42,9 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txAvailableTC(0, 1) == MaxReceivedTcInMapChannel);
 	CHECK(serv_channel.txAvailableTC(0, 2) == MaxReceivedTcInMapChannel);
 
+    err = serv_channel.storeTC(pckt_type_a, 9, 8, 0, 0, ServiceType::TYPE_A);
+	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
+
 	serv_channel.storeTC(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_A);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 1);
 	const TransferFrameTC* packet_a = serv_channel.txOutPacketTC().second;
@@ -61,7 +66,6 @@ TEST_CASE("Service Channel") {
 	CHECK((serv_channel.txOutPacketTC(0, 0).second == packet_a));
 
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
-	ServiceChannelNotification err;
 	err = serv_channel.mappRequest(0, 0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 2);
@@ -148,7 +152,8 @@ TEST_CASE("Service Channel") {
 	*/
 
 	uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
-	uint8_t invalid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
+    uint8_t invalid_vcid_TM[] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t invalid_crc_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
     // TM Reception
 
@@ -158,11 +163,14 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
+    err = serv_channel.storeTM(invalid_vcid_TM, 14);
+    CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
+
 	serv_channel.storeTM(valid_pckt_TM, 14);
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
-	serv_channel.storeTM(invalid_pckt_TM, 14);
+	serv_channel.storeTM(invalid_crc_TM, 14);
 	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 2);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
 
