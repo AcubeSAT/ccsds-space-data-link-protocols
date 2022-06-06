@@ -332,10 +332,6 @@ private:
 	 * @brief The Master Channel the Virtual Channel belongs in
 	 */
 	std::reference_wrapper<MasterChannel> masterChannel;
-    /**
-     * @brief The Master Channel the Virtual Channel belongs in
-     */
-    std::reference_wrapper<MasterChannel> masterChannel;
 
     /**
     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
