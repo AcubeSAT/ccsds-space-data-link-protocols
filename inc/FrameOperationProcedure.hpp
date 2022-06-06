@@ -45,12 +45,24 @@ public:
 	 * @brief TC Packets stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueue;
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFOP;
 	/**
 	 * @brief TC Packets stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInSentQueue>* sentQueue;
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFOP;
+
+    /**
+     * @brief TC Packets stored in list, before being processed by the FOP service
+     * @see p. 5.1.4 from COP-1 CCSDS
+     */
+    etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFARM;
+    /**
+     * @brief TC Packets stored in list, after being processed by the FOP service
+     * @see p. 5.1.7 from COP-1 CCSDS
+     */
+    etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFARM;
+
 	VirtualChannel* vchan;
 
 private:
@@ -319,9 +331,9 @@ private:
 
 public:
 	FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueue,
-	                        etl::list<TransferFrameTC*, MaxReceivedTxTcInSentQueue>* sentQueue,
+	                        etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueue,
 	                        const uint8_t repetitionCopCtrl)
-	    : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), state(FOPState::INITIAL),
+	    : waitQueueFOP(waitQueue), sentQueueFOP(sentQueue), vchan(vchan), state(FOPState::INITIAL),
 	      suspendState(FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(FlagState::READY),
 	      bdOut(FlagState::READY), bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0),
 	      tiInitial(FopTimerInitial), transmissionLimit(repetitionCopCtrl), transmissionCount(1),

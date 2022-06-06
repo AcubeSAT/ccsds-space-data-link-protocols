@@ -33,9 +33,14 @@ const uint8_t MaxReceivedTxTcInWaitQueue = 10;
 const uint8_t MaxReceivedRxTcInWaitQueue = 10;
 
 // Maximum received TX TCs in sent queue (following COP checks).
-const uint8_t MaxReceivedTxTcInSentQueue = 10;
+const uint8_t MaxReceivedTxTcInFOPSentQueue = 10;
 // Maximum received RX TCs in sent queue (following COP checks).
-const uint8_t MaxReceivedRxTcInSentQueue = 10;
+const uint8_t MaxReceivedRxTcInFOPSentQueue = 10;
+
+// Maximum received TX TMs in sent queue (following COP checks).
+const uint8_t MaxReceivedTxTcInFARMSentQueue = 10;
+// Maximum received RX TCs in sent queue (following COP checks).
+const uint8_t MaxReceivedRxTcInFARMSentQueue = 10;
 
 // Maximum received TC in the master buffer, before being passed to the all frames generation service
 const uint8_t MaxReceivedTxTcInMasterBuffer = 100;
@@ -79,6 +84,8 @@ const uint8_t MaxRxInMasterChannel = 200;
 
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
+
+const uint8_t MemoryPoolMemorySize = 8; //Size of memory pool
 
 enum FlagState { NOT_READY = 0, READY = 1 };
 
