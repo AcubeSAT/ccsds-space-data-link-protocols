@@ -195,4 +195,21 @@ TEST_CASE("Service Channel") {
 	CHECK(packet_tm_mc->packetData()[2] == 0x00);
     CHECK(packet_tm_mc->packetData()[3] ==  0x00);
 
+    //StorePacketTm test
+    uint8_t packet1[] = {1,54,32,49,12,23};
+    uint8_t packet2[] = {47,31,65,81,25,44,76,99,13};
+    uint8_t packet3[] = {41,91,68,10};
+
+    err = serv_channel.storePacketTm(packet1, 6, 0);
+    CHECK(err == NO_SERVICE_EVENT);
+    err = serv_channel.storePacketTm(packet2, 9, 0);
+    CHECK(err == NO_SERVICE_EVENT);
+    err = serv_channel.storePacketTm(packet3, 4, 0);
+    CHECK(err == NO_SERVICE_EVENT);
+
+    err = serv_channel.vcGenerationService(15,0);
+    CHECK(err == NO_SERVICE_EVENT);
+    err = serv_channel.vcGenerationService(3,0);
+    CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
+
 }
