@@ -46,7 +46,7 @@ TEST_CASE("MAPP blocking") {
 	serv_channel.mappRequest(3, 2);
 
 	CHECK(serv_channel.txAvailableTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 6);
-	CHECK(serv_channel.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
+	CHECK(serv_channel.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel - 0);
 }
 
 TEST_CASE("Virtual Channel Generation") {}

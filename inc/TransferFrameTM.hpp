@@ -157,17 +157,17 @@ struct TransferFrameTM : public TransferFrame {
 	 */
 	std::optional<uint32_t> getOperationalControlField() const {
 		uint32_t operationalControlField;
-		uint8_t* ocfPtr;
+		uint8_t* operationalControlFieldPointer;
 		if (!operationalControlFieldExists()) {
 			return {};
 		}
-		ocfPtr = packet + frameLength - 4 - 2 * eccFieldExists;
-		operationalControlField = (ocfPtr[0] << 24U) | (ocfPtr[1] << 16U) | (ocfPtr[2] << 8U) | ocfPtr[3];
+		operationalControlFieldPointer = packet + frameLength - 4 - 2 * eccFieldExists;
+		operationalControlField = (operationalControlFieldPointer[0] << 24U) | (operationalControlFieldPointer[1] << 16U) | (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
 		return operationalControlField;
 	}
 
-	void setMasterChannelFrameCount(uint8_t mcfc) {
-		packet[2] = mcfc;
+	void setMasterChannelFrameCount(uint8_t masterChannelFrameCount) {
+		packet[2] = masterChannelFrameCount;
 	}
 
 	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
