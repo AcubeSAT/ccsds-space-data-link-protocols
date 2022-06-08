@@ -16,7 +16,7 @@ private:
     /**
      * @var The size of the block of memory in bytes
      */
-    static constexpr uint8_t memorySize = 8;
+    static constexpr uint16_t memorySize = 5*128;
 
     /**
      * @var An array that allocates statically memory to be used for the packet data
