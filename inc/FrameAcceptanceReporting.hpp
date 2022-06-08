@@ -68,9 +68,9 @@ public:
 	VirtualChannel* vchan;
 
 	FrameAcceptanceReporting(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
-	                        etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue,
-	                        const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
-	                        const uint8_t farmNegativeWinWidth)
+	                         etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue,
+	                         const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
+	                         const uint8_t farmNegativeWinWidth)
 	    : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farmSlidingWinWidth),
 	      farmNegativeWidth(farmNegativeWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
 	      receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY), wait(FlagState::NOT_READY),
