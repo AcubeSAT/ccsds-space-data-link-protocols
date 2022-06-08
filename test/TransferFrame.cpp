@@ -12,7 +12,6 @@ TEST_CASE("TransferFrameTC Generation") {
 	CHECK(pckt.packetData()[2] == 128);
 	CHECK(pckt.packetData()[3] == 33);
 	CHECK(pckt.packetData()[4] == 4);
-	CHECK(pckt.globalVirtualChannelId() == 32);
 }
 
 TEST_CASE("TC Header Generation") {
@@ -48,6 +47,6 @@ TEST_CASE("PacketTΜ Generation") {
 	CHECK(pckt.packetData()[3] == 23);
 	CHECK(pckt.packetData()[4] == 40);
 	CHECK(pckt.packetData()[5] == 6);
-    CHECK(pckt.getOperationalControlField() == 0x80210405);
-	//CHECK(pckt.global_virtual_channel_id() == 32);
+	CHECK(pckt.getOperationalControlField() == 0x80210405);
+	// CHECK(pckt.global_virtual_channel_id() == 32);
 }
