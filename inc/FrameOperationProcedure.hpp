@@ -52,16 +52,16 @@ public:
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFOP;
 
-    /**
-     * @brief TC Packets stored in list, before being processed by the FOP service
-     * @see p. 5.1.4 from COP-1 CCSDS
-     */
-    etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFARM;
-    /**
-     * @brief TC Packets stored in list, after being processed by the FOP service
-     * @see p. 5.1.7 from COP-1 CCSDS
-     */
-    etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFARM;
+	/**
+	 * @brief TC Packets stored in list, before being processed by the FOP service
+	 * @see p. 5.1.4 from COP-1 CCSDS
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFARM;
+	/**
+	 * @brief TC Packets stored in list, after being processed by the FOP service
+	 * @see p. 5.1.7 from COP-1 CCSDS
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFARM;
 
 	VirtualChannel* vchan;
 

@@ -26,7 +26,7 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* packet) {
 		return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
 	}
 	txOutFramesBeforeAllFramesGenerationListTC.push_back(packet);
-	uint8_t vid = packet->globalVirtualChannelId();
+	uint8_t vid = packet->virtualChannelId();
 	// virtChannels.at(0).fop.
 	ccsdsLog(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
 	return MasterChannelAlert::NO_MC_ALERT;
@@ -66,8 +66,8 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* packet) {
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent,
                                         const uint16_t maxFrameLength, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                                        const bool frameErrorControlFieldTMPresent,
-                                        const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
+                                        const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+                                        const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
                                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
@@ -81,9 +81,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 	                                          repetitionTypeAFrame, repetitionCopCtrl,
 	                                          frameErrorControlFieldTMPresent,
 	                                          secondaryHeaderTMPresent, secondaryHeaderTMLength,
-	                                          operationalControlFieldTMPresent,
-	                                          synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
-                                              farmNegativeWinWidth, mapChan));
+	                                          operationalControlFieldTMPresent, synchronization, farmSlidingWinWidth,
+	                                          farmPositiveWinWidth, farmNegativeWinWidth, mapChan));
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
