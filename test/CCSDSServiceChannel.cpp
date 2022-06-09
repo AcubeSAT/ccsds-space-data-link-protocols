@@ -190,10 +190,10 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
 
-    err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, 14);
-    CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
-    CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
-    CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
+	err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, 14);
+	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
 
 	uint8_t resulting_tm_packet[14] = {0};
 

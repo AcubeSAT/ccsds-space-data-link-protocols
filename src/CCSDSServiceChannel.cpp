@@ -4,7 +4,6 @@
 #include "CLCW.hpp"
 #include <CCSDSLoggerImpl.h>
 
-
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength) {
 	if (masterChannel.rxMasterCopyTC.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
@@ -54,14 +53,14 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
                                                    uint16_t sduid, ServiceType serviceType) {
 	uint8_t vid = gvcid & 0x3F;
 
-    // Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
-    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        // If it doesn't, abort operation
-        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return ServiceChannelNotification::INVALID_VC_ID;
-    }
+	// Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
+	if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+		// If it doesn't, abort operation
+		ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+		return ServiceChannelNotification::INVALID_VC_ID;
+	}
 
-    VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
+	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
 
 	// Check if MAP Channel Id does not exist in the relevant MAP channels map
 	if (virtualChannel->mapChannels.find(mapid) == virtualChannel->mapChannels.end()) {
@@ -77,7 +76,8 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::MAP_CHANNEL_FRAME_BUFFER_FULL;
 	}
 
-	TransferFrameTC packet_s = TransferFrameTC(packet, packetLength, gvcid, serviceType, virtualChannel->segmentHeaderPresent);
+	TransferFrameTC packet_s =
+	    TransferFrameTC(packet, packetLength, gvcid, serviceType, virtualChannel->segmentHeaderPresent);
 
 	if (serviceType == ServiceType::TYPE_AD) {
 		packet_s.setRepetitions(virtualChannel->repetitionTypeAFrame);
@@ -193,22 +193,22 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 				TransferFrameTC t_packet =
 				    TransferFrameTC(packet->packetData(), maxPacketLength, packet->virtualChannelId(),
 				                    packet->getServiceType(), virtualChannel->segmentHeaderPresent);
-                //t_packet.setSegmentationHeader(mapid | 0x40);
+				// t_packet.setSegmentationHeader(mapid | 0x40);
 				virtualChannel->storeVC(&t_packet);
 
 				// Middle portion
-				//t_packet.setSegmentationHeader(mapid | 0x00);
+				// t_packet.setSegmentationHeader(mapid | 0x00);
 				for (uint8_t i = 1; i < (tf_n - 1); i++) {
 					t_packet.setPacketData(&packet->packetData()[i * maxPacketLength]);
 					virtualChannel->storeVC(&t_packet);
 				}
 
 				// Last portion
-				//t_packet.setSegmentationHeader(mapid | 0x80);
+				// t_packet.setSegmentationHeader(mapid | 0x80);
 				t_packet.setPacketData(&packet->packetData()[(tf_n - 1) * maxPacketLength]);
 
 				t_packet.setPacketLength(packet->getFrameLength() % maxPacketLength);
-                virtualChannel->storeVC(&t_packet);
+				virtualChannel->storeVC(&t_packet);
 			}
 		} else {
 			ccsdsLog(Tx, TypeServiceChannelNotif, PACKET_EXCEEDS_MAX_SIZE);
@@ -381,7 +381,7 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 		return ServiceChannelNotification::NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM;
 	}
 
-	if (virt_channel->rxInFramesAfterVCReception.full()){
+	if (virt_channel->rxInFramesAfterVCReception.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RECEPTION_BUFFER_AFTER_FARM_FULL);
 		return ServiceChannelNotification::VC_RECEPTION_BUFFER_AFTER_FARM_FULL;
 	}
@@ -502,7 +502,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	}
 
 	uint8_t vid = packet->virtualChannelId();
-    VirtualChannel* vchan = &(masterChannel.virtualChannels.at(vid));
+	VirtualChannel* vchan = &(masterChannel.virtualChannels.at(vid));
 
 	uint16_t frameSize = packet->getPacketLength();
 	uint16_t idleDataSize = TmTransferFrameSize - frameSize;
@@ -531,13 +531,13 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 		return ServiceChannelNotification::RX_IN_MC_FULL;
 	}
 
-    uint8_t vid = (packet[1] >> 1) & 0x7;
-    // Check if Virtual channel Id does not exist in the relevant Virtual Channels map
-    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        // If it doesn't, abort operation
-        ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return ServiceChannelNotification::INVALID_VC_ID;
-    }
+	uint8_t vid = (packet[1] >> 1) & 0x7;
+	// Check if Virtual channel Id does not exist in the relevant Virtual Channels map
+	if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+		// If it doesn't, abort operation
+		ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
+		return ServiceChannelNotification::INVALID_VC_ID;
+	}
 
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
 	TransferFrameTM frame = TransferFrameTM(packet, packetLength, virtualChannel->frameErrorControlFieldTMPresent);
@@ -667,33 +667,33 @@ void ServiceChannel::resumeAdService(uint8_t vid) {
 
 void ServiceChannel::setVs(uint8_t vid, uint8_t vs) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-    virtualChannel->fop.setVs(vs);
+	virtualChannel->fop.setVs(vs);
 }
 
 void ServiceChannel::setFopWidth(uint8_t vid, uint8_t width) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-    virtualChannel->fop.setFopWidth(width);
+	virtualChannel->fop.setFopWidth(width);
 }
 
 void ServiceChannel::setT1Initial(uint8_t vid, uint16_t t1Init) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-    virtualChannel->fop.setT1Initial(t1Init);
+	virtualChannel->fop.setT1Initial(t1Init);
 }
 
 void ServiceChannel::setTransmissionLimit(uint8_t vid, uint8_t vr) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-    virtualChannel->fop.setTransmissionLimit(vr);
+	virtualChannel->fop.setTransmissionLimit(vr);
 }
 
 void ServiceChannel::setTimeoutType(uint8_t vid, bool vr) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-    virtualChannel->fop.setTimeoutType(vr);
+	virtualChannel->fop.setTimeoutType(vr);
 }
 
 // todo: this may not be needed since it doesn't affect lower procedures and doesn't change the state in any way
 void ServiceChannel::invalidDirective(uint8_t vid) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-    virtualChannel->fop.invalidDirective();
+	virtualChannel->fop.invalidDirective();
 }
 
 FOPState ServiceChannel::fopState(uint8_t vid) const {
@@ -719,7 +719,6 @@ uint8_t ServiceChannel::transmitterFrameSeqNumber(uint8_t vid) const {
 uint8_t ServiceChannel::expectedFrameSeqNumber(uint8_t vid) const {
 	return masterChannel.virtualChannels.at(vid).fop.expectedAcknowledgementSeqNumber;
 }
-
 
 uint8_t ServiceChannel::getFrameCountTM(uint8_t vid) {
 	return masterChannel.virtualChannels.at(vid).frameCountTM;

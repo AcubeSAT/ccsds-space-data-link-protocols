@@ -95,7 +95,7 @@ public:
 	 * @param vid           Virtual Channel ID that determines from which vid buffer the frame is processed
 	 * @param packet_target A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
 	 */
-    ServiceChannelNotification packetExtractionTM(uint8_t vid, uint8_t* packet_target);
+	ServiceChannelNotification packetExtractionTM(uint8_t vid, uint8_t* packet_target);
 
 	/**
 	 * @brief This service is used for storing incoming TC packets in the master channel
@@ -149,8 +149,8 @@ public:
 
 	/**
 	 * @brief The Virtual Channel Reception Function shall perform the Frame Acceptance and
-		Reporting Mechanism (FARM), which is a sub-procedure of the Communications Operation
-		Procedure (COP)
+	    Reporting Mechanism (FARM), which is a sub-procedure of the Communications Operation
+	    Procedure (COP)
 	 @see  p. 4.4.5 from TC Space Data Link Protocol
 	 */
 	ServiceChannelNotification vcReceptionTC(uint8_t vid);
@@ -274,7 +274,7 @@ public:
 	 */
 
 	uint16_t rxInAvailableTM(uint8_t vid) const {
-        return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
+		return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
 	}
 	/**
 	 * @brief Available number of outcoming TX frames in master channel buffer

@@ -77,12 +77,11 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blocking,
-	                                          repetitionTypeAFrame, repetitionCopCtrl,
-	                                          frameErrorControlFieldTMPresent,
-	                                          secondaryHeaderTMPresent, secondaryHeaderTMLength,
-	                                          operationalControlFieldTMPresent, synchronization, farmSlidingWinWidth,
-	                                          farmPositiveWinWidth, farmNegativeWinWidth, mapChan));
+	virtualChannels.emplace(
+	    vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blocking, repetitionTypeAFrame,
+	                         repetitionCopCtrl, frameErrorControlFieldTMPresent, secondaryHeaderTMPresent,
+	                         secondaryHeaderTMLength, operationalControlFieldTMPresent, synchronization,
+	                         farmSlidingWinWidth, farmPositiveWinWidth, farmNegativeWinWidth, mapChan));
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
