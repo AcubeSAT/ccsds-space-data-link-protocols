@@ -156,6 +156,14 @@ public:
 	ServiceChannelNotification vcGenerationRequestTC(uint8_t vid);
 
 	/**
+	 * @brief The Virtual Channel Reception Function shall perform the Frame Acceptance and
+		Reporting Mechanism (FARM), which is a sub-procedure of the Communications Operation
+		Procedure (COP)
+	 @see  p. 4.4.5 from TC Space Data Link Protocol
+	 */
+	ServiceChannelNotification vcReceptionTC(uint8_t vid);
+
+	/**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer.
@@ -302,6 +310,20 @@ public:
 	 */
 	uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
 		return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
+	}
+
+	/**
+	 * @brief available space for packets at waitQueueRxTC buffer
+	 */
+	uint16_t getAvailableWaitQueueRxTC(uint8_t vid) const {
+		return masterChannel.virtChannels.at(vid).waitQueueRxTC.available();
+	}
+
+	/**
+	 * @brief available space for packets at rxInFramesAfterVCReception buffer
+	 */
+	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
+		return masterChannel.virtChannels.at(vid).rxInFramesAfterVCReception.available();
 	}
 
 	/**

@@ -120,6 +120,24 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
+	// Rx side
+	// new packet
+	uint8_t pckt1[] = {0x10, 0xB1, 0x00, 0x03, 0x00, 0x00, 0x00, 0x1C, 0x21, 0X40};
+	serv_channel.storeTC(pckt1, 10);
+
+	// All frames reception
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	err = serv_channel.allFramesReceptionTCRequest();
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue - 1);
+
+	// VC reception
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer);
+	err = serv_channel.vcReceptionTC(0);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer - 1);
+
 	/**
 	 * the next commented lines are duplicated (line 93) . I don't know why. It won't work if uncommented
 	 */
