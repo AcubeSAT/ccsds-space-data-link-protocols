@@ -4,6 +4,7 @@
 #include "CLCW.hpp"
 #include <CCSDSLoggerImpl.h>
 
+
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength) {
 	if (masterChannel.rxMasterCopyTC.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
@@ -407,6 +408,29 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
+ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
+	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
+
+	if (virt_channel->waitQueueRxTC.empty()) {
+		ccsdsLog(Rx, TypeServiceChannelNotif, NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM);
+		return ServiceChannelNotification::NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM;
+	}
+
+	if (virt_channel->rxInFramesAfterVCReception.full()){
+		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RECEPTION_BUFFER_AFTER_FARM_FULL);
+		return ServiceChannelNotification::VC_RECEPTION_BUFFER_AFTER_FARM_FULL;
+	}
+
+	TransferFrameTC* frame = virt_channel->waitQueueRxTC.front();
+	// FARM procedures
+
+	virt_channel->waitQueueRxTC.pop_front();
+
+	virt_channel->rxInFramesAfterVCReception.push_back(frame);
+	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+	return ServiceChannelNotification::NO_SERVICE_EVENT;
+}
+
 ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	if (masterChannel.rxInFramesBeforeAllFramesReceptionListTC.empty()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
@@ -439,7 +463,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	}
 
 	// Check for valid SCID
-	if (packet->spacecraftId() == SpacecraftIdentifier) {
+	if (packet->spacecraftId() != SpacecraftIdentifier) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
 		return ServiceChannelNotification::RX_INVALID_SCID;
 	}
