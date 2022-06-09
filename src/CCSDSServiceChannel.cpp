@@ -463,7 +463,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	}
 
 	// Check for valid SCID
-	if (packet->spacecraftId() == SpacecraftIdentifier) {
+	if (packet->spacecraftId() != SpacecraftIdentifier) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
 		return ServiceChannelNotification::RX_INVALID_SCID;
 	}
