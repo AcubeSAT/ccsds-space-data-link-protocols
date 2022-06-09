@@ -91,11 +91,11 @@ public:
 	ServiceChannelNotification storePacketTm(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
 
 	/**
-	 * @brief This service is used for storing incoming TM packets in the master channel
-	 * @param packet Raw packet data
-	 * @param packetLength The length of the packet
+	 * @brief This service is used for extracting RX TM packet. It signals the end of the TM Rx chain
+	 * @param vid           Virtual Channel ID that determines from which vid buffer the frame is processed
+	 * @param packet_target A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
 	 */
-	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength);
+	ServiceChannelNotification packetExtractionTM(uint8_t vid, uint8_t* packet_target);
 
 	/**
 	 * @brief This service is used for storing incoming TC packets in the master channel
@@ -131,14 +131,6 @@ public:
 #endif
 
 	/**
-	 * @brief The Master Channel Reception Function shall be used to extract service data units
-	 * contained in the Transfer Frame Secondary Header and Operational Control Field from
-	 * Transfer Frames of a Master Channel.
-	 @see p. 4.3.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
-	 */
-	ServiceChannelNotification mcReceptionTMRequest();
-
-	/**
 	 * @brief The Master Channel Generation Service shall be used to insert Transfer Frame
 	 * Secondary Header and/or Operational Control Field service data units into Transfer Frames
 	 * of a Master Channel.
@@ -157,8 +149,8 @@ public:
 
 	/**
 	 * @brief The Virtual Channel Reception Function shall perform the Frame Acceptance and
-		Reporting Mechanism (FARM), which is a sub-procedure of the Communications Operation
-		Procedure (COP)
+	    Reporting Mechanism (FARM), which is a sub-procedure of the Communications Operation
+	    Procedure (COP)
 	 @see  p. 4.4.5 from TC Space Data Link Protocol
 	 */
 	ServiceChannelNotification vcReceptionTC(uint8_t vid);
@@ -177,7 +169,7 @@ public:
 	 * rate to the Channel Coding Sublayer. Also writes the received packet to the provided pointer.
 	 * @see p. 4.3.7 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
 	 */
-	ServiceChannelNotification allFramesReceptionTMRequest(uint8_t* packet_destination);
+	ServiceChannelNotification allFramesReceptionTMRequest(uint8_t* packet, uint16_t packetLength);
 
 	/**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
@@ -278,11 +270,11 @@ public:
 	void process();
 
 	/**
-	 * @brief Available number of incoming TM frames in master channel buffer
+	 * @brief Available number of incoming TM frames in virtual channel buffer
 	 */
 
-	uint16_t rxInAvailableTM() const {
-		return masterChannel.rxInFramesBeforeAllFramesReceptionListTM.available();
+	uint16_t rxInAvailableTM(uint8_t vid) const {
+		return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
 	}
 	/**
 	 * @brief Available number of outcoming TX frames in master channel buffer
@@ -302,28 +294,28 @@ public:
 	 * @brief Available space in TC virtual channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid) const {
-		return masterChannel.virtChannels.at(vid).availableBufferTC();
+		return masterChannel.virtualChannels.at(vid).availableBufferTC();
 	}
 
 	/**
 	 * @brief Available space in TC MAP channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
-		return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
+		return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
 	}
 
 	/**
 	 * @brief available space for packets at waitQueueRxTC buffer
 	 */
 	uint16_t getAvailableWaitQueueRxTC(uint8_t vid) const {
-		return masterChannel.virtChannels.at(vid).waitQueueRxTC.available();
+		return masterChannel.virtualChannels.at(vid).waitQueueRxTC.available();
 	}
 
 	/**
 	 * @brief available space for packets at rxInFramesAfterVCReception buffer
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
-		return masterChannel.virtChannels.at(vid).rxInFramesAfterVCReception.available();
+		return masterChannel.virtualChannels.at(vid).rxInFramesAfterVCReception.available();
 	}
 
 	/**

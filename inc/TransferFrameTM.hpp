@@ -162,7 +162,9 @@ struct TransferFrameTM : public TransferFrame {
 			return {};
 		}
 		operationalControlFieldPointer = packet + frameLength - 4 - 2 * eccFieldExists;
-		operationalControlField = (operationalControlFieldPointer[0] << 24U) | (operationalControlFieldPointer[1] << 16U) | (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
+		operationalControlField = (operationalControlFieldPointer[0] << 24U) |
+		                          (operationalControlFieldPointer[1] << 16U) |
+		                          (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
 		return operationalControlField;
 	}
 
