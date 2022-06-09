@@ -73,12 +73,12 @@ public:
 	/**
 	 * Compares two packets
 	 */
-	friend bool operator==(const TransferFrameTC& pack1, const TransferFrameTC& pack2) {
-		if (pack1.frameLength != pack2.frameLength) {
+	friend bool operator==(const TransferFrameTC& packet1, const TransferFrameTC& packet2) {
+		if (packet1.frameLength != packet2.frameLength) {
 			return false;
 		}
-		for (uint16_t i = 0; i < pack1.frameLength; i++) {
-			if (pack1.packetData()[i] != pack2.packetData()[i]) {
+		for (uint16_t i = 0; i < packet1.frameLength; i++) {
+			if (packet1.packetData()[i] != packet2.packetData()[i]) {
 				return false;
 			}
 		}
@@ -240,7 +240,7 @@ public:
 	// Assumes MAP Id exists
 	// TODO: Replace with std::optional
 	uint8_t mapId() const {
-		if (segHdrPresent) {
+		if (segmentationHeaderPresent) {
 			return packet[5] & 0x3F;
 		}
 		return 0;
@@ -300,20 +300,20 @@ public:
 
 	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
-	void setSegmentationHeader(uint8_t seg_hdr) {
-		segHdr = seg_hdr;
+	void setSegmentationHeader(uint8_t segmentation_hdr) {
+		packet[5] = segmentation_hdr;
 	}
 
-	void setPacketData(uint8_t* packt_data) {
-		packet = packt_data;
+	void setPacketData(uint8_t* packet_data) {
+		packet = packet_data;
 	}
 
-	void setPacketLength(uint16_t packt_len) {
-		frameLength = packt_len;
+	void setPacketLength(uint16_t packet_length) {
+		frameLength = packet_length;
 	}
 
-	void setServiceType(ServiceType serv_type) {
-		serviceType = serv_type;
+	void setServiceType(ServiceType service_type) {
+		serviceType = service_type;
 	}
 
 	void setAcknowledgement(bool acknowledgement) {
@@ -324,10 +324,10 @@ public:
 		packet[4] = frame_seq_number;
 	}
 
-	TransferFrameTC(uint8_t* packet, uint16_t frameLength, uint8_t segHdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-	                ServiceType serviceType, bool segHdrPresent, PacketType t = TC)
-	    : TransferFrame(t, frameLength, packet), hdr(packet), segHdr(segHdr), serviceType(serviceType), ack(false),
-	      toBeRetransmitted(false), segHdrPresent(segHdrPresent) {
+	TransferFrameTC(uint8_t* packet, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
+	                PacketType t = TC)
+	    : TransferFrame(t, frameLength, packet), hdr(packet), serviceType(serviceType), ack(false),
+	      toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
 		packet[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
@@ -344,9 +344,8 @@ private:
 	// This is used by COP to signal the higher procedures
 	FDURequestType confSignal;
 	TransferFrameHeaderTC hdr;
-	uint8_t segHdr;
 	ServiceType serviceType;
-	bool segHdrPresent;
+	bool segmentationHeaderPresent;
 	bool ack;
 	uint8_t reps;
 };

@@ -4,6 +4,7 @@
 #include "CLCW.hpp"
 #include <CCSDSLoggerImpl.h>
 
+
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength) {
 	if (masterChannel.rxMasterCopyTC.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, RX_IN_MC_FULL);
@@ -76,8 +77,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::MAP_CHANNEL_FRAME_BUFFER_FULL;
 	}
 
-	TransferFrameTC packet_s =
-	    TransferFrameTC(packet, packetLength, 0, gvcid, mapid, sduid, serviceType, vchan->segmentHeaderPresent);
+	TransferFrameTC packet_s = TransferFrameTC(packet, packetLength, gvcid, serviceType, vchan->segmentHeaderPresent);
 
 	if (serviceType == ServiceType::TYPE_AD) {
 		packet_s.setRepetitions(vchan->repetitionTypeAFrame);
@@ -169,6 +169,8 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
+// TODO: MAP Request service shall be rewritten to support allocation in the Memory Pool
+// TODO: It shall also be decided based on the virtual channel whether this or vc request will be called based on the VC
 ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapid) {
 	VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
 	MAPChannel* mapChannel = &(virtChannel->mapChannels.at(mapid));
@@ -202,22 +204,21 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 				mapChannel->unprocessedPacketListBufferTC.pop_front();
 
 				// First portion
-				uint16_t seg_header = mapid | 0x40;
-
-				TransferFrameTC t_packet = TransferFrameTC(
-				    packet->packetData(), maxPacketLength, seg_header, packet->virtualChannelId(), packet->mapId(),
-				    packet->spacecraftId(), packet->getServiceType(), virtChannel->segmentHeaderPresent);
+				TransferFrameTC t_packet =
+				    TransferFrameTC(packet->packetData(), maxPacketLength, packet->virtualChannelId(),
+				                    packet->getServiceType(), virtChannel->segmentHeaderPresent);
+                //t_packet.setSegmentationHeader(mapid | 0x40);
 				virtChannel->storeVC(&t_packet);
 
 				// Middle portion
-				t_packet.setSegmentationHeader(mapid | 0x00);
+				//t_packet.setSegmentationHeader(mapid | 0x00);
 				for (uint8_t i = 1; i < (tf_n - 1); i++) {
 					t_packet.setPacketData(&packet->packetData()[i * maxPacketLength]);
 					virtChannel->storeVC(&t_packet);
 				}
 
 				// Last portion
-				t_packet.setSegmentationHeader(mapid | 0x80);
+				//t_packet.setSegmentationHeader(mapid | 0x80);
 				t_packet.setPacketData(&packet->packetData()[(tf_n - 1) * maxPacketLength]);
 				t_packet.setPacketLength(packet->getFrameLength() % maxPacketLength);
 				virtChannel->storeVC(&t_packet);
@@ -379,8 +380,8 @@ ServiceChannelNotification ServiceChannel::mcReceptionTMRequest() {
 ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
 	if (virt_channel->txUnprocessedPacketListBufferTC.empty()) {
-		ccsdsLog(Tx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
-		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
+		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
 	}
 
 	if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.full()) {
