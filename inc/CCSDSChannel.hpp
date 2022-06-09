@@ -207,6 +207,13 @@ public:
 	}
 
 	/**
+	 * @brief Returns availableVCBufferTC space in the VC TC buffer
+	 */
+	uint16_t rxInAvailableTM() const {
+		return rxInFramesAfterMCReception.available();
+	}
+
+	/**
 	 * @brief Defines whether the OCF service is present
 	 */
 	const bool operationalControlFieldTMPresent;
@@ -289,6 +296,11 @@ public:
 
 private:
 	/**
+	 * @brief TM packets after being processed by the MasterChannelReception Service
+	 */
+	etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> rxInFramesAfterMCReception;
+
+	/**
 	 * @brief Buffer to store incoming packets BEFORE being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueTxTC;
@@ -309,7 +321,7 @@ private:
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue> sentQueueRxTC;
 
 	/**
-     * @brief Buffer to store incoming packets AFTER being processed by FARM
+	 * @brief Buffer to store incoming packets AFTER being processed by FARM
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesAfterVCReception;
 
@@ -343,21 +355,21 @@ struct MasterChannel {
 	 * @brief Virtual channels of the master channel
 	 */
 	// TODO: Type aliases because this is getting out of hand
-	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtChannels;
+	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
 	bool errorCtrlField;
 	uint8_t frameCount{};
 
 	MasterChannel(bool errorCtrlField)
-	    : virtChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
+	    : virtualChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField), frameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
-	    : virtChannels(m.virtChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
+	    : virtualChannels(m.virtualChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
 	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), frameCountTM(m.frameCountTM) {
-		for (auto& vc : virtChannels) {
+		for (auto& vc : virtualChannels) {
 			vc.second.masterChannel = *this;
 		}
 	}
@@ -428,8 +440,6 @@ private:
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTC;
 	// TM packets that are ready to be transmitted to higher procedures following all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTC;
-	// TC packets that are received, before being received by the all frames reception service
-	etl::list<TransferFrameTM*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTM;
 
 	// Buffer to store TM packets that are processed by the packet and VC Generation services
 	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedPacketListBufferTM;
