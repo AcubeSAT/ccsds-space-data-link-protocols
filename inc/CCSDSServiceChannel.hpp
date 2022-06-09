@@ -264,7 +264,7 @@ public:
 	 */
 
 	uint16_t rxInAvailableTM(uint8_t vid) const {
-        return masterChannel.virtChannels.at(vid).rxInAvailableTM();
+        return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
 	}
 	/**
 	 * @brief Available number of outcoming TX frames in master channel buffer
@@ -284,14 +284,14 @@ public:
 	 * @brief Available space in TC virtual channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid) const {
-		return masterChannel.virtChannels.at(vid).availableBufferTC();
+		return masterChannel.virtualChannels.at(vid).availableBufferTC();
 	}
 
 	/**
 	 * @brief Available space in TC MAP channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
-		return masterChannel.virtChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
+		return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
 	}
 
 	/**
