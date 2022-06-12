@@ -387,12 +387,50 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	}
 
 	TransferFrameTC* frame = virt_channel->waitQueueRxTC.front();
+
 	// FARM procedures
 
 	virt_channel->waitQueueRxTC.pop_front();
 
-	virt_channel->rxInFramesAfterVCReception.push_back(frame);
-	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+	// If MAP channels are implemented in this specific VC, write to the MAP buffer
+	if (virt_channel->segmentHeaderPresent) {
+		uint8_t mapid = frame->mapId();
+		MAPChannel* map = &(virt_channel->mapChannels.at(mapid));
+		map->rxInFramesAfterVCReception.push_back(frame);
+	} else {
+		virt_channel->rxInFramesAfterVCReception.push_back(frame);
+	}
+
+	return ServiceChannelNotification::NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8_t mapid, uint8_t* packet) {
+	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
+
+	// We can't call the MAP Packet Extraction servie if no segment
+	if (!virtualChannel->segmentHeaderPresent) {
+		ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_SERVICE_CALL);
+		return ServiceChannelNotification::INVALID_SERVICE_CALL;
+	}
+
+	MAPChannel* mapChannel = &(virtualChannel->mapChannels.at(mapid));
+
+	if (mapChannel->rxInFramesAfterVCReception.empty()) {
+		ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
+		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+	}
+
+	TransferFrameTC* frame = mapChannel->rxInFramesAfterVCReception.front();
+
+	uint16_t frameSize = frame->packetLength();
+	uint8_t headerSize = 6; // Segment header is present
+	uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldTMPresent;
+
+	memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
+
+	mapChannel->rxInFramesAfterVCReception.pop_front();
+	masterChannel.removeMasterRx(frame);
+
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 

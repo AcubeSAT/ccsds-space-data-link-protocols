@@ -122,8 +122,10 @@ TEST_CASE("Service Channel") {
 
 	// Rx side
 	// new packet
-	uint8_t pckt1[] = {0x10, 0xB1, 0x00, 0x03, 0x00, 0x00, 0x00, 0x1C, 0x21, 0X40};
-	serv_channel.storeTC(pckt1, 10);
+	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0x21, 0x33};
+	uint8_t out_buffer[10] = {0};
+
+	serv_channel.storeTC(packet1, 10);
 
 	// All frames reception
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
@@ -136,7 +138,14 @@ TEST_CASE("Service Channel") {
 	err = serv_channel.vcReceptionTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
-	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer - 1);
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInVirtualChannelBuffer);
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0, 0) == MaxReceivedRxTcInMAPBuffer - 1);
+
+	// Packet extraction
+	err = serv_channel.packetExtractionTC(0, 0, out_buffer);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(out_buffer[0] == 0x00);
+	CHECK(out_buffer[1] == 0x1C);
 
 	/**
 	 * the next commented lines are duplicated (line 93) . I don't know why. It won't work if uncommented
