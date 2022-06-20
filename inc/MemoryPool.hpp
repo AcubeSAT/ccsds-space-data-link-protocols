@@ -11,12 +11,13 @@
  * This helps better keep track of data and reduce the memory needed for storing them.
  */
 
+template <uint8_t T>
 class MemoryPool {
 private:
 	/**
 	 * @var The size of the block of memory in bytes
 	 */
-	static constexpr uint8_t memorySize = 8;
+	static constexpr uint8_t memorySize = T;
 
 	/**
 	 * @var An array that allocates statically memory to be used for the packet data
@@ -65,7 +66,10 @@ public:
 	/**
 	 * @return the bitset that shows if each memory slot is used.
 	 */
-	std::bitset<memorySize> getUsedMemory();
+	//added the implementation here because there was an error with the template. It will not stay like this
+	std::bitset<memorySize> getUsedMemory() {
+		return usedMemory;
+	}
 };
 
 #endif // CCSDS_TM_PACKETS_MEMORYPOOL_H

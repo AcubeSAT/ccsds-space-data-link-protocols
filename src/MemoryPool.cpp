@@ -3,9 +3,11 @@
 #include "Logger.hpp"
 #include "Alert.hpp"
 
-MemoryPool::MemoryPool() {}
+template <uint8_t T>
+MemoryPool<T>::MemoryPool() {}
 
-uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
+template <uint8_t T>
+uint8_t* MemoryPool<T>::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> index = findFit(packetLength);
 	uint16_t start = index.first;
 	if (index.second == NO_SPACE) {
@@ -18,7 +20,8 @@ uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 	return memory + start;
 }
 
-bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
+template <uint8_t T>
+bool MemoryPool<T>::deletePacket(uint8_t* packet, uint16_t packetLength) {
 	int32_t indexInMemory = packet - &memory[0];
 	if (indexInMemory >= 0 && indexInMemory <= memorySize - 1) {
 		for (uint16_t deletionIndex = indexInMemory; deletionIndex < indexInMemory + packetLength; deletionIndex++)
@@ -29,7 +32,8 @@ bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
 	return false;
 }
 
-std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLength) {
+template <uint8_t T>
+std::pair<uint16_t, MasterChannelAlert> MemoryPool<T>::findFit(uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> fit;
 	uint16_t windowLength = 0;
 	for (uint16_t memoryIndex = 0; memoryIndex < memorySize; memoryIndex++) {
@@ -49,10 +53,7 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 	return fit;
 }
 
-uint8_t* MemoryPool::getMemory() {
+template <uint8_t T>
+uint8_t* MemoryPool<T>::getMemory() {
 	return &memory[0];
-}
-
-std::bitset<MemoryPoolMemorySize> MemoryPool::getUsedMemory() {
-	return usedMemory;
 }

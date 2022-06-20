@@ -12,7 +12,7 @@ TEST_CASE("Packet Insertions") {
 	// Insertions
 	SECTION("Packet insertion with empty memory") {
 		// Initialize memory pool
-		MemoryPool pool = MemoryPool();
+		MemoryPool<8> pool = MemoryPool<8>();
 
 		uint8_t* packet = pool.allocatePacket(data, 5);
 		for (unsigned int i = 0; i < 5; i++) {
@@ -22,7 +22,7 @@ TEST_CASE("Packet Insertions") {
 	}
 	SECTION("Bigger packet than empty space") {
 		// Initialize memory pool
-		MemoryPool pool = MemoryPool();
+		MemoryPool<8> pool = MemoryPool<8>();
 
 		uint8_t* packet = pool.allocatePacket(data, 5);
 		CHECK(packet != nullptr);
@@ -34,7 +34,7 @@ TEST_CASE("Packet Insertions") {
 	}
 	SECTION("Packet insertions with some space left") {
 		// Initialize memory pool
-		MemoryPool pool = MemoryPool();
+		MemoryPool<8> pool = MemoryPool<8>();
 
 		uint8_t* packet = pool.allocatePacket(data, 5);
 		uint8_t* packet3 = pool.allocatePacket(data3, 1);
@@ -49,7 +49,7 @@ TEST_CASE("Packet Insertions") {
 	}
 	SECTION("Packet length equals space left") {
 		// Initialize memory pool
-		MemoryPool pool = MemoryPool();
+		MemoryPool<8> pool = MemoryPool<8>();
 
 		uint8_t* packet = pool.allocatePacket(data, 5);
 		uint8_t* packet3 = pool.allocatePacket(data3, 1);
@@ -62,7 +62,7 @@ TEST_CASE("Packet Insertions") {
 
 TEST_CASE("Packet deletions") {
 	// Initialize memory pool
-	MemoryPool pool = MemoryPool();
+	MemoryPool<8> pool = MemoryPool<8>();
 
 	// Initialize packets
 	uint8_t data[5] = {1, 2, 3, 4, 5};
