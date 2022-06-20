@@ -42,7 +42,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	}
 
 	masterChannel.rxMasterCopyTC.push_back(pckt);
-	TransferFrameTC* masterPckt = &(masterChannel.rxMasterCopyTC.front());
+	TransferFrameTC* masterPckt = &(masterChannel.rxMasterCopyTC.back());
 
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(masterPckt);
 	ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);

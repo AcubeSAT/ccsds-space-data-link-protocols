@@ -234,7 +234,7 @@ public:
 	 * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t virtualChannelId() const {
-		return packet[2] & 0xF3 >> 2;
+		return (packet[2] & 0xFC) >> 2;
 	};
 
 	// Assumes MAP Id exists

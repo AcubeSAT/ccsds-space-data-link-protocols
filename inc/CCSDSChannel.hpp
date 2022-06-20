@@ -411,13 +411,23 @@ struct MasterChannel {
 	/**
 	 * @brief Add virtual channel to master channel
 	 */
-	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength,
-	                         const bool blocking, const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
 	                         etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
+
+	/**
+	 * @brief Add virtual channel to master channel
+	 */
+	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
+	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth);
 
 private:
 	// Packets stored in frames list, before being processed by the all frames generation service

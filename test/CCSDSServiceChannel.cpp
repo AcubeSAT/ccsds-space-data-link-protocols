@@ -18,8 +18,11 @@ TEST_CASE("Service Channel") {
 	};
 
 	MasterChannel master_channel = MasterChannel(true);
-	master_channel.addVC(0, true, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
+	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
 	                     10, map_channels);
+
+    master_channel.addVC(1, 128, false, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 20, 3,
+                         3);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
@@ -123,9 +126,11 @@ TEST_CASE("Service Channel") {
 	// Rx side
 	// new packet
 	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0x21, 0x33};
+    uint8_t packet2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0x21, 0x33};
 	uint8_t out_buffer[10] = {0};
 
 	serv_channel.storeTC(packet1, 10);
+    serv_channel.storeTC(packet2, 10);
 
 	// All frames reception
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
@@ -133,13 +138,24 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue - 1);
 
-	// VC reception
+    CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue);
+    err = serv_channel.allFramesReceptionTCRequest();
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+    CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue - 1);
+
+    // VC reception
 	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer);
 	err = serv_channel.vcReceptionTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
 	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInVirtualChannelBuffer);
 	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0, 0) == MaxReceivedRxTcInMAPBuffer - 1);
+
+    CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(1) == MaxReceivedRxTcInMasterBuffer);
+    err = serv_channel.vcReceptionTC(1);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+    CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue);
+    CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(1) == MaxReceivedRxTcInVirtualChannelBuffer - 1);
 
 	// Packet extraction
 	err = serv_channel.packetExtractionTC(0, 0, out_buffer);
