@@ -87,7 +87,7 @@ const uint8_t MaxRxInMasterChannel = 200;
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
 
-const uint16_t MemoryPoolMemorySize = 5*128; //Size of memory pool
+const uint16_t MemoryPoolMemorySize = 5*128;
 
 enum FlagState { NOT_READY = 0, READY = 1 };
 

@@ -136,10 +136,10 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 
 ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transferFrameDataLength, uint8_t gvcid) {
     uint8_t vid = gvcid & 0x3F;
-    /*if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
+    if (masterChannel.virtChannels.find(vid) == masterChannel.virtChannels.end()){
         ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
-    }*/
+    }
     VirtualChannel *vchan = &(masterChannel.virtChannels.at(vid));
 
 
@@ -148,8 +148,9 @@ ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transfer
         return PACKET_BUFFER_EMPTY;
     }
     uint16_t packetLength = vchan->packetLengthBufferTmTx.front();
-    // Allocate space for the Primary Header
-    static uint8_t tmpData[TmTransferFrameSize] = {0, 0, 0, 0, 0,0};
+    // Allocate space for the Primary Header - 6 bytes
+    static uint8_t tmpData[TmTransferFrameSize];
+    allocateTmTransferFrameHeader(tmpData);
     while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
            !vchan->packetLengthBufferTmTx.empty()) {
         for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
@@ -160,10 +161,8 @@ ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transfer
         vchan->packetLengthBufferTmTx.pop();
         packetLength = vchan->packetLengthBufferTmTx.front();
     }
-    // Allocate space for trailer
-    for(uint8_t i = 0; i < 6 ; i++){
-        tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
-    }
+    // Allocate space for trailer - 6 bytes
+    allocateTmtTransferFrameTrailer(currentTransferFrameDataLength, tmpData);
     if (currentTransferFrameDataLength != 0) {
         uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
         vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
@@ -756,6 +755,20 @@ void ServiceChannel::setTimeoutType(uint8_t vid, bool vr) {
 void ServiceChannel::invalidDirective(uint8_t vid) {
 	VirtualChannel* virtChannel = &(masterChannel.virtChannels.at(vid));
 	virtChannel->fop.invalidDirective();
+}
+
+void ServiceChannel::allocateTmTransferFrameHeader(uint8_t *tmpData) {
+    for(uint8_t i = 0 ; i < 6 ; i++){
+        tmpData[i] = 0;
+    }
+}
+
+void ServiceChannel::allocateTmtTransferFrameTrailer(uint16_t transferFrameSize, uint8_t* tmpData) {
+    for(uint8_t i = 0; i < TmTrailerSize ; i++){
+        if(transferFrameSize + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
+            tmpData[transferFrameSize + TmPrimaryHeaderSize + i] = 0;
+        }
+    }
 }
 
 FOPState ServiceChannel::fopState(uint8_t vid) const {
