@@ -146,7 +146,7 @@ protected:
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTmInMapChannel> unprocessedPacketListBufferTM;
 	/**
-	 * Store packets before being extracted
+	 * Store frames before being extracted
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> rxInFramesAfterVCReception;
 };

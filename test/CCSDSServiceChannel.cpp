@@ -145,7 +145,8 @@ TEST_CASE("Service Channel") {
 	err = serv_channel.packetExtractionTC(0, 0, out_buffer);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(out_buffer[0] == 0x00);
-	CHECK(out_buffer[1] == 0x1C);
+    CHECK(out_buffer[1] == 0x00);
+    CHECK(out_buffer[2] == 0x1C);
 
 	/**
 	 * the next commented lines are duplicated (line 93) . I don't know why. It won't work if uncommented
