@@ -227,10 +227,6 @@ public:
 
 	void invalidDirective(uint8_t vid);
 
-    void allocateTmTransferFrameHeader(uint8_t* tmpData);
-
-    void allocateTmtTransferFrameTrailer(uint16_t transferFrameSize, uint8_t* tmpData);
-
 	/**
 	 * @brief Get FOP State of the virtual channel
 	 */
