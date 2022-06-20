@@ -145,6 +145,10 @@ protected:
 	 * Store unprocessed received TMs
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTmInMapChannel> unprocessedPacketListBufferTM;
+	/**
+	 * Store frames before being extracted
+	 */
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> rxInFramesAfterVCReception;
 };
 
 /**
@@ -323,7 +327,7 @@ private:
 	/**
 	 * @brief Buffer to store incoming packets AFTER being processed by FARM
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesAfterVCReception;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer> rxInFramesAfterVCReception;
 
 	/**
 	 * @brief Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel

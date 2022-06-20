@@ -309,7 +309,12 @@ public:
 	}
 
 	void setPacketLength(uint16_t packet_length) {
-		frameLength = packet_length;
+		packet[2] = ((virtualChannelId() & 0x3F) << 2) | (frameLength & 0x300 >> 8);
+		packet[3] = frameLength & 0xFF;
+	}
+
+	uint16_t packetLength() {
+		return (static_cast<uint16_t>(packet[2] & 0x3) << 8) | packet[3];
 	}
 
 	void setServiceType(ServiceType service_type) {
