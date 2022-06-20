@@ -120,6 +120,24 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
+	// Rx side
+	// new packet
+	uint8_t pckt1[] = {0x10, 0xB1, 0x00, 0x03, 0x00, 0x00, 0x00, 0x1C, 0x21, 0X40};
+	serv_channel.storeTC(pckt1, 10);
+
+	// All frames reception
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	err = serv_channel.allFramesReceptionTCRequest();
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue - 1);
+
+	// VC reception
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer);
+	err = serv_channel.vcReceptionTC(0);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInMasterBuffer - 1);
+
 	/**
 	 * the next commented lines are duplicated (line 93) . I don't know why. It won't work if uncommented
 	 */
@@ -160,33 +178,30 @@ TEST_CASE("Service Channel") {
 	// TODO: This should take the output of TM RX called previously. Proper functional tests should include two service
 	//  channels to simulate communication between GS and SC
 
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
-	err = serv_channel.storeTM(invalid_vcid_TM, 14);
-	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
-
-	serv_channel.storeTM(valid_pckt_TM, 14);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
+	err = serv_channel.allFramesReceptionTMRequest(valid_pckt_TM, 14);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
-	serv_channel.storeTM(invalid_crc_TM, 14);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 2);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 2);
+	err = serv_channel.allFramesReceptionTMRequest(invalid_vcid_TM, 14);
+	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
+
+	err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, 14);
+	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
 
 	uint8_t resulting_tm_packet[14] = {0};
 
-	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
+	err = serv_channel.packetExtractionTM(0, resulting_tm_packet);
 	// Valid packet passes to lower procedures
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer - 1);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
-
-	err = serv_channel.allFramesReceptionTMRequest(resulting_tm_packet);
-	// Invalid CRC is logged and the packet is deleted from the master buffer
-	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
-	CHECK(serv_channel.rxInAvailableTM() == MaxReceivedRxTmInMasterBuffer);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
 
 	// TM Transmission
 	CHECK(serv_channel.getFrameCountTM(0) == 0);

@@ -38,6 +38,8 @@ const uint8_t MaxReceivedRxTcInWaitQueue = 10;
 const uint8_t MaxReceivedTxTcInFOPSentQueue = 10;
 // Maximum received RX TCs in sent queue (following COP checks).
 const uint8_t MaxReceivedRxTcInFOPSentQueue = 10;
+// Maxium received RX TMs in Virtual channel buffer
+const uint8_t MaxReceivedRxTmInVirtBuffer = 10;
 
 // Maximum received TX TMs in sent queue (following COP checks).
 const uint8_t MaxReceivedTxTcInFARMSentQueue = 10;
