@@ -423,7 +423,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 	TransferFrameTC* frame = mapChannel->rxInFramesAfterVCReception.front();
 
 	uint16_t frameSize = frame->packetLength();
-	uint8_t headerSize = TcPrimaryHeaderSize; // Segment header is present
+	uint8_t headerSize = TcPrimaryHeaderSize + 1; // Segment header is present
 	uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldTMPresent;
 
 	memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
@@ -432,6 +432,34 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 	masterChannel.removeMasterRx(frame);
 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8_t* packet) {
+    VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
+
+    // If segmentation header exists, then the MAP packet extraction service needs to be called
+    if (virtualChannel->segmentHeaderPresent) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_SERVICE_CALL);
+        return ServiceChannelNotification::INVALID_SERVICE_CALL;
+    }
+
+    if (virtualChannel->rxInFramesAfterVCReception.empty()) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
+        return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+    }
+
+    TransferFrameTC* frame = virtualChannel->rxInFramesAfterVCReception.front();
+
+    uint16_t frameSize = frame->packetLength();
+    uint8_t headerSize = TcPrimaryHeaderSize; // Segment header is present
+    uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldTMPresent;
+
+    memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
+
+    virtualChannel->rxInFramesAfterVCReception.pop_front();
+    masterChannel.removeMasterRx(frame);
+
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
 ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {

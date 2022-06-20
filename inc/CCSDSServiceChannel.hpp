@@ -180,7 +180,16 @@ public:
 	 */
 	ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t mapid, uint8_t* packet);
 
-	/**
+    /**
+     * @brief The MAP Packet Extraction Function shall be used to extract variable-length
+     * Packets from Frame Data Units on a MAP Channel
+     * @see 4.4.1 from TC Data Link Protocol
+     * @param vid Virtual channel ID
+     * @param mapid MAP channel ID
+     */
+    ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t* packet);
+
+    /**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer.

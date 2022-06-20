@@ -126,7 +126,7 @@ TEST_CASE("Service Channel") {
 	// Rx side
 	// new packet
 	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0x21, 0x33};
-    uint8_t packet2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0x21, 0x33};
+    uint8_t packet2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0xAE, 0x3B, 0xC8, 0x21, 0x33};
 	uint8_t out_buffer[10] = {0};
 
 	serv_channel.storeTC(packet1, 10);
@@ -160,13 +160,23 @@ TEST_CASE("Service Channel") {
 	// Packet extraction
 	err = serv_channel.packetExtractionTC(0, 0, out_buffer);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(out_buffer[0] == 0x00);
-    CHECK(out_buffer[1] == 0x00);
-    CHECK(out_buffer[2] == 0x1C);
 
-	/**
-	 * the next commented lines are duplicated (line 93) . I don't know why. It won't work if uncommented
-	 */
+	CHECK(out_buffer[0] == 0x00);
+    CHECK(out_buffer[1] == 0x1C);
+
+    err = serv_channel.packetExtractionTC(1, 0, out_buffer);
+    CHECK(err == ServiceChannelNotification::INVALID_SERVICE_CALL);
+
+    err = serv_channel.packetExtractionTC(1, out_buffer);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+    CHECK(out_buffer[0] == 0xAE);
+    CHECK(out_buffer[1] == 0x3B);
+    CHECK(out_buffer[2] == 0xC8);
+
+    /**
+     * the next commented lines are duplicated (line 93) . I don't know why. It won't work if uncommented
+     */
 	//    // All Frames Generation Service
 	//    CHECK(serv_channel.tx_out_processed_packet().second == nullptr);
 	//    err = serv_channel.all_frames_generation_request();
