@@ -159,7 +159,6 @@ ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transfer
     uint8_t vid = gvcid & 0x3F;
     VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
 
-
     uint16_t currentTransferFrameDataLength = 0;
     if (vchan->packetLengthBufferTmTx.empty()) {
         return PACKET_BUFFER_EMPTY;
@@ -179,7 +178,9 @@ ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transfer
     }
     // Allocate space for trailer
     for(uint8_t i = 0; i < 6 ; i++){
-        tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
+        if(currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
+            tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
+        }
     }
     if (currentTransferFrameDataLength != 0) {
         uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
