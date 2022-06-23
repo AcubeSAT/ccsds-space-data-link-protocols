@@ -172,6 +172,15 @@ public:
 	ServiceChannelNotification allFramesReceptionTMRequest(uint8_t* packet, uint16_t packetLength);
 
 	/**
+	 * @brief The MAP Packet Extraction Function shall be used to extract variable-length
+	 * Packets from Frame Data Units on a MAP Channel
+	 * @see 4.4.1 from TC Data Link Protocol
+	 * @param vid Virtual channel ID
+	 * @param mapid MAP channel ID
+	 */
+	ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t mapid, uint8_t* packet);
+
+	/**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer.
@@ -312,10 +321,17 @@ public:
 	}
 
 	/**
-	 * @brief available space for packets at rxInFramesAfterVCReception buffer
+	 * @brief available space for packets waiting to be processed from the VC Generation Service
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
 		return masterChannel.virtualChannels.at(vid).rxInFramesAfterVCReception.available();
+	}
+
+	/**
+	 * @brief available space for packets at rxInFramesAfterVCReception buffer
+	 */
+	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid, uint8_t mapid) const {
+		return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).rxInFramesAfterVCReception.available();
 	}
 
 	/**
