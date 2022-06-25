@@ -7,6 +7,7 @@
 #include <etl/map.h>
 #include <etl/flat_map.h>
 #include <etl/list.h>
+#include <etl/queue.h>
 
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
@@ -14,6 +15,7 @@
 #include <TransferFrameTC.hpp>
 #include <TransferFrameTM.hpp>
 #include <iostream>
+#include "MemoryPool.hpp"
 
 class MasterChannel;
 
@@ -348,6 +350,16 @@ private:
 	 * @brief The Master Channel the Virtual Channel belongs in
 	 */
 	std::reference_wrapper<MasterChannel> masterChannel;
+
+    /**
+    * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
+    */
+    etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTmTx;
+
+    /**
+     * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data
+     */
+    etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
 };
 
 struct MasterChannel {
@@ -497,6 +509,8 @@ private:
 	 * @brief Removes TM frames from the RX master buffer
 	 */
 	void removeMasterRx(TransferFrameTM* packet_ptr);
+
+    MemoryPool masterChannelPool = MemoryPool();
 };
 
 #endif // CCSDS_CHANNEL_HPP

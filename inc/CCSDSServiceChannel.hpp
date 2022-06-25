@@ -189,7 +189,7 @@ public:
      */
     ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t* packet);
 
-    /**
+	/**
 	 * @brief The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer.
