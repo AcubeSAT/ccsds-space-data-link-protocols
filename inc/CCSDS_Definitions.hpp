@@ -12,14 +12,10 @@ const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assign
 
 // TODO? See if some of those constants don't need to be global and can be defined in the class instead
 
-/* TM TransferFrame Definitions */
 const uint16_t TmTransferFrameSize = 128;
 const uint8_t TmPrimaryHeaderSize = 6;
-const uint8_t TmSecondaryHeaderSize = 0; // Size set to zero if the secondary header is not used
 const uint8_t TmTrailerSize = 6;
-const uint16_t MaxTransferFrameDataLength = 116;
 
-/* TC TransferFrame Definitions */
 const uint8_t TcPrimaryHeaderSize = 5;
 const bool TcErrorControlFieldExists = false;
 
@@ -29,51 +25,38 @@ const uint16_t MCID = SpacecraftIdentifier;
 const uint8_t MaxReceivedTcInMapChannel = 5;
 const uint8_t MaxReceivedTmInMapChannel = 5;
 
-// Maximum received TX TCs in wait queue (before COP checks).
-const uint8_t MaxReceivedTxTcInWaitQueue = 10;
-// Maximum received RX TCs in wait queue (before COP checks).
-const uint8_t MaxReceivedRxTcInWaitQueue = 10;
+const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
+const uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
 
-// Maximum received TX TCs in sent queue (following COP checks).
-const uint8_t MaxReceivedTxTcInFOPSentQueue = 10;
-// Maximum received RX TCs in sent queue (following COP checks).
-const uint8_t MaxReceivedRxTcInFOPSentQueue = 10;
-// Maxium received RX TMs in Virtual channel buffer
-const uint8_t MaxReceivedRxTmInVirtBuffer = 10;
+const uint8_t MaxReceivedTxTcInFOPSentQueue = 10; ///> Maximum received TX TCs in sent queue (following COP checks).
+const uint8_t MaxReceivedRxTcInFOPSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
+const uint8_t MaxReceivedRxTmInVirtBuffer = 10; ///> Maxiumm received RX TMs in Virtual channel buffer
 
-// Maximum received TX TMs in sent queue (following COP checks).
-const uint8_t MaxReceivedTxTcInFARMSentQueue = 10;
-// Maximum received RX TCs in sent queue (following COP checks).
-const uint8_t MaxReceivedRxTcInFARMSentQueue = 10;
+const uint8_t MaxReceivedTxTcInFARMSentQueue = 10; ///> Maximum received TX TMs in sent queue (following COP checks).
+const uint8_t MaxReceivedRxTcInFARMSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
 
-// Maximum received TC in the master buffer, before being passed to the all frames generation service
-const uint8_t MaxReceivedTxTcInMasterBuffer = 100;
-// Maximum received TC in the master buffer, ready to be transmitted to the lower procedures (doesn't include
-// repetitions)
+const uint8_t MaxReceivedTxTcInMasterBuffer = 100; ///> Maximum received TX TC in the master buffer
+
+/**
+ * Maximum received TX TCs in the master buffer, ready to be transmitted to the lower procedures (doesn't include
+ * repetitions)
+ */
 const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
-// Maximum received TM in the master buffer, before being passed to the all frames generation service
+
+/**
+ * Maximum received TX TMs in the master buffer, ready to be transmitted to the lower procedures (doesn't include
+ * repetitions)
+ */
 const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
 
-const uint8_t MaxReceivedTxTmOutInVCBuffer = 100;
-// Maximum received TM in the master buffer, before being passed to the all frames generation service
-const uint8_t MaxReceivedTxTmInVCBuffer = 100;
+const uint8_t MaxReceivedTxTmOutInVCBuffer = 100; ///> Maximum received TM in the master buffer, after passing through the all frames generation service
+const uint8_t MaxReceivedTxTmInVCBuffer = 100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
 
-// Maximum received TM in the master buffer, ready to be transmitted to the lower procedures (doesn't include
-// repetitions)
-
-const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100;
-
-// Maximum received TC in the master buffer, before being passed to the all frames reception service
-const uint8_t MaxReceivedRxTcInMasterBuffer = 100;
-const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100;
-// Maximum received TC in the master buffer, before being passed to the all frames reception service
-const uint8_t MaxReceivedRxTcInMAPBuffer = 100;
-// Maximum received TC in the master buffer, ready to be transmitted to the higher procedures
-const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100;
-// Maximum received TM in the master buffer, before being passed to the all frames reception service
-const uint8_t MaxReceivedRxTmInMasterBuffer = 100;
-// Maximum received TM in the master buffer, ready to be transmitted to the higher procedures
-const uint8_t MaxReceivedRxTmOutInMasterBuffer = 100;
+const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100; ///> Maximum received fully-processed TX TMs in the master buffer
+const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
+const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
+const uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer
+const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100; ///> Maximum received fully processed RX TCs in MAP buffer
 
 const uint8_t MaxVirtualChannels = 10;
 const uint8_t MaxMapChannels = 3;
@@ -81,13 +64,18 @@ const uint8_t MaxMapChannels = 3;
 // Number of master copies of TX transfer frames that are stored in the master channel. This holds all the transfer
 // frames that are stored in all services
 const uint8_t MaxTxInMasterChannel = 200;
-// Number of master copies of RX transfer frames that are stored in the master channel. This holds all the transfer
-// frames that are stored in all services
+/**
+ * Number of master copies of RX transfer frames that are stored in the master channel.
+ * This holds all the transfer frames that are stored in all services
+ */
+
 const uint8_t MaxRxInMasterChannel = 200;
 
-// Raw TX packets stored directly in the virtual channel buffer. Set to 0 if VC processing service isn't used
-[[maybe_unused]] const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 6;
-[[maybe_unused]] const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6;
+
+const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
+/// Set to 0 if VC processing service isn't used
+const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
+/// Set to 0 if VC processing service isn't used
 
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
@@ -97,7 +85,6 @@ const uint16_t MemoryPoolMemorySize = 5*128; //Size of memory pool
 enum FlagState { NOT_READY = 0, READY = 1 };
 
 const uint16_t PacketBufferTmSize = 512;
-const uint16_t MasterTransferFrameBufferTmSize = 512;
 
 const uint8_t idle_data[] = {
     0x53, 0x45, 0x24, 0x3,  0xce, 0xf0, 0xd2, 0x75, 0x50, 0xb9, 0x57, 0x24, 0x70, 0x83, 0xa8, 0x4e, 0x44, 0xd4, 0xa6,
