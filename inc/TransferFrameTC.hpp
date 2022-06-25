@@ -11,7 +11,7 @@
 class TransferFrameTC;
 
 /**
- * @brief The packet's service type
+ *  The packet's service type
  * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
  */
 enum class ServiceType {
@@ -35,7 +35,7 @@ public:
 	TransferFrameHeaderTC(uint8_t* pckt) : TransferFrameHeader(pckt) {}
 
 	/**
-	 * @brief The bypass Flag determines whether the packet will bypass FARM checks
+	 *  The bypass Flag determines whether the packet will bypass FARM checks
 	 * @details Bit 2 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -44,7 +44,7 @@ public:
 	}
 
 	/**
-	 * @brief The control and command Flag determines whether the packet carries control commands (Type-C) or
+	 *  The control and command Flag determines whether the packet carries control commands (Type-C) or
 	 * data (Type-D)
 	 * @details Bit 3 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.2 from TC SPACE DATA LINK PROTOCOL
@@ -54,7 +54,7 @@ public:
 	}
 
 	/**
-	 * @brief The length of the transfer frame
+	 *  The length of the transfer frame
 	 * @details Bits 22–31 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -112,7 +112,7 @@ public:
 	}
 
 	/**
-	 * @brief Used to indicate the COP that is being used.
+	 *  Used to indicate the COP that is being used.
 	 * @return Bits 6-7 of the CLCW (the COP in Effect parameter)
 	 * @see p. 4.2.1.5 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -130,7 +130,7 @@ public:
 	}
 
 	/**
-	 * @brief The No RF Available Flag shall provide a logical indication of the ‘ready’ status
+	 *  The No RF Available Flag shall provide a logical indication of the ‘ready’ status
 	 * of the radio frequency (RF) elements within the space link provided by the Physical Layer.
 	 * @return Bit 16 of the CLCW (the No RF Available Flag).
 	 * @see p. 4.2.1.8.2 from TC SPACE DATA LINK PROTOCOL
@@ -188,14 +188,14 @@ public:
 	}
 
 	/**
-	 * @brief Set the number of repetitions that is determined by the virtual channel
+	 *  Set the number of repetitions that is determined by the virtual channel
 	 */
 	void setRepetitions(const uint8_t repetitions) {
 		reps = repetitions;
 	}
 
 	/**
-	 * @brief Determines whether the packet is marked for retransmission while in the sent queue
+	 *  Determines whether the packet is marked for retransmission while in the sent queue
 	 */
 	bool getToBeRetransmitted() const {
 		return toBeRetransmitted;

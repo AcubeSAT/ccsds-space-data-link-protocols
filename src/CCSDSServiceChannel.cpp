@@ -407,10 +407,10 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
 
-	TransferFrameTC* frame = virt_channel->txUnprocessedPacketListBufferTC.front();
+	TransferFrameTC &frame = *virt_channel->txUnprocessedPacketListBufferTC.front();
 	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
-	if (frame->transferFrameHeader().ctrlAndCmdFlag() == 0) {
+	if (frame.transferFrameHeader().ctrlAndCmdFlag() == 0) {
 		err = virt_channel->fop.transferFdu();
 	} else {
 		err = virt_channel->fop.validClcwArrival();
@@ -427,31 +427,31 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 }
 
 ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
-	VirtualChannel* virtChannel = &(masterChannel.virtualChannels.at(vid));
+	VirtualChannel &virtChannel = *(&masterChannel.virtualChannels.at(vid));
 
-	if (virtChannel->waitQueueRxTC.empty()) {
+	if (virtChannel.waitQueueRxTC.empty()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM);
 		return ServiceChannelNotification::NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM;
 	}
 
-	if (virtChannel->rxInFramesAfterVCReception.full()) {
+	if (virtChannel.rxInFramesAfterVCReception.full()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RECEPTION_BUFFER_AFTER_FARM_FULL);
 		return ServiceChannelNotification::VC_RECEPTION_BUFFER_AFTER_FARM_FULL;
 	}
 
-	TransferFrameTC* frame = virtChannel->waitQueueRxTC.front();
+	TransferFrameTC *frame = virtChannel.waitQueueRxTC.front();
 
 	// FARM procedures
 
-	virtChannel->waitQueueRxTC.pop_front();
+	virtChannel.waitQueueRxTC.pop_front();
 
 	// If MAP channels are implemented in this specific VC, write to the MAP buffer
-	if (virtChannel->segmentHeaderPresent) {
+	if (virtChannel.segmentHeaderPresent) {
 		uint8_t mapid = frame->mapId();
-		MAPChannel* mapChannel = &(virtChannel->mapChannels.at(mapid));
-		mapChannel->rxInFramesAfterVCReception.push_back(frame);
+		MAPChannel &mapChannel = *(&virtChannel.mapChannels.at(mapid));
+		mapChannel.rxInFramesAfterVCReception.push_back(frame);
 	} else {
-		virtChannel->rxInFramesAfterVCReception.push_back(frame);
+		virtChannel.rxInFramesAfterVCReception.push_back(frame);
 	}
 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;

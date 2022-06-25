@@ -15,7 +15,7 @@ const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assign
 const uint16_t TmTransferFrameSize = 128;
 const uint8_t TmPrimaryHeaderSize = 6;
 const uint8_t TmTrailerSize = 6;
-g
+
 const uint8_t TcPrimaryHeaderSize = 5;
 const bool TcErrorControlFieldExists = false;
 
