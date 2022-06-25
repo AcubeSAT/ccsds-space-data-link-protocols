@@ -396,8 +396,8 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 }
 
 ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
-	VirtualChannel* virt_channel = &(masterChannel.virtualChannels.at(vid));
-	if (virt_channel->txUnprocessedPacketListBufferTC.empty()) {
+	VirtualChannel &virt_channel = masterChannel.virtualChannels.at(vid);
+	if (virt_channel.txUnprocessedPacketListBufferTC.empty()) {
 		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
 		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
 	}
@@ -407,13 +407,13 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
 
-	TransferFrameTC &frame = *virt_channel->txUnprocessedPacketListBufferTC.front();
+	TransferFrameTC &frame = *virt_channel.txUnprocessedPacketListBufferTC.front();
 	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
 	if (frame.transferFrameHeader().ctrlAndCmdFlag() == 0) {
-		err = virt_channel->fop.transferFdu();
+		err = virt_channel.fop.transferFdu();
 	} else {
-		err = virt_channel->fop.validClcwArrival();
+		err = virt_channel.fop.validClcwArrival();
 	}
 
 	if (err == COPDirectiveResponse::REJECT) {
@@ -421,13 +421,13 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		return ServiceChannelNotification::FOP_REQUEST_REJECTED;
 	}
 
-	virt_channel->txUnprocessedPacketListBufferTC.pop_front();
+	virt_channel.txUnprocessedPacketListBufferTC.pop_front();
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
 ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
-	VirtualChannel &virtChannel = *(&masterChannel.virtualChannels.at(vid));
+	VirtualChannel &virtChannel = masterChannel.virtualChannels.at(vid);
 
 	if (virtChannel.waitQueueRxTC.empty()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM);
@@ -448,7 +448,7 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	// If MAP channels are implemented in this specific VC, write to the MAP buffer
 	if (virtChannel.segmentHeaderPresent) {
 		uint8_t mapid = frame->mapId();
-		MAPChannel &mapChannel = *(&virtChannel.mapChannels.at(mapid));
+		MAPChannel &mapChannel = virtChannel.mapChannels.at(mapid);
 		mapChannel.rxInFramesAfterVCReception.push_back(frame);
 	} else {
 		virtChannel.rxInFramesAfterVCReception.push_back(frame);
@@ -458,31 +458,31 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 }
 
 ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8_t mapid, uint8_t* packet) {
-	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
+	VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
 
 	// We can't call the MAP Packet Extraction service if no segmentation header is present
-	if (!virtualChannel->segmentHeaderPresent) {
+	if (!virtualChannel.segmentHeaderPresent) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, INVALID_SERVICE_CALL);
 		return ServiceChannelNotification::INVALID_SERVICE_CALL;
 	}
 
-	MAPChannel* mapChannel = &(virtualChannel->mapChannels.at(mapid));
+	MAPChannel &mapChannel = virtualChannel.mapChannels.at(mapid);
 
-	if (mapChannel->rxInFramesAfterVCReception.empty()) {
+	if (mapChannel.rxInFramesAfterVCReception.empty()) {
 		ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
 		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
 	}
 
-	TransferFrameTC* frame = mapChannel->rxInFramesAfterVCReception.front();
+	TransferFrameTC* frame = mapChannel.rxInFramesAfterVCReception.front();
 
 	uint16_t frameSize = frame->packetLength();
 	uint8_t headerSize = TcPrimaryHeaderSize + 1; // Segment header is present
 
-	uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldTMPresent;
+	uint8_t trailerSize = 2 * virtualChannel.frameErrorControlFieldTMPresent;
 
 	memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
 
-	mapChannel->rxInFramesAfterVCReception.pop_front();
+	mapChannel.rxInFramesAfterVCReception.pop_front();
 	masterChannel.removeMasterRx(frame);
 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;

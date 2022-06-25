@@ -25,32 +25,32 @@ class MasterChannel;
 struct PhysicalChannel {
 private:
 	/**
-	 *  Maximum length of a single transfer frame
+	 * Maximum length of a single transfer frame
 	 */
 	const uint16_t maxFrameLength;
 
 	/**
-	 *  Determines whether Error Control field is present
+	 * Determines whether Error Control field is present
 	 */
 	const bool errorControlFieldPresent;
 
 	/**
-	 *  Sets the maximum number of transfer frames that can be transferred in a single data unit
+	 * Sets the maximum number of transfer frames that can be transferred in a single data unit
 	 */
 	const uint16_t maxFramePdu;
 
 	/**
-	 *  Maximum length of a data unit
+	 * Maximum length of a data unit
 	 */
 	const uint16_t maxPDULength;
 
 	/**
-	 *  Maximum bit rate (bits per second)
+	 * Maximum bit rate (bits per second)
 	 */
 	const uint32_t bitrate;
 
 	/**
-	 *  Maximum number of retransmissions for a data unit
+	 * Maximum number of retransmissions for a data unit
 	 */
 	const uint16_t repetitions;
 
@@ -65,35 +65,35 @@ public:
 	}
 
 	/**
-	 *  Determines whether Error Control field is present
+	 * Determines whether Error Control field is present
 	 */
 	bool getErrorControlFieldPresent() const {
 		return errorControlFieldPresent;
 	}
 
 	/**
-	 *  Sets the maximum number of transfer frames that can be transferred in a single data unit
+	 * Sets the maximum number of transfer frames that can be transferred in a single data unit
 	 */
 	uint16_t getMaxFramePdu() const {
 		return maxFramePdu;
 	};
 
 	/**
-	 *  Maximum length of a data unit
+	 * Maximum length of a data unit
 	 */
 	uint16_t getMaxPDULength() const {
 		return maxPDULength;
 	};
 
 	/**
-	 *  Maximum bit rate (bits per second)
+	 * Maximum bit rate (bits per second)
 	 */
 	uint32_t getBitrate() const {
 		return bitrate;
 	};
 
 	/**
-	 *  Maximum number of retransmissions for a data unit
+	 * Maximum number of retransmissions for a data unit
 	 */
 	uint16_t getRepetitions() const {
 		return repetitions;
@@ -108,7 +108,7 @@ class MAPChannel {
 
 private:
 	/**
-	 *  MAP Channel Identifier
+	 * MAP Channel Identifier
 	 */
 	const uint8_t MAPID; // 6 bits
 
@@ -116,14 +116,14 @@ public:
 	void storeMAPChannel(TransferFrame packet);
 
 	/**
-	 *  Returns availableBufferTC space in the MAP Channel buffer
+	 * Returns availableBufferTC space in the MAP Channel buffer
 	 */
 	uint16_t availableBufferTC() const {
 		return unprocessedPacketListBufferTC.available();
 	}
 
 	/**
-	 *  Returns availableBufferTM space in the MAP Channel buffer
+	 * Returns availableBufferTM space in the MAP Channel buffer
 	 */
 	uint16_t availableBufferTM() const {
 		return unprocessedPacketListBufferTM.available();
@@ -166,27 +166,27 @@ class VirtualChannel {
 	//@TODO: Those variables shouldn't be public
 public:
 	/**
-	 *  Virtual Channel Identifier
+	 * Virtual Channel Identifier
 	 */
 	const uint8_t VCID; // 6 bits
 
 	/**
-	 *  Global Virtual Channel Identifier
+	 * Global Virtual Channel Identifier
 	 */
 	const uint16_t GVCID; // 16 bits (assumes TFVN is set to 0)
 
 	/**
-	 *  Determines whether the Segment Header is present (enables MAP services)
+	 * Determines whether the Segment Header is present (enables MAP services)
 	 */
 	const bool segmentHeaderPresent;
 
 	/**
-	 *  Maximum length of a single transfer frame
+	 * Maximum length of a single transfer frame
 	 */
 	const uint16_t maxFrameLengthTC;
 
 	/**
-	 *  Determines whether smaller data units can be combined into a single transfer frame
+	 * Determines whether smaller data units can be combined into a single transfer frame
 	 */
 	const bool blockingTC;
 
@@ -206,41 +206,41 @@ public:
 	uint8_t frameCountTM;
 
 	/**
-	 *  Returns availableVCBufferTC space in the VC TC buffer
+	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t availableBufferTC() const {
 		return txUnprocessedPacketListBufferTC.available();
 	}
 
 	/**
-	 *  Returns availableVCBufferTC space in the VC TC buffer
+	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t rxInAvailableTM() const {
 		return rxInFramesAfterMCReception.available();
 	}
 
 	/**
-	 *  Defines whether the OCF service is present
+	 * Defines whether the OCF service is present
 	 */
 	const bool operationalControlFieldTMPresent;
 
 	/**
-	 *  Defines whether the ECF service is present
+	 * Defines whether the ECF service is present
 	 */
 	const bool frameErrorControlFieldTMPresent;
 
 	/**
-	 *  Defines whether octet or forward-ordered synchronization is used
+	 * Defines whether octet or forward-ordered synchronization is used
 	 */
 	const SynchronizationFlag synchronization;
 
 	/**
-	 *  Indicates whether secondary header is present in this VC
+	 * Indicates whether secondary header is present in this VC
 	 */
 	const bool secondaryHeaderTMPresent;
 
 	/**
-	 *  Indicates the length of the secondary header for this VC. If secondary header is disabled for this VC,
+	 * Indicates the length of the secondary header for this VC. If secondary header is disabled for this VC,
 	 * it is ignored
 	 */
 	const uint8_t secondaryHeaderTMLength;
@@ -302,52 +302,52 @@ public:
 
 private:
 	/**
-	 *  TM packets after being processed by the MasterChannelReception Service
+	 * TM packets after being processed by the MasterChannelReception Service
 	 */
 	etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> rxInFramesAfterMCReception;
 
 	/**
-	 *  Buffer to store incoming packets BEFORE being processed by COP
+	 * Buffer to store incoming packets BEFORE being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueTxTC;
 
 	/**
-	 *  Buffer to store incoming packets AFTER being processed by COP
+	 * Buffer to store incoming packets AFTER being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueRxTC;
 
 	/**
-	 *  Buffer to store outcoming packets AFTER being processed by COP
+	 * Buffer to store outcoming packets AFTER being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue> sentQueueTxTC;
 
 	/**
-	 *  Buffer to storeOut outcoming packets AFTER being processed by COP
+	 * Buffer to storeOut outcoming packets AFTER being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue> sentQueueRxTC;
 
 	/**
-	 *  Buffer to store incoming packets AFTER being processed by FARM
+	 * Buffer to store incoming packets AFTER being processed by FARM
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer> rxInFramesAfterVCReception;
 
 	/**
-	 *  Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
+	 * Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
 
 	/**
-	 *  Holds the FOP state of the virtual channel
+	 * Holds the FOP state of the virtual channel
 	 */
 	FrameOperationProcedure fop;
 
 	/**
-	 *  Holds the FARM state of the virtual channel
+	 * Holds the FARM state of the virtual channel
 	 */
 	FrameAcceptanceReporting farm;
 
 	/**
-	 *  The Master Channel the Virtual Channel belongs in
+	 * The Master Channel the Virtual Channel belongs in
 	 */
 	std::reference_wrapper<MasterChannel> masterChannel;
 
@@ -368,7 +368,7 @@ struct MasterChannel {
 	friend class FrameAcceptanceReporting;
 
 	/**
-	 *  Virtual channels of the master channel
+	 * Virtual channels of the master channel
 	 */
 	// TODO: Type aliases because this is getting out of hand
 	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
@@ -421,7 +421,7 @@ struct MasterChannel {
 	MasterChannelAlert storeTransmittedOut(TransferFrameTC* packet);
 
 	/**
-	 *  Add virtual channel to master channel
+	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
@@ -432,7 +432,7 @@ struct MasterChannel {
 	                         etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 	/**
-	 *  Add virtual channel to master channel
+	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
@@ -471,42 +471,42 @@ private:
 	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedPacketListBufferTM;
 
 	/**
-	 *  Buffer holding the master copy of TC TX packets that are currently being processed
+	 * Buffer holding the master copy of TC TX packets that are currently being processed
 	 */
 	etl::list<TransferFrameTC, MaxTxInMasterChannel> txMasterCopyTC;
 
 	/**
-	 *  Removes TC frames from the Tx master buffer
+	 * Removes TC frames from the Tx master buffer
 	 */
 	void removeMasterTx(TransferFrameTC* packet_ptr);
 
 	/**
-	 *  Buffer holding the master copy of TM TX packets that are currently being processed
+	 * Buffer holding the master copy of TM TX packets that are currently being processed
 	 */
 	etl::list<TransferFrameTM, MaxTxInMasterChannel> txMasterCopyTM;
 
 	/**
-	 *  Removes TM frames from the Tx master buffer
+	 * Removes TM frames from the Tx master buffer
 	 */
 	void removeMasterTx(TransferFrameTM* packet_ptr);
 
 	/**
-	 *  Buffer holding the master copy of TC RX packets that are currently being processed
+	 * Buffer holding the master copy of TC RX packets that are currently being processed
 	 */
 	etl::list<TransferFrameTC, MaxRxInMasterChannel> rxMasterCopyTC;
 
 	/**
-	 *  Removes TM frames from the Rx master buffer
+	 * Removes TM frames from the Rx master buffer
 	 */
 	void removeMasterRx(TransferFrameTC* packet_ptr);
 
 	/**
-	 *  Buffer holding the master copy of TM RX packets that are currently being processed
+	 * Buffer holding the master copy of TM RX packets that are currently being processed
 	 */
 	etl::list<TransferFrameTM, MaxRxInMasterChannel> rxMasterCopyTM;
 
 	/**
-	 *  Removes TM frames from the RX master buffer
+	 * Removes TM frames from the RX master buffer
 	 */
 	void removeMasterRx(TransferFrameTM* packet_ptr);
 

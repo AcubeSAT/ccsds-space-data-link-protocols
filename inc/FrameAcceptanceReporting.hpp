@@ -42,28 +42,28 @@ public:
 	/* Directives */
 
 	/**
-	 *  FARM actions according to the table 6-1
+	 * FARM actions according to the table 6-1
 	 * @see p. 6.2-6.3 and table 6-1 from COP-1 CCSDS
 	 */
 	COPDirectiveResponse frameArrives();
 
 	/**
-	 *  signals when sufficient buffer space becomes available for at least one more maximum-size Frame.
+	 * signals when sufficient buffer space becomes available for at least one more maximum-size Frame.
 	 * @see p. 6.3.2.3 from COP-1 CCSDS
 	 */
 	COPDirectiveResponse bufferRelease();
 
 	/**
-	 *  Buffer for storing packets, BEFORE being processed by FARM.
+	 * Buffer for storing packets, BEFORE being processed by FARM.
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue;
 	/**
-	 *  Buffer for storing packets, AFTER being processed by FARM.
+	 * Buffer for storing packets, AFTER being processed by FARM.
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue;
 
 	/**
-	 *  The Virtual Channel in which FOP is initialized
+	 * The Virtual Channel in which FOP is initialized
 	 */
 	VirtualChannel* vchan;
 

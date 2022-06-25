@@ -12,7 +12,7 @@ struct TransferFrameHeader {
 	}
 
 	/**
-	 *  The ID of the spacecraft
+	 * The ID of the spacecraft
 	 * 			TC: Bits  6–15  of  the  Transfer  Frame  Primary  Header
 	 * 			TM: Bits  2–11  of  the  Transfer  Frame  Primary  Header
 	 */
@@ -26,7 +26,7 @@ struct TransferFrameHeader {
 	}
 
 	/**
-	 *  The virtual channel ID this channel is transferred in
+	 * The virtual channel ID this channel is transferred in
 	 * 			TC: Bits 16–21 of the Transfer Frame Primary Header
 	 * 			TM: Bits 12–14 of the Transfer Frame Primary Header
 	 */
@@ -51,14 +51,14 @@ public:
 	    : type(t), frameLength(packetLength), packet(packet){};
 
 	/**
-	 *  Appends the CRC code (given that the corresponding Error Correction field is present in the given
+	 * Appends the CRC code (given that the corresponding Error Correction field is present in the given
 	 * virtual channel)
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	void append_crc();
 
 	/**
-	 *  Calculates the CRC code
+	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	static uint16_t calculateCRC(const uint8_t* packet, uint16_t len);
