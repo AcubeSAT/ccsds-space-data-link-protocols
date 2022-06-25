@@ -155,6 +155,59 @@ ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
+ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transferFrameDataLength, uint8_t gvcid) {
+    uint8_t vid = gvcid & 0x3F;
+    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
+
+    uint16_t currentTransferFrameDataLength = 0;
+    if (vchan->packetLengthBufferTmTx.empty()) {
+        return PACKET_BUFFER_EMPTY;
+    }
+    uint16_t packetLength = vchan->packetLengthBufferTmTx.front();
+    // Allocate space for the Primary Header
+    static uint8_t tmpData[TmTransferFrameSize] = {0, 0, 0, 0, 0,0};
+    while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
+           !vchan->packetLengthBufferTmTx.empty()) {
+        for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
+            tmpData[i + TmPrimaryHeaderSize] = vchan->packetBufferTmTx.front();
+            vchan->packetBufferTmTx.pop();
+        }
+        currentTransferFrameDataLength += packetLength;
+        vchan->packetLengthBufferTmTx.pop();
+        packetLength = vchan->packetLengthBufferTmTx.front();
+    }
+    // Allocate space for trailer
+    for(uint8_t i = 0; i < 6 ; i++){
+        if(currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
+            tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
+        }
+    }
+    if (currentTransferFrameDataLength != 0) {
+        uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
+        vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
+        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData,  currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize, TM);
+        masterChannel.txMasterCopyTM.push_back(transferFrameTm);
+        masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
+        return NO_SERVICE_EVENT;
+    }
+    return NO_TX_PACKETS_TO_TRANSFER_FRAME;
+
+}
+
+ServiceChannelNotification ServiceChannel::storePacketTm(uint8_t *packet, uint16_t packetLength, uint8_t gvcid) {
+    uint8_t vid = gvcid & 0x3F;
+    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
+
+    if (packetLength <= vchan->packetBufferTmTx.available()) {
+        vchan->packetLengthBufferTmTx.push(packetLength);
+        for (uint16_t i = 0; i < packetLength; i++) {
+            vchan->packetBufferTmTx.push(packet[i]);
+        }
+        return NO_SERVICE_EVENT;
+    }
+    return VC_MC_FRAME_BUFFER_FULL;
+}
+
 // TODO: MAP Request service shall be rewritten to support allocation in the Memory Pool
 // TODO: It shall also be decided based on the virtual channel whether this or vc request will be called based on the VC
 ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapid) {
