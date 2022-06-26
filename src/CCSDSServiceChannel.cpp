@@ -562,7 +562,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 		uint16_t crc = frame->calculateCRC(frame->packetData(), len);
 
 		uint16_t packet_crc =
-		    ((static_cast<uint16_t>(frame->packetData()[len]) << 8) & 0xFF00) | frame->packetData()[len + 1];
+		    (static_cast<uint16_t>(frame->packetData()[len]) << 8) | frame->packetData()[len + 1];
 		if (crc != packet_crc) {
 			ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
 			// Invalid packet is discarded and service aborted
