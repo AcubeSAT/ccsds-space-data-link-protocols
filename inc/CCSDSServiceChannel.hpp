@@ -6,6 +6,7 @@
 #include <optional>
 #include <TransferFrameTC.hpp>
 #include <utility>
+#include <CCSDSLoggerImpl.h>
 
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
@@ -296,6 +297,10 @@ public:
 	 */
 
 	uint16_t rxInAvailableTM(uint8_t vid) const {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
 		return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
 	}
 	/**
@@ -316,6 +321,10 @@ public:
 	 * Available space in TC virtual channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid) const {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
 		return masterChannel.virtualChannels.at(vid).availableBufferTC();
 	}
 
@@ -323,13 +332,26 @@ public:
 	 * Available space in TC MAP channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
-		return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).availableBufferTC();
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()){
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
+        const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
+        if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+            return ServiceChannelNotification::INVALID_MAP_ID;
+        }
+		return virtualChannel.mapChannels.at(mapid).availableBufferTC();
 	}
 
 	/**
 	 * Available space for packets at waitQueueRxTC buffer
 	 */
 	uint16_t getAvailableWaitQueueRxTC(uint8_t vid) const {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
 		return masterChannel.virtualChannels.at(vid).waitQueueRxTC.available();
 	}
 
@@ -337,6 +359,10 @@ public:
 	 * Available space for packets waiting to be processed from the VC Generation Service
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
 		return masterChannel.virtualChannels.at(vid).rxInFramesAfterVCReception.available();
 	}
 
@@ -344,6 +370,15 @@ public:
 	 * Available space for packets at rxInFramesAfterVCReception buffer
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid, uint8_t mapid) const {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()){
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
+        const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
+        if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
+            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+            return ServiceChannelNotification::INVALID_MAP_ID;
+        }
 		return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).rxInFramesAfterVCReception.available();
 	}
 

@@ -2,7 +2,6 @@
 #include <TransferFrameTM.hpp>
 #include <etl/iterator.h>
 #include "CLCW.hpp"
-#include <CCSDSLoggerImpl.h>
 
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength) {
 	if (masterChannel.rxMasterCopyTC.full()) {
