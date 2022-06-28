@@ -512,7 +512,7 @@ private:
 	 */
 	void removeMasterRx(TransferFrameTM* packet_ptr);
 
-    MemoryPool masterChannelPool = MemoryPool();
+    MemoryPool<5*128> masterChannelPool = MemoryPool<5*128>();
 };
 
 #endif // CCSDS_CHANNEL_HPP
