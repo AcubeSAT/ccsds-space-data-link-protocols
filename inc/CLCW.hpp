@@ -1,6 +1,5 @@
+#pragma once
 #include <cstdint>
-#include "CCSDSChannel.hpp"
-#include "TransferFrameTM.hpp"
 
 struct CLCW {
 	const uint32_t clcw;

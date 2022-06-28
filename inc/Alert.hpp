@@ -30,7 +30,8 @@ enum ServiceChannelNotification : int {
 	RX_INVALID_CRC = 0x1A,
 	INVALID_SERVICE_CALL = 0x1B,
     PACKET_BUFFER_EMPTY = 0x1C,
-    NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D
+    NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D,
+    NEW_CLCW_GENERATED = 0x1E
 };
 
 enum SynchronizationFlag : bool { OCTET = 0, FORWARD_ORDERED = 1 };

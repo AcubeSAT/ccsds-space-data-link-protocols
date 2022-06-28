@@ -249,6 +249,10 @@ public:
 
 	void invalidDirective(uint8_t vid);
 
+    /**
+     * @brief A function that generates a CLCW and stores it to a clcw buffer
+     */
+    ServiceChannelNotification clcwReportTime(uint8_t vid);
 	/**
 	 * Get FOP State of the virtual channel
 	 */

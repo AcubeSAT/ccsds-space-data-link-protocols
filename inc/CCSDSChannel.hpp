@@ -16,6 +16,7 @@
 #include <TransferFrameTM.hpp>
 #include <iostream>
 #include "MemoryPool.hpp"
+#include "CLCW.hpp"
 
 class MasterChannel;
 
@@ -360,6 +361,11 @@ private:
      *  Queue that stores the packet data that will eventually be concatenated to transfer frame data
      */
     etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
+
+    /**
+     * A buffer that stores constructed CLCWs from FARM checks.
+     */
+    etl::list<CLCW, ClcwBufferSize> clcwBuffer;
 };
 
 struct MasterChannel {

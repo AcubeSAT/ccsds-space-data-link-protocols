@@ -442,8 +442,12 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	TransferFrameTC *frame = virtChannel.waitQueueRxTC.front();
 
 	// FARM procedures
+    virtChannel.farm.waitQueue->push_back(frame);
+    virtChannel.farm.frameArrives();
+    clcwReportTime(vid);
 
 	virtChannel.waitQueueRxTC.pop_front();
+    virtChannel.farm.waitQueue->pop_front();
 
 	// If MAP channels are implemented in this specific VC, write to the MAP buffer
 	if (virtChannel.segmentHeaderPresent) {
@@ -911,4 +915,20 @@ std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::tx
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT,
 	                 masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.front());
+}
+
+ServiceChannelNotification ServiceChannel::clcwReportTime(uint8_t vid){
+    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+        // If it does't, abort operation
+        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+    VirtualChannel* vchan = &(masterChannel.virtualChannels.at(vid));
+
+    CLCW clcw = CLCW(0,0,0,0,vid, 0,0,1,
+                     vchan->farm.lockout, vchan->farm.wait, vchan->farm.retransmit, vchan->farm.farmBCount,
+                     0,vchan->farm.receiverFrameSeqNumber);
+
+    vchan->clcwBuffer.push_back(clcw);
+    return NEW_CLCW_GENERATED;
 }
