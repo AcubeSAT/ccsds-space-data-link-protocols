@@ -121,8 +121,8 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	}
 
 	TransferFrameTM packet_s = TransferFrameTM(
-	    packet, packetLength, vchan->frameCountTM, vid, vchan->operationalControlFieldTMPresent,
-	    vchan->frameErrorControlFieldTMPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization);
+	    packet, packetLength, vchan->frameCountTM, vid,
+        vchan->frameErrorControlFieldTMPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization);
 
 	// Increment VC frame count. The MC counter is incremented in the Master Channel
 	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
@@ -444,7 +444,19 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	// FARM procedures
     virtChannel.farm.waitQueue->push_back(frame);
     virtChannel.farm.frameArrives();
-    clcwReportTime(vid);
+
+    CLCW clcw = CLCW(0,0,0,0,vid, 0,0,1,
+                     virtChannel.farm.lockout, virtChannel.farm.wait, virtChannel.farm.retransmit, virtChannel.farm.farmBCount,
+                     0, virtChannel.farm.receiverFrameSeqNumber);
+
+    //add 10 octets as idle data
+    for(uint8_t i = 6 ; i < 16 ; i++){
+        //add idle data
+        clcwTransferFrameBuffer[i] = idle_data[i-3];
+    }
+    TransferFrameTM clcwTransferFrame = TransferFrameTM(clcwTransferFrameBuffer, 22, virtChannel.frameCountTM,
+                                                        vid, false, OCTET, clcw.clcw, TM);
+
 
 	virtChannel.waitQueueRxTC.pop_front();
     virtChannel.farm.waitQueue->pop_front();
@@ -520,65 +532,66 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 }
 
 ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
-	if (masterChannel.rxInFramesBeforeAllFramesReceptionListTC.empty()) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
-		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
-	}
+    if (masterChannel.rxInFramesBeforeAllFramesReceptionListTC.empty()) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
+        return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+    }
 
-	if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTC.full()) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, RX_OUT_BUFFER_FULL);
-		return ServiceChannelNotification::RX_OUT_BUFFER_FULL;
-	}
+    if (masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTC.full()) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, RX_OUT_BUFFER_FULL);
+        return ServiceChannelNotification::RX_OUT_BUFFER_FULL;
+    }
 
-	TransferFrameTC* frame = masterChannel.rxInFramesBeforeAllFramesReceptionListTC.front();
-	VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(frame->virtualChannelId());
+    TransferFrameTC *frame = masterChannel.rxInFramesBeforeAllFramesReceptionListTC.front();
+    VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(frame->virtualChannelId());
 
-	if (virtualChannel.waitQueueRxTC.full()) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
-		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
-	}
+    if (virtualChannel.waitQueueRxTC.full()) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
+        return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
+    }
 
-	// Frame Delimiting and Fill Removal supposedly aren't implemented here
+    // Frame Delimiting and Fill Removal supposedly aren't implemented here
 
-	/*
-	 * Frame validation checks
-	 */
+    /*
+     * Frame validation checks
+     */
 
-	// Check for valid TFVN
-	if (frame->getTransferFrameVersionNumber() != 0) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_TFVN);
-		return ServiceChannelNotification::RX_INVALID_TFVN;
-	}
+    // Check for valid TFVN
+    if (frame->getTransferFrameVersionNumber() != 0) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_TFVN);
+        return ServiceChannelNotification::RX_INVALID_TFVN;
+    }
 
-	// Check for valid SCID
-	if (frame->spacecraftId() != SpacecraftIdentifier) {
-		ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
-		return ServiceChannelNotification::RX_INVALID_SCID;
-	}
+    // Check for valid SCID
+    if (frame->spacecraftId() != SpacecraftIdentifier) {
+        ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
+        return ServiceChannelNotification::RX_INVALID_SCID;
+    }
 
-	// TransferFrameTC length is checked upon storing the packet in the MC
+    // TransferFrameTC length is checked upon storing the packet in the MC
 
-	// If present in channel, check if CRC is valid
-	bool eccFieldExists = virtualChannel.frameErrorControlFieldTMPresent;
+    // If present in channel, check if CRC is valid
+    bool eccFieldExists = virtualChannel.frameErrorControlFieldTMPresent;
 
-	if (eccFieldExists) {
-		uint16_t len = frame->packetLength() - 2;
-		uint16_t crc = frame->calculateCRC(frame->packetData(), len);
+    if (eccFieldExists) {
+        uint16_t len = frame->packetLength() - 2;
+        uint16_t crc = frame->calculateCRC(frame->packetData(), len);
 
-		uint16_t packet_crc =
-		    (static_cast<uint16_t>(frame->packetData()[len]) << 8) | frame->packetData()[len + 1];
-		if (crc != packet_crc) {
-			ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
-			// Invalid packet is discarded and service aborted
+        uint16_t packet_crc =
+                (static_cast<uint16_t>(frame->packetData()[len]) << 8) | frame->packetData()[len + 1];
+        if (crc != packet_crc) {
+            ccsdsLog(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
+            // Invalid packet is discarded and service aborted
             masterChannel.removeMasterRx(frame);
             masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
-			return ServiceChannelNotification::RX_INVALID_CRC;
-		}
-		virtualChannel.waitQueueRxTC.push_back(frame);
-		masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
-		ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-		return ServiceChannelNotification::NO_SERVICE_EVENT;
-	}
+            return ServiceChannelNotification::RX_INVALID_CRC;
+        }
+        virtualChannel.waitQueueRxTC.push_back(frame);
+        masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
+        ccsdsLog(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+        return ServiceChannelNotification::NO_SERVICE_EVENT;
+    }
+    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
 std::optional<TransferFrameTC> ServiceChannel::getTxProcessedPacket() {
@@ -915,20 +928,4 @@ std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::tx
 	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT,
 	                 masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.front());
-}
-
-ServiceChannelNotification ServiceChannel::clcwReportTime(uint8_t vid){
-    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        // If it does't, abort operation
-        ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return ServiceChannelNotification::INVALID_VC_ID;
-    }
-    VirtualChannel* vchan = &(masterChannel.virtualChannels.at(vid));
-
-    CLCW clcw = CLCW(0,0,0,0,vid, 0,0,1,
-                     vchan->farm.lockout, vchan->farm.wait, vchan->farm.retransmit, vchan->farm.farmBCount,
-                     0,vchan->farm.receiverFrameSeqNumber);
-
-    vchan->clcwBuffer.push_back(clcw);
-    return NEW_CLCW_GENERATED;
 }

@@ -173,14 +173,14 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
-	                bool ocfPresent, bool eccFieldExists, bool transferFrameSecondaryHeaderPresent,
+                    bool eccFieldExists, bool transferFrameSecondaryHeaderPresent,
 	                SynchronizationFlag syncFlag, PacketType t = TM)
 	    : TransferFrame(t, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
 	      firstHeaderPointer(firstHeaderPointer) {
 		// TFVN + SC Id
 		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// SC Id + VC ID + OCF
-		packet[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1) | ocfPresent;
+		packet[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1);
 		// MC Frame Count is set by the MC Generation Service
 		packet[2] = 0;
 		packet[3] = virtualChannelFrameCount;
@@ -188,6 +188,28 @@ struct TransferFrameTM : public TransferFrame {
 		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
 		packet[5] = firstHeaderPointer & 0xFF;
 	}
+
+    //Constructor with operational control field
+    TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
+                    bool transferFrameSecondaryHeaderPresent,SynchronizationFlag syncFlag, uint32_t operationalControlField,
+                    PacketType t = TM): TransferFrame(t, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
+                                        firstHeaderPointer(firstHeaderPointer){
+        // TFVN + SC Id
+        packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
+        // SC Id + VC ID + OCF
+        packet[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1) | 1;
+        // MC Frame Count is set by the MC Generation Service
+        packet[2] = 0;
+        packet[3] = virtualChannelFrameCount;
+        // Data field status. TransferFrame Order Flag and Segment Length ID are unused
+        packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
+        packet[5] = firstHeaderPointer & 0xFF;
+        uint8_t* ocfPointer = packet + frameLength - 4 - 2*eccFieldExists;
+        ocfPointer[0] = operationalControlField >> 24;
+        ocfPointer[1] = (operationalControlField >> 16) & 0xFF;
+        ocfPointer[0] = (operationalControlField >> 8) & 0xFF;
+        ocfPointer[0] = operationalControlField & 0xFF;
+    }
 
 	TransferFrameTM(uint8_t* packet, uint16_t packet_length, bool eccFieldExists)
 	    : TransferFrame(PacketType::TM, packet_length, packet), hdr(packet), eccFieldExists(eccFieldExists) {}
