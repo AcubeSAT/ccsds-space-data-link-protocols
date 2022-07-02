@@ -337,6 +337,9 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
+		if (!virtualChannel.segmentHeaderPresent){
+			return ServiceChannelNotification::INVALID_MAP_ID;
+		}
         if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
             ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
@@ -375,6 +378,9 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
+        if (!virtualChannel.segmentHeaderPresent){
+            return ServiceChannelNotification::INVALID_MAP_ID;
+        }
         if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
             ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
