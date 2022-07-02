@@ -122,7 +122,7 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 
 	TransferFrameTM packet_s = TransferFrameTM(
 	    packet, packetLength, vchan->frameCountTM, vid,
-        vchan->frameErrorControlFieldTMPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization);
+        vchan->frameErrorControlFieldTMPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization, 0,TM);
 
 	// Increment VC frame count. The MC counter is incremented in the Master Channel
 	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
@@ -455,7 +455,8 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
         clcwTransferFrameBuffer[i] = idle_data[i-3];
     }
     TransferFrameTM clcwTransferFrame = TransferFrameTM(clcwTransferFrameBuffer, 22, virtChannel.frameCountTM,
-                                                        vid, false, OCTET, clcw.clcw, TM);
+                                                        vid, virtChannel.frameErrorControlFieldTMPresent, virtChannel.secondaryHeaderTMPresent,
+                                                        virtChannel.synchronization, clcw.clcw, TM);
 
 
 	virtChannel.waitQueueRxTC.pop_front();

@@ -190,7 +190,7 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
     //Constructor with operational control field
-    TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
+    TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid, bool eccFieldExists,
                     bool transferFrameSecondaryHeaderPresent,SynchronizationFlag syncFlag, uint32_t operationalControlField,
                     PacketType t = TM): TransferFrame(t, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
                                         firstHeaderPointer(firstHeaderPointer){

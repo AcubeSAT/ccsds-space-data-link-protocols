@@ -18,10 +18,10 @@ TEST_CASE("Service Channel") {
 	};
 
 	MasterChannel master_channel = MasterChannel(true);
-	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
+	master_channel.addVC(0, 128, true, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
 	                     10, map_channels);
 
-    master_channel.addVC(1, 128, false, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 20, 3,
+    master_channel.addVC(1, 128, false, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3,
                          3);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
