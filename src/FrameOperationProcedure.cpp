@@ -1,7 +1,8 @@
 #include <FrameOperationProcedure.hpp>
 #include <CCSDSChannel.hpp>
 #include "CCSDSLoggerImpl.h"
-FOPNotification FrameOperationProcedure::purgeSentQueue() {
+template <uint16_t s>
+FOPNotification FrameOperationProcedure<s>::purgeSentQueue() {
 	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
 	while (cur_frame != sentQueueFOP->end()) {
@@ -12,7 +13,8 @@ FOPNotification FrameOperationProcedure::purgeSentQueue() {
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::purgeWaitQueue() {
+template <uint16_t s>
+FOPNotification FrameOperationProcedure<s>::purgeWaitQueue() {
 	etl::ilist<TransferFrameTC*>::iterator cur_frame = waitQueueFOP->begin();
 
 	while (cur_frame != waitQueueFOP->end()) {
@@ -23,7 +25,8 @@ FOPNotification FrameOperationProcedure::purgeWaitQueue() {
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitAdFrame() {
+template <uint16_t s>
+FOPNotification FrameOperationProcedure<s>::transmitAdFrame() {
 	if (sentQueueFOP->full()) {
 		ccsdsLog(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
 		return FOPNotification::SENT_QUEUE_FULL;
@@ -54,7 +57,8 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitBcFrame(TransferFrameTC* bc_frame) {
+template <uint16_t s>
+FOPNotification FrameOperationProcedure<s>::transmitBcFrame(TransferFrameTC* bc_frame) {
 	bc_frame->setToBeRetransmitted(0);
 	transmissionCount = 1;
 
@@ -64,7 +68,8 @@ FOPNotification FrameOperationProcedure::transmitBcFrame(TransferFrameTC* bc_fra
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitBdFrame(TransferFrameTC* bd_frame) {
+template <uint16_t s>
+FOPNotification FrameOperationProcedure<s>::transmitBdFrame(TransferFrameTC* bd_frame) {
 	bdOut = NOT_READY;
 	// Pass frame to all frames generation service
 	vchan->master_channel().storeOut(bd_frame);
@@ -72,7 +77,8 @@ FOPNotification FrameOperationProcedure::transmitBdFrame(TransferFrameTC* bd_fra
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-void FrameOperationProcedure::initiateAdRetransmission() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::initiateAdRetransmission() {
 	// TODO generate an `abort` request to lower procedures
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
@@ -84,7 +90,8 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 	}
 }
 
-void FrameOperationProcedure::initiateBcRetransmission() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::initiateBcRetransmission() {
 	// TODO generate an `abort` request to lower procedures
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
@@ -96,7 +103,8 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 	}
 }
 
-void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
+template <uint16_t s>
+void FrameOperationProcedure<s>::acknowledgeFrame(uint8_t frame_seq_num) {
 	for (TransferFrameTC* pckt : *sentQueueFOP) {
 		if (pckt->transferFrameSequenceNumber() == frame_seq_num) {
 			pckt->setAcknowledgement(true);
@@ -105,7 +113,8 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
 	}
 }
 
-void FrameOperationProcedure::removeAcknowledgedFrames() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::removeAcknowledgedFrames() {
 	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
 	while (cur_frame != sentQueueFOP->end()) {
@@ -131,7 +140,8 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 	transmissionCount = 1;
 }
 
-void FrameOperationProcedure::lookForDirective() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::lookForDirective() {
 	if (bcOut == FlagState::READY) {
 		for (TransferFrameTC* frame : *sentQueueFOP) {
 			if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
@@ -148,7 +158,8 @@ void FrameOperationProcedure::lookForDirective() {
 }
 
 // TODO: Sent Queue as-is is pretty much tx
-COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::pushSentQueue() {
 	if (vchan->sentQueueTxTC.empty()) {
 		ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
 		return COPDirectiveResponse::REJECT;
@@ -167,7 +178,8 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 	return COPDirectiveResponse::REJECT;
 }
 
-COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::lookForFdu() {
 	if (adOut == FlagState::READY) {
 		for (TransferFrameTC* frame : *sentQueueFOP) {
 			if (frame->getServiceType() == ServiceType::TYPE_AD) {
@@ -195,14 +207,16 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	return COPDirectiveResponse::REJECT;
 }
 
-void FrameOperationProcedure::initialize() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::initialize() {
 	purgeSentQueue();
 	purgeWaitQueue();
 	transmissionCount = 1;
 	suspendState = FOPState::INITIAL;
 }
 
-void FrameOperationProcedure::alert(AlertEvent event) {
+template <uint16_t s>
+void FrameOperationProcedure<s>::alert(AlertEvent event) {
 	// TODO: cancel the timer
 	purgeSentQueue();
 	purgeWaitQueue();
@@ -212,7 +226,8 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
-COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::validClcwArrival() {
 	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
 	if (frame->lockout() == 0) {
@@ -508,7 +523,8 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 	return COPDirectiveResponse::ACCEPT;
 }
 
-void FrameOperationProcedure::invalidClcwArrival() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::invalidClcwArrival() {
 	switch (state) {
 		case FOPState::ACTIVE:
 		case FOPState::RETRANSMIT_WITHOUT_WAIT:
@@ -523,7 +539,8 @@ void FrameOperationProcedure::invalidClcwArrival() {
 	}
 }
 
-FDURequestType FrameOperationProcedure::initiateAdNoClcw() {
+template <uint16_t s>
+FDURequestType FrameOperationProcedure<s>::initiateAdNoClcw() {
 	// E23
 	if (state == FOPState::INITIAL) {
 		initialize();
@@ -533,7 +550,8 @@ FDURequestType FrameOperationProcedure::initiateAdNoClcw() {
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FDURequestType FrameOperationProcedure::initiateAdClcw() {
+template <uint16_t s>
+FDURequestType FrameOperationProcedure<s>::initiateAdClcw() {
 	// E24
 	if (state == FOPState::INITIAL) {
 		initialize();
@@ -542,7 +560,8 @@ FDURequestType FrameOperationProcedure::initiateAdClcw() {
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FDURequestType FrameOperationProcedure::initiateAdUnlock() {
+template <uint16_t s>
+FDURequestType FrameOperationProcedure<s>::initiateAdUnlock() {
 	if (state == FOPState::INITIAL && bcOut == FlagState::READY) {
 		// E25
 		initialize();
@@ -554,7 +573,8 @@ FDURequestType FrameOperationProcedure::initiateAdUnlock() {
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FDURequestType FrameOperationProcedure::initiateAdVr(uint8_t vr) {
+template <uint16_t s>
+FDURequestType FrameOperationProcedure<s>::initiateAdVr(uint8_t vr) {
 	if (state == FOPState::INITIAL && bcOut == FlagState::READY) {
 		// E27
 		initialize();
@@ -568,7 +588,8 @@ FDURequestType FrameOperationProcedure::initiateAdVr(uint8_t vr) {
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FDURequestType FrameOperationProcedure::terminateAdService() {
+template <uint16_t s>
+FDURequestType FrameOperationProcedure<s>::terminateAdService() {
 	// E29
 	if (state != FOPState::INITIAL) {
 		alert(AlertEvent::ALRT_TERM);
@@ -578,13 +599,15 @@ FDURequestType FrameOperationProcedure::terminateAdService() {
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-FDURequestType FrameOperationProcedure::resumeAdService() {
+template <uint16_t s>
+FDURequestType FrameOperationProcedure<s>::resumeAdService() {
 	state = suspendState;
 	ccsdsLog(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
-COPDirectiveResponse FrameOperationProcedure::setVs(uint8_t vs) {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::setVs(uint8_t vs) {
 	// E35
 	if (state == FOPState::INITIAL && suspendState == FOPState::INITIAL) {
 		transmitterFrameSeqNumber = vs;
@@ -597,40 +620,46 @@ COPDirectiveResponse FrameOperationProcedure::setVs(uint8_t vs) {
 	}
 }
 
-COPDirectiveResponse FrameOperationProcedure::setFopWidth(uint8_t width) {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::setFopWidth(uint8_t width) {
 	// E36
 	fopSlidingWindow = width;
 	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
-COPDirectiveResponse FrameOperationProcedure::setT1Initial(uint16_t t1_init) {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::setT1Initial(uint16_t t1_init) {
 	// E37
 	tiInitial = t1_init;
 	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
-COPDirectiveResponse FrameOperationProcedure::setTransmissionLimit(uint8_t vr) {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::setTransmissionLimit(uint8_t vr) {
 	// E38
 	transmissionLimit = vr;
 	return COPDirectiveResponse::ACCEPT;
 }
 
-COPDirectiveResponse FrameOperationProcedure::setTimeoutType(bool vr) {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::setTimeoutType(bool vr) {
 	// E39
 	timeoutType = vr;
 	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
-COPDirectiveResponse FrameOperationProcedure::invalidDirective() {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::invalidDirective() {
 	// E40
 	ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
 
-void FrameOperationProcedure::adAccept() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::adAccept() {
 	// E41
 	adOut = FlagState::READY;
 	if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT) {
@@ -638,13 +667,15 @@ void FrameOperationProcedure::adAccept() {
 	}
 }
 
-void FrameOperationProcedure::adReject() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::adReject() {
 	// E42
 	alert(AlertEvent::ALRT_LLIF);
 	state = FOPState::INITIAL;
 }
 
-void FrameOperationProcedure::bcAccept() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::bcAccept() {
 	// E43
 	bcOut = FlagState::READY;
 	if (state == FOPState::INITIALIZING_WITH_BC_FRAME) {
@@ -652,23 +683,27 @@ void FrameOperationProcedure::bcAccept() {
 	}
 }
 
-void FrameOperationProcedure::bcReject() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::bcReject() {
 	alert(AlertEvent::ALRT_LLIF);
 	state = FOPState::INITIAL;
 }
 
-COPDirectiveResponse FrameOperationProcedure::bdAccept() {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::bdAccept() {
 	bdOut = FlagState::READY;
 	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
-void FrameOperationProcedure::bdReject() {
+template <uint16_t s>
+void FrameOperationProcedure<s>::bdReject() {
 	alert(AlertEvent::ALRT_LLIF);
 	state = FOPState::INITIAL;
 }
 
-COPDirectiveResponse FrameOperationProcedure::transferFdu() {
+template <uint16_t s>
+COPDirectiveResponse FrameOperationProcedure<s>::transferFdu() {
 	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
 	if (frame->transferFrameHeader().bypassFlag() == 0) {

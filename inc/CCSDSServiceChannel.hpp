@@ -18,7 +18,7 @@ private:
 	 * The Master Channel essentially stores the configuration of your channel. It partitions the physical
 	 * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic
 	 */
-	MasterChannel masterChannel;
+	MasterChannel<256> masterChannel;
 	/**
 	 * PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame
 	 * length
@@ -374,7 +374,7 @@ public:
 	std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutProcessedPacketTC() const;
 
 	// This is honestly a bit confusing
-	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
+	ServiceChannel(MasterChannel<256> masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 };
 

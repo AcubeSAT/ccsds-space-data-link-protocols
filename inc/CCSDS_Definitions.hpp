@@ -22,7 +22,7 @@ const bool TcErrorControlFieldExists = false;
 const uint16_t MCID = SpacecraftIdentifier;
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
-const uint8_t MaxReceivedTcInMapChannel = 5;
+const uint8_t MaxReceivedTcInMapChannel = 128;
 const uint8_t MaxReceivedTmInMapChannel = 5;
 
 const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
@@ -72,7 +72,7 @@ const uint8_t MaxTxInMasterChannel = 200;
 const uint8_t MaxRxInMasterChannel = 200;
 
 
-const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
+const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 256; ///> Raw TX TC packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
 const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used

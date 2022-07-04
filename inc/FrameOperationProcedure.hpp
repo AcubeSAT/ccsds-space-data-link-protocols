@@ -33,37 +33,38 @@ enum AlertEvent {
 	ALRT_LOCKOUT = 6,
 };
 
-class VirtualChannel;
-class MAPChannel;
+template <uint16_t t> class VirtualChannel;
+template <uint16_t t> class MAPChannel;
 
+template <uint16_t s>
 class FrameOperationProcedure {
 	friend class ServiceChannel;
-	friend class MasterChannel;
+	template <uint16_t t> friend class MasterChannel;
 
 public:
 	/**
 	 * TC Packets stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFOP;
+	etl::list<TransferFrameTC*, s>* waitQueueFOP;
 	/**
 	 * TC Packets stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFOP;
+	etl::list<TransferFrameTC*, s>* sentQueueFOP;
 
 	/**
 	 * TC Packets stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFARM;
+	etl::list<TransferFrameTC*, s>* waitQueueFARM;
 	/**
 	 * TC Packets stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFARM;
+	etl::list<TransferFrameTC*, s>* sentQueueFARM;
 
-	VirtualChannel* vchan;
+	VirtualChannel<256>* vchan;
 
 private:
 	/**
@@ -330,8 +331,8 @@ private:
 	COPDirectiveResponse transferFdu();
 
 public:
-	FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueue,
-	                        etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueue,
+	FrameOperationProcedure(VirtualChannel<256>* vchan, etl::list<TransferFrameTC*, s>* waitQueue,
+	                        etl::list<TransferFrameTC*, s>* sentQueue,
 	                        const uint8_t repetitionCopCtrl)
 	    : waitQueueFOP(waitQueue), sentQueueFOP(sentQueue), vchan(vchan), state(FOPState::INITIAL),
 	      suspendState(FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(FlagState::READY),
