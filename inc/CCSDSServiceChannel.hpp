@@ -145,7 +145,16 @@ public:
 	 * 		b) the Frame Generation Procedure in this order.
 	 * @see p. 4.3.5 from TC Space Data Link Protocol
 	 */
-	ServiceChannelNotification vcGenerationRequestTC(uint8_t vid);
+	ServiceChannelNotification vcGenerationRequestTC(uint16_t transferFrameDataLength, uint8_t vid);
+
+	/**
+	 * Method that stores a TC packet pointer and the TC  packet data to the packetLengthBufferTcTx and packetBufferTcTx
+	 * queues
+	 * @param packet pointer to the packet data
+	 * @param packetLength length of the packet
+	 * @param vid virtual channel id
+	 */
+	ServiceChannelNotification storePacketTC(uint8_t* packet, uint16_t packetLength, uint8_t vid);
 
 	/**
 	 * The Virtual Channel Reception Function shall perform the Frame Acceptance and

@@ -395,11 +395,11 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
+ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint16_t transferFrameDataLength, uint8_t vid) {
 	VirtualChannel &virt_channel = masterChannel.virtualChannels.at(vid);
-	if (virt_channel.txUnprocessedPacketListBufferTC.empty()) {
-		ccsdsLog(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
-		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
+
+	if (virt_channel.packetLengthBufferTcTx.empty()) {
+		return PACKET_BUFFER_TC_EMPTY;
 	}
 
 	if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.full()) {
@@ -407,23 +407,69 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
 
-	TransferFrameTC &frame = *virt_channel.txUnprocessedPacketListBufferTC.front();
-	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
+	uint16_t currentTransferFrameDataLength = 0;
+	uint16_t packetLength = virt_channel.packetLengthBufferTcTx.front();
 
-	if (frame.transferFrameHeader().ctrlAndCmdFlag() == 0) {
-		err = virt_channel.fop.transferFdu();
-	} else {
-		err = virt_channel.fop.validClcwArrival();
+	// Allocate space for the Primary Header
+	static uint8_t tmpData[TcTransferFrameSize] = {0, 0, 0, 0, 0};
+	while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
+	       !virt_channel.packetLengthBufferTcTx.empty()) {
+
+		if (packetLength > TcTransferFrameSize){
+			for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
+				tmpData[i + TcPrimaryHeaderSize] = virt_channel.packetBufferTcTx.front();
+				virt_channel.packetBufferTcTx.pop();
+			}
+		}
+
+		for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
+			tmpData[i + TcPrimaryHeaderSize] = virt_channel.packetBufferTcTx.front();
+			virt_channel.packetBufferTcTx.pop();
+		}
+		currentTransferFrameDataLength += packetLength;
+		virt_channel.packetLengthBufferTcTx.pop();
+		packetLength = virt_channel.packetLengthBufferTcTx.front();
+	}
+	// Allocate space for trailer
+	for(uint8_t i = 0; i < TcTrailerSize ; i++){
+		if(currentTransferFrameDataLength + TcPrimaryHeaderSize + i < TcTransferFrameSize) {
+			tmpData[currentTransferFrameDataLength + TcPrimaryHeaderSize + i] = 0;
+		}
 	}
 
-	if (err == COPDirectiveResponse::REJECT) {
-		ccsdsLog(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
-		return ServiceChannelNotification::FOP_REQUEST_REJECTED;
-	}
+	if (currentTransferFrameDataLength != 0) {
+		uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData, currentTransferFrameDataLength + TcPrimaryHeaderSize + TcTrailerSize);
+		TransferFrameTC transferFrameTc = TransferFrameTC(transferFrameData,  currentTransferFrameDataLength + TcPrimaryHeaderSize + TcTrailerSize, TC);
+		masterChannel.txMasterCopyTC.push_back(transferFrameTc);
+		masterChannel.txOutFramesBeforeAllFramesGenerationListTC.push_back(&(masterChannel.txMasterCopyTC.back()));
 
-	virt_channel.txUnprocessedPacketListBufferTC.pop_front();
-	ccsdsLog(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-	return ServiceChannelNotification::NO_SERVICE_EVENT;
+		COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
+		if (transferFrameTc.transferFrameHeader().ctrlAndCmdFlag() == 0) {
+			err = virt_channel.fop.transferFdu();
+		} else {
+			err = virt_channel.fop.validClcwArrival();
+		}
+
+		if (err == COPDirectiveResponse::REJECT) {
+			ccsdsLog(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
+			return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+		}
+		return NO_SERVICE_EVENT;
+	}
+	return NO_TX_PACKETS_TO_TRANSFER_FRAME;
+}
+
+ServiceChannelNotification ServiceChannel::storePacketTC(uint8_t *packet, uint16_t packetLength, uint8_t vid) {
+	VirtualChannel *virt_channel = &(masterChannel.virtualChannels.at(vid));
+
+	if (packetLength <= virt_channel->packetBufferTcTx.available()) {
+		virt_channel->packetLengthBufferTcTx.push(packetLength);
+		for (uint16_t i = 0; i < packetLength; i++) {
+			virt_channel->packetBufferTcTx.push(packet[i]);
+		}
+		return NO_SERVICE_EVENT;
+	}
+	return TX_TC_BUFFER_FULL;
 }
 
 ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {

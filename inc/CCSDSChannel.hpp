@@ -352,14 +352,24 @@ private:
 	std::reference_wrapper<MasterChannel> masterChannel;
 
     /**
-    *  Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
+    *  Queue that stores the pointers of the TM packets that will eventually be concatenated to transfer frame data.
     */
     etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTmTx;
 
     /**
-     *  Queue that stores the packet data that will eventually be concatenated to transfer frame data
+     *  Queue that stores the TM packet data that will eventually be concatenated to transfer frame data
      */
     etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
+
+	/**
+    *  Queue that stores the pointers of the TC packets that will eventually be concatenated to transfer frame data.
+	 */
+	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTcTx;
+
+	/**
+     *  Queue that stores the TC packet data that will eventually be concatenated to transfer frame data
+	 */
+	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTcTx;
 };
 
 struct MasterChannel {
@@ -440,6 +450,10 @@ struct MasterChannel {
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth);
+
+	etl::list<TransferFrameTC, MaxTxInMasterChannel> getTxMasterCopyTC(){
+		return txMasterCopyTC;
+	}
 
 private:
 	// Packets stored in frames list, before being processed by the all frames generation service
