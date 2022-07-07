@@ -308,7 +308,7 @@ TEST_CASE("VC Generation Service TM"){
     CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
 }
 
-/*TEST_CASE("VC Generation Service TC"){
+TEST_CASE("VC Generation Service TC"){
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
@@ -357,4 +357,4 @@ TEST_CASE("VC Generation Service TM"){
 
 	err = serv_channel.vcGenerationRequestTC(3, 0);
 	CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
-}*/
+}

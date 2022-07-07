@@ -415,13 +415,6 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint16_t transf
 	while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
 	       !virt_channel.packetLengthBufferTcTx.empty()) {
 
-		if (packetLength > TcTransferFrameSize){
-			for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
-				tmpData[i + TcPrimaryHeaderSize] = virt_channel.packetBufferTcTx.front();
-				virt_channel.packetBufferTcTx.pop();
-			}
-		}
-
 		for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
 			tmpData[i + TcPrimaryHeaderSize] = virt_channel.packetBufferTcTx.front();
 			virt_channel.packetBufferTcTx.pop();
