@@ -18,7 +18,6 @@ void ccsdsLog(TxRx txRx, NotificationType notificationType, MyNotif Notif, T mes
 
 template <class MyNotif>
 void ccsdsLog(TxRx txRx, NotificationType notificationType, MyNotif Notif) {
-    const int c = 3;
 	switch (LOG_VERBOSE) {
 		case 0:
             LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif;
