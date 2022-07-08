@@ -1,6 +1,6 @@
 #include "Logger.hpp"
 #include "CCSDSChannel.hpp"
-#include "CCSDS_Log.h"
+#include "CCSDSLogger.h"
 
 int main() {
 	LOG_DEBUG << "CCSDS Services test application";

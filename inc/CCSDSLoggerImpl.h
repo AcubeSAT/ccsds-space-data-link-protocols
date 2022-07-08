@@ -3,32 +3,31 @@
 #include <iostream>
 #include <iomanip>
 #include <logOperators.h>
+
+#include "etl/basic_string.h"
 #include "Logger.hpp"
+
 
 /**
  * Allows to log additional data of interest
  */
-template <typename T, class myNotif>
-void ccsdsLog(TxRx txRx, NotificationType notificationType, myNotif Notif, T message){
-    std::ostringstream ss;
-    ss << txRx << ":" << notificationType << ":" << Notif << ":" << message;
-    LOG_NOTICE << ss.str();
+template <typename T, class MyNotif>
+void ccsdsLog(TxRx txRx, NotificationType notificationType, MyNotif Notif, T message){
+	LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif << ":" << message;
 }
 
-template <class myNotif>
-void ccsdsLog(TxRx txRx, NotificationType notificationType, myNotif Notif) {
-	std::ostringstream ss;
+template <class MyNotif>
+void ccsdsLog(TxRx txRx, NotificationType notificationType, MyNotif Notif) {
+    const int c = 3;
 	switch (LOG_VERBOSE) {
 		case 0:
-			ss << txRx << ":" << notificationType << ":" << Notif;
-			LOG_NOTICE << ss.str();
-			break;
+            LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif;
+            break;
 		case 1:
 			uint16_t a;
 			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |
 			    (static_cast<uint16_t>(Notif));
-			ss << std::hex << a << std::endl;
-			LOG_NOTICE << ss.str();
+			LOG_NOTICE << std::hex << a;
 			break;
 	};
 }

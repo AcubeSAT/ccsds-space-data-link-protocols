@@ -1,5 +1,5 @@
 #include <FrameAcceptanceReporting.hpp>
-#include "CCSDS_Log.h"
+#include "CCSDSLogger.h"
 
 COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
