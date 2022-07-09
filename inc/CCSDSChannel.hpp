@@ -377,7 +377,7 @@ struct MasterChannel {
 	MasterChannelAlert storeTransmittedOut(TransferFrameTM* packet);
 
     /** 
-     * Keeps track of last master channel frame count. If lost frames in a master channel is detected, then a warning
+     * Keeps track of last master channel frame count. If lost frames in a master channel are detected, then a warning
      * is logged. However, this isn't considered a reason for raising a warning as per CCSDS TM Data Link.
      * Upon initialization of the channel, a MC count of 0 is expected.
      */ 
