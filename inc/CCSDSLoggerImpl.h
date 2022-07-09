@@ -12,12 +12,12 @@
  * Allows to log additional data of interest
  */
 template <typename T, class CCSDSNotification>
-void ccsdsLog(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif, T message){
+void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif, T message){
 	LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif << ":" << message;
 }
 
 template <class CCSDSNotification>
-void ccsdsLog(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif) {
+void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif) {
 	switch (LOG_VERBOSE) {
 		case 0:
             LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif;
