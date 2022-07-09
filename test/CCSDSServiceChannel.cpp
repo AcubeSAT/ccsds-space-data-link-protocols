@@ -271,37 +271,63 @@ TEST_CASE("VC Generation Service"){
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
     ServiceChannelNotification err;
 
-    uint8_t packet1[] = {1, 54, 32, 49, 12, 23};
-    uint8_t packet2[] = {47, 31, 65, 81, 25, 44, 76, 99, 13};
-    uint8_t packet3[] = {41, 91, 68, 10};
+    SECTION("Blocking") {
+        uint8_t packet1[] = {1, 54, 32, 49, 12, 23};
+        uint8_t packet2[] = {47, 31, 65, 81, 25, 44, 76, 99, 13};
+        uint8_t packet3[] = {41, 91, 68, 10};
 
-    err = serv_channel.storePacketTm(packet1, 6, 0);
-    CHECK(err == NO_SERVICE_EVENT);
-    err = serv_channel.storePacketTm(packet2, 9, 0);
-    CHECK(err == NO_SERVICE_EVENT);
-    err = serv_channel.storePacketTm(packet3, 4, 0);
-    CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTm(packet1, 6, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTm(packet2, 9, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTm(packet3, 4, 0);
+        CHECK(err == NO_SERVICE_EVENT);
 
-    err = serv_channel.vcGenerationService(15, 0);
-    CHECK(err == NO_SERVICE_EVENT);
-    const TransferFrameTM* transferFrame = serv_channel.packetMasterChannel();
+        err = serv_channel.vcGenerationService(15, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        const TransferFrameTM *transferFrame = serv_channel.packetMasterChannel();
 
-    CHECK(transferFrame->packetData()[6] == 1);
-    CHECK(transferFrame->packetData()[7] == 54);
-    CHECK(transferFrame->packetData()[8] == 32);
-    CHECK(transferFrame->packetData()[9] == 49);
-    CHECK(transferFrame->packetData()[10] == 12);
-    CHECK(transferFrame->packetData()[11] == 23);
-    CHECK(transferFrame->packetData()[12] == 47);
-    CHECK(transferFrame->packetData()[13] == 31);
-    CHECK(transferFrame->packetData()[14] == 65);
-    CHECK(transferFrame->packetData()[15] == 81);
-    CHECK(transferFrame->packetData()[16] == 25);
-    CHECK(transferFrame->packetData()[17] == 44);
-    CHECK(transferFrame->packetData()[18] == 76);
-    CHECK(transferFrame->packetData()[19] == 99);
-    CHECK(transferFrame->packetData()[20] == 13);
+        CHECK(transferFrame->packetData()[6] == 1);
+        CHECK(transferFrame->packetData()[7] == 54);
+        CHECK(transferFrame->packetData()[8] == 32);
+        CHECK(transferFrame->packetData()[9] == 49);
+        CHECK(transferFrame->packetData()[10] == 12);
+        CHECK(transferFrame->packetData()[11] == 23);
+        CHECK(transferFrame->packetData()[12] == 47);
+        CHECK(transferFrame->packetData()[13] == 31);
+        CHECK(transferFrame->packetData()[14] == 65);
+        CHECK(transferFrame->packetData()[15] == 81);
+        CHECK(transferFrame->packetData()[16] == 25);
+        CHECK(transferFrame->packetData()[17] == 44);
+        CHECK(transferFrame->packetData()[18] == 76);
+        CHECK(transferFrame->packetData()[19] == 99);
+        CHECK(transferFrame->packetData()[20] == 13);
+    }
+    SECTION("Segmentation") {
 
-    err = serv_channel.vcGenerationService(3, 0);
-    CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
+        uint8_t packet5[] = {47, 31, 65, 81, 25, 44, 76, 99, 13, 43, 78};
+        serv_channel.storePacketTm(packet5, 11, 0);
+
+
+        err = serv_channel.vcGenerationService(5, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        const TransferFrameTM *transferFrame = serv_channel.packetMasterChannel();
+
+        CHECK(transferFrame->packetData()[6] == 44);
+        CHECK(transferFrame->packetData()[7] == 76);
+        CHECK(transferFrame->packetData()[8] == 99);
+        CHECK(transferFrame->packetData()[9] == 13);
+        CHECK(transferFrame->packetData()[10] == 43);
+
+        const TransferFrameTM *transferFrameTm = serv_channel.nextPacketMasterChannel();
+
+        CHECK(transferFrame->packetData()[6] == 47);
+        CHECK(transferFrame->packetData()[7] == 31);
+        CHECK(transferFrame->packetData()[8] == 65);
+        CHECK(transferFrame->packetData()[9] == 81);
+        CHECK(transferFrame->packetData()[10] == 25);
+
+    }
+
 }

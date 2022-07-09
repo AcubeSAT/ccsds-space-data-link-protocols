@@ -51,6 +51,11 @@ public:
 		return masterChannel.txProcessedPacketListBufferTM.available();
 	}
 
+    const TransferFrameTM* nextPacketMasterChannel() {
+        masterChannel.txProcessedPacketListBufferTM.pop_front();
+        return masterChannel.txProcessedPacketListBufferTM.front();
+    }
+
 	/**
 	 * Stores an incoming  TC packet in the ring buffer
 	 *
