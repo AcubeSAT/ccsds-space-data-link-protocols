@@ -200,12 +200,12 @@ public:
 	 */
 	const uint8_t repetitionCOPCtrl;
 
-	/**
-	 * Determines the number of TM Transfer Frames transmitted
-	 */
-	uint8_t frameCountTM;
+    /**
+     * Determines the number of TM Transfer Frames transmitted
+     */
+    uint8_t frameCountTM;
 
-	/**
+    /**
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t availableBufferTC() const {
@@ -266,7 +266,7 @@ public:
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-	      frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+          frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
 	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
@@ -373,22 +373,23 @@ struct MasterChannel {
 	// TODO: Type aliases because this is getting out of hand
 	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
 	bool errorCtrlField;
-	uint8_t frameCount{};
+    uint8_t frameCount{};
 
 	MasterChannel(bool errorCtrlField)
 	    : virtualChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField), frameCountTM(0) {}
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtualChannels(m.virtualChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
-	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), frameCountTM(m.frameCountTM) {
-		for (auto& vc : virtualChannels) {
-			vc.second.masterChannel = *this;
-		}
-	}
+          rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), currFrameCountTM(m.currFrameCountTM) {
+        for (auto& vc : virtualChannels) {
+            vc.second.masterChannel = *this;
+        }
+
+    }
 
 	/**
 	 *
@@ -404,7 +405,12 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTM* packet);
 
-	uint8_t frameCountTM;
+    /**
+     * Keeps track of last master channel frame count. If lost frames in a master channel are detected, then a warning
+     * is logged. However, this isn't considered a reason for raising an error as per CCSDS TM Data Link.
+     * Upon initialization of the channel, a MC count of 0 is expected.
+     */ 
+	uint8_t currFrameCountTM;
 
 	/**
 	 *
