@@ -1,10 +1,10 @@
 #include <FrameAcceptanceReporting.hpp>
-#include "CCSDS_Log.h"
+#include "CCSDSLogger.h"
 
 COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
 
-	if (frame->getServiceType() == ServiceType::TYPE_A && frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	if (frame->getServiceType() == ServiceType::TYPE_AD && frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
 			if (!sentQueue->full()) {
 				// E1
@@ -13,10 +13,10 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 					waitQueue->pop_front();
 					receiverFrameSeqNumber += 1;
 					retransmit = FlagState::NOT_READY;
-					ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
+					ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, ACCEPT);
 					return COPDirectiveResponse::ACCEPT;
 				} else {
-					ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
+					ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, REJECT);
 					return COPDirectiveResponse::REJECT;
 				}
 			} else {
@@ -26,7 +26,7 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 					wait = FlagState::READY;
 					state = FARMState::WAIT;
 				}
-				ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
+				ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, REJECT);
 				return COPDirectiveResponse::REJECT;
 			}
 		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber) &&
@@ -35,12 +35,12 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 			if (state == FARMState::OPEN) {
 				retransmit = FlagState::READY;
 			}
-			ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
+			ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		} else if ((frame->transferFrameSequenceNumber() < receiverFrameSeqNumber) &&
 		           (frame->transferFrameSequenceNumber() >= receiverFrameSeqNumber - farmNegativeWidth)) {
 			// E4
-			ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
+			ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
 		           (frame->transferFrameSequenceNumber() < receiverFrameSeqNumber - farmNegativeWidth)) {
@@ -49,21 +49,23 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 				lockout = FlagState::READY;
 			}
 			state = FARMState::LOCKOUT;
-			ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
+			ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		}
-	} else if (frame->getServiceType() == ServiceType::TYPE_B && !frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	} else if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
+	            (frame->getServiceType() == ServiceType::TYPE_BD)) &&
+	           !frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		// E6
         sentQueue->push_back(frame);
 		// TODO: This is not exactly accurate, BD frames should be passed to a separate queue and
 		//  directly processed from higher procedures
         waitQueue->pop_front();
 		farmBCount += 1;
-		ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
+		ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
-	} else if (frame->getServiceType() == ServiceType::TYPE_B && frame->transferFrameHeader().ctrlAndCmdFlag()) {
-        // TODO: Define what user data BD frames will include and how they're identified (E6 state number)
-		// TODO: Those depend on the pending CLCW implementation
+	} else if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
+	            (frame->getServiceType() == ServiceType::TYPE_BD)) &&
+	           frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		if (frame->controlWordType() == 0) {
 			if (frame->packetPlData()[4] == 0) {
 				// E7
@@ -77,20 +79,20 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 					lockout = FlagState::NOT_READY;
 				}
 				state = FARMState::OPEN;
-				ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			} else if (frame->packetPlData()[4] == 130 && frame->packetPlData()[5] == 0) {
 				// E8
 				farmBCount += 1;
 				retransmit = FlagState::NOT_READY;
 				receiverFrameSeqNumber = frame->packetPlData()[6];
-				ccsdsLog(Rx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			}
 		}
 	}
 	// Invalid Directive
-    ccsdsLog(Rx, TypeCOPDirectiveResponse, REJECT);
+    ccsdsLogNotice(Rx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
 
