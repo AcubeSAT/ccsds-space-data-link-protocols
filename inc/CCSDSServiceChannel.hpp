@@ -30,8 +30,12 @@ private:
 	// from the header of the frame. Not sure what makes more sense
 
 	uint8_t packetCountTM;
+
+    // Variable to indicate that a CLCW has been constructed and should be sent
+    bool clcwWaiting = false;
+
     // Buffer to store the data of the clcw transfer frame
-    uint8_t clcwTransferFrameBuffer[128] = {0};
+    uint8_t clcwTransferFrameBuffer[TmTransferFrameSize] = {0};
 public:
 	// Public methods that are called by the scheduler
 

@@ -445,20 +445,24 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
     virtChannel.farm.waitQueue->push_back(frame);
     virtChannel.farm.frameArrives();
 
-    CLCW clcw = CLCW(0,0,0,0,vid, 0,0,1,
+    CLCW clcw = CLCW(0,0,0,1,vid,0,1,
                      virtChannel.farm.lockout, virtChannel.farm.wait, virtChannel.farm.retransmit, virtChannel.farm.farmBCount,
-                     0, virtChannel.farm.receiverFrameSeqNumber);
+                      virtChannel.farm.receiverFrameSeqNumber);
 
-    //add 10 octets as idle data
-    for(uint8_t i = 6 ; i < 16 ; i++){
+    //add idle data
+    for(uint8_t i = TmPrimaryHeaderSize ; i < TmTransferFrameSize - 2*virtChannel.frameErrorControlFieldTMPresent ; i++){
         //add idle data
         clcwTransferFrameBuffer[i] = idle_data[i-3];
     }
-    TransferFrameTM clcwTransferFrame = TransferFrameTM(clcwTransferFrameBuffer, 22, virtChannel.frameCountTM,
+    TransferFrameTM clcwTransferFrame = TransferFrameTM(clcwTransferFrameBuffer, TmTransferFrameSize, virtChannel.frameCountTM,
                                                         vid, virtChannel.frameErrorControlFieldTMPresent, virtChannel.secondaryHeaderTMPresent,
                                                         virtChannel.synchronization, clcw.clcw, TM);
 
+    for(uint8_t i = 0 ; i < TmTransferFrameSize ; i++){
+        clcwTransferFrameBuffer[i] = clcwTransferFrame.packetData()[i];
+    }
 
+    clcwWaiting = true;
 	virtChannel.waitQueueRxTC.pop_front();
     virtChannel.farm.waitQueue->pop_front();
 
