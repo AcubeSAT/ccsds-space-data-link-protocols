@@ -298,7 +298,7 @@ public:
 
 	uint16_t rxInAvailableTM(uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
 		return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
@@ -322,7 +322,7 @@ public:
 	 */
 	uint16_t txAvailableTC(const uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
 		return masterChannel.virtualChannels.at(vid).availableBufferTC();
@@ -333,7 +333,7 @@ public:
 	 */
 	uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()){
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
@@ -341,7 +341,7 @@ public:
 			return ServiceChannelNotification::INVALID_MAP_ID;
 		}
         if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
 		return virtualChannel.mapChannels.at(mapid).availableBufferTC();
@@ -352,7 +352,7 @@ public:
 	 */
 	uint16_t getAvailableWaitQueueRxTC(uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
 		return masterChannel.virtualChannels.at(vid).waitQueueRxTC.available();
@@ -363,7 +363,7 @@ public:
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
 		return masterChannel.virtualChannels.at(vid).rxInFramesAfterVCReception.available();
@@ -374,7 +374,7 @@ public:
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid, uint8_t mapid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()){
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
@@ -382,7 +382,7 @@ public:
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
         if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
-            ccsdsLog(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
 		return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).rxInFramesAfterVCReception.available();
