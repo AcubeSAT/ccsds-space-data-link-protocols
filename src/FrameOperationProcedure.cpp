@@ -78,7 +78,7 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 	// TODO start the timer
 
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->getServiceType() == ServiceType::TYPE_A) {
+		if (frame->getServiceType() == ServiceType::TYPE_AD) {
 			frame->setToBeRetransmitted(true);
 		}
 	}
@@ -90,7 +90,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 	// TODO start the timer
 
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->getServiceType() == ServiceType::TYPE_B) {
+		if ((frame->getServiceType() == ServiceType::TYPE_BC) || (frame->getServiceType() == ServiceType::TYPE_BD)) {
 			frame->setToBeRetransmitted(1);
 		}
 	}
@@ -134,7 +134,9 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 void FrameOperationProcedure::lookForDirective() {
 	if (bcOut == FlagState::READY) {
 		for (TransferFrameTC* frame : *sentQueueFOP) {
-			if (frame->getServiceType() == ServiceType::TYPE_B && frame->getToBeRetransmitted()) {
+			if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
+			     (frame->getServiceType() == ServiceType::TYPE_BD)) &&
+			    frame->getToBeRetransmitted()) {
 				bcOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
 			}
@@ -168,7 +170,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	if (adOut == FlagState::READY) {
 		for (TransferFrameTC* frame : *sentQueueFOP) {
-			if (frame->getServiceType() == ServiceType::TYPE_A) {
+			if (frame->getServiceType() == ServiceType::TYPE_AD) {
 				// adOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
 				FOPNotification resp = transmitAdFrame();
@@ -180,7 +182,7 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 		// The wait queue is supposed to have a maximum capacity of one
 		if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
 			TransferFrameTC* frame = waitQueueFOP->front();
-			if (frame->getServiceType() == ServiceType::TYPE_A) {
+			if (frame->getServiceType() == ServiceType::TYPE_AD) {
 				sentQueueFOP->push_back(frame);
 				waitQueueFOP->pop_front();
 				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
@@ -670,7 +672,7 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
 	if (frame->transferFrameHeader().bypassFlag() == 0) {
-		if (frame->getServiceType() == ServiceType::TYPE_A) {
+		if (frame->getServiceType() == ServiceType::TYPE_AD) {
 			if (!waitQueueFOP->full()) {
 				// E19
 				if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT) {
@@ -689,7 +691,8 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 				return COPDirectiveResponse::REJECT;
 			}
-		} else if (frame->getServiceType() == ServiceType::TYPE_B) {
+		} else if ((frame->getServiceType() == ServiceType::TYPE_BC) ||
+		           (frame->getServiceType() == ServiceType::TYPE_BD)) {
 			if (bdOut == FlagState::READY) {
 				//
 				transmitBcFrame(frame);

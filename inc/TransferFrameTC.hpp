@@ -11,10 +11,15 @@
 class TransferFrameTC;
 
 /**
- * @brief The packet's service type
+ *  The packet's service type
  * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
  */
-enum ServiceType { TYPE_A = 0, TYPE_B = 1 };
+enum class ServiceType {
+	TYPE_AD = 0x0,
+	TYPE_AC = 0x1,
+	TYPE_BD = 0x2,
+	TYPE_BC = 0x3,
+};
 
 enum FDURequestType : uint8_t {
 	REQUEST_PENDING = 0,
@@ -30,7 +35,7 @@ public:
 	TransferFrameHeaderTC(uint8_t* pckt) : TransferFrameHeader(pckt) {}
 
 	/**
-	 * @brief The bypass Flag determines whether the packet will bypass FARM checks
+	 * The bypass Flag determines whether the packet will bypass FARM checks
 	 * @details Bit 2 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -39,7 +44,7 @@ public:
 	}
 
 	/**
-	 * @brief The control and command Flag determines whether the packet carries control commands (Type-C) or
+	 * The control and command Flag determines whether the packet carries control commands (Type-C) or
 	 * data (Type-D)
 	 * @details Bit 3 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.2 from TC SPACE DATA LINK PROTOCOL
@@ -49,7 +54,7 @@ public:
 	}
 
 	/**
-	 * @brief The length of the transfer frame
+	 * The length of the transfer frame
 	 * @details Bits 22–31 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -65,13 +70,19 @@ public:
 		// TODO Maybe signal the higher procedures here instead of having them manually take care of them
 	}
 
-	// This only compares the frame sequence number of two packets both as a way to save time when comparing the
-	// data fields and because this is handy when getting rid of duplicate packets. However, this could result in
-	// undesired behavior if we're to delete different packets that share a frame sequence number for some reason.
-	// This is normally not allowed, but we have to cross-check if it is compatible with FARM checks
-
-	friend bool operator==(const TransferFrameTC& pack1, const TransferFrameTC& pack2) {
-		return (pack1.transferFrameSeqNumber == pack2.transferFrameSeqNumber);
+	/**
+	 * Compares two packets
+	 */
+	friend bool operator==(const TransferFrameTC& packet1, const TransferFrameTC& packet2) {
+		if (packet1.frameLength != packet2.frameLength) {
+			return false;
+		}
+		for (uint16_t i = 0; i < packet1.frameLength; i++) {
+			if (packet1.packetData()[i] != packet2.packetData()[i]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	// TODO: Handle CLCWs without any ambiguities
@@ -101,7 +112,7 @@ public:
 	}
 
 	/**
-	 * @brief Used to indicate the COP that is being used.
+	 * Used to indicate the COP that is being used.
 	 * @return Bits 6-7 of the CLCW (the COP in Effect parameter)
 	 * @see p. 4.2.1.5 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -119,7 +130,7 @@ public:
 	}
 
 	/**
-	 * @brief The No RF Available Flag shall provide a logical indication of the ‘ready’ status
+	 * The No RF Available Flag shall provide a logical indication of the ‘ready’ status
 	 * of the radio frequency (RF) elements within the space link provided by the Physical Layer.
 	 * @return Bit 16 of the CLCW (the No RF Available Flag).
 	 * @see p. 4.2.1.8.2 from TC SPACE DATA LINK PROTOCOL
@@ -177,14 +188,14 @@ public:
 	}
 
 	/**
-	 * @brief Set the number of repetitions that is determined by the virtual channel
+	 * Set the number of repetitions that is determined by the virtual channel
 	 */
 	void setRepetitions(const uint8_t repetitions) {
 		reps = repetitions;
 	}
 
 	/**
-	 * @brief Determines whether the packet is marked for retransmission while in the sent queue
+	 * Determines whether the packet is marked for retransmission while in the sent queue
 	 */
 	bool getToBeRetransmitted() const {
 		return toBeRetransmitted;
@@ -206,23 +217,16 @@ public:
 	 * @return Bits 22–31 of the Transfer Frame Primary Header (the Frame Length)
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
-	uint16_t getPacketLength() const {
-		return packetLength;
+	uint16_t getFrameLength() const {
+		return frameLength;
 	}
 
 	/**
 	 * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
+	// TODO: Use std::optional
 	uint8_t segmentationHeader() const {
-		return segHdr;
-	}
-
-	/**
-	 * @return the Global Virtual Channel Identifier (GVCID)
-	 * @see p. 2.1.3 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t globalVirtualChannelId() const {
-		return gvcid;
+		return packet[5];
 	}
 
 	/**
@@ -230,19 +234,27 @@ public:
 	 * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t virtualChannelId() const {
-		return gvcid & 0x3F;
+		return (packet[2] & 0xFC) >> 2;
 	};
 
+	// Assumes MAP Id exists
+	// TODO: Replace with std::optional
 	uint8_t mapId() const {
-		return mapid;
+		if (segmentationHeaderPresent) {
+			return packet[5] & 0x3F;
+		}
+		return 0;
 	}
 
+	uint8_t getTransferFrameVersionNumber() const {
+		return (packet[0] >> 6) & 0x3;
+	}
 	/**
 	 * @return Bits  6–15  of  the  Transfer  Frame  Primary  Header (the  Spacecraft Identifier (SCID)).
 	 * @see p. 4.1.2.5 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t spacecraftId() const {
-		return sduid;
+		return SpacecraftIdentifier;
 	}
 
 	/**
@@ -250,22 +262,25 @@ public:
 	 * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL.
 	 */
 	uint8_t transferFrameSequenceNumber() const {
-		return transferFrameSeqNumber;
-	}
-
-	/**
-	 * @return Bits 0–1 of the Transfer Frame Primary Header (the (binary encoded) Transfer Frame Version Number).
-	 * @see p. 4.1.2.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t getTransferFrameVersionNumber() const {
-		return transferFrameVersionNumber;
+		return packet[4];
 	}
 
 	/**
 	 * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	ServiceType getServiceType() const {
-		return serviceType;
+		bool bypass = (packet[0] >> 6) & 0x1;
+		bool ctrl = (packet[0] >> 5) & 0x1;
+
+		if (bypass && ctrl) {
+			return ServiceType::TYPE_BC;
+		} else if (bypass && !ctrl) {
+			return ServiceType::TYPE_BD;
+		} else if (!bypass && !ctrl) {
+			return ServiceType::TYPE_AD;
+		}
+		// Reserved type not normally used as per the standard
+		return ServiceType::TYPE_AC;
 	}
 
 	bool acknowledged() const {
@@ -285,20 +300,25 @@ public:
 
 	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
-	void setSegmentationHeader(uint8_t seg_hdr) {
-		segHdr = seg_hdr;
+	void setSegmentationHeader(uint8_t segmentation_hdr) {
+		packet[5] = segmentation_hdr;
 	}
 
-	void setPacketData(uint8_t* packt_data) {
-		packet = packt_data;
+	void setPacketData(uint8_t* packet_data) {
+		packet = packet_data;
 	}
 
-	void setPacketLength(uint16_t packt_len) {
-		packetLength = packt_len;
+	void setPacketLength(uint16_t packet_length) {
+		packet[2] = ((virtualChannelId() & 0x3F) << 2) | (frameLength & 0x300 >> 8);
+		packet[3] = frameLength & 0xFF;
 	}
 
-	void setServiceType(ServiceType serv_type) {
-		serviceType = serv_type;
+	uint16_t packetLength() {
+		return (static_cast<uint16_t>(packet[2] & 0x3) << 8) | packet[3];
+	}
+
+	void setServiceType(ServiceType service_type) {
+		serviceType = service_type;
 	}
 
 	void setAcknowledgement(bool acknowledgement) {
@@ -306,33 +326,33 @@ public:
 	}
 
 	void setTransferFrameSequenceNumber(uint8_t frame_seq_number) {
-		transferFrameSeqNumber = frame_seq_number;
+		packet[4] = frame_seq_number;
 	}
 
-	TransferFrameTC(uint8_t* packet, uint16_t packetLength, uint8_t segHdr, uint8_t gvcid, uint8_t mapid, uint16_t sduid,
-	         ServiceType serviceType, bool segHdrPresent, PacketType t = TC)
-	    : TransferFrame(t, packetLength, packet), hdr(packet), segHdr(segHdr), gvcid(gvcid), mapid(mapid), sduid(sduid),
-	      serviceType(serviceType), transferFrameSeqNumber(0), ack(false), toBeRetransmitted(false),
-	      transferFrameVersionNumber(0) {}
+	TransferFrameTC(uint8_t* packet, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
+	                PacketType t = TC)
+	    : TransferFrame(t, frameLength, packet), hdr(packet), serviceType(serviceType), ack(false),
+	      toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
+		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
+		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
+		packet[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
+		packet[1] = SpacecraftIdentifier & 0xFF;
+		packet[2] = ((gvcid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
+		packet[3] = frameLength & 0xFF;
+	}
 
-	TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC);
+	TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC)
+	    : TransferFrame(PacketType::TC, packetLength, packet), hdr(packet){};
 
 private:
 	bool toBeRetransmitted;
 	// This is used by COP to signal the higher procedures
 	FDURequestType confSignal;
 	TransferFrameHeaderTC hdr;
-	uint8_t segHdr;
-	uint8_t gvcid;
-	uint8_t mapid;
-	uint16_t sduid;
-	uint8_t transferFrameVersionNumber;
 	ServiceType serviceType;
-	uint8_t transferFrameSeqNumber;
+	bool segmentationHeaderPresent;
 	bool ack;
 	uint8_t reps;
 };
-
-
 
 #endif // CCSDS_PACKET_H

@@ -4,7 +4,7 @@
 COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
 
-	if (frame->getServiceType() == ServiceType::TYPE_A && frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	if (frame->getServiceType() == ServiceType::TYPE_AD && frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
 			if (!sentQueue->empty()) {
 				// E1
@@ -49,12 +49,16 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		}
-	} else if (frame->getServiceType() == ServiceType::TYPE_B && !frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	} else if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
+	            (frame->getServiceType() == ServiceType::TYPE_BD)) &&
+	           !frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		// E6
 		farmBCount += 1;
 		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
-	} else if (frame->getServiceType() == ServiceType::TYPE_B && frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	} else if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
+	            (frame->getServiceType() == ServiceType::TYPE_BD)) &&
+	           frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		if (frame->controlWordType() == 0) {
 			if (frame->packetPlData()[4] == 0) {
 				// E7

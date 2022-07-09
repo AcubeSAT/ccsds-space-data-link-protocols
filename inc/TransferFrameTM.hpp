@@ -13,7 +13,7 @@ public:
 	TransferFrameHeaderTM(uint8_t* pckt) : TransferFrameHeader(pckt) {}
 
 	/**
-	 * @brief The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
+	 * The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
 	 * @details Bit  15  of  the  Transfer  Frame  Primary  Header
 	 * @see p. 4.1.2.4 from TM SPACE DATA LINK PROTOCOL
 	 */
@@ -22,7 +22,7 @@ public:
 	}
 
 	/**
-	 * @brief Provides  a  running  count  of  the  Transfer  Frames  which  have  been  transmitted  through  the
+	 * Provides  a  running  count  of  the  Transfer  Frames  which  have  been  transmitted  through  the
 	 * same  Master  Channel.
 	 * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
@@ -32,7 +32,7 @@ public:
 	}
 
 	/**
-	 * @brief contain  a  sequential  binary  count (modulo-256) of each Transfer Frame transmitted within a
+	 * contain  a  sequential  binary  count (modulo-256) of each Transfer Frame transmitted within a
 	 * specific Virtual Channel.
 	 * @details Bits  24–31  of  the  Transfer  Frame  Primary  Header
 	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
@@ -42,7 +42,7 @@ public:
 	}
 
 	/**
-	 * @brief Indicates the presence of the secondary header.
+	 * Indicates the presence of the secondary header.
 	 * @details Bit  32  of  the Transfer  Frame  Primary  Header
 	 * @see p. 4.1.2.7.2 from TM SPACE DATA LINK PROTOCOL
 	 */
@@ -52,7 +52,7 @@ public:
 	}
 
 	/**
-	 * @brief Signals the type of data which are inserted into the Transfer Frame Data Field (VCA_SDU or Packets).
+	 * Signals the type of data which are inserted into the Transfer Frame Data Field (VCA_SDU or Packets).
 	 * @details Bit 33 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.3 from TM SPACE DATA LINK PROTOCOL
 	 */
@@ -62,7 +62,7 @@ public:
 	}
 
 	/**
-	 * @brief If the Synchronization Flag is set to ‘0’,t he TransferFrame Order Flag is reserved for
+	 * If the Synchronization Flag is set to ‘0’,t he TransferFrame Order Flag is reserved for
 	            future use by the CCSDS and shall be set to ‘0’. If the Synchronization Flag is
 	            set to ‘1’, the use of the TransferFrame Order Flag is undefined.
 	 * @details Bit 34 of the Transfer Frame Primary Header
@@ -72,7 +72,7 @@ public:
 		return (packetHeader[4] & 0x20) >> 5U;
 	}
 	/**
-	 * @brief If the Synchronization Flag is set to ‘0’, the First Header Pointer shall contain
+	 * If the Synchronization Flag is set to ‘0’, the First Header Pointer shall contain
 	 *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field.
 	 *		Otherwise it is undefined.
 	 * @details Bits 37–47 of the Transfer Frame Primary Header
@@ -83,7 +83,7 @@ public:
 	}
 
 	/**
-	 * @brief Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
+	 * Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
 	 *							b) Synchronization Flag (1 bit)
 	 *							c) TransferFrame Order Flag (1 bit)
 	 *							d) Segment Length Identifier (2 bits)
@@ -98,7 +98,7 @@ public:
 
 struct TransferFrameTM : public TransferFrame {
 	/**
-	 * @brief The Virtual Channel Identifier provides the identification of the Virtual Channel.
+	 * The Virtual Channel Identifier provides the identification of the Virtual Channel.
 	 * @details Bits 12–14 of the Transfer Frame Primary Header.
 	 * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
@@ -107,7 +107,7 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	/**
-	 * @brief This  8-bit  field  shall  contain  a  sequential  binary  count  (modulo-256)  of  each
+	 * This  8-bit  field  shall  contain  a  sequential  binary  count  (modulo-256)  of  each
 	 * Transfer Frame transmitted within a specific Master Channel.
 	 * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
@@ -117,7 +117,7 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	/**
-	 * @brief This  8-bit  field  shall  contain  a  sequential  binary  count  (modulo-256)  of  each
+	 * This  8-bit  field  shall  contain  a  sequential  binary  count  (modulo-256)  of  each
 	 * Transfer Frame transmitted within a specific Virtual Channel.
 	 * @details Bits  24-31  of  the  Transfer  Frame  Primary  Header.
 	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
@@ -126,10 +126,9 @@ struct TransferFrameTM : public TransferFrame {
 		return packet[3];
 	}
 
-
 	/**
 	 *
-	 * @brief Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
+	 *  Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
 	 *                      b) Synchronization Flag (1 bit)
 	 *                      c) TransferFrame Order Flag (1 bit)
 	 *                      d) Segment Length Identifier (2 bits)
@@ -142,40 +141,42 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	uint16_t getPacketLength() const {
-		return packetLength;
+		return frameLength;
 	}
 
 	uint8_t* packetData() const {
 		return packet;
 	}
 
-
-	bool operationalControlFieldExists() const{
+	bool operationalControlFieldExists() const {
 		return packet[1] & 0x1;
 	}
-
 
 	/**
 	 * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
 	 */
 	std::optional<uint32_t> getOperationalControlField() const {
-        uint32_t operationalControlField;
-        uint8_t* ocfPtr;
-		if(!operationalControlFieldExists()){return {};}
-		ocfPtr = packet + packetLength - 4 - 2*eccFieldExists;
-        operationalControlField = (ocfPtr[0] << 24U) | (ocfPtr[1] << 16U) | (ocfPtr[2] << 8U) | ocfPtr[3];
-        return operationalControlField;
+		uint32_t operationalControlField;
+		uint8_t* operationalControlFieldPointer;
+		if (!operationalControlFieldExists()) {
+			return {};
+		}
+		operationalControlFieldPointer = packet + frameLength - 4 - 2 * eccFieldExists;
+		operationalControlField = (operationalControlFieldPointer[0] << 24U) |
+		                          (operationalControlFieldPointer[1] << 16U) |
+		                          (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
+		return operationalControlField;
 	}
 
-	void setMasterChannelFrameCount(uint8_t mcfc){
-		packet[2] = mcfc;
+	void setMasterChannelFrameCount(uint8_t masterChannelFrameCount) {
+		packet[2] = masterChannelFrameCount;
 	}
 
 	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
 	                bool ocfPresent, bool eccFieldExists, bool transferFrameSecondaryHeaderPresent,
 	                SynchronizationFlag syncFlag, PacketType t = TM)
-	    : TransferFrame(t, packetLength, packet), hdr(packet), scid(scid),
-	      eccFieldExists(eccFieldExists), firstHeaderPointer(firstHeaderPointer) {
+	    : TransferFrame(t, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
+	      firstHeaderPointer(firstHeaderPointer) {
 		// TFVN + SC Id
 		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// SC Id + VC ID + OCF
@@ -188,8 +189,8 @@ struct TransferFrameTM : public TransferFrame {
 		packet[5] = firstHeaderPointer & 0xFF;
 	}
 
-    TransferFrameTM(uint8_t* packet, uint16_t packet_length, bool eccFieldExists)
-        : TransferFrame(PacketType::TM, packet_length, packet), hdr(packet), eccFieldExists(eccFieldExists) {}
+	TransferFrameTM(uint8_t* packet, uint16_t packet_length, bool eccFieldExists)
+	    : TransferFrame(PacketType::TM, packet_length, packet), hdr(packet), eccFieldExists(eccFieldExists) {}
 
 private:
 	TransferFrameHeaderTM hdr;
