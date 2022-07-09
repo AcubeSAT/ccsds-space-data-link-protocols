@@ -10,6 +10,10 @@
 
 /**
  * Allows to log additional data of interest
+ *
+ * @note The CCSDS standards define the error handling procedures of the CCSDS Services. Currently,
+ * the logger is simply used for extra observability and that is why the log level is restricted to
+ * that of a notice
  */
 template <typename T, class CCSDSNotification>
 void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif, T message){
