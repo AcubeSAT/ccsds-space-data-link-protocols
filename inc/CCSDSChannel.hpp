@@ -451,10 +451,6 @@ struct MasterChannel {
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth);
 
-	etl::list<TransferFrameTC, MaxTxInMasterChannel> getTxMasterCopyTC(){
-		return txMasterCopyTC;
-	}
-
 private:
 	// Packets stored in frames list, before being processed by the all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTC;

@@ -41,6 +41,16 @@ public:
 		return masterChannel.txProcessedPacketListBufferTM.front();
 	}
 
+	//for testing purposes
+	TransferFrameTC* availablePacketsBeforeAllframes() const {
+		return masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
+	}
+
+	//for testing
+	void popPacketsBeforeAllframes() {
+		masterChannel.txOutFramesBeforeAllFramesGenerationListTC.pop_front();
+	}
+
 	uint16_t availableMcTxTM() const {
 		return masterChannel.txProcessedPacketListBufferTM.available();
 	}
@@ -148,7 +158,7 @@ public:
 	ServiceChannelNotification vcGenerationRequestTC(uint16_t transferFrameDataLength, uint8_t vid);
 
 	/**
-	 * Method that stores a TC packet pointer and the TC  packet data to the packetLengthBufferTcTx and packetBufferTcTx
+	 * Method that stores a TC packet pointer and the TC packet data to the packetLengthBufferTcTx and packetBufferTcTx
 	 * queues
 	 * @param packet pointer to the packet data
 	 * @param packetLength length of the packet

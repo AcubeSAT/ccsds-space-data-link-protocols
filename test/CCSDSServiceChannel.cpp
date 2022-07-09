@@ -337,24 +337,33 @@ TEST_CASE("VC Generation Service TC"){
 
 	err = serv_channel.vcGenerationRequestTC(15, 0);
 	CHECK(err == NO_SERVICE_EVENT);
-	const TransferFrameTC transferFrame = master_channel.getTxMasterCopyTC().back();
+	const TransferFrameTC* transferFrame = serv_channel.availablePacketsBeforeAllframes();
 
-	CHECK(transferFrame.packetData()[6] == 1);
-	CHECK(transferFrame.packetData()[7] == 54);
-	CHECK(transferFrame.packetData()[8] == 32);
-	CHECK(transferFrame.packetData()[9] == 49);
-	CHECK(transferFrame.packetData()[10] == 12);
-	CHECK(transferFrame.packetData()[11] == 23);
-	CHECK(transferFrame.packetData()[12] == 47);
-	CHECK(transferFrame.packetData()[13] == 31);
-	CHECK(transferFrame.packetData()[14] == 65);
-	CHECK(transferFrame.packetData()[15] == 81);
-	CHECK(transferFrame.packetData()[16] == 25);
-	CHECK(transferFrame.packetData()[17] == 44);
-	CHECK(transferFrame.packetData()[18] == 76);
-	CHECK(transferFrame.packetData()[19] == 99);
-	CHECK(transferFrame.packetData()[20] == 13);
+	CHECK(transferFrame->packetData()[5] == 0xC0);
+	CHECK(transferFrame->packetData()[6] == 54);
+	CHECK(transferFrame->packetData()[7] == 32);
+	CHECK(transferFrame->packetData()[8] == 49);
+	CHECK(transferFrame->packetData()[9] == 12);
+	CHECK(transferFrame->packetData()[10] == 23);
+	CHECK(transferFrame->packetData()[11] == 47);
+	CHECK(transferFrame->packetData()[12] == 31);
+	CHECK(transferFrame->packetData()[13] == 65);
+	CHECK(transferFrame->packetData()[14] == 81);
+	CHECK(transferFrame->packetData()[15] == 25);
+	CHECK(transferFrame->packetData()[16] == 44);
+	CHECK(transferFrame->packetData()[17] == 76);
+	CHECK(transferFrame->packetData()[18] == 99);
+	CHECK(transferFrame->packetData()[19] == 13);
 
+	serv_channel.popPacketsBeforeAllframes();
+	//Segmentation
 	err = serv_channel.vcGenerationRequestTC(3, 0);
-	CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x40);
+	CHECK(transferFrame->packetData()[6] == 91);
+	CHECK(transferFrame->packetData()[7] == 68);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x80);
 }
