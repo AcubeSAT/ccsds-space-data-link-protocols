@@ -378,7 +378,7 @@ struct MasterChannel {
 
     /** 
      * Keeps track of last master channel frame count. If lost frames in a master channel are detected, then a warning
-     * is logged. However, this isn't considered a reason for raising a warning as per CCSDS TM Data Link.
+     * is logged. However, this isn't considered a reason for raising an error as per CCSDS TM Data Link.
      * Upon initialization of the channel, a MC count of 0 is expected.
      */ 
 	uint8_t currFrameCountTM;
