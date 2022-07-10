@@ -169,62 +169,66 @@ ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transfer
         return TX_MC_FRAME_BUFFER_FULL;
     }
     uint16_t packetLength = vchan->packetLengthBufferTmTx.front();
-    // Allocate space for the Primary Header
-    static uint8_t tmpData[TmTransferFrameSize] = {0, 0, 0, 0, 0,0};
     //Blocking
-    while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
-           !vchan->packetLengthBufferTmTx.empty()) {
-        for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
-            tmpData[i + TmPrimaryHeaderSize] = vchan->packetBufferTmTx.front();
-            vchan->packetBufferTmTx.pop();
+    if(packetLength <= transferFrameDataLength) {
+        // Allocate space for the Primary Header
+        static uint8_t tmpData[TmTransferFrameSize] = {0, 0, 0, 0, 0, 0};
+        while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
+               !vchan->packetLengthBufferTmTx.empty()) {
+            for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
+                tmpData[i + TmPrimaryHeaderSize] = vchan->packetBufferTmTx.front();
+                vchan->packetBufferTmTx.pop();
+            }
+            currentTransferFrameDataLength += packetLength;
+            vchan->packetLengthBufferTmTx.pop();
+            packetLength = vchan->packetLengthBufferTmTx.front();
         }
-        currentTransferFrameDataLength += packetLength;
-        vchan->packetLengthBufferTmTx.pop();
-        packetLength = vchan->packetLengthBufferTmTx.front();
-    }
-    // Allocate space for trailer
-    for(uint8_t i = 0; i < 6 ; i++){
-        if(currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
-            tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
+        // Allocate space for trailer
+        for (uint8_t i = 0; i < 6; i++) {
+            if (currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
+                tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
+            }
         }
-    }
-    if (currentTransferFrameDataLength != 0) {
-        uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
+        uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData,
+                                                                                    currentTransferFrameDataLength +
+                                                                                    TmPrimaryHeaderSize + TmTrailerSize);
         vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
-        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData,  currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize, TM);
+        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData,
+                                                          currentTransferFrameDataLength + TmPrimaryHeaderSize +
+                                                          TmTrailerSize, TM);
         masterChannel.txMasterCopyTM.push_back(transferFrameTm);
         masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
         return NO_SERVICE_EVENT;
     }
-    //Segmentation
-    while (packetLength > transferFrameDataLength && !vchan->packetLengthBufferTmTx.empty()){
+    // Allocate space for the Primary Header
+    static uint8_t tmpData[TmTransferFrameSize] = {0, 0, 0, 0, 0, 0};
+    uint16_t transferFrames = packetLength / transferFrameDataLength + (packetLength % transferFrameDataLength != 0);
+    if (masterChannel.txMasterCopyTM.available() < transferFrames) {
+        return MASTER_CHANNEL_FRAME_BUFFER_FULL;
+    }
+    if (masterChannel.txProcessedPacketListBufferTM.available() < transferFrames) {
+        return TX_MC_FRAME_BUFFER_FULL;
+    }
+    for (uint16_t i = 0; i < transferFrames; i++) {
         currentTransferFrameDataLength = packetLength > transferFrameDataLength ? transferFrameDataLength : packetLength;
-        //Allocate space for header
-        for (uint8_t i = 0 ; i < TmPrimaryHeaderSize ; i++){
-            tmpData[i] = 0;
-        }
-        for (uint16_t i = 0 ; i < currentTransferFrameDataLength ; i++) {
-            tmpData[i + TmPrimaryHeaderSize] = vchan->packetBufferTmTx.front();
+        //Allocate data
+        for (uint16_t j = 0 ; j < currentTransferFrameDataLength; j++) {
+            tmpData[j + TmPrimaryHeaderSize] = vchan->packetBufferTmTx.front();
             vchan->packetBufferTmTx.pop();
         }
-        // Allocate space for trailer
-        for(uint8_t i = 0; i < 6 ; i++){
+        //Allocate trailer
+        for(uint8_t j = 0; j < 6 ; j++){
             if(currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
                 tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
             }
         }
         uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
         vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
-        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData,  currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize, TM);
-        if(masterChannel.txMasterCopyTM.full()){
-            return MASTER_CHANNEL_FRAME_BUFFER_FULL;
-        }
-        if(masterChannel.txProcessedPacketListBufferTM.full()){
-            return TX_MC_FRAME_BUFFER_FULL;
-        }
+        TransferFrameTM transferFrameTm = TransferFrameTM(transferFrameData,  currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,
+                                                          true);
         masterChannel.txMasterCopyTM.push_back(transferFrameTm);
         masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
-        packetLength = packetLength - 
+        packetLength -= transferFrameDataLength;
     }
     return NO_SERVICE_EVENT;
 }
