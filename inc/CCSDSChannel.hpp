@@ -228,7 +228,7 @@ public:
 	/**
 	 * Defines whether the ECF service is present
 	 */
-	const bool frameErrorControlFieldTMPresent;
+	const bool frameErrorControlFieldPresent;
 
 	/**
 	 * Defines whether octet or forward-ordered synchronization is used
@@ -256,7 +256,7 @@ public:
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
 	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldTMPresent,
+	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
 	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
 	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
@@ -265,7 +265,7 @@ public:
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
 	      repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl), waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
-	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
+	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
           frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
 	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -281,7 +281,7 @@ public:
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop), farm(v.farm),
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
-	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
+	      frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
@@ -373,15 +373,14 @@ struct MasterChannel {
 	 */
 	// TODO: Type aliases because this is getting out of hand
 	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
-	bool errorCtrlField;
     uint8_t frameCount{};
 
-	MasterChannel(bool errorCtrlField)
+	MasterChannel()
 	    : virtualChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField), currFrameCountTM(0) {}
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
-	    : virtualChannels(m.virtualChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
+	    : virtualChannels(m.virtualChannels), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
@@ -432,7 +431,7 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
@@ -443,7 +442,7 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth);
