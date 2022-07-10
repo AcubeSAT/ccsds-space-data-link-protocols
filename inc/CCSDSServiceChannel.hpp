@@ -32,7 +32,7 @@ private:
 	uint8_t packetCountTM;
 
     // Variable to indicate that a CLCW has been constructed and should be sent
-    bool clcwWaiting = false;
+    bool clcwWaitingToBeTransmitted = false;
 
     // Buffer to store the data of the clcw transfer frame
     uint8_t clcwTransferFrameBuffer[TmTransferFrameSize] = {0};

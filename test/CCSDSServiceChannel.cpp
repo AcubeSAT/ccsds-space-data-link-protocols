@@ -305,3 +305,28 @@ TEST_CASE("VC Generation Service"){
     err = serv_channel.vcGenerationService(3, 0);
     CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
 }
+
+TEST_CASE("CLCW construction at VC Reception"){
+    PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+            {0, MAPChannel(0, true, true)},
+            {1, MAPChannel(1, false, false)},
+            {2, MAPChannel(2, true, false)},
+    };
+
+    MasterChannel master_channel = MasterChannel(true);
+    master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED,
+                         255, 10, 10, map_channels);
+
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+    ServiceChannelNotification err;
+    uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    serv_channel.storeTC(packet1,10);
+    serv_channel.allFramesReceptionTCRequest();
+    err = serv_channel.vcReceptionTC(0);
+    CHECK(err == NO_SERVICE_EVENT);
+
+
+
+}

@@ -452,17 +452,13 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
     //add idle data
     for(uint8_t i = TmPrimaryHeaderSize ; i < TmTransferFrameSize - 2*virtChannel.frameErrorControlFieldTMPresent ; i++){
         //add idle data
-        clcwTransferFrameBuffer[i] = idle_data[i-3];
+        clcwTransferFrameBuffer[i] = idle_data[i];
     }
     TransferFrameTM clcwTransferFrame = TransferFrameTM(clcwTransferFrameBuffer, TmTransferFrameSize, virtChannel.frameCountTM,
                                                         vid, virtChannel.frameErrorControlFieldTMPresent, virtChannel.secondaryHeaderTMPresent,
                                                         virtChannel.synchronization, clcw.clcw, TM);
 
-    for(uint8_t i = 0 ; i < TmTransferFrameSize ; i++){
-        clcwTransferFrameBuffer[i] = clcwTransferFrame.packetData()[i];
-    }
-
-    clcwWaiting = true;
+    clcwWaitingToBeTransmitted = true;
 	virtChannel.waitQueueRxTC.pop_front();
     virtChannel.farm.waitQueue->pop_front();
 
