@@ -121,7 +121,7 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 
 	TransferFrameTM packet_s = TransferFrameTM(
 	    packet, packetLength, vchan->frameCountTM, vid, vchan->operationalControlFieldTMPresent,
-	    vchan->frameErrorControlFieldTMPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization);
+	    vchan->frameErrorControlFieldPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization);
 
 	// Increment VC frame count. The MC counter is incremented in the Master Channel
 	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
@@ -145,7 +145,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8
 	uint16_t frameSize = packet->getPacketLength();
 	uint8_t headerSize = 5 + virtualChannel->secondaryHeaderTMLength;
 	uint8_t trailerSize =
-	    4 * packet->operationalControlFieldExists() + 2 * virtualChannel->frameErrorControlFieldTMPresent;
+	    4 * packet->operationalControlFieldExists() + 2 * virtualChannel->frameErrorControlFieldPresent;
 	memcpy(packet_target, packet->packetData() + headerSize + 1, frameSize - headerSize - trailerSize);
 
 	virtualChannel->rxInFramesAfterMCReception.pop_front();
@@ -477,7 +477,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 	uint16_t frameSize = frame->packetLength();
 	uint8_t headerSize = TcPrimaryHeaderSize + 1; // Segment header is present
 
-	uint8_t trailerSize = 2 * virtualChannel.frameErrorControlFieldTMPresent;
+	uint8_t trailerSize = 2 * virtualChannel.frameErrorControlFieldPresent;
 
 	memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
 
@@ -505,7 +505,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 
     uint16_t frameSize = frame->packetLength();
     uint8_t headerSize = TcPrimaryHeaderSize; // Segment header is present
-    uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldTMPresent;
+    uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldPresent;
 
     memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
 
@@ -555,7 +555,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	// TransferFrameTC length is checked upon storing the packet in the MC
 
 	// If present in channel, check if CRC is valid
-	bool eccFieldExists = virtualChannel.frameErrorControlFieldTMPresent;
+	bool eccFieldExists = virtualChannel.frameErrorControlFieldPresent;
 
 	if (eccFieldExists) {
 		uint16_t len = frame->packetLength() - 2;
@@ -603,7 +603,10 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTCRequest() {
 	TransferFrameTC* packet = masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
 	masterChannel.txOutFramesBeforeAllFramesGenerationListTC.pop_front();
 
-	if (masterChannel.errorCtrlField) {
+    uint8_t vid = packet->virtualChannelId();
+    VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
+
+	if (vchan.frameErrorControlFieldPresent) {
 		packet->append_crc();
 	}
 
@@ -619,7 +622,10 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 
 	TransferFrameTM* packet = masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.front();
 
-	if (masterChannel.errorCtrlField) {
+    uint8_t vid = packet->virtualChannelId();
+    VirtualChannel &vchan = masterChannel.virtualChannels.at(vid);
+
+    if (vchan.frameErrorControlFieldPresent) {
 		packet->append_crc();
 	}
 
@@ -627,12 +633,9 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
 
-	uint8_t vid = packet->virtualChannelId();
-	VirtualChannel* vchan = &(masterChannel.virtualChannels.at(vid));
-
 	uint16_t frameSize = packet->getPacketLength();
 	uint16_t idleDataSize = TmTransferFrameSize - frameSize;
-	uint8_t trailerSize = 4 * packet->operationalControlFieldExists() + 2 * vchan->frameErrorControlFieldTMPresent;
+	uint8_t trailerSize = 4 * packet->operationalControlFieldExists() + 2 * vchan.frameErrorControlFieldPresent;
 
 	// Copy frame without the trailer
 	memcpy(packet_data, packet->packetData(), frameSize - trailerSize);
@@ -666,8 +669,8 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	}
 
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-	TransferFrameTM frame = TransferFrameTM(packet, packetLength, virtualChannel->frameErrorControlFieldTMPresent);
-	bool eccFieldExists = virtualChannel->frameErrorControlFieldTMPresent;
+	TransferFrameTM frame = TransferFrameTM(packet, packetLength, virtualChannel->frameErrorControlFieldPresent);
+	bool eccFieldExists = virtualChannel->frameErrorControlFieldPresent;
 
 	if (virtualChannel->rxInFramesAfterMCReception.full()) {
         ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_IN_BUFFER_FULL);

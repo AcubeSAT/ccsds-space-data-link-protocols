@@ -17,7 +17,7 @@ TEST_CASE("Service Channel") {
 	    {2, MAPChannel(2, true, false)},
 	};
 
-	MasterChannel master_channel = MasterChannel(true);
+	MasterChannel master_channel = MasterChannel();
 	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
 	                     10, map_channels);
 
@@ -264,7 +264,7 @@ TEST_CASE("VC Generation Service"){
             {2, MAPChannel(2, true, false)},
     };
 
-    MasterChannel master_channel = MasterChannel(true);
+    MasterChannel master_channel = MasterChannel();
     master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED,
                          255, 10, 10, map_channels);
 

@@ -13,7 +13,7 @@ TEST_CASE("CCSDS TC Channel Model") {
 	                                                                   {3, MAPChannel(3, true, true)}};
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-	MasterChannel master_channel = MasterChannel(true);
+	MasterChannel master_channel = MasterChannel();
 	master_channel.addVC(3, 1024, true, 32, 32, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255,
 	                     10, 10, map_channels);
 
@@ -30,7 +30,7 @@ TEST_CASE("MAPP blocking") {
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, true, true)}};
 
-	MasterChannel master_channel = MasterChannel(true);
+	MasterChannel master_channel = MasterChannel();
 	master_channel.addVC(3, 8, true, 32, 32, true, true, true, 11, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
 	                     10, map_channels);
 
