@@ -667,6 +667,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
 	TransferFrameTM frame = TransferFrameTM(packet, packetLength, virtualChannel->frameErrorControlFieldTMPresent);
+
 	bool eccFieldExists = virtualChannel->frameErrorControlFieldTMPresent;
 
 	if (virtualChannel->rxInFramesAfterMCReception.full()) {
@@ -703,10 +704,16 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 		CLCW clcw = CLCW(operationalControlField.value());
 	}
 	// TODO: Will we use secondary headers? If so they need to be processed here and forward to the respective service
-	masterChannel.rxMasterCopyTM.push_back(frame);
-	TransferFrameTM* masterPacket = &(masterChannel.rxMasterCopyTM.back());
-	virtualChannel->rxInFramesAfterMCReception.push_back(masterPacket);
 
+	masterChannel.rxMasterCopyTM.push_back(frame);
+
+	TransferFrameTM* masterPacket = &(masterChannel.rxMasterCopyTM.back());
+    if (frame.getOperationalControlField())
+    {
+        virtualChannel->rxMasterCopyCLCWTM.push_back(masterPacket);
+    }
+
+	virtualChannel->rxInFramesAfterMCReception.push_back(masterPacket);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 

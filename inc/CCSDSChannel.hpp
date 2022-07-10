@@ -336,6 +336,11 @@ private:
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
 
+    /**
+    * Buffer holding the master copy of the CLCW that is currently being processed
+    */
+    etl::list<TransferFrameTM*, 1> rxMasterCopyCLCWTM;
+
 	/**
 	 * Holds the FOP state of the virtual channel
 	 */
@@ -515,6 +520,7 @@ private:
 	 * Removes TM frames from the RX master buffer
 	 */
 	void removeMasterRx(TransferFrameTM* packet_ptr);
+
 
     MemoryPool masterChannelPool = MemoryPool();
 };
