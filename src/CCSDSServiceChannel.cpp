@@ -118,12 +118,12 @@ ServiceChannelNotification ServiceChannel::storeTM(uint8_t* packet, uint16_t pac
 	if (vchan->secondaryHeaderTMPresent) {
 		secondaryHeader = &packet[7];
 	}
+    //TODO::Add ifs for whether operational control field is present
+    TransferFrameTM packet_s = TransferFrameTM(
+            packet, packetLength, vchan->frameCountTM, vid,
+            vchan->frameErrorControlFieldPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization, 0);
 
-	TransferFrameTM packet_s = TransferFrameTM(
-	    packet, packetLength, vchan->frameCountTM, vid, vchan->operationalControlFieldTMPresent,
-	    vchan->frameErrorControlFieldPresent, vchan->secondaryHeaderTMPresent, vchan->synchronization);
-
-	// Increment VC frame count. The MC counter is incremented in the Master Channel
+    // Increment VC frame count. The MC counter is incremented in the Master Channel
 	vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
 
 	masterChannel.txMasterCopyTM.push_back(packet_s);
