@@ -41,12 +41,27 @@ public:
 		return masterChannel.txProcessedPacketListBufferTM.front();
 	}
 
-	//for testing purposes
+	/**
+	 * This method returns the number of Transfer Frames that can be stored at the
+	 * txOutFramesBeforeAllFramesGenerationListTC buffer.
+	 */
+	uint8_t BeforeAllFramesGenerationListCapacity(){
+	    return masterChannel.txOutFramesBeforeAllFramesGenerationListTC.available();
+	}
+
+	/**
+	 * Made for testing, this method returns the transfer frame on the front of the
+	 * txOutFramesBeforeAllFramesGenerationListTC buffer.
+	 */
 	TransferFrameTC* availablePacketsBeforeAllframes() const {
 		return masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
 	}
 
-	//for testing
+	/**
+	 * Made for testing
+	 * This method pops the front of txOutFramesBeforeAllFramesGenerationListTC buffer, so we can check
+	 * the next transfer frame.
+	 */
 	void popPacketsBeforeAllframes() {
 		masterChannel.txOutFramesBeforeAllFramesGenerationListTC.pop_front();
 	}
@@ -155,7 +170,7 @@ public:
 	 * 		b) the Frame Generation Procedure in this order.
 	 * @see p. 4.3.5 from TC Space Data Link Protocol
 	 */
-	ServiceChannelNotification vcGenerationRequestTC(uint16_t transferFrameDataLength, uint8_t vid);
+	ServiceChannelNotification vcGenerationRequestTC(uint8_t vid);
 
 	/**
 	 * Method that stores a TC packet pointer and the TC packet data to the packetLengthBufferTcTx and packetBufferTcTx

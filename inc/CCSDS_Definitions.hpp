@@ -16,9 +16,8 @@ const uint16_t TmTransferFrameSize = 128;
 const uint8_t TmPrimaryHeaderSize = 6;
 const uint8_t TmTrailerSize = 6;
 
-const uint16_t TcTransferFrameSize = 128;
+const uint16_t MaxTcTransferFrameSize = 3;
 const uint8_t TcPrimaryHeaderSize = 5;
-const uint8_t TcTrailerSize = 5;
 
 const bool TcErrorControlFieldExists = false;
 

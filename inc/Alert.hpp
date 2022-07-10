@@ -32,7 +32,8 @@ enum ServiceChannelNotification : int {
     PACKET_BUFFER_EMPTY = 0x1C,
     NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D,
 	PACKET_BUFFER_TC_EMPTY = 0x1F,
-	TX_TC_BUFFER_FULL = 0x20
+	TX_TC_BUFFER_FULL = 0x20,
+	SEGMENTATION_UNAVAILABLE = 0x21
 };
 
 enum SynchronizationFlag : bool { OCTET = 0, FORWARD_ORDERED = 1 };
