@@ -9,7 +9,7 @@ FOPNotification FrameOperationProcedure<s>::purgeSentQueue() {
 		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
 		sentQueueFOP->erase(cur_frame++);
 	}
-	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
+	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
@@ -21,14 +21,14 @@ FOPNotification FrameOperationProcedure<s>::purgeWaitQueue() {
 		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
 		waitQueueFOP->erase(cur_frame++);
 	}
-	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
+	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
 template <uint16_t s>
 FOPNotification FrameOperationProcedure<s>::transmitAdFrame() {
 	if (sentQueueFOP->full()) {
-		ccsdsLog(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
+		ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
 		return FOPNotification::SENT_QUEUE_FULL;
 	}
 
@@ -38,7 +38,7 @@ FOPNotification FrameOperationProcedure<s>::transmitAdFrame() {
 
 	TransferFrameTC* ad_frame = waitQueueFOP->front();
 	if (waitQueueFOP->empty()) {
-		ccsdsLog(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
+		ccsdsLogNotice(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
 		return FOPNotification::WAIT_QUEUE_EMPTY;
 	}
 
@@ -53,7 +53,7 @@ FOPNotification FrameOperationProcedure<s>::transmitAdFrame() {
 	// pass the frame into the all frames generation service
 	vchan->master_channel().storeOut(ad_frame);
 	waitQueueFOP->pop_front();
-	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
+	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
@@ -64,7 +64,7 @@ FOPNotification FrameOperationProcedure<s>::transmitBcFrame(TransferFrameTC* bc_
 
 	// TODO start the timer
 	vchan->master_channel().storeOut(bc_frame);
-	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
+	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
@@ -73,7 +73,7 @@ FOPNotification FrameOperationProcedure<s>::transmitBdFrame(TransferFrameTC* bd_
 	bdOut = NOT_READY;
 	// Pass frame to all frames generation service
 	vchan->master_channel().storeOut(bd_frame);
-	ccsdsLog(Tx, TypeFOPNotif, NO_FOP_EVENT);
+	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
@@ -161,7 +161,7 @@ void FrameOperationProcedure<s>::lookForDirective() {
 template <uint16_t s>
 COPDirectiveResponse FrameOperationProcedure<s>::pushSentQueue() {
 	if (vchan->sentQueueTxTC.empty()) {
-		ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 		return COPDirectiveResponse::REJECT;
 	}
 
@@ -171,10 +171,10 @@ COPDirectiveResponse FrameOperationProcedure<s>::pushSentQueue() {
 
 	if (err == MasterChannelAlert::NO_MC_ALERT) {
 		// sentQueueTC->pop_front();
-		ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
 	}
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
 
@@ -186,7 +186,7 @@ COPDirectiveResponse FrameOperationProcedure<s>::lookForFdu() {
 				// adOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
 				FOPNotification resp = transmitAdFrame();
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			}
 		}
@@ -197,13 +197,13 @@ COPDirectiveResponse FrameOperationProcedure<s>::lookForFdu() {
 			if (frame->getServiceType() == ServiceType::TYPE_AD) {
 				sentQueueFOP->push_back(frame);
 				waitQueueFOP->pop_front();
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			}
 		}
 	}
 	// TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
 
@@ -516,10 +516,10 @@ COPDirectiveResponse FrameOperationProcedure<s>::validClcwArrival() {
 
 	MasterChannelAlert mc = vchan->master_channel().storeOut(frame);
 	if (mc != MasterChannelAlert::NO_MC_ALERT) {
-		ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 		return COPDirectiveResponse::REJECT;
 	}
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
@@ -546,7 +546,7 @@ FDURequestType FrameOperationProcedure<s>::initiateAdNoClcw() {
 		initialize();
 		state = FOPState::ACTIVE;
 	}
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -569,7 +569,7 @@ FDURequestType FrameOperationProcedure<s>::initiateAdUnlock() {
 		// @todo transmit unlock frame
 	}
 	// E26
-	ccsdsLog(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
+	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -584,7 +584,7 @@ FDURequestType FrameOperationProcedure<s>::initiateAdVr(uint8_t vr) {
 		state = FOPState::INITIALIZING_WITH_BC_FRAME;
 	}
 	// E28
-	ccsdsLog(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
+	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -595,14 +595,14 @@ FDURequestType FrameOperationProcedure<s>::terminateAdService() {
 		alert(AlertEvent::ALRT_TERM);
 		state = FOPState::INITIAL;
 	}
-	ccsdsLog(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
+	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
 template <uint16_t s>
 FDURequestType FrameOperationProcedure<s>::resumeAdService() {
 	state = suspendState;
-	ccsdsLog(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
+	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
 	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
 }
 
@@ -612,10 +612,10 @@ COPDirectiveResponse FrameOperationProcedure<s>::setVs(uint8_t vs) {
 	if (state == FOPState::INITIAL && suspendState == FOPState::INITIAL) {
 		transmitterFrameSeqNumber = vs;
 		expectedAcknowledgementSeqNumber = vs;
-		ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
 	} else {
-		ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 		return COPDirectiveResponse::REJECT;
 	}
 }
@@ -624,7 +624,7 @@ template <uint16_t s>
 COPDirectiveResponse FrameOperationProcedure<s>::setFopWidth(uint8_t width) {
 	// E36
 	fopSlidingWindow = width;
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
@@ -632,7 +632,7 @@ template <uint16_t s>
 COPDirectiveResponse FrameOperationProcedure<s>::setT1Initial(uint16_t t1_init) {
 	// E37
 	tiInitial = t1_init;
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
@@ -647,14 +647,14 @@ template <uint16_t s>
 COPDirectiveResponse FrameOperationProcedure<s>::setTimeoutType(bool vr) {
 	// E39
 	timeoutType = vr;
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
 template <uint16_t s>
 COPDirectiveResponse FrameOperationProcedure<s>::invalidDirective() {
 	// E40
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
 
@@ -692,7 +692,7 @@ void FrameOperationProcedure<s>::bcReject() {
 template <uint16_t s>
 COPDirectiveResponse FrameOperationProcedure<s>::bdAccept() {
 	bdOut = FlagState::READY;
-	ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }
 
@@ -716,14 +716,14 @@ COPDirectiveResponse FrameOperationProcedure<s>::transferFdu() {
 				} else if (state == FOPState::RETRANSMIT_WITH_WAIT) {
 					waitQueueFOP->push_back(frame);
 				} else {
-					ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+					ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 					return COPDirectiveResponse::REJECT;
 				}
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			} else {
 				// E20
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 				return COPDirectiveResponse::REJECT;
 			}
 		} else if ((frame->getServiceType() == ServiceType::TYPE_BC) ||
@@ -731,7 +731,7 @@ COPDirectiveResponse FrameOperationProcedure<s>::transferFdu() {
 			if (bdOut == FlagState::READY) {
 				//
 				transmitBcFrame(frame);
-				ccsdsLog(Tx, TypeCOPDirectiveResponse, ACCEPT);
+				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
 			} else {
 				// E22
@@ -743,7 +743,7 @@ COPDirectiveResponse FrameOperationProcedure<s>::transferFdu() {
 
 		MasterChannelAlert mc = vchan->master_channel().storeOut(frame);
 		if (mc != MasterChannelAlert::NO_MC_ALERT) {
-			ccsdsLog(Tx, TypeCOPDirectiveResponse, REJECT);
+			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		}
 	}

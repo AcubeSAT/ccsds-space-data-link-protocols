@@ -204,12 +204,12 @@ public:
 	 */
 	const uint8_t repetitionCOPCtrl;
 
-	/**
-	 * Determines the number of TM Transfer Frames transmitted
-	 */
-	uint8_t frameCountTM;
+    /**
+     * Determines the number of TM Transfer Frames transmitted
+     */
+    uint8_t frameCountTM;
 
-	/**
+    /**
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t availableBufferTC() const {
@@ -231,7 +231,7 @@ public:
 	/**
 	 * Defines whether the ECF service is present
 	 */
-	const bool frameErrorControlFieldTMPresent;
+	const bool frameErrorControlFieldPresent;
 
 	/**
 	 * Defines whether octet or forward-ordered synchronization is used
@@ -259,7 +259,7 @@ public:
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
 	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldTMPresent,
+	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
 	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
 	               etl::flat_map<uint8_t, MAPChannel<128>, MaxMapChannels> mapChan)
@@ -268,9 +268,9 @@ public:
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
 	      repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl), waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
-	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
+	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-	      frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+          frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
 	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
@@ -284,7 +284,7 @@ public:
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop), farm(v.farm),
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
-	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
+	      frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
@@ -379,21 +379,24 @@ struct MasterChannel {
 	etl::flat_map<uint8_t, VirtualChannel<256>, MaxVirtualChannels> virtualChannels;
 	bool errorCtrlField;
 	uint8_t frameCount{};
+	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
+    uint8_t frameCount{};
 
-	MasterChannel(bool errorCtrlField)
+	MasterChannel()
 	    : virtualChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), errorCtrlField(errorCtrlField), frameCountTM(0) {}
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
-	    : virtualChannels(m.virtualChannels), errorCtrlField(m.errorCtrlField), frameCount(m.frameCount),
+	    : virtualChannels(m.virtualChannels), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
-	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), frameCountTM(m.frameCountTM) {
-		for (auto& vc : virtualChannels) {
-			vc.second.masterChannel = *this;
-		}
-	}
+          rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), currFrameCountTM(m.currFrameCountTM) {
+        for (auto& vc : virtualChannels) {
+            vc.second.masterChannel = *this;
+        }
+
+    }
 
 	/**
 	 *
@@ -409,7 +412,12 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTM* packet);
 
-	uint8_t frameCountTM;
+    /**
+     * Keeps track of last master channel frame count. If lost frames in a master channel are detected, then a warning
+     * is logged. However, this isn't considered a reason for raising an error as per CCSDS TM Data Link.
+     * Upon initialization of the channel, a MC count of 0 is expected.
+     */
+	uint8_t currFrameCountTM;
 
 	/**
 	 *
@@ -430,7 +438,7 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
@@ -441,7 +449,7 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth);
