@@ -65,7 +65,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* packet) {
 
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                                        const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+                                        const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
@@ -78,15 +78,15 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 
 	virtualChannels.emplace(vcid,
 	                        VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
-	                                       repetitionCopCtrl, frameErrorControlFieldTMPresent, secondaryHeaderTMPresent,
-	                                       secondaryHeaderTMLength, operationalControlFieldTMPresent, synchronization,
+	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
+                                           operationalControlFieldTMPresent, frameErrorControlFieldPresent, synchronization,
 	                                       farmSlidingWinWidth, farmPositiveWinWidth, farmNegativeWinWidth, mapChan));
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                                        const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
+                                        const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
@@ -98,8 +98,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 
 	virtualChannels.emplace(vcid,
 	                        VirtualChannel(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
-	                                       repetitionCopCtrl, frameErrorControlFieldTMPresent, secondaryHeaderTMPresent,
-	                                       secondaryHeaderTMLength, operationalControlFieldTMPresent, synchronization,
+	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
+	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent, synchronization,
 	                                       farmSlidingWinWidth, farmPositiveWinWidth, farmNegativeWinWidth,
 	                                       etl::flat_map<uint8_t, MAPChannel, MaxMapChannels>()));
 	return MasterChannelAlert::NO_MC_ALERT;
