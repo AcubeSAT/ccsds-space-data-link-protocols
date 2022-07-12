@@ -61,7 +61,7 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	            (frame->getServiceType() == ServiceType::TYPE_BD)) &&
 	           frame->transferFrameHeader().ctrlAndCmdFlag()) {
 		if (frame->controlWordType() == 0) {
-			if (frame->packetPlData()[4] == 0) {
+			if (frame->packetPlData()[5] == 0) {
 				// E7
 				farmBCount += 1;
 				retransmit = FlagState::NOT_READY;
@@ -75,7 +75,7 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 				state = FARMState::OPEN;
 				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 				return COPDirectiveResponse::ACCEPT;
-			} else if (frame->packetPlData()[4] == 130 && frame->packetPlData()[5] == 0) {
+			} else if (frame->packetPlData()[5] == 130 && frame->packetPlData()[6] == 0) {
 				// E8
 				farmBCount += 1;
 				retransmit = FlagState::NOT_READY;
