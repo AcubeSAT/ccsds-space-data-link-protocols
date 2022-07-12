@@ -1,7 +1,7 @@
 #include <CCSDSServiceChannel.hpp>
 #include <TransferFrameTM.hpp>
+//#include "CLCW.hpp"
 #include <etl/iterator.h>
-#include "CLCW.hpp"
 
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength) {
 	if (masterChannel.rxMasterCopyTC.full()) {
@@ -411,11 +411,8 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 	TransferFrameTC &frame = *virt_channel.txUnprocessedPacketListBufferTC.front();
 	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
-	if (frame.transferFrameHeader().ctrlAndCmdFlag() == 0) {
-		err = virt_channel.fop.transferFdu();
-	} else {
-		err = virt_channel.fop.validClcwArrival();
-	}
+	err = virt_channel.fop.validClcwArrival();
+
 
 	if (err == COPDirectiveResponse::REJECT) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
@@ -702,16 +699,13 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
 	if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
 		CLCW clcw = CLCW(operationalControlField.value());
+        virtualChannel->rxMasterCopyCLCWTM.push_back(&clcw);
 	}
 	// TODO: Will we use secondary headers? If so they need to be processed here and forward to the respective service
 
 	masterChannel.rxMasterCopyTM.push_back(frame);
 
 	TransferFrameTM* masterPacket = &(masterChannel.rxMasterCopyTM.back());
-    if (frame.getOperationalControlField())
-    {
-        virtualChannel->rxMasterCopyCLCWTM.push_back(masterPacket);
-    }
 
 	virtualChannel->rxInFramesAfterMCReception.push_back(masterPacket);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;

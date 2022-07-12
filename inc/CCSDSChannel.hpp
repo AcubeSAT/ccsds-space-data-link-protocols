@@ -1,14 +1,14 @@
 #ifndef CCSDS_CHANNEL_HPP
 #define CCSDS_CHANNEL_HPP
 
-#pragma once
 
+#pragma once
 #include <cstdint>
 #include <etl/map.h>
 #include <etl/flat_map.h>
 #include <etl/list.h>
 #include <etl/queue.h>
-
+#include <CLCW.hpp>
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
 #include <FrameAcceptanceReporting.hpp>
@@ -16,6 +16,7 @@
 #include <TransferFrameTM.hpp>
 #include <iostream>
 #include "MemoryPool.hpp"
+
 
 class MasterChannel;
 
@@ -339,7 +340,7 @@ private:
     /**
     * Buffer holding the master copy of the CLCW that is currently being processed
     */
-    etl::list<TransferFrameTM*, 1> rxMasterCopyCLCWTM;
+    etl::list<CLCW*, 1> rxMasterCopyCLCWTM;
 
 	/**
 	 * Holds the FOP state of the virtual channel

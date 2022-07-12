@@ -1,6 +1,7 @@
 #include <FrameOperationProcedure.hpp>
 #include <CCSDSChannel.hpp>
 #include "CCSDSLoggerImpl.h"
+#include "CLCW.hpp"
 FOPNotification FrameOperationProcedure::purgeSentQueue() {
 	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
@@ -213,12 +214,13 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
+	CLCW* clcw = vchan->rxMasterCopyCLCWTM.front();
+    TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
-	if (frame->lockout() == 0) {
-		if (frame->reportValue() == expectedAcknowledgementSeqNumber) {
-			if (frame->retransmit() == 0) {
-				if (frame->wait() == 0) {
+	if (clcw->getLockout() == 0) {
+		if (clcw->getReportValue() == expectedAcknowledgementSeqNumber) {
+			if (clcw->getRetransmit() == 0) {
+				if (clcw->getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
 						// E1
 						switch (state) {
@@ -230,12 +232,12 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 								state = FOPState::INITIAL;
 								break;
 							case FOPState::INITIALIZING_WITH_BC_FRAME:
-								frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
+                                frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
 								state = FOPState::ACTIVE;
 								// cancel timer
 								break;
 							case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-								frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
+                                frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
 								// bc_accept()??
 								//  cancel timer
 								state = FOPState::ACTIVE;
@@ -291,10 +293,10 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						break;
 				}
 			}
-		} else if (frame->reportValue() > expectedAcknowledgementSeqNumber &&
+		} else if (clcw->getReportValue() > expectedAcknowledgementSeqNumber &&
 		           expectedAcknowledgementSeqNumber >= transmitterFrameSeqNumber) {
-			if (frame->retransmit() == 0) {
-				if (frame->wait() == 0) {
+			if (clcw->getRetransmit() == 0) {
+				if (clcw->getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
 						// E5
 						switch (state) {
@@ -375,7 +377,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 					}
 				} else if (transmissionLimit > 1) {
 					if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
-						if (frame->wait() == 0) {
+						if (clcw->getWait() == 0) {
 							// E8
 							switch (state) {
 								case FOPState::ACTIVE:
@@ -408,7 +410,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						}
 					} else {
 						if (transmissionCount < transmissionLimit) {
-							if (frame->wait() == 0) {
+							if (clcw->getWait() == 0) {
 								//  E10
 								switch (state) {
 									case FOPState::ACTIVE:
@@ -438,7 +440,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 								}
 							}
 						} else {
-							if (frame->wait() == 0) {
+							if (clcw->getWait() == 0) {
 								// E12
 								switch (state) {
 									case FOPState::ACTIVE:
