@@ -36,7 +36,10 @@ private:
     bool clcwWaitingToBeTransmitted = false;
 
     // Buffer to store the data of the clcw transfer frame
-    uint8_t clcwTransferFrameBuffer[TmTransferFrameSize] = {0};
+    uint8_t clcwTransferFrameDataBuffer[TmTransferFrameSize] = {0};
+
+    etl::list<TransferFrameTM, 1> clcwTransferFrameFrameBuffer;
+
 public:
 	// Public methods that are called by the scheduler
 
@@ -254,6 +257,8 @@ public:
 	void setTimeoutType(uint8_t vid, bool vr);
 
 	void invalidDirective(uint8_t vid);
+
+    CLCW getClcwInBuffer();
 
     /**
      * @brief A function that generates a CLCW and stores it to a clcw buffer

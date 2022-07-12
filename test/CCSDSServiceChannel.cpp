@@ -315,18 +315,42 @@ TEST_CASE("CLCW construction at VC Reception"){
             {2, MAPChannel(2, true, false)},
     };
 
-    MasterChannel master_channel = MasterChannel(true);
+    MasterChannel master_channel = MasterChannel();
     master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED,
                          255, 10, 10, map_channels);
 
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+    VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
+
     ServiceChannelNotification err;
     uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    uint8_t packet2[] = {0x10, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
     serv_channel.storeTC(packet1,10);
+    serv_channel.storeTC(packet2, 10);
+    serv_channel.storeTC(packet3, 10);
+    serv_channel.allFramesReceptionTCRequest();
+    serv_channel.allFramesReceptionTCRequest();
     serv_channel.allFramesReceptionTCRequest();
     err = serv_channel.vcReceptionTC(0);
+    //Checks if frame sequence number is the same as expected
+    CHECK(serv_channel.getClcwInBuffer().getWait() == false);
+    CHECK(serv_channel.getClcwInBuffer().getRetransmit() == false);
+    CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
     CHECK(err == NO_SERVICE_EVENT);
 
+    err = serv_channel.vcReceptionTC(0);
+    //Checks if frame sequence number is bigger than expected but smaller that positive window
+    CHECK(serv_channel.getClcwInBuffer().getWait() == false);
+    CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
+    CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
+    CHECK(err == NO_SERVICE_EVENT);
 
+    err = serv_channel.vcReceptionTC(0);
+    //Checks if frame sequence number is bigger than expected and bigger that positive window
+    CHECK(serv_channel.getClcwInBuffer().getWait() == false);
+    CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
+    CHECK(serv_channel.getClcwInBuffer().getLockout() == true);
+    CHECK(err == NO_SERVICE_EVENT);
 
 }

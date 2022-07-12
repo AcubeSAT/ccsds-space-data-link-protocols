@@ -207,8 +207,8 @@ struct TransferFrameTM : public TransferFrame {
         uint8_t* ocfPointer = packet + frameLength - 4 - 2*eccFieldExists;
         ocfPointer[0] = operationalControlField >> 24;
         ocfPointer[1] = (operationalControlField >> 16) & 0xFF;
-        ocfPointer[0] = (operationalControlField >> 8) & 0xFF;
-        ocfPointer[0] = operationalControlField & 0xFF;
+        ocfPointer[2] = (operationalControlField >> 8) & 0xFF;
+        ocfPointer[3] = operationalControlField & 0xFF;
     }
 
 	TransferFrameTM(uint8_t* packet, uint16_t packet_length, bool eccFieldExists)
