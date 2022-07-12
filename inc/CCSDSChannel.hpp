@@ -378,9 +378,7 @@ struct MasterChannel {
 	// TODO: Type aliases because this is getting out of hand
 	etl::flat_map<uint8_t, VirtualChannel<256>, MaxVirtualChannels> virtualChannels;
 	bool errorCtrlField;
-	uint8_t frameCount{};
-	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
-    uint8_t frameCount{};
+	uint8_t frameCount{};;
 
 	MasterChannel()
 	    : virtualChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
