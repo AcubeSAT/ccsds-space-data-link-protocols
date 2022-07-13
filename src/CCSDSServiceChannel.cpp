@@ -44,7 +44,6 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	TransferFrameTC* masterPckt = &(masterChannel.rxMasterCopyTC.back());
 
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(masterPckt);
-	ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
@@ -442,7 +441,6 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
     TransferFrameTC *frame = virtChannel.waitQueueRxTC.front();
 
     // FARM procedures
-    virtChannel.farm.waitQueue->push_back(frame);
     virtChannel.farm.frameArrives();
 
     CLCW clcw = CLCW(0, 0, 0, 1, vid, 0, 1,
@@ -466,8 +464,6 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
     }
     clcwTransferFrameFrameBuffer.push_back(clcwTransferFrame);
     clcwWaitingToBeTransmitted = true;
-	virtChannel.waitQueueRxTC.pop_front();
-    virtChannel.farm.waitQueue->pop_front();
 
 	// If MAP channels are implemented in this specific VC, write to the MAP buffer
 	if (virtChannel.segmentHeaderPresent) {
@@ -597,12 +593,10 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 		}
 		virtualChannel.waitQueueRxTC.push_back(frame);
 		masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
-        ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 		return ServiceChannelNotification::NO_SERVICE_EVENT;
 	}
     virtualChannel.waitQueueRxTC.push_back(frame);
     masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
-    ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 

@@ -4,13 +4,13 @@
 COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
 
-	if (frame->getServiceType() == ServiceType::TYPE_AD && frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	if ((frame->getServiceType() == ServiceType::TYPE_AD) && (frame->transferFrameHeader().ctrlAndCmdFlag())) {
 		if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
 			if (!sentQueue->full()) {
 				// E1
 				if (state == FARMState::OPEN) {
 					sentQueue->push_back(frame);
-					sentQueue->pop_front();
+					waitQueue->pop_front();
 					receiverFrameSeqNumber += 1;
 					retransmit = FlagState::NOT_READY;
 					ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);

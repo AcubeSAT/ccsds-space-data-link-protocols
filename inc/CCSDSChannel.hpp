@@ -288,6 +288,8 @@ public:
 		fop.waitQueueFOP = &waitQueueTxTC;
 		fop.sentQueueFARM = &sentQueueRxTC;
 		fop.waitQueueFARM = &sentQueueRxTC;
+		farm.waitQueue = &waitQueueRxTC;
+		farm.sentQueue = &sentQueueRxTC;
 	}
 
 	VirtualChannelAlert storeVC(TransferFrameTC* packet);
