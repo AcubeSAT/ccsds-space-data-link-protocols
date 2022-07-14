@@ -172,7 +172,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transfer
     //Blocking
     if(packetLength <= transferFrameDataLength) {
         // Allocate space for the Primary Header
-        static uint8_t tmpData[TmTransferFrameSize] = {0, 0, 0, 0, 0, 0};
+        static uint8_t tmpData[TmTransferFrameSize] = {0};
         while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
                !vchan->packetLengthBufferTmTx.empty()) {
             for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
@@ -201,15 +201,15 @@ ServiceChannelNotification ServiceChannel::vcGenerationService(uint16_t transfer
         return NO_SERVICE_EVENT;
     }
     // Allocate space for the Primary Header
-    static uint8_t tmpData[TmTransferFrameSize] = {0, 0, 0, 0, 0, 0};
-    uint16_t transferFrames = packetLength / transferFrameDataLength + (packetLength % transferFrameDataLength != 0);
-    if (masterChannel.txMasterCopyTM.available() < transferFrames) {
+    static uint8_t tmpData[TmTransferFrameSize] = {0};
+    uint16_t numberOfTransferFrames = packetLength / transferFrameDataLength + (packetLength % transferFrameDataLength != 0);
+    if (masterChannel.txMasterCopyTM.available() < numberOfTransferFrames) {
         return MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
-    if (masterChannel.txProcessedPacketListBufferTM.available() < transferFrames) {
+    if (masterChannel.txProcessedPacketListBufferTM.available() < numberOfTransferFrames) {
         return TX_MC_FRAME_BUFFER_FULL;
     }
-    for (uint16_t i = 0; i < transferFrames; i++) {
+    for (uint16_t i = 0; i < numberOfTransferFrames; i++) {
         currentTransferFrameDataLength = packetLength > transferFrameDataLength ? transferFrameDataLength : packetLength;
         //Allocate data
         for (uint16_t j = 0 ; j < currentTransferFrameDataLength; j++) {
