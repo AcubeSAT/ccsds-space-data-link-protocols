@@ -185,7 +185,7 @@ struct TransferFrameTM : public TransferFrame {
 		packet[2] = 0;
 		packet[3] = virtualChannelFrameCount;
 		// Data field status. TransferFrame Order Flag and Segment Length ID are unused
-		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
+		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
 		packet[5] = firstHeaderPointer & 0xFF;
 	}
 
@@ -202,7 +202,7 @@ struct TransferFrameTM : public TransferFrame {
         packet[2] = 0;
         packet[3] = virtualChannelFrameCount;
         // Data field status. TransferFrame Order Flag and Segment Length ID are unused
-        packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
+        packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6) & (firstHeaderPointer & 0x700 >> 8);
         packet[5] = firstHeaderPointer & 0xFF;
         uint8_t* ocfPointer = packet + frameLength - 4 - 2*eccFieldExists;
         ocfPointer[0] = operationalControlField >> 24;
