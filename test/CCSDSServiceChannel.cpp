@@ -313,12 +313,12 @@ TEST_CASE("VC Generation Service"){
         CHECK(err == NO_SERVICE_EVENT);
 
         const TransferFrameTM *transferFrame = serv_channel.packetMasterChannel();
-
         CHECK(transferFrame->packetData()[6] == 47);
         CHECK(transferFrame->packetData()[7] == 31);
         CHECK(transferFrame->packetData()[8] == 65);
         CHECK(transferFrame->packetData()[9] == 81);
         CHECK(transferFrame->packetData()[10] == 25);
+        CHECK(transferFrame->segmentLengthId() == 1);
 
         transferFrame = serv_channel.nextPacketMasterChannel();
 
@@ -327,10 +327,12 @@ TEST_CASE("VC Generation Service"){
         CHECK(transferFrame->packetData()[8] == 99);
         CHECK(transferFrame->packetData()[9] == 13);
         CHECK(transferFrame->packetData()[10] == 43);
+        CHECK(transferFrame-> segmentLengthId() == 0);
 
         transferFrame = serv_channel.nextPacketMasterChannel();
 
         CHECK(transferFrame->packetData()[6] == 78);
+        CHECK(transferFrame->segmentLengthId() == 2);
 
     }
 
