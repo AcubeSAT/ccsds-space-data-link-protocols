@@ -32,11 +32,16 @@ private:
 
 	uint8_t packetCountTM;
 
-    // Variable to indicate that a CLCW has been constructed and should be sent
+    /**
+     * Variable to indicate that a CLCW has been constructed and should be sent
+     */
     bool clcwWaiting = false;
 
-    // Buffer to store the data of the clcw transfer frame
+    /**
+     * Buffer to store the data of the clcw transfer frame
+     */
     uint8_t clcwTransferFrameBuffer[TmTransferFrameSize] = {0};
+
 public:
 	// Public methods that are called by the scheduler
 
@@ -259,6 +264,20 @@ public:
 	void setTimeoutType(uint8_t vid, bool vr);
 
 	void invalidDirective(uint8_t vid);
+
+    uint16_t availableInPacketLengthBufferTmTx(uint8_t gvcid);
+
+    uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
+
+    /**
+     * @brief Helper function that implements the blocking of the Virtual Channel Generation Service
+     */
+    ServiceChannelNotification blockingTm(uint16_t  transferFrameDataLength, uint16_t packetLength, uint8_t gvcid);
+
+    /**
+     * @brief Helper function that implements the segmentation of the Virtual Channel Generation Service
+     */
+    ServiceChannelNotification segmentationTm(uint8_t numberOfTransferFrames, uint16_t packetLength, uint16_t transferFrameDataLength, uint8_t gvcid);
 
     /**
      * @brief A function that generates a CLCW and stores it to a clcw buffer

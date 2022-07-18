@@ -252,6 +252,13 @@ public:
 	 */
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels;
 
+    uint16_t availableInPacketLengthBufferTmTx(){
+        return packetLengthBufferTmTx.available();
+    }
+    uint16_t availableInPacketBufferTmTx(){
+        return packetBufferTmTx.available();
+    }
+
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
 	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
