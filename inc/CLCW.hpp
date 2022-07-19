@@ -2,7 +2,7 @@
 #include <cstdint>
 
 struct CLCW {
-	const uint32_t clcw;
+    uint32_t clcw;
 
 	CLCW(const uint32_t operationalControlField) : clcw(operationalControlField){};
 
@@ -22,6 +22,20 @@ public:
 	 * @see 4.2.2 from Telecommand Part 2
 	 */
 	const bool getControlWordType();
+
+    /**
+	 * Control Word Type is set to 0 to indicate that the Operational Control Field contains a CLCW
+	 * @return bit 0 of the CLCW
+	 * @see 4.2.2 from Telecommand Part 2
+	 */
+    const uint8_t getSpare();
+
+    /**
+     *Bits 14-15 of the CLCW shall contain the Reserved Spare.
+     * @return These two bits are reserved by CCSDS for future application and shall be set to ‘00’.
+     * @see 4.2.2 from Telecommand Part 2
+     */
+    const uint8_t getSpare2();
 
 	/**
 	 * Clcw Version Number is set to value "00"  to indicate the Version-1 CLCW is used.
@@ -100,4 +114,11 @@ public:
 	 * @see p. 4.2.11.1 from TC SPACE DATA LINK PROTOCOL
 	 */
 	const uint8_t getReportValue();
+
+    void setCLCW(CLCW newclcw){
+        clcw = (newclcw.getControlWordType() << 31U | newclcw.getClcwVersion() << 29U | newclcw.getStatusField() << 26U | newclcw.getCopInEffect() << 24U | newclcw.getVcId() << 18U |
+             newclcw.getSpare() << 16U | newclcw.getNoRfAvailable() << 15U | newclcw.getNoBitLock() << 14U | newclcw.getLockout() << 13U | newclcw.getWait() << 12U |
+             newclcw.getRetransmit() << 11U | newclcw.getFarmBCounter() << 9U | newclcw.getSpare2() << 8U | newclcw.getReportValue());
+
+    }
 };

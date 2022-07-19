@@ -25,6 +25,14 @@ const uint8_t CLCW::getVcId() {
 	return (clcw >> 18U) & 0x3F;
 }
 
+const uint8_t CLCW::getSpare() {
+    return (clcw >> 16U) & 0x2;
+}
+
+const uint8_t CLCW::getSpare2() {
+    return (clcw >> 24U) & 0x1;
+}
+
 const bool CLCW::getNoRfAvailable() {
 	return (clcw >> 15U) & 0x1;
 }

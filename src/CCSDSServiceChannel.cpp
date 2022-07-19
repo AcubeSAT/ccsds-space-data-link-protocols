@@ -699,7 +699,8 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
 	if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
 		CLCW clcw = CLCW(operationalControlField.value());
-        virtualChannel->rxMasterCopyCLCWTM.push_back(&clcw);
+        virtualChannel->currentlyProcessedCLCW.setCLCW(clcw);
+        virtualChannel->fop.validClcwArrival();
 	}
 	// TODO: Will we use secondary headers? If so they need to be processed here and forward to the respective service
 

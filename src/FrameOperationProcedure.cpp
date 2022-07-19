@@ -214,13 +214,13 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	CLCW* clcw = vchan->rxMasterCopyCLCWTM.front();
+	CLCW clcw = vchan->currentlyProcessedCLCW.getClcw();
     TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
-	if (clcw->getLockout() == 0) {
-		if (clcw->getReportValue() == expectedAcknowledgementSeqNumber) {
-			if (clcw->getRetransmit() == 0) {
-				if (clcw->getWait() == 0) {
+	if (clcw.getLockout() == 0) {
+		if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
+			if (clcw.getRetransmit() == 0) {
+				if (clcw.getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
 						// E1
 						switch (state) {
@@ -293,10 +293,10 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						break;
 				}
 			}
-		} else if (clcw->getReportValue() > expectedAcknowledgementSeqNumber &&
+		} else if (clcw.getReportValue() > expectedAcknowledgementSeqNumber &&
 		           expectedAcknowledgementSeqNumber >= transmitterFrameSeqNumber) {
-			if (clcw->getRetransmit() == 0) {
-				if (clcw->getWait() == 0) {
+			if (clcw.getRetransmit() == 0) {
+				if (clcw.getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
 						// E5
 						switch (state) {
@@ -377,7 +377,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 					}
 				} else if (transmissionLimit > 1) {
 					if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
-						if (clcw->getWait() == 0) {
+						if (clcw.getWait() == 0) {
 							// E8
 							switch (state) {
 								case FOPState::ACTIVE:
@@ -410,7 +410,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						}
 					} else {
 						if (transmissionCount < transmissionLimit) {
-							if (clcw->getWait() == 0) {
+							if (clcw.getWait() == 0) {
 								//  E10
 								switch (state) {
 									case FOPState::ACTIVE:
@@ -440,7 +440,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 								}
 							}
 						} else {
-							if (clcw->getWait() == 0) {
+							if (clcw.getWait() == 0) {
 								// E12
 								switch (state) {
 									case FOPState::ACTIVE:

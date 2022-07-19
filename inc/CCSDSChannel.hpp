@@ -266,7 +266,7 @@ public:
 	      repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl), waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldTMPresent(frameErrorControlFieldTMPresent),
-	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
+	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization), currentlyProcessedCLCW(CLCW(0)),
           frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
 	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
@@ -282,7 +282,8 @@ public:
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldTMPresent(v.frameErrorControlFieldTMPresent),
-	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
+	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels),
+          currentlyProcessedCLCW(0) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
 		fop.waitQueueFOP = &waitQueueTxTC;
@@ -340,7 +341,7 @@ private:
     /**
     * Buffer holding the master copy of the CLCW that is currently being processed
     */
-    etl::list<CLCW*, 1> rxMasterCopyCLCWTM;
+    CLCW currentlyProcessedCLCW;
 
 	/**
 	 * Holds the FOP state of the virtual channel
