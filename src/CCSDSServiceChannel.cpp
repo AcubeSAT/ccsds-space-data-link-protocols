@@ -459,10 +459,10 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
                                                         vid, virtChannel.frameErrorControlFieldPresent,
                                                         virtChannel.secondaryHeaderTMPresent,
                                                         virtChannel.synchronization, clcw.clcw, TM);
-    if (!clcwTransferFrameFrameBuffer.empty()) {
-        clcwTransferFrameFrameBuffer.pop_front();
+    if (!clcwTransferFrameBuffer.empty()) {
+        clcwTransferFrameBuffer.pop_front();
     }
-    clcwTransferFrameFrameBuffer.push_back(clcwTransferFrame);
+    clcwTransferFrameBuffer.push_back(clcwTransferFrame);
     clcwWaitingToBeTransmitted = true;
 
 	// If MAP channels are implemented in this specific VC, write to the MAP buffer
@@ -850,7 +850,7 @@ void ServiceChannel::setTimeoutType(uint8_t vid, bool vr) {
 	virtualChannel->fop.setTimeoutType(vr);
 }
 CLCW ServiceChannel::getClcwInBuffer() {
-    CLCW clcw = CLCW(clcwTransferFrameFrameBuffer.front().getOperationalControlField().value());
+    CLCW clcw = CLCW(clcwTransferFrameBuffer.front().getOperationalControlField().value());
     return clcw;
 }
 
@@ -950,4 +950,7 @@ std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::tx
 	ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT,
 	                 masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.front());
+}
+uint8_t* ServiceChannel::getClcwTransferFrameDataBuffer() {
+    return clcwTransferFrameDataBuffer;
 }
