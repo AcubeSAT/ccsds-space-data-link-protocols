@@ -29,7 +29,7 @@ const uint8_t CLCW::getSpare() {
     return (clcw >> 16U) & 0x2;
 }
 
-const uint8_t CLCW::getSpare2() {
+const uint8_t CLCW::getSpareSecondPart() {
     return (clcw >> 24U) & 0x1;
 }
 

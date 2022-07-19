@@ -410,9 +410,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 
 	TransferFrameTC &frame = *virt_channel.txUnprocessedPacketListBufferTC.front();
 	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
-
 	err = virt_channel.fop.transferFdu();
-
 
 	if (err == COPDirectiveResponse::REJECT) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);

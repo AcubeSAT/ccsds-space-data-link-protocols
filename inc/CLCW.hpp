@@ -24,18 +24,18 @@ public:
 	const bool getControlWordType();
 
     /**
-	 * Control Word Type is set to 0 to indicate that the Operational Control Field contains a CLCW
-	 * @return bit 0 of the CLCW
-	 * @see 4.2.2 from Telecommand Part 2
-	 */
+    *Bits 14-15 of the CLCW shall contain the Reserved Spare. Shall be set to ‘00’
+    * @return bits 14,15 of the CLCW
+    * @see 4.2.2 from Telecommand Part 2
+    */
     const uint8_t getSpare();
 
     /**
-     *Bits 14-15 of the CLCW shall contain the Reserved Spare.
-     * @return These two bits are reserved by CCSDS for future application and shall be set to ‘00’.
-     * @see 4.2.2 from Telecommand Part 2
-     */
-    const uint8_t getSpare2();
+    *Bit 23 of the CLCW shall contain the Reserved Spare. Shall be set to 0
+    * @return bit 23 of the CLCW
+    * @see 4.2.2 from Telecommand Part 2
+    */
+    const uint8_t getSpareSecondPart();
 
 	/**
 	 * Clcw Version Number is set to value "00"  to indicate the Version-1 CLCW is used.
@@ -117,8 +117,8 @@ public:
 
     void setCLCW(CLCW newclcw){
         clcw = (newclcw.getControlWordType() << 31U | newclcw.getClcwVersion() << 29U | newclcw.getStatusField() << 26U | newclcw.getCopInEffect() << 24U | newclcw.getVcId() << 18U |
-             newclcw.getSpare() << 16U | newclcw.getNoRfAvailable() << 15U | newclcw.getNoBitLock() << 14U | newclcw.getLockout() << 13U | newclcw.getWait() << 12U |
-             newclcw.getRetransmit() << 11U | newclcw.getFarmBCounter() << 9U | newclcw.getSpare2() << 8U | newclcw.getReportValue());
+                newclcw.getSpare() << 16U | newclcw.getNoRfAvailable() << 15U | newclcw.getNoBitLock() << 14U | newclcw.getLockout() << 13U | newclcw.getWait() << 12U |
+                newclcw.getRetransmit() << 11U | newclcw.getFarmBCounter() << 9U | newclcw.getSpareSecondPart() << 8U | newclcw.getReportValue());
 
     }
 };
