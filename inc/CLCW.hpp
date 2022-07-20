@@ -38,7 +38,7 @@ public:
     }
 
     /**
-    *Bit 23 of the CLCW shall contain the Reserved Spare. Shall be set to 0
+    * Bit 23 of the CLCW shall contain the Reserved Spare. Shall be set to 0
     * @return bit 23 of the CLCW
     * @see 4.2.2 from Telecommand Part 2
     */
