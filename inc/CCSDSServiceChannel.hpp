@@ -8,6 +8,13 @@
 #include <utility>
 #include <CCSDSLoggerImpl.h>
 
+enum SegmentLengthID{
+    SegmentationMiddle = 0x0,
+    SegmentationStart = 0x1,
+    SegmentaionEnd = 0x2,
+    NoSegmentation = 0x3
+};
+
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
  * bidirectional interface between the receiving and transmitting parties
@@ -55,11 +62,6 @@ public:
 	uint16_t availableMcTxTM() const {
 		return masterChannel.txProcessedPacketListBufferTM.available();
 	}
-
-    const TransferFrameTM* nextPacketMasterChannel() {
-        masterChannel.txProcessedPacketListBufferTM.pop_front();
-        return masterChannel.txProcessedPacketListBufferTM.front();
-    }
 
 	/**
 	 * Stores an incoming  TC packet in the ring buffer
@@ -265,8 +267,14 @@ public:
 
 	void invalidDirective(uint8_t vid);
 
+    /**
+     * @brief Returns the available space in the packetLengthBufferTmTx buffer
+     */
     uint16_t availableInPacketLengthBufferTmTx(uint8_t gvcid);
 
+    /**
+     * @brief Returns the available space in the packetBufferTmTx buffer
+     */
     uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
 
     /**

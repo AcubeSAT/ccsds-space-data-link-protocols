@@ -327,7 +327,8 @@ TEST_CASE("VC Generation Service"){
         CHECK(transferFrame->packetData()[10] == 25);
         CHECK(transferFrame->segmentLengthId() == 1);
 
-        transferFrame = serv_channel.nextPacketMasterChannel();
+        serv_channel.mcGenerationTMRequest();
+        transferFrame = serv_channel.packetMasterChannel();
 
         CHECK(transferFrame->packetData()[6] == 44);
         CHECK(transferFrame->packetData()[7] == 76);
@@ -336,7 +337,8 @@ TEST_CASE("VC Generation Service"){
         CHECK(transferFrame->packetData()[10] == 43);
         CHECK(transferFrame-> segmentLengthId() == 0);
 
-        transferFrame = serv_channel.nextPacketMasterChannel();
+        serv_channel.mcGenerationTMRequest();
+        transferFrame = serv_channel.packetMasterChannel();
 
         CHECK(transferFrame->packetData()[6] == 78);
         CHECK(transferFrame->segmentLengthId() == 2);
