@@ -89,51 +89,6 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-// It is expected for space to be reserved for the Primary and Secondary header (if present) beforehand
-ServiceChannelNotification ServiceChannel::storeTM(uint8_t *packet, uint16_t packetLength, uint8_t gvcid) {
-    uint8_t vid = gvcid & 0x3F;
-
-    // Check if Virtual Channel Id does not exist in the relevant Virtual chanels map
-    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        // If it doesn't, abort operation
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return ServiceChannelNotification::INVALID_VC_ID;
-    }
-    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
-
-    if (masterChannel.txMasterCopyTM.full()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, MASTER_CHANNEL_FRAME_BUFFER_FULL);
-        return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
-    }
-
-    if (masterChannel.txProcessedPacketListBufferTM.full()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
-        return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
-    }
-
-    auto hdr = TransferFrameHeaderTM(packet);
-
-    uint8_t *secondaryHeader = 0;
-
-    if (vchan->secondaryHeaderTMPresent) {
-        secondaryHeader = &packet[7];
-    }
-    SegmentLengthID segmentLengthId = NoSegmentation;
-    TransferFrameTM packet_s = TransferFrameTM(
-            packet, packetLength, vchan->frameCountTM, vid,
-            vchan->frameErrorControlFieldPresent, vchan->secondaryHeaderTMPresent, segmentLengthId,
-            vchan->synchronization, 0);
-
-    // Increment VC frame count. The MC counter is incremented in the Master Channel
-    vchan->frameCountTM = vchan->frameCountTM < 255 ? vchan->frameCountTM + 1 : 0;
-
-    masterChannel.txMasterCopyTM.push_back(packet_s);
-    masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
-
-    ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-    return ServiceChannelNotification::NO_SERVICE_EVENT;
-}
-
 ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8_t* packet_target) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
 

@@ -239,20 +239,6 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
 
-	// TM Transmission
-	CHECK(serv_channel.getFrameCountTM(0) == 0);
-	uint8_t pck_tm_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
-	err = serv_channel.storeTM(pck_tm_data, 15, 0);
-	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.availableMcTxTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
-
-	const TransferFrameTM* packet_tm_mc = serv_channel.packetMasterChannel();
-	CHECK(serv_channel.getFrameCountTM(0) == 1);
-
-	CHECK(packet_tm_mc->packetData()[0] == 0x06);
-	CHECK(packet_tm_mc->packetData()[1] == 0x71);
-	CHECK(packet_tm_mc->packetData()[2] == 0x00);
-    CHECK(packet_tm_mc->packetData()[3] ==  0x00);
 }
 
 TEST_CASE("VC Generation Service"){
