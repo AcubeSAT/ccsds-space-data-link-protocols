@@ -21,7 +21,7 @@ TEST_CASE("Service Channel") {
 	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
 	                     10, map_channels);
 
-    master_channel.addVC(1, 128, false, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 20, 3,
+    master_channel.addVC(1, 128, false, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3,
                          3);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -304,4 +304,76 @@ TEST_CASE("VC Generation Service"){
 
     err = serv_channel.vcGenerationService(3, 0);
     CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
+}
+
+TEST_CASE("CLCW construction at VC Reception"){
+    PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+            {0, MAPChannel(0, true, true)},
+            {1, MAPChannel(1, false, false)},
+            {2, MAPChannel(2, true, false)},
+    };
+
+    MasterChannel master_channel = MasterChannel();
+    master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED,
+                         255, 10, 10, map_channels);
+
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+    VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
+
+    ServiceChannelNotification err;
+    uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    uint8_t packet2[] = {0x10, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    serv_channel.storeTC(packet1,10);
+    serv_channel.storeTC(packet2, 10);
+    serv_channel.storeTC(packet3, 10);
+    serv_channel.allFramesReceptionTCRequest();
+    serv_channel.allFramesReceptionTCRequest();
+    serv_channel.allFramesReceptionTCRequest();
+    err = serv_channel.vcReceptionTC(0);
+    //Checks if frame sequence number is the same as expected
+    CHECK(serv_channel.getClcwInBuffer().getWait() == false);
+    CHECK(serv_channel.getClcwInBuffer().getRetransmit() == false);
+    CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
+    CLCW clcw = CLCW(serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent]
+                     << 24 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent + 1]
+                      << 16 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent +2]
+                      << 8 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent+3]);
+    CHECK(clcw.getWait() == false);
+    CHECK(clcw.getRetransmit() == false);
+    CHECK(clcw.getLockout() == false);
+    CHECK(err == NO_SERVICE_EVENT);
+
+    err = serv_channel.vcReceptionTC(0);
+    //Checks if frame sequence number is bigger than expected but smaller that positive window
+    CHECK(serv_channel.getClcwInBuffer().getWait() == false);
+    CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
+    CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
+    CLCW clcw2 = CLCW(serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent]
+                             << 24 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent + 1]
+                             << 16 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent +2]
+                             << 8 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent+3]);
+    CHECK(clcw2.getWait() == false);
+    CHECK(clcw2.getRetransmit() == true);
+    CHECK(clcw2.getLockout() == false);
+    CHECK(err == NO_SERVICE_EVENT);
+    CHECK(err == NO_SERVICE_EVENT);
+
+    err = serv_channel.vcReceptionTC(0);
+    //Checks if frame sequence number is bigger than expected and bigger that positive window
+    CHECK(serv_channel.getClcwInBuffer().getWait() == false);
+    CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
+    CHECK(serv_channel.getClcwInBuffer().getLockout() == true);
+    CLCW clcw3 = CLCW(serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent]
+                             << 24 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent + 1]
+                             << 16 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent +2]
+                             << 8 | serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 - 2*virtualChannel.frameErrorControlFieldPresent+3]);
+    CHECK(clcw3.getWait() == false);
+    CHECK(clcw3.getRetransmit() == true);
+    CHECK(clcw3.getLockout() == true);
+    CHECK(err == NO_SERVICE_EVENT);
+    CHECK(err == NO_SERVICE_EVENT);
+
 }
