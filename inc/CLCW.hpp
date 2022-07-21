@@ -14,6 +14,7 @@ struct CLCW {
                    spare << 16U | noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U |
                    retransmit << 11U | farmBCounter << 9U | spare2 << 8U | reportValue) {};
 
+
 public:
     const uint32_t getClcw() {
         return clcw;
