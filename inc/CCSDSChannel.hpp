@@ -16,6 +16,7 @@
 #include <TransferFrameTM.hpp>
 #include <iostream>
 #include "MemoryPool.hpp"
+#include "CLCW.hpp"
 
 class MasterChannel;
 
@@ -287,6 +288,8 @@ public:
 		fop.waitQueueFOP = &waitQueueTxTC;
 		fop.sentQueueFARM = &sentQueueRxTC;
 		fop.waitQueueFARM = &sentQueueRxTC;
+		farm.waitQueue = &waitQueueRxTC;
+		farm.sentQueue = &sentQueueRxTC;
 	}
 
 	VirtualChannelAlert storeVC(TransferFrameTC* packet);
