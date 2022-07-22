@@ -239,20 +239,6 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
 
-	// TM Transmission
-	CHECK(serv_channel.getFrameCountTM(0) == 0);
-	uint8_t pck_tm_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x55};
-	err = serv_channel.storeTM(pck_tm_data, 15, 0);
-	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.availableMcTxTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 1);
-
-	const TransferFrameTM* packet_tm_mc = serv_channel.packetMasterChannel();
-	CHECK(serv_channel.getFrameCountTM(0) == 1);
-
-	CHECK(packet_tm_mc->packetData()[0] == 0x06);
-	CHECK(packet_tm_mc->packetData()[1] == 0x71);
-	CHECK(packet_tm_mc->packetData()[2] == 0x00);
-    CHECK(packet_tm_mc->packetData()[3] ==  0x00);
 }
 
 TEST_CASE("VC Generation Service"){
@@ -271,39 +257,79 @@ TEST_CASE("VC Generation Service"){
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
     ServiceChannelNotification err;
 
-    uint8_t packet1[] = {1, 54, 32, 49, 12, 23};
-    uint8_t packet2[] = {47, 31, 65, 81, 25, 44, 76, 99, 13};
-    uint8_t packet3[] = {41, 91, 68, 10};
+    SECTION("Blocking") {
+        uint8_t packet1[] = {1, 54, 32, 49, 12, 23};
+        uint8_t packet2[] = {47, 31, 65, 81, 25, 44, 76, 99, 13};
+        uint8_t packet3[] = {41, 91, 68, 10};
+        uint8_t vid = 0 & 0x3F;
 
-    err = serv_channel.storePacketTm(packet1, 6, 0);
-    CHECK(err == NO_SERVICE_EVENT);
-    err = serv_channel.storePacketTm(packet2, 9, 0);
-    CHECK(err == NO_SERVICE_EVENT);
-    err = serv_channel.storePacketTm(packet3, 4, 0);
-    CHECK(err == NO_SERVICE_EVENT);
 
-    err = serv_channel.vcGenerationService(15, 0);
-    CHECK(err == NO_SERVICE_EVENT);
-    const TransferFrameTM* transferFrame = serv_channel.packetMasterChannel();
+        err = serv_channel.storePacketTm(packet1, 6, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTm(packet2, 9, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTm(packet3, 4, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize - 3);
+        CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize - 19);
+        uint16_t maxTransferFrameData = 15;
+        err = serv_channel.vcGenerationService(maxTransferFrameData, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize - 1);
+        CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize - 4);
 
-    CHECK(transferFrame->packetData()[6] == 1);
-    CHECK(transferFrame->packetData()[7] == 54);
-    CHECK(transferFrame->packetData()[8] == 32);
-    CHECK(transferFrame->packetData()[9] == 49);
-    CHECK(transferFrame->packetData()[10] == 12);
-    CHECK(transferFrame->packetData()[11] == 23);
-    CHECK(transferFrame->packetData()[12] == 47);
-    CHECK(transferFrame->packetData()[13] == 31);
-    CHECK(transferFrame->packetData()[14] == 65);
-    CHECK(transferFrame->packetData()[15] == 81);
-    CHECK(transferFrame->packetData()[16] == 25);
-    CHECK(transferFrame->packetData()[17] == 44);
-    CHECK(transferFrame->packetData()[18] == 76);
-    CHECK(transferFrame->packetData()[19] == 99);
-    CHECK(transferFrame->packetData()[20] == 13);
+        const TransferFrameTM *transferFrame = serv_channel.packetMasterChannel();
 
-    err = serv_channel.vcGenerationService(3, 0);
-    CHECK(err == NO_TX_PACKETS_TO_TRANSFER_FRAME);
+        CHECK(transferFrame->segmentLengthId() == 3);
+        for(uint8_t i = TmPrimaryHeaderSize ; i < maxTransferFrameData + TmPrimaryHeaderSize ; i++){
+            if(i < TmPrimaryHeaderSize + sizeof(packet1)){
+                CHECK(transferFrame->packetData()[i] == packet1[i - TmPrimaryHeaderSize]);
+            }
+            else if(i >= TmPrimaryHeaderSize + sizeof(packet1) && i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
+                CHECK(transferFrame->packetData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
+            }
+            else{
+                CHECK(transferFrame->packetData()[i] == packet3[i - TmPrimaryHeaderSize - sizeof(packet1) - sizeof(packet2)]);
+            }
+        }
+    }
+    SECTION("Segmentation") {
+
+        uint8_t packet5[] = {47, 31, 65, 81, 25, 44, 76, 99, 13, 43, 78};
+        serv_channel.storePacketTm(packet5, 11, 0);
+        CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize - 1);
+        CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize - 11);
+
+        err = serv_channel.vcGenerationService(5, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize);
+        CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize);
+        const TransferFrameTM *transferFrame = serv_channel.packetMasterChannel();
+        CHECK(transferFrame->packetData()[6] == 47);
+        CHECK(transferFrame->packetData()[7] == 31);
+        CHECK(transferFrame->packetData()[8] == 65);
+        CHECK(transferFrame->packetData()[9] == 81);
+        CHECK(transferFrame->packetData()[10] == 25);
+        CHECK(transferFrame->segmentLengthId() == 1);
+
+        serv_channel.mcGenerationTMRequest();
+        transferFrame = serv_channel.packetMasterChannel();
+
+        CHECK(transferFrame->packetData()[6] == 44);
+        CHECK(transferFrame->packetData()[7] == 76);
+        CHECK(transferFrame->packetData()[8] == 99);
+        CHECK(transferFrame->packetData()[9] == 13);
+        CHECK(transferFrame->packetData()[10] == 43);
+        CHECK(transferFrame-> segmentLengthId() == 0);
+
+        serv_channel.mcGenerationTMRequest();
+        transferFrame = serv_channel.packetMasterChannel();
+
+        CHECK(transferFrame->packetData()[6] == 78);
+        CHECK(transferFrame->segmentLengthId() == 2);
+
+    }
+
 }
 
 TEST_CASE("CLCW construction at VC Reception"){
