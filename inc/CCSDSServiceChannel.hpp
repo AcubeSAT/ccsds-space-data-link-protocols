@@ -8,6 +8,13 @@
 #include <utility>
 #include <CCSDSLoggerImpl.h>
 
+enum SegmentLengthID{
+    SegmentationMiddle = 0x0,
+    SegmentationStart = 0x1,
+    SegmentaionEnd = 0x2,
+    NoSegmentation = 0x3
+};
+
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
  * bidirectional interface between the receiving and transmitting parties
@@ -32,11 +39,15 @@ private:
 
 	uint8_t packetCountTM;
 
-    // Variable to indicate that a CLCW has been constructed and should be sent
+    /**
+     * Variable to indicate that a CLCW has been constructed and should be sent
+     */
     bool clcwWaitingToBeTransmitted = false;
 
-    // Buffer to store the data of the clcw transfer frame
-    uint8_t clcwTransferFrameDataBuffer[TmTransferFrameSize] = {0};
+    /**
+     * Buffer to store the data of the clcw transfer frame
+     */
+     uint8_t clcwTransferFrameDataBuffer[TmTransferFrameSize] = {0};
 
     etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
@@ -266,6 +277,33 @@ public:
      * @brief A function that generates a CLCW and stores it to a clcw buffer
      */
     ServiceChannelNotification clcwReportTime(uint8_t vid);
+    /**
+     * Returns the available space in the packetLengthBufferTmTx buffer
+     */
+    uint16_t availableInPacketLengthBufferTmTx(uint8_t gvcid);
+
+    /**
+     * Returns the available space in the packetBufferTmTx buffer
+     */
+    uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
+
+    /**
+     * Function used by the vcGenerationService function to implement the blocking of packets stored in packetBufferTmTx
+     * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the vcGenerationService parameter
+     * @param packetLength The length of the next packet in the packetBufferTmTx
+     * @return A Service Channel Notification as it is the case with vcGenerationService
+     */
+    ServiceChannelNotification blockingTm(uint16_t  transferFrameDataLength, uint16_t packetLength, uint8_t gvcid);
+
+    /**
+     * Function used by the vcGenerationService function to implement the segmentation of packets stored in packetBufferTmTx
+     * @param numberOfTransferFrames The number of transfer frames that the packet will segmented into
+     * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the vcGenerationService parameter
+     * @param packetLength The length of the next packet in the packetBufferTmTx
+     * @return A Service Channel Notification as it is the case with vcGenerationService
+     */
+    ServiceChannelNotification segmentationTm(uint8_t numberOfTransferFrames, uint16_t packetLength, uint16_t transferFrameDataLength, uint8_t gvcid);
+
 	/**
 	 * Get FOP State of the virtual channel
 	 */
