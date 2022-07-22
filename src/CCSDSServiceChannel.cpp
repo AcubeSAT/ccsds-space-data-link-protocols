@@ -44,7 +44,6 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	TransferFrameTC* masterPckt = &(masterChannel.rxMasterCopyTC.back());
 
 	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(masterPckt);
-	ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
@@ -366,22 +365,44 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 }
 
 ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
-	VirtualChannel &virtChannel = masterChannel.virtualChannels.at(vid);
+    VirtualChannel &virtChannel = masterChannel.virtualChannels.at(vid);
 
-	if (virtChannel.waitQueueRxTC.empty()) {
-		ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM);
-		return ServiceChannelNotification::NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM;
-	}
+    if (virtChannel.waitQueueRxTC.empty()) {
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM);
+        return ServiceChannelNotification::NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM;
+    }
 
-	if (virtChannel.rxInFramesAfterVCReception.full()) {
-		ccsdsLogNotice(Rx, TypeServiceChannelNotif, VC_RECEPTION_BUFFER_AFTER_FARM_FULL);
-		return ServiceChannelNotification::VC_RECEPTION_BUFFER_AFTER_FARM_FULL;
-	}
+    if (virtChannel.rxInFramesAfterVCReception.full()) {
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, VC_RECEPTION_BUFFER_AFTER_FARM_FULL);
+        return ServiceChannelNotification::VC_RECEPTION_BUFFER_AFTER_FARM_FULL;
+    }
 
-	TransferFrameTC *frame = virtChannel.waitQueueRxTC.front();
+    TransferFrameTC *frame = virtChannel.waitQueueRxTC.front();
 
-	// FARM procedures
-	virtChannel.waitQueueRxTC.pop_front();
+    // FARM procedures
+    virtChannel.farm.frameArrives();
+
+    CLCW clcw = CLCW(0, 0, 0, 1, vid, 0, 1,
+                     virtChannel.farm.lockout, virtChannel.farm.wait, virtChannel.farm.retransmit,
+                     virtChannel.farm.farmBCount,
+                     virtChannel.farm.receiverFrameSeqNumber);
+
+    //add idle data
+    for (uint8_t i = TmPrimaryHeaderSize;
+         i < TmTransferFrameSize - 2 * virtChannel.frameErrorControlFieldPresent; i++) {
+        //add idle data
+        clcwTransferFrameDataBuffer[i] = idle_data[i];
+    }
+    TransferFrameTM clcwTransferFrame = TransferFrameTM(clcwTransferFrameDataBuffer, TmTransferFrameSize,
+                                                        virtChannel.frameCountTM,
+                                                        vid, virtChannel.frameErrorControlFieldPresent,
+                                                        virtChannel.secondaryHeaderTMPresent,
+                                                        virtChannel.synchronization, clcw.clcw, TM);
+    if (!clcwTransferFrameBuffer.empty()) {
+        clcwTransferFrameBuffer.pop_front();
+    }
+    clcwTransferFrameBuffer.push_back(clcwTransferFrame);
+    clcwWaitingToBeTransmitted = true;
 
 	// If MAP channels are implemented in this specific VC, write to the MAP buffer
 	if (virtChannel.segmentHeaderPresent) {
@@ -511,9 +532,10 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 		}
 		virtualChannel.waitQueueRxTC.push_back(frame);
 		masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
-        ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 		return ServiceChannelNotification::NO_SERVICE_EVENT;
 	}
+    virtualChannel.waitQueueRxTC.push_back(frame);
+    masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
@@ -766,6 +788,10 @@ void ServiceChannel::setTimeoutType(uint8_t vid, bool vr) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
 	virtualChannel->fop.setTimeoutType(vr);
 }
+CLCW ServiceChannel::getClcwInBuffer() {
+    CLCW clcw = CLCW(clcwTransferFrameBuffer.front().getOperationalControlField().value());
+    return clcw;
+}
 
 // todo: this may not be needed since it doesn't affect lower procedures and doesn't change the state in any way
 void ServiceChannel::invalidDirective(uint8_t vid) {
@@ -863,6 +889,9 @@ std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::tx
 	ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT,
 	                 masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTM.front());
+}
+uint8_t* ServiceChannel::getClcwTransferFrameDataBuffer() {
+    return clcwTransferFrameDataBuffer;
 }
 
 ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameDataLength, uint16_t packetLength, uint8_t gvcid) {

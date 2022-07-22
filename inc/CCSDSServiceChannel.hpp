@@ -42,12 +42,14 @@ private:
     /**
      * Variable to indicate that a CLCW has been constructed and should be sent
      */
-    bool clcwWaiting = false;
+    bool clcwWaitingToBeTransmitted = false;
 
     /**
      * Buffer to store the data of the clcw transfer frame
      */
-    uint8_t clcwTransferFrameBuffer[TmTransferFrameSize] = {0};
+     uint8_t clcwTransferFrameDataBuffer[TmTransferFrameSize] = {0};
+
+    etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
 public:
 	// Public methods that are called by the scheduler
@@ -267,6 +269,14 @@ public:
 
 	void invalidDirective(uint8_t vid);
 
+    CLCW getClcwInBuffer();
+
+    uint8_t* getClcwTransferFrameDataBuffer();
+
+    /**
+     * @brief A function that generates a CLCW and stores it to a clcw buffer
+     */
+    ServiceChannelNotification clcwReportTime(uint8_t vid);
     /**
      * Returns the available space in the packetLengthBufferTmTx buffer
      */
@@ -294,10 +304,6 @@ public:
      */
     ServiceChannelNotification segmentationTm(uint8_t numberOfTransferFrames, uint16_t packetLength, uint16_t transferFrameDataLength, uint8_t gvcid);
 
-    /**
-     * @brief A function that generates a CLCW and stores it to a clcw buffer
-     */
-    ServiceChannelNotification clcwReportTime(uint8_t vid);
 	/**
 	 * Get FOP State of the virtual channel
 	 */
