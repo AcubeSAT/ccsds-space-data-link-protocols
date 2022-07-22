@@ -49,8 +49,10 @@ const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
  */
 const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
 
-const uint8_t MaxReceivedTxTmOutInVCBuffer = 100; ///> Maximum received TM in the master buffer, after passing through the all frames generation service
-const uint8_t MaxReceivedTxTmInVCBuffer = 100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
+const uint8_t MaxReceivedTxTmOutInVCBuffer =
+    100; ///> Maximum received TM in the master buffer, after passing through the all frames generation service
+const uint8_t MaxReceivedTxTmInVCBuffer =
+    100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
 
 const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100; ///> Maximum received fully-processed TX TMs in the master buffer
 const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
@@ -71,16 +73,17 @@ const uint8_t MaxTxInMasterChannel = 200;
 
 const uint8_t MaxRxInMasterChannel = 200;
 
-
-const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
+const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer =
+    6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
-const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
+const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
+    6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
 
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
 
-const uint16_t MemoryPoolMemorySize = 5*128; //Size of memory pool
+const uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 
 enum FlagState { NOT_READY = 0, READY = 1 };
 
