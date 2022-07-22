@@ -902,18 +902,18 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
     static uint8_t tmpData[TmTransferFrameSize] = {0};
     while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
            !vchan.packetLengthBufferTmTx.empty()) {
-        for (uint16_t i = currentTransferFrameDataLength;
-             i < currentTransferFrameDataLength + packetLength; i++) {
-            tmpData[i + TmPrimaryHeaderSize] = vchan.packetBufferTmTx.front();
+        for (uint16_t dataIndex = currentTransferFrameDataLength;
+             dataIndex < currentTransferFrameDataLength + packetLength; dataIndex++) {
+            tmpData[dataIndex + TmPrimaryHeaderSize] = vchan.packetBufferTmTx.front();
             vchan.packetBufferTmTx.pop();
         }
         currentTransferFrameDataLength += packetLength;
         vchan.packetLengthBufferTmTx.pop();
         packetLength = vchan.packetLengthBufferTmTx.front();
     }
-    for (uint8_t i = 0; i < TmTrailerSize; i++) {
-        if (currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
-            tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
+    for (uint8_t dataIndex = 0; dataIndex < TmTrailerSize; dataIndex++) {
+        if (currentTransferFrameDataLength + TmPrimaryHeaderSize + dataIndex < TmTransferFrameSize) {
+            tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + dataIndex] = 0;
         }
     }
     uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData,
@@ -939,7 +939,7 @@ ServiceChannelNotification ServiceChannel::segmentationTm(uint8_t numberOfTransf
 
     uint16_t currentTransferFrameDataLength = 0;
     static uint8_t tmpData[TmTransferFrameSize] = {0};
-    for (uint16_t i = 0; i < numberOfTransferFrames; i++) {
+    for (uint16_t segmentedFrameIndex = 0; segmentedFrameIndex < numberOfTransferFrames; segmentedFrameIndex++) {
         currentTransferFrameDataLength =
                 packetLength > transferFrameDataLength ? transferFrameDataLength : packetLength;
         SegmentLengthID segmentLengthId = SegmentationMiddle;
@@ -947,14 +947,14 @@ ServiceChannelNotification ServiceChannel::segmentationTm(uint8_t numberOfTransf
             tmpData[dataIndex + TmPrimaryHeaderSize] = vchan.packetBufferTmTx.front();
             vchan.packetBufferTmTx.pop();
         }
-        if (i == 0) {
+        if (segmentedFrameIndex == 0) {
             segmentLengthId = SegmentationStart;
-        } else if (i == numberOfTransferFrames - 1) {
+        } else if (segmentedFrameIndex == numberOfTransferFrames - 1) {
             segmentLengthId = SegmentaionEnd;
         }
-        for (uint8_t j = 0; j < TmTrailerSize; j++) {
-            if (currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
-                tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
+        for (uint8_t dataIndex = 0; dataIndex < TmTrailerSize; dataIndex++) {
+            if (currentTransferFrameDataLength + TmPrimaryHeaderSize + segmentedFrameIndex < TmTransferFrameSize) {
+                tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + segmentedFrameIndex] = 0;
             }
         }
         uint8_t *transferFrameData = masterChannel.masterChannelPool.allocatePacket(tmpData,
