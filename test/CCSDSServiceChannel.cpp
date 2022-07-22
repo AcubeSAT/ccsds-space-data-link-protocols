@@ -262,7 +262,6 @@ TEST_CASE("VC Generation Service"){
         uint8_t packet2[] = {47, 31, 65, 81, 25, 44, 76, 99, 13};
         uint8_t packet3[] = {41, 91, 68, 10};
         uint8_t vid = 0 & 0x3F;
-        VirtualChannel *vchan = &(master_channel.virtualChannels.at(vid));
 
 
         err = serv_channel.storePacketTm(packet1, 6, 0);

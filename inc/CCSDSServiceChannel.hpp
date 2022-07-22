@@ -268,22 +268,29 @@ public:
 	void invalidDirective(uint8_t vid);
 
     /**
-     * @brief Returns the available space in the packetLengthBufferTmTx buffer
+     * Returns the available space in the packetLengthBufferTmTx buffer
      */
     uint16_t availableInPacketLengthBufferTmTx(uint8_t gvcid);
 
     /**
-     * @brief Returns the available space in the packetBufferTmTx buffer
+     * Returns the available space in the packetBufferTmTx buffer
      */
     uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
 
     /**
-     * @brief Helper function that implements the blocking of the Virtual Channel Generation Service
+     * Function used by the vcGenerationService function to implement the blocking of packets stored in packetBufferTmTx
+     * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the vcGenerationService parameter
+     * @param packetLength The length of the next packet in the packetBufferTmTx
+     * @return A Service Channel Notification as it is the case with vcGenerationService
      */
     ServiceChannelNotification blockingTm(uint16_t  transferFrameDataLength, uint16_t packetLength, uint8_t gvcid);
 
     /**
-     * @brief Helper function that implements the segmentation of the Virtual Channel Generation Service
+     * Function used by the vcGenerationService function to implement the segmentation of packets stored in packetBufferTmTx
+     * @param numberOfTransferFrames The number of transfer frames that the packet will segmented into
+     * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the vcGenerationService parameter
+     * @param packetLength The length of the next packet in the packetBufferTmTx
+     * @return A Service Channel Notification as it is the case with vcGenerationService
      */
     ServiceChannelNotification segmentationTm(uint8_t numberOfTransferFrames, uint16_t packetLength, uint16_t transferFrameDataLength, uint8_t gvcid);
 
