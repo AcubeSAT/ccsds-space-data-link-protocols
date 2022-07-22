@@ -943,8 +943,8 @@ ServiceChannelNotification ServiceChannel::segmentationTm(uint8_t numberOfTransf
         currentTransferFrameDataLength =
                 packetLength > transferFrameDataLength ? transferFrameDataLength : packetLength;
         SegmentLengthID segmentLengthId = SegmentationMiddle;
-        for (uint16_t dataIndex = 0; dataIndex < currentTransferFrameDataLength; dataIndex++) {
-            tmpData[dataIndex + TmPrimaryHeaderSize] = vchan.packetBufferTmTx.front();
+        for (uint16_t j = 0; j < currentTransferFrameDataLength; j++) {
+            tmpData[j + TmPrimaryHeaderSize] = vchan.packetBufferTmTx.front();
             vchan.packetBufferTmTx.pop();
         }
         if (i == 0) {
