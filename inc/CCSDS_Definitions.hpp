@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-inline uint8_t inline const tm_error_control_field_exists = 1;
+inline uint8_t const tm_error_control_field_exists = 1;
 inline const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those inline constants don't need to be global and can be defined in the class instead
