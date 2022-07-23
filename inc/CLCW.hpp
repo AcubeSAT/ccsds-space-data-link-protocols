@@ -44,7 +44,7 @@ public:
     * @see 4.2.2 from Telecommand Part 2
     */
     const uint8_t getSpareSecondPart() {
-        return (clcw >> 24U) & 0x1;
+        return (clcw >> 8U) & 0x1;
     }
 
     /**
