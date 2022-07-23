@@ -7,64 +7,64 @@
 #include <cstdint>
 
 inline uint8_t inline const tm_error_control_field_exists = 1;
-inline inline const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
+inline const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those inline constants don't need to be global and can be defined in the class instead
 
-inline inline const uint16_t TmTransferFrameSize = 128;
-inline inline const uint8_t TmPrimaryHeaderSize = 6;
-inline inline const uint8_t TmTrailerSize = 6;
+inline const uint16_t TmTransferFrameSize = 128;
+inline const uint8_t TmPrimaryHeaderSize = 6;
+inline const uint8_t TmTrailerSize = 6;
 
-inline inline const uint8_t TcPrimaryHeaderSize = 5;
-inline inline const bool TcErrorControlFieldExists = false;
+inline const uint8_t TcPrimaryHeaderSize = 5;
+inline const bool TcErrorControlFieldExists = false;
 
-inline inline const uint16_t MCID = SpacecraftIdentifier;
+inline const uint16_t MCID = SpacecraftIdentifier;
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
-inline inline const uint8_t MaxReceivedTcInMapChannel = 5;
-inline inline const uint8_t MaxReceivedTmInMapChannel = 5;
+inline const uint8_t MaxReceivedTcInMapChannel = 5;
+inline const uint8_t MaxReceivedTmInMapChannel = 5;
 
-inline inline const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
-inline inline const uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
+inline const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
+inline const uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
 
-inline inline const uint8_t MaxReceivedTxTcInFOPSentQueue = 10; ///> Maximum received TX TCs in sent queue (following COP checks).
-inline inline const uint8_t MaxReceivedRxTcInFOPSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
-inline inline const uint8_t MaxReceivedRxTmInVirtBuffer = 10; ///> Maxiumm received RX TMs in Virtual channel buffer
+inline const uint8_t MaxReceivedTxTcInFOPSentQueue = 10; ///> Maximum received TX TCs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedRxTcInFOPSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedRxTmInVirtBuffer = 10; ///> Maxiumm received RX TMs in Virtual channel buffer
 
-inline inline const uint8_t MaxReceivedTxTcInFARMSentQueue = 10; ///> Maximum received TX TMs in sent queue (following COP checks).
-inline inline const uint8_t MaxReceivedRxTcInFARMSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedTxTcInFARMSentQueue = 10; ///> Maximum received TX TMs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedRxTcInFARMSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
 
-inline inline const uint8_t MaxReceivedTxTcInMasterBuffer = 100; ///> Maximum received TX TC in the master buffer
+inline const uint8_t MaxReceivedTxTcInMasterBuffer = 100; ///> Maximum received TX TC in the master buffer
 
 /**
  * Maximum received TX TCs in the master buffer, ready to be transmitted to the lower procedures (doesn't include
  * repetitions)
  */
-inline inline const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
+inline const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
 
 /**
  * Maximum received TX TMs in the master buffer, ready to be transmitted to the lower procedures (doesn't include
  * repetitions)
  */
-inline inline const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
+inline const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
 
-inline inline const uint8_t MaxReceivedTxTmOutInVCBuffer =
+inline const uint8_t MaxReceivedTxTmOutInVCBuffer =
     100; ///> Maximum received TM in the master buffer, after passing through the all frames generation service
-inline inline const uint8_t MaxReceivedTxTmInVCBuffer =
+inline const uint8_t MaxReceivedTxTmInVCBuffer =
     100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
 
-inline inline const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100; ///> Maximum received fully-processed TX TMs in the master buffer
-inline inline const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
-inline inline const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
-inline inline const uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer
-inline inline const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100; ///> Maximum received fully processed RX TCs in MAP buffer
+inline const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100; ///> Maximum received fully-processed TX TMs in the master buffer
+inline const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
+inline const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
+inline const uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer
+inline const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100; ///> Maximum received fully processed RX TCs in MAP buffer
 
-inline inline const uint8_t MaxVirtualChannels = 10;
-inline inline const uint8_t MaxMapChannels = 3;
+inline const uint8_t MaxVirtualChannels = 10;
+inline const uint8_t MaxMapChannels = 3;
 
 // Number of master copies of TX transfer frames that are stored in the master channel. This holds all the transfer
 // frames that are stored in all services
-inline inline const uint8_t MaxTxInMasterChannel = 200;
+inline const uint8_t MaxTxInMasterChannel = 200;
 /**
  * Number of master copies of RX transfer frames that are stored in the master channel.
  * This holds all the transfer frames that are stored in all services
