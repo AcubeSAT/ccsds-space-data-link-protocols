@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-#define tm_error_control_field_exists 1
+inline uint8_t const tm_error_control_field_exists = 1;
 const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those constants don't need to be global and can be defined in the class instead
@@ -174,5 +174,7 @@ const uint8_t idle_data[] = {
     0xef, 0x1f, 0x7,  0x12, 0xc1, 0x54, 0x36, 0x68, 0xa6, 0xc9, 0x3c, 0x8d, 0xfe, 0x74, 0x7,  0x16, 0x7b, 0x1f, 0xc4,
     0x8b, 0x30, 0x5,  0xd3, 0x7,  0x28, 0xf9, 0x4,  0x7c, 0x9c, 0x86, 0x24, 0xc8, 0x65, 0x5a, 0x65, 0xa3, 0xfa, 0xfa,
     0xe1, 0xac};
-#define LOGGER_MAX_MESSAGE_SIZE 512
-#define LOG_VERBOSE 0
+
+inline uint16_t const logger_max_message_size = 512;
+
+inline uint8_t const log_verbose = 0;
