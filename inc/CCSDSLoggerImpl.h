@@ -1,5 +1,5 @@
-#ifndef CCSDS_TM_PACKETS_CCSDSLOGGERIMPL_H
-#define CCSDS_TM_PACKETS_CCSDSLOGGERIMPL_H
+#pragma once
+
 #include <iostream>
 #include <iomanip>
 #include <logOperators.h>
@@ -34,5 +34,3 @@ void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotificat
 			break;
 	};
 }
-
-#endif // CCSDS_TM_PACKETS_CCSDSLOGGERIMPL_H

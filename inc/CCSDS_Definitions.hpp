@@ -2,10 +2,9 @@
  * All necessary definitions used throughout the program
  */
 
-#include <cstdint>
+#pragma once
 
-#ifndef CCSDS_CCSDS_DEFINITIONS_HPP
-#define CCSDS_CCSDS_DEFINITIONS_HPP
+#include <cstdint>
 
 #define tm_error_control_field_exists 1
 const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
@@ -177,4 +176,3 @@ const uint8_t idle_data[] = {
     0xe1, 0xac};
 #define LOGGER_MAX_MESSAGE_SIZE 512
 #define LOG_VERBOSE 0
-#endif // CCSDS_TCCSDS_DEFINITIONS_HPP

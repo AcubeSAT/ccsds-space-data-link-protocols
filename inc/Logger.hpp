@@ -1,5 +1,4 @@
-#ifndef ECSS_SERVICES_LOGGER_HPP
-#define ECSS_SERVICES_LOGGER_HPP
+#pragma once
 
 #include <cstdint>
 #include <etl/String.hpp>
@@ -220,5 +219,3 @@ template <typename T>
 [[maybe_unused]] constexpr Logger::NoLogEntry operator<<(const Logger::NoLogEntry noLogEntry, T value) {
 	return noLogEntry;
 }
-
-#endif // ECSS_SERVICES_LOGGER_HPP

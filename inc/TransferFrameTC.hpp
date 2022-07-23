@@ -1,5 +1,4 @@
-#ifndef CCSDS_TC_PACKET_H
-#define CCSDS_TC_PACKET_H
+#pragma once
 
 #include <CCSDS_Definitions.hpp>
 #include <algorithm>
@@ -354,5 +353,3 @@ private:
 	bool ack;
 	uint8_t reps;
 };
-
-#endif // CCSDS_PACKET_H
