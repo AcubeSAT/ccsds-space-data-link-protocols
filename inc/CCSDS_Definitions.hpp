@@ -22,7 +22,7 @@ const bool TcErrorControlFieldExists = false;
 const uint16_t MCID = SpacecraftIdentifier;
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
-const uint8_t MaxReceivedTcInMapChannel = 128;
+const uint8_t MaxReceivedTcInMapChannel = 5;
 const uint8_t MaxReceivedTmInMapChannel = 5;
 
 const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
@@ -49,8 +49,10 @@ const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
  */
 const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
 
-const uint8_t MaxReceivedTxTmOutInVCBuffer = 100; ///> Maximum received TM in the master buffer, after passing through the all frames generation service
-const uint8_t MaxReceivedTxTmInVCBuffer = 100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
+const uint8_t MaxReceivedTxTmOutInVCBuffer =
+    100; ///> Maximum received TM in the master buffer, after passing through the all frames generation service
+const uint8_t MaxReceivedTxTmInVCBuffer =
+    100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
 
 const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100; ///> Maximum received fully-processed TX TMs in the master buffer
 const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
@@ -73,18 +75,23 @@ const uint8_t MaxRxInMasterChannel = 200;
 
 
 const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 256; ///> Raw TX TC packets stored directly in the virtual channel buffer.
+const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer =
+    6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
-const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
+const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
+    6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
 
 const uint8_t FopSlidingWindowInitial = 255;
 const uint8_t FopTimerInitial = 60; // sec
 
-const uint16_t MemoryPoolMemorySize = 5*128; //Size of memory pool
+const uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 
 enum FlagState { NOT_READY = 0, READY = 1 };
 
 const uint16_t PacketBufferTmSize = 512;
+
+const uint16_t ClcwBufferSize = 100;
 
 const uint8_t idle_data[] = {
     0x53, 0x45, 0x24, 0x3,  0xce, 0xf0, 0xd2, 0x75, 0x50, 0xb9, 0x57, 0x24, 0x70, 0x83, 0xa8, 0x4e, 0x44, 0xd4, 0xa6,
