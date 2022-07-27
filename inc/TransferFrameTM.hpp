@@ -1,5 +1,5 @@
-#ifndef CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
-#define CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP
+#pragma once
+
 #include "TransferFrame.hpp"
 #include "Alert.hpp"
 #include "CCSDS_Definitions.hpp"
@@ -237,5 +237,3 @@ private:
 	bool eccFieldExists;
 	uint16_t firstHeaderPointer;
 };
-
-#endif // CCSDS_TM_PACKETS_TRANSFERFRAMETM_HPP

@@ -1,5 +1,4 @@
-#ifndef CCSDS_SERVICECHANNEL_HPP
-#define CCSDS_SERVICECHANNEL_HPP
+#pragma once
 
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
@@ -473,5 +472,3 @@ public:
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 };
-
-#endif // CCSDS_CCSDSSERVICECHANNEL_HPP
