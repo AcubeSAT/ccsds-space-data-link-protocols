@@ -82,7 +82,7 @@ MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t ma
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
+	virtualChannels.emplace(vcid, VirtualChannel<256>(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                             repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -103,16 +103,13 @@ MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t ma
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid,
-	                        VirtualChannel<256>(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
-	                                       repetitionCopCtrl, frameErrorControlFieldTMPresent, secondaryHeaderTMPresent,
-	                                       secondaryHeaderTMLength, operationalControlFieldTMPresent, synchronization,
-	                        VirtualChannel(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
+	virtualChannels.emplace(vcid,VirtualChannel<256>(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
 	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
-	                                       farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels>()));
+	                                       farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel<128>, MaxMapChannels>()));
 	return MasterChannelAlert::NO_MC_ALERT;
+
 }
 
 template <uint16_t t>

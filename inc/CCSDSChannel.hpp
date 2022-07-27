@@ -263,7 +263,7 @@ public:
 		return packetBufferTmTx.available();
 	}
 
-	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
+	VirtualChannel(std::reference_wrapper<MasterChannel<256>> masterChannel, const uint8_t vcid,
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
 	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
@@ -278,8 +278,8 @@ public:
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-	      frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
-	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
+	      frameCountTM(0), fop(FrameOperationProcedure<256>(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+	      farm(FrameAcceptanceReporting<256>(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
 	}
@@ -358,7 +358,7 @@ private:
 	/**
 	 * Holds the FARM state of the virtual channel
 	 */
-	FrameAcceptanceReporting farm;
+	FrameAcceptanceReporting<256> farm;
 
 	/**
 	 * The Master Channel the Virtual Channel belongs in
@@ -368,25 +368,25 @@ private:
 	/**
 	 *  Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTmTx;
+	etl::queue<uint16_t, t> packetLengthBufferTmTx;
 
 	/**
 	 *  Queue that stores the packet data that will eventually be concatenated to transfer frame data
 	 */
-	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
+	etl::queue<uint8_t, t> packetBufferTmTx;
 };
 
 template <uint16_t t>
 struct MasterChannel {
 	friend class ServiceChannel;
 	friend class FrameOperationProcedure<256>;
-	friend class FrameAcceptanceReporting;
+	friend class FrameAcceptanceReporting<256>;
 
 	/**
 	 * Virtual channels of the master channel
 	 */
 	// TODO: Type aliases because this is getting out of hand
-	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
+	etl::flat_map<uint8_t, VirtualChannel<256>, MaxVirtualChannels> virtualChannels;
 	uint8_t frameCount{};
 
 	MasterChannel()

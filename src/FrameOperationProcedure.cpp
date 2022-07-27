@@ -749,3 +749,5 @@ COPDirectiveResponse FrameOperationProcedure<s>::transferFdu() {
 	}
 	return COPDirectiveResponse::ACCEPT;
 }
+
+template class FrameOperationProcedure<256>;

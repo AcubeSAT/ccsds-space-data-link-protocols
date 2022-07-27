@@ -1,7 +1,8 @@
 #include <FrameAcceptanceReporting.hpp>
 #include "CCSDSLogger.h"
 
-COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
+template <uint16_t t>
+COPDirectiveResponse FrameAcceptanceReporting<t>::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
     waitQueue->pop_front();
 
@@ -89,7 +90,8 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	return COPDirectiveResponse::REJECT;
 }
 
-COPDirectiveResponse FrameAcceptanceReporting::bufferRelease() {
+template <uint16_t t>
+COPDirectiveResponse FrameAcceptanceReporting<t>::bufferRelease() {
 	if (state == FARMState::LOCKOUT) {
 		state = FARMState::OPEN;
 		wait = FlagState::NOT_READY;
@@ -98,3 +100,5 @@ COPDirectiveResponse FrameAcceptanceReporting::bufferRelease() {
 	}
 	return COPDirectiveResponse::ACCEPT;
 }
+
+template class FrameAcceptanceReporting<256>;

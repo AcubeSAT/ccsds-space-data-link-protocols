@@ -389,7 +389,7 @@ public:
 			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
 			return ServiceChannelNotification::INVALID_VC_ID;
 		}
-		const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
+		const VirtualChannel<256>& virtualChannel = masterChannel.virtualChannels.at(vid);
 		if (!virtualChannel.segmentHeaderPresent) {
 			return ServiceChannelNotification::INVALID_MAP_ID;
 		}
@@ -431,7 +431,7 @@ public:
 			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
 			return ServiceChannelNotification::INVALID_VC_ID;
 		}
-		const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
+		const VirtualChannel<256>& virtualChannel = masterChannel.virtualChannels.at(vid);
 		if (!virtualChannel.segmentHeaderPresent) {
 			return ServiceChannelNotification::INVALID_MAP_ID;
 		}
