@@ -1,5 +1,4 @@
-#ifndef ECSS_SERVICES_LOGGER_HPP
-#define ECSS_SERVICES_LOGGER_HPP
+#pragma once
 
 #include <cstdint>
 #include <etl/String.hpp>
@@ -87,7 +86,7 @@ public:
      * @internal
      */
     struct LogEntry {
-        String<LOGGER_MAX_MESSAGE_SIZE> message; ///< The current log message itself, starting from a blank slate
+        String<logger_max_message_size> message; ///< The current log message itself, starting from a blank slate
         LogLevel level; ///< The log level of this message
 
         explicit LogEntry(LogLevel level); ///< Create a new LogEntry
@@ -220,5 +219,3 @@ template <typename T>
 [[maybe_unused]] constexpr Logger::NoLogEntry operator<<(const Logger::NoLogEntry noLogEntry, T value) {
 	return noLogEntry;
 }
-
-#endif // ECSS_SERVICES_LOGGER_HPP

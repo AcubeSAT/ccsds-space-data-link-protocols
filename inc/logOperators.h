@@ -1,5 +1,5 @@
-#ifndef CCSDS_TM_PACKETS_LOGOPERATORS_H
-#define CCSDS_TM_PACKETS_LOGOPERATORS_H
+#pragma once
+
 #include <cstdint>
 #include "map"
 #include <string>
@@ -10,5 +10,3 @@ std::ostream& operator<<(std::ostream& out, const NotificationType value);
 std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification value);
 std::ostream& operator<<(std::ostream& out, const COPDirectiveResponse value);
 std::ostream& operator<<(std::ostream& out, const FOPNotification value);
-
-#endif // CCSDS_TM_PACKETS_LOGOPERATORS_H
