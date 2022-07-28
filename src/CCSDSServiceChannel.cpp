@@ -459,6 +459,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 	}
 
 	TransferFrameTC* frame = virtualChannel->rxInFramesAfterVCReception.front();
+	frame->setToTransmitted();
 
 	uint16_t frameSize = frame->packetLength();
 	uint8_t headerSize = TcPrimaryHeaderSize; // Segment header is present
