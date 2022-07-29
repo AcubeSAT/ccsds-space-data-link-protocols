@@ -144,3 +144,20 @@ void MasterChannel::removeMasterRx(TransferFrameTM* packet_ptr) {
 		}
 	}
 }
+void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
+    for(TransferFrameTC& transferFrame : txMasterCopyTC){
+        if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
+            transferFrame.setAcknowledgement(true);
+            return;
+        }
+    }
+}
+
+void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
+    for(TransferFrameTC transferFrame : txMasterCopyTC){
+        if(transferFrame.transferFrameSequenceNumber() == frameSequenceNumber){
+            transferFrame.setToBeRetransmitted(true);
+            return;
+        }
+    }
+}

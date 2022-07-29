@@ -524,6 +524,16 @@ private:
 	 */
 	void removeMasterRx(TransferFrameTM* packet_ptr);
 
+    /**
+     * Sets the acknowledgement flag of a transfer frame to true
+     */
+    void acknowledgeFrame(uint8_t frameSequenceNumber);
+
+    /**
+     * Sets the toBeRetransmitted flag of a transfer frame to true
+     */
+    void setRetransmitFrame(uint8_t frameSequenceNumber);
+
 	MemoryPool masterChannelPool = MemoryPool();
 };
 

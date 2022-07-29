@@ -77,9 +77,9 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->getServiceType() == ServiceType::TYPE_AD) {
-			frame->setToBeRetransmitted(true);
+	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
+		if (frame.getServiceType() == ServiceType::TYPE_AD) {
+			frame.setToBeRetransmitted(true);
 		}
 	}
 }
@@ -89,9 +89,9 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if ((frame->getServiceType() == ServiceType::TYPE_BC) || (frame->getServiceType() == ServiceType::TYPE_BD)) {
-			frame->setToBeRetransmitted(1);
+	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
+		if ((frame.getServiceType() == ServiceType::TYPE_BC) || (frame.getServiceType() == ServiceType::TYPE_BD)) {
+			frame.setToBeRetransmitted(1);
 		}
 	}
 }
@@ -106,18 +106,6 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
 }
 
 void FrameOperationProcedure::removeAcknowledgedFrames() {
-	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
-
-	while (cur_frame != sentQueueFOP->end()) {
-		if ((*cur_frame)->acknowledged()) {
-			expectedAcknowledgementSeqNumber = (*cur_frame)->transferFrameSequenceNumber();
-			sentQueueFOP->erase(cur_frame++);
-		} else {
-			++cur_frame;
-		}
-	}
-
-	// Also remove acknowledged frames from Master TX Buffer
 	etl::ilist<TransferFrameTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
 
 	while (cur_packet != vchan->master_channel().txMasterCopyTC.end()) {
