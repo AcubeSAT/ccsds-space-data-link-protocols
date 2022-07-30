@@ -100,12 +100,8 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
 	for (TransferFrameTC* pckt : *sentQueueFOP) {
 		if (pckt->transferFrameSequenceNumber() == frame_seq_num) {
 			pckt->setAcknowledgement(true);
-			return;
 		}
 	}
-}
-
-void FrameOperationProcedure::removeAcknowledgedFrames() {
 	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
 	while (cur_frame != sentQueueFOP->end()) {
@@ -116,6 +112,11 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 			++cur_frame;
 		}
 	}
+	return ;
+}
+
+void FrameOperationProcedure::removeAcknowledgedFrames() {
+
 
 	// Also remove acknowledged frames from Master TX Buffer
 	etl::ilist<TransferFrameTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
@@ -213,12 +214,12 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
+	CLCW clcw = vchan->currentlyProcessedCLCW.getClcw();
 
-	if (frame->lockout() == 0) {
-		if (frame->reportValue() == expectedAcknowledgementSeqNumber) {
-			if (frame->retransmit() == 0) {
-				if (frame->wait() == 0) {
+	if (clcw.getLockout() == 0) {
+		if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
+			if (clcw.getRetransmit() == 0) {
+				if (clcw.getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
 						// E1
 						switch (state) {
@@ -230,12 +231,10 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 								state = FOPState::INITIAL;
 								break;
 							case FOPState::INITIALIZING_WITH_BC_FRAME:
-								frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
 								state = FOPState::ACTIVE;
 								// cancel timer
 								break;
 							case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-								frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
 								// bc_accept()??
 								//  cancel timer
 								state = FOPState::ACTIVE;
@@ -291,10 +290,10 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						break;
 				}
 			}
-		} else if (frame->reportValue() > expectedAcknowledgementSeqNumber &&
+		} else if (clcw.getReportValue() > expectedAcknowledgementSeqNumber &&
 		           expectedAcknowledgementSeqNumber >= transmitterFrameSeqNumber) {
-			if (frame->retransmit() == 0) {
-				if (frame->wait() == 0) {
+			if (clcw.getRetransmit()== 0) {
+				if (clcw.getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
 						// E5
 						switch (state) {
@@ -375,7 +374,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 					}
 				} else if (transmissionLimit > 1) {
 					if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
-						if (frame->wait() == 0) {
+						if (clcw.getWait() == 0) {
 							// E8
 							switch (state) {
 								case FOPState::ACTIVE:
@@ -408,7 +407,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						}
 					} else {
 						if (transmissionCount < transmissionLimit) {
-							if (frame->wait() == 0) {
+							if (clcw.getWait() == 0) {
 								//  E10
 								switch (state) {
 									case FOPState::ACTIVE:
@@ -438,7 +437,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 								}
 							}
 						} else {
-							if (frame->wait() == 0) {
+							if (clcw.getWait() == 0) {
 								// E12
 								switch (state) {
 									case FOPState::ACTIVE:
@@ -499,11 +498,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 		}
 	}
 
-	MasterChannelAlert mc = vchan->master_channel().storeOut(frame);
-	if (mc != MasterChannelAlert::NO_MC_ALERT) {
-		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-		return COPDirectiveResponse::REJECT;
-	}
+
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }

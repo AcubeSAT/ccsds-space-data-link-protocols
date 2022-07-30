@@ -2,16 +2,16 @@
 #include <cstdint>
 
 struct CLCW {
-	const uint32_t clcw;
+	uint32_t clcw;
 
 	CLCW(const uint32_t operationalControlField) : clcw(operationalControlField){};
 
 	CLCW(const bool controlWordType, const uint8_t clcwVersion, const uint8_t statusField, const uint8_t copInEffect,
-	     const uint8_t vcId, const bool noRfAvailable, const bool noBitLock, const bool lockout,
-	     const bool wait, const bool retransmit, const uint8_t farmBCounter, uint8_t reportValue)
+	     const uint8_t vcId, const uint8_t spare, const bool noRfAvailable, const bool noBitLock, const bool lockout,
+	     const bool wait, const bool retransmit, const uint8_t farmBCounter, bool spare2, uint8_t reportValue)
 	    : clcw(controlWordType << 31U | clcwVersion << 29U | statusField << 26U | copInEffect << 24U | vcId << 18U |
-                 noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U |
-	           retransmit << 11U | farmBCounter << 9U | reportValue){};
+	           spare << 16U | noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U |
+	           retransmit << 11U | farmBCounter << 9U | spare2 << 8U | reportValue){};
 
 public:
 	const uint32_t getClcw();
@@ -36,6 +36,25 @@ public:
 	 * @see p. 4.2.1.4 from TC SPACE DATA LINK PROTOCOL
 	 */
 	const uint8_t getStatusField();
+
+	/**
+    *Bits 14-15 of the CLCW shall contain the Reserved Spare. Shall be set to ‘00’
+    * @return bits 14,15 of the CLCW
+    * @see 4.2.2 from Telecommand Part 2
+	 */
+	const uint8_t getSpare() {
+		return (clcw >> 16U) & 0x2;
+	}
+
+	/**
+    * Bit 23 of the CLCW shall contain the Reserved Spare. Shall be set to 0
+    * @return bit 23 of the CLCW
+    * @see 4.2.2 from Telecommand Part 2
+	 */
+	const uint8_t getSpareSecondPart() {
+		return (clcw >> 8U) & 0x1;
+	}
+
 
 	/**
 	 * Used to indicate the COP that is being used.
@@ -100,4 +119,15 @@ public:
 	 * @see p. 4.2.11.1 from TC SPACE DATA LINK PROTOCOL
 	 */
 	const uint8_t getReportValue();
+
+
+	void setCLCW(CLCW newclcw) {
+		clcw = (newclcw.getControlWordType() << 31U | newclcw.getClcwVersion() << 29U |
+		        newclcw.getStatusField() << 26U | newclcw.getCopInEffect() << 24U | newclcw.getVcId() << 18U |
+		        newclcw.getSpare() << 16U | newclcw.getNoRfAvailable() << 15U | newclcw.getNoBitLock() << 14U |
+		        newclcw.getLockout() << 13U | newclcw.getWait() << 12U |
+		        newclcw.getRetransmit() << 11U | newclcw.getFarmBCounter() << 9U | newclcw.getSpareSecondPart() << 8U |
+		        newclcw.getReportValue());
+
+	}
 };

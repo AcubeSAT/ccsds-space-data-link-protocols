@@ -24,6 +24,10 @@ TEST_CASE("Service Channel") {
     master_channel.addVC(1, 128, false, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3,
                          3);
 
+	master_channel.addVC(2, 128, false, 2, 2, false, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3,
+	                     3, map_channels);
+
+
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
 	//    memset(reinterpret_cast<uint8_t*>(&master_channel), 0xff, sizeof(master_channel));
@@ -209,6 +213,19 @@ TEST_CASE("Service Channel") {
 	uint8_t invalid_vcid_TM[] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
 	uint8_t invalid_crc_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
+		//Packets that carry a CLCW
+	uint8_t valid_no_crc_TM[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x0};
+	uint8_t valid_no_crc_TM2[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x0};
+	uint8_t valid_no_crc_TM3[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x0};
+	uint8_t valid_no_crc_TM4[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x01};
+	uint8_t valid_no_crc_TM5[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x01};
+	uint8_t valid_no_crc_TM6[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x01};
+	uint8_t valid_no_crc_TM7[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x01};
+	uint8_t valid_no_crc_TM8[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x04};
+	uint8_t valid_no_crc_TM9[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x05};
+	uint8_t valid_no_crc_TM10[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x05};
+	uint8_t valid_no_crc_TM11[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x05};
+
 	// TM Reception
 
 	// TODO: This should take the output of TM RX called previously. Proper functional tests should include two service
@@ -238,6 +255,66 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
+
+	//E1 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+	//E3 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM2, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+	//E4 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM3, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+	//E5 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM4, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+	//E7 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM5, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+	//E11 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM6, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM7, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
+	serv_channel.storeTC(pckt_type_a, 9, 2, 0, 0, ServiceType::TYPE_AD);
+	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel - 1);
+	err = serv_channel.mappRequest(2, 0);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	//    CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
+	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+	serv_channel.initiateAdNoClcw(2);
+	// Process first type-A packet
+	err = serv_channel.vcGenerationRequestTC(2);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	err = serv_channel.pushSentQueue(2);
+	CHECK(packet_a->transferFrameSequenceNumber() == 4);
+	serv_channel.acknowledgeFrame(2, 4);
+	//E13 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+	//E2 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM8, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+	//E6 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM9, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+	//E8 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM10, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+	//E9 change of state
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM11, 12);
+	CHECK(serv_channel.fopState(2) == INITIAL);
+
+
 
 }
 

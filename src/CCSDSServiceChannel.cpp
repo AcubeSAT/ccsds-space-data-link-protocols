@@ -100,7 +100,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8
 	uint16_t frameSize = packet->getPacketLength();
 	uint8_t headerSize = 5 + virtualChannel->secondaryHeaderTMLength;
 	uint8_t trailerSize =
-	    4 * packet->operationalControlFieldExists() + 2 * virtualChannel->frameErrorControlFieldTMPresent;
+	    4 * packet->operationalControlFieldExists() + 2 * virtualChannel->frameErrorControlFieldPresent;
 	memcpy(packet_target, packet->packetData() + headerSize + 1, frameSize - headerSize - trailerSize);
 
 	virtualChannel->rxInFramesAfterMCReception.pop_front();
@@ -349,11 +349,8 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 	TransferFrameTC& frame = *virt_channel.txUnprocessedPacketListBufferTC.front();
 	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
-	if (frame.transferFrameHeader().ctrlAndCmdFlag() == 0) {
-		err = virt_channel.fop.transferFdu();
-	} else {
-		err = virt_channel.fop.validClcwArrival();
-	}
+	err = virt_channel.fop.transferFdu();
+
 
 	if (err == COPDirectiveResponse::REJECT) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
@@ -382,8 +379,10 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	// FARM procedures
 	virtChannel.farm.frameArrives();
 
-	CLCW clcw = CLCW(0, 0, 0, 1, vid, 0, 1, virtChannel.farm.lockout, virtChannel.farm.wait,
-	                 virtChannel.farm.retransmit, virtChannel.farm.farmBCount, virtChannel.farm.receiverFrameSeqNumber);
+	CLCW clcw = CLCW(0, 0, 0, 1, vid, 0, 0,
+	                 1, virtChannel.farm.lockout, virtChannel.farm.wait,
+	                 virtChannel.farm.retransmit,
+	                 virtChannel.farm.farmBCount, 0, virtChannel.farm.receiverFrameSeqNumber);
 
 	// add idle data
 	for (uint8_t i = TmPrimaryHeaderSize; i < TmTransferFrameSize - 2 * virtChannel.frameErrorControlFieldPresent;
@@ -661,6 +660,9 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
 	if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
 		CLCW clcw = CLCW(operationalControlField.value());
+		virtualChannel->currentlyProcessedCLCW.setCLCW(clcw);
+		virtualChannel->fop.validClcwArrival();
+
 	}
 	// TODO: Will we use secondary headers? If so they need to be processed here and forward to the respective service
 	masterChannel.rxMasterCopyTM.push_back(frame);
