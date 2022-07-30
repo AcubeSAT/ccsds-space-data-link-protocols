@@ -224,7 +224,7 @@ public:
 
 	// COP Directives
 
-	ServiceChannelNotification transmitFrame(uint8_t* pack);
+	ServiceChannelNotification frameTransmission(uint8_t* tframe);
 
 	ServiceChannelNotification transmitAdFrame(uint8_t vid);
 

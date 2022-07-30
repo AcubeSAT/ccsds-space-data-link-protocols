@@ -670,19 +670,21 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::transmitFrame(uint8_t* pack) {
+ServiceChannelNotification ServiceChannel::frameTransmission(uint8_t *tframe) {
 	if (masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.empty()) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY);
 		return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY;
 	}
 
-	TransferFrameTC* packet = masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.front();
-	packet->setRepetitions(packet->repetitions() - 1);
-	if (packet->repetitions() == 0) {
+	TransferFrameTC* frame = masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.front();
+    frame->setRepetitions(frame->repetitions() - 1);
+    frame->setToTransmitted();
+
+    if (frame->repetitions() == 0) {
 		masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.pop_front();
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	}
-	memcpy(pack, packet, packet->getFrameLength());
+	memcpy(tframe, frame, frame->getFrameLength());
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 

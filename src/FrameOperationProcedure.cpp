@@ -136,7 +136,7 @@ void FrameOperationProcedure::lookForDirective() {
 		for (TransferFrameTC* frame : *sentQueueFOP) {
 			if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
 			     (frame->getServiceType() == ServiceType::TYPE_BD)) &&
-			    frame->getToBeRetransmitted()) {
+			    frame->isToBeRetransmitted()) {
 				bcOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
 			}
@@ -168,29 +168,33 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
+    // If Ad Out Flag isn't set to ready, the process shall be aborted
 	if (adOut == FlagState::READY) {
-		for (TransferFrameTC* frame : *sentQueueFOP) {
-			if (frame->getServiceType() == ServiceType::TYPE_AD) {
-				// adOut = FlagState::NOT_READY;
-				frame->setToBeRetransmitted(0);
-				FOPNotification resp = transmitAdFrame();
-				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-				return COPDirectiveResponse::ACCEPT;
+		etl::ilist<TransferFrameTC>::iterator frame = vchan->master_channel().txMasterCopyTC.begin();
+
+		// Check if some transmitted packet is set to be retransmitted
+		while (frame != vchan->master_channel().txMasterCopyTC.end()) {
+			if ((frame->getServiceType() == ServiceType::TYPE_AD) && frame->isTransmitted()) {
+				if (frame->isToBeRetransmitted()) {
+					adOut = FlagState::NOT_READY;
+					frame->setToBeRetransmitted(0);
+					waitQueueFOP->push_front(&frame);
+					transmitAdFrame();
+					return COPDirectiveResponse::ACCEPT;
+				}
 			}
-		}
-		// Search the wait queue for a suitable FDU
-		// The wait queue is supposed to have a maximum capacity of one
-		if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
-			TransferFrameTC* frame = waitQueueFOP->front();
-			if (frame->getServiceType() == ServiceType::TYPE_AD) {
-				sentQueueFOP->push_back(frame);
-				waitQueueFOP->pop_front();
-				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-				return COPDirectiveResponse::ACCEPT;
-			}
+			++frame;
 		}
 	}
-	// TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
+
+    // Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
+    TransferFrameTC* frame = waitQueueFOP->front();
+    if ((frame->getServiceType() == ServiceType::TYPE_AD) && (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
+        transmitAdFrame();
+        ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
+        return COPDirectiveResponse::ACCEPT;
+    }
+
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
