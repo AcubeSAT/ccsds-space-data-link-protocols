@@ -403,3 +403,44 @@ TEST_CASE("CLCW construction at VC Reception"){
     CHECK(err == NO_SERVICE_EVENT);
 
 }
+
+TEST_CASE("Frame Acknowledgement and Retransmission"){
+    PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+            {0, MAPChannel(0, true, true)},
+            {1, MAPChannel(1, false, false)},
+            {2, MAPChannel(2, true, false)},
+    };
+
+    MasterChannel master_channel = MasterChannel();
+    master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED,
+                         255, 10, 10, map_channels);
+
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+    VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
+
+    uint8_t packet[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x21, 0xA1};
+    uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    uint8_t packet2[] = {0x10, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+
+    serv_channel.initiateAdClcw(0);
+    serv_channel.storeTC(packet,9,0,0,0,ServiceType::TYPE_AD);
+    serv_channel.storeTC(packet,9,0,0,0,ServiceType::TYPE_AD);
+    serv_channel.mappRequest(0,0);
+    serv_channel.mappRequest(0,0);
+    serv_channel.vcGenerationRequestTC(0);
+    serv_channel.vcGenerationRequestTC(0);
+    serv_channel.allFramesGenerationTCRequest();
+    uint8_t sentFrame[9] = {0};
+    serv_channel.transmitFrame(sentFrame);
+    serv_channel.storeTC(sentFrame, 9);
+    serv_channel.allFramesReceptionTCRequest();
+    serv_channel.vcReceptionTC(0);
+    TransferFrameTM transferFrameTm = TransferFrameTM(sentFrame, 9, virtualChannel.frameCountTM, 0, virtualChannel.frameErrorControlFieldPresent,
+                                                      virtualChannel.secondaryHeaderTMPresent, NoSegmentation,
+                                                      virtualChannel.synchronization, serv_channel.getClcwInBuffer().clcw, TM);
+    serv_channel.allFramesReceptionTMRequest(transferFrameTm.packetData(), 9);
+
+}
