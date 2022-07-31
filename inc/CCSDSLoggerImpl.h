@@ -1,5 +1,5 @@
-#ifndef CCSDS_TM_PACKETS_CCSDSLOGGERIMPL_H
-#define CCSDS_TM_PACKETS_CCSDSLOGGERIMPL_H
+#pragma once
+
 #include <iostream>
 #include <iomanip>
 #include <logOperators.h>
@@ -22,7 +22,7 @@ void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotificat
 
 template <class CCSDSNotification>
 void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif) {
-	switch (LOG_VERBOSE) {
+	switch (log_verbose) {
 		case 0:
             LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif;
             break;
@@ -34,5 +34,3 @@ void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotificat
 			break;
 	};
 }
-
-#endif // CCSDS_TM_PACKETS_CCSDSLOGGERIMPL_H

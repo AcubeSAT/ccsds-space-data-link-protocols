@@ -1,6 +1,3 @@
-#ifndef CCSDS_CHANNEL_HPP
-#define CCSDS_CHANNEL_HPP
-
 #pragma once
 
 #include <cstdint>
@@ -536,5 +533,3 @@ private:
 
 	MemoryPool masterChannelPool = MemoryPool();
 };
-
-#endif // CCSDS_CHANNEL_HPP

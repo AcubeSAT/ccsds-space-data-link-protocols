@@ -1,5 +1,4 @@
-#ifndef CCSDS_SERVICECHANNEL_HPP
-#define CCSDS_SERVICECHANNEL_HPP
+#pragma once
 
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
@@ -225,7 +224,7 @@ public:
 
 	// COP Directives
 
-	ServiceChannelNotification transmitFrame(uint8_t* pack);
+	ServiceChannelNotification frameTransmission(uint8_t* tframe);
 
 	ServiceChannelNotification transmitAdFrame(uint8_t vid);
 
@@ -473,5 +472,3 @@ public:
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 };
-
-#endif // CCSDS_CCSDSSERVICECHANNEL_HPP

@@ -1,8 +1,6 @@
+#pragma once
 
 #include <cstdint>
-
-#ifndef CCSDS_TM_PACKETS_PACKET_H
-#define CCSDS_TM_PACKETS_PACKET_H
 
 enum PacketType { TC, TM };
 
@@ -67,5 +65,3 @@ protected:
 	uint16_t frameLength;
 	uint8_t* packet;
 };
-
-#endif // CCSDS_TM_PACKETS_PACKET_H
