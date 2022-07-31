@@ -1,5 +1,4 @@
-#ifndef CCSDS_SERVICECHANNEL_HPP
-#define CCSDS_SERVICECHANNEL_HPP
+#pragma once
 
 #include <CCSDSChannel.hpp>
 #include <Alert.hpp>
@@ -7,6 +6,8 @@
 #include <TransferFrameTC.hpp>
 #include <utility>
 #include <CCSDSLoggerImpl.h>
+
+enum SegmentLengthID { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentaionEnd = 0x2, NoSegmentation = 0x3 };
 
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
@@ -31,6 +32,18 @@ private:
 	// from the header of the frame. Not sure what makes more sense
 
 	uint8_t packetCountTM;
+
+	/**
+	 * Variable to indicate that a CLCW has been constructed and should be sent
+	 */
+	bool clcwWaitingToBeTransmitted = false;
+
+	/**
+	 * Buffer to store the data of the clcw transfer frame
+	 */
+	uint8_t clcwTransferFrameDataBuffer[TmTransferFrameSize] = {0};
+
+	etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
 public:
 	// Public methods that are called by the scheduler
@@ -211,7 +224,7 @@ public:
 
 	// COP Directives
 
-	ServiceChannelNotification transmitFrame(uint8_t* pack);
+	ServiceChannelNotification frameTransmission(uint8_t* tframe);
 
 	ServiceChannelNotification transmitAdFrame(uint8_t vid);
 
@@ -249,6 +262,45 @@ public:
 	void setTimeoutType(uint8_t vid, bool vr);
 
 	void invalidDirective(uint8_t vid);
+
+	CLCW getClcwInBuffer();
+
+	uint8_t* getClcwTransferFrameDataBuffer();
+
+	/**
+	 * @brief A function that generates a CLCW and stores it to a clcw buffer
+	 */
+	ServiceChannelNotification clcwReportTime(uint8_t vid);
+	/**
+	 * Returns the available space in the packetLengthBufferTmTx buffer
+	 */
+	uint16_t availableInPacketLengthBufferTmTx(uint8_t gvcid);
+
+	/**
+	 * Returns the available space in the packetBufferTmTx buffer
+	 */
+	uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
+
+	/**
+	 * Function used by the vcGenerationService function to implement the blocking of packets stored in packetBufferTmTx
+	 * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the
+	 * vcGenerationService parameter
+	 * @param packetLength The length of the next packet in the packetBufferTmTx
+	 * @return A Service Channel Notification as it is the case with vcGenerationService
+	 */
+	ServiceChannelNotification blockingTm(uint16_t transferFrameDataLength, uint16_t packetLength, uint8_t gvcid);
+
+	/**
+	 * Function used by the vcGenerationService function to implement the segmentation of packets stored in
+	 * packetBufferTmTx
+	 * @param numberOfTransferFrames The number of transfer frames that the packet will segmented into
+	 * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the
+	 * vcGenerationService parameter
+	 * @param packetLength The length of the next packet in the packetBufferTmTx
+	 * @return A Service Channel Notification as it is the case with vcGenerationService
+	 */
+	ServiceChannelNotification segmentationTm(uint8_t numberOfTransferFrames, uint16_t packetLength,
+	                                          uint16_t transferFrameDataLength, uint8_t gvcid);
 
 	/**
 	 * Get FOP State of the virtual channel
@@ -297,10 +349,10 @@ public:
 	 */
 
 	uint16_t rxInAvailableTM(uint8_t vid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
+		if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+			return ServiceChannelNotification::INVALID_VC_ID;
+		}
 		return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
 	}
 	/**
@@ -321,10 +373,10 @@ public:
 	 * Available space in TC virtual channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
+		if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+			return ServiceChannelNotification::INVALID_VC_ID;
+		}
 		return masterChannel.virtualChannels.at(vid).availableBufferTC();
 	}
 
@@ -332,18 +384,19 @@ public:
 	 * Available space in TC MAP channel buffer
 	 */
 	uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()){
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
-        const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
-		if (!virtualChannel.segmentHeaderPresent){
+		if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+			return ServiceChannelNotification::INVALID_VC_ID;
+		}
+		const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
+		if (!virtualChannel.segmentHeaderPresent) {
 			return ServiceChannelNotification::INVALID_MAP_ID;
 		}
-        if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
+		if (virtualChannel.segmentHeaderPresent &&
+		    (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+			return ServiceChannelNotification::INVALID_MAP_ID;
+		}
 		return virtualChannel.mapChannels.at(mapid).availableBufferTC();
 	}
 
@@ -351,10 +404,10 @@ public:
 	 * Available space for packets at waitQueueRxTC buffer
 	 */
 	uint16_t getAvailableWaitQueueRxTC(uint8_t vid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
+		if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+			return ServiceChannelNotification::INVALID_VC_ID;
+		}
 		return masterChannel.virtualChannels.at(vid).waitQueueRxTC.available();
 	}
 
@@ -362,10 +415,10 @@ public:
 	 * Available space for packets waiting to be processed from the VC Generation Service
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
+		if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+			return ServiceChannelNotification::INVALID_VC_ID;
+		}
 		return masterChannel.virtualChannels.at(vid).rxInFramesAfterVCReception.available();
 	}
 
@@ -373,18 +426,19 @@ public:
 	 * Available space for packets at rxInFramesAfterVCReception buffer
 	 */
 	uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid, uint8_t mapid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()){
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
-        const VirtualChannel &virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderPresent){
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
-        if (virtualChannel.segmentHeaderPresent && (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
+		if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+			return ServiceChannelNotification::INVALID_VC_ID;
+		}
+		const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
+		if (!virtualChannel.segmentHeaderPresent) {
+			return ServiceChannelNotification::INVALID_MAP_ID;
+		}
+		if (virtualChannel.segmentHeaderPresent &&
+		    (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+			return ServiceChannelNotification::INVALID_MAP_ID;
+		}
 		return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).rxInFramesAfterVCReception.available();
 	}
 
@@ -418,5 +472,3 @@ public:
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 };
-
-#endif // CCSDS_CCSDSSERVICECHANNEL_HPP
