@@ -161,3 +161,7 @@ void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
         }
     }
 }
+
+TransferFrameTC MasterChannel::getLastTxMasterCopyTcFrame() {
+    return txMasterCopyTC.back();
+}

@@ -359,7 +359,6 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
 		return ServiceChannelNotification::FOP_REQUEST_REJECTED;
 	}
-
 	virt_channel.txUnprocessedPacketListBufferTC.pop_front();
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
@@ -380,7 +379,7 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	TransferFrameTC* frame = virtChannel.waitQueueRxTC.front();
 
 	// FARM procedures
-	virtChannel.farm.frameArrives();
+    virtChannel.farm.frameArrives();
 
 	CLCW clcw = CLCW(0, 0, 0, 1, vid, 0, 1, virtChannel.farm.lockout, virtChannel.farm.wait,
 	                 virtChannel.farm.retransmit, virtChannel.farm.farmBCount, virtChannel.farm.receiverFrameSeqNumber);
@@ -661,7 +660,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
 	if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
 		CLCW clcw = CLCW(operationalControlField.value());
-        if(clcw.getRetransmit() == false && clcw.getLockout()){
+        if(clcw.getReportValue() == expectedFrameSeqNumber(0) + 1){
             masterChannel.acknowledgeFrame( clcw.getReportValue() == 0 ? 255 : clcw.getReportValue() - 1 );
         }
 	}
@@ -983,4 +982,8 @@ uint16_t ServiceChannel::availableInPacketBufferTmTx(uint8_t gvcid) {
 	VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
 	return vchan.packetBufferTmTx.available();
+}
+
+TransferFrameTC ServiceChannel::getLastMasterCopyTcFrame() {
+    return masterChannel.getLastTxMasterCopyTcFrame();
 }

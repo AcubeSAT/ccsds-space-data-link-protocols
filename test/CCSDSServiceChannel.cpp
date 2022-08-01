@@ -426,21 +426,16 @@ TEST_CASE("Frame Acknowledgement and Retransmission"){
     uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
 
     serv_channel.initiateAdClcw(0);
-    serv_channel.storeTC(packet,9,0,0,0,ServiceType::TYPE_AD);
-    serv_channel.storeTC(packet,9,0,0,0,ServiceType::TYPE_AD);
+    serv_channel.storeTC(packet1,9,0,0,0,ServiceType::TYPE_AD);
     serv_channel.mappRequest(0,0);
-    serv_channel.mappRequest(0,0);
-    serv_channel.vcGenerationRequestTC(0);
     serv_channel.vcGenerationRequestTC(0);
     serv_channel.allFramesGenerationTCRequest();
-    uint8_t sentFrame[9] = {0};
-    serv_channel.transmitFrame(sentFrame);
-    serv_channel.storeTC(sentFrame, 9);
+    CHECK(serv_channel.getLastMasterCopyTcFrame().isTransmitted() == true);
+    TransferFrameTC transferFrame = serv_channel.getLastMasterCopyTcFrame();
+    TransferFrameTC* transferFramePtr = &transferFrame;
+    serv_channel.storeTC(transferFrame.packetData(), transferFrame.getFrameLength());
     serv_channel.allFramesReceptionTCRequest();
     serv_channel.vcReceptionTC(0);
-    TransferFrameTM transferFrameTm = TransferFrameTM(sentFrame, 9, virtualChannel.frameCountTM, 0, virtualChannel.frameErrorControlFieldPresent,
-                                                      virtualChannel.secondaryHeaderTMPresent, NoSegmentation,
-                                                      virtualChannel.synchronization, serv_channel.getClcwInBuffer().clcw, TM);
-    serv_channel.allFramesReceptionTMRequest(transferFrameTm.packetData(), 9);
-
+    serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
+    CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
 }

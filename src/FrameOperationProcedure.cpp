@@ -42,6 +42,7 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 	ad_frame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
 
 	ad_frame->setToBeRetransmitted(0);
+    ad_frame->setToTransmitted();
 
 	sentQueueFOP->push_back(ad_frame);
 	adOut = false;

@@ -431,6 +431,11 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTC* packet);
 
+    /**
+     * Returns the last stored Transfer Frame in txMasterCopyTc
+     */
+    TransferFrameTC getLastTxMasterCopyTcFrame();
+
 	/**
 	 * Add virtual channel to master channel
 	 */
