@@ -323,7 +323,7 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 	// TODO: Process secondary headers
 
 	// set master channel frame counter
-	packet->setMasterChannelFrameCount(masterChannel.currFrameCountTM);
+    packet->setMasterChannelFrameCount(masterChannel.currFrameCountTM);
 
 	// increment master channel frame counter
 	masterChannel.currFrameCountTM = masterChannel.currFrameCountTM <= 254 ? masterChannel.currFrameCountTM : 0;
@@ -349,11 +349,15 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 	TransferFrameTC& frame = *virt_channel.txUnprocessedPacketListBufferTC.front();
 	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
-	if (frame.transferFrameHeader().ctrlAndCmdFlag() == 0) {
-		err = virt_channel.fop.transferFdu();
-	} else {
-		err = virt_channel.fop.validClcwArrival();
+	err = virt_channel.fop.transferFdu();
+
+	MasterChannelAlert mc = virt_channel.master_channel().storeOut(&frame);
+	if (mc != MasterChannelAlert::NO_MC_ALERT) {
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
+		return  ServiceChannelNotification::FOP_REQUEST_REJECTED;
 	}
+
+
 
 	if (err == COPDirectiveResponse::REJECT) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
@@ -382,8 +386,10 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	// FARM procedures
 	virtChannel.farm.frameArrives();
 
-	CLCW clcw = CLCW(0, 0, 0, 1, vid, 0, 1, virtChannel.farm.lockout, virtChannel.farm.wait,
-	                 virtChannel.farm.retransmit, virtChannel.farm.farmBCount, virtChannel.farm.receiverFrameSeqNumber);
+	CLCW clcw = CLCW(0, 0, 0, 1, vid, 0, 0,
+	                 1, virtChannel.farm.lockout, virtChannel.farm.wait,
+	                 virtChannel.farm.retransmit,
+	                 virtChannel.farm.farmBCount, 0, virtChannel.farm.receiverFrameSeqNumber);
 
 	// add idle data
 	for (uint8_t i = TmPrimaryHeaderSize; i < TmTransferFrameSize - 2 * virtChannel.frameErrorControlFieldPresent;
@@ -661,6 +667,9 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
 	if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
 		CLCW clcw = CLCW(operationalControlField.value());
+		virtualChannel->currentlyProcessedCLCW = CLCW(clcw.getClcw());
+		virtualChannel->fop.validClcwArrival();
+
 	}
 	// TODO: Will we use secondary headers? If so they need to be processed here and forward to the respective service
 	masterChannel.rxMasterCopyTM.push_back(frame);
