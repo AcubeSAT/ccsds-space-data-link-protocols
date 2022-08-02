@@ -296,23 +296,23 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.pushSentQueue(2);
-	CHECK(packet_a->transferFrameSequenceNumber() == 4);
-	serv_channel.acknowledgeFrame(2, 4);
+	CHECK(packet_a->transferFrameSequenceNumber() == 0);
+	serv_channel.acknowledgeFrame(2, 0);
 	//E13 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.fopState(2) == ACTIVE);
 	//E2 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM8, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.fopState(2) == ACTIVE);
 	//E6 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM9, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.fopState(2) == ACTIVE);
 	//E8 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM10, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.fopState(2) == ACTIVE);
 	//E9 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM11, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.fopState(2) == ACTIVE);
 
 
 
