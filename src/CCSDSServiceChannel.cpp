@@ -660,7 +660,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
 	if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
 		CLCW clcw = CLCW(operationalControlField.value());
-		virtualChannel->currentlyProcessedCLCW.setCLCW(clcw);
+		virtualChannel->currentlyProcessedCLCW = CLCW(clcw.getClcw());
 		virtualChannel->fop.validClcwArrival();
 
 	}

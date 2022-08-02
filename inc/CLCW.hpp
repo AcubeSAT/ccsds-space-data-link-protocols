@@ -10,8 +10,8 @@ struct CLCW {
 	     const uint8_t vcId, const uint8_t spare, const bool noRfAvailable, const bool noBitLock, const bool lockout,
 	     const bool wait, const bool retransmit, const uint8_t farmBCounter, bool spare2, uint8_t reportValue)
 	    : clcw(controlWordType << 31U | clcwVersion << 29U | statusField << 26U | copInEffect << 24U | vcId << 18U |
-	           spare << 16U | noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U |
-	           retransmit << 11U | farmBCounter << 9U | spare2 << 8U | reportValue){};
+	           noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U |
+	           retransmit << 11U | farmBCounter << 9U  | reportValue){};
 
 public:
 	const uint32_t getClcw() {
@@ -129,14 +129,4 @@ public:
 	}
 
 
-
-	void setCLCW(CLCW newclcw) {
-		clcw = (newclcw.getControlWordType() << 31U | newclcw.getClcwVersion() << 29U |
-		        newclcw.getStatusField() << 26U | newclcw.getCopInEffect() << 24U | newclcw.getVcId() << 18U |
-		        0 << 16U | newclcw.getNoRfAvailable() << 15U | newclcw.getNoBitLock() << 14U |
-		        newclcw.getLockout() << 13U | newclcw.getWait() << 12U |
-		        newclcw.getRetransmit() << 11U | newclcw.getFarmBCounter() << 9U | 0 << 8U |
-		        newclcw.getReportValue());
-
-	}
 };
