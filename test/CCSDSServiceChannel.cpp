@@ -111,7 +111,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txOutProcessedPacketTC().second == packet_a);
 
 	CHECK(packet_a->acknowledged() == false);
-	CHECK(packet_a->transferFrameSequenceNumber() == 4);
+	CHECK(packet_a->transferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(0, 0);
 
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
