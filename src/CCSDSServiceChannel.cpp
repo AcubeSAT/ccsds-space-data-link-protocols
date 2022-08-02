@@ -351,6 +351,13 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 
 	err = virt_channel.fop.transferFdu();
 
+	MasterChannelAlert mc = virt_channel.master_channel().storeOut(&frame);
+	if (mc != MasterChannelAlert::NO_MC_ALERT) {
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
+		return  ServiceChannelNotification::FOP_REQUEST_REJECTED;
+	}
+
+
 
 	if (err == COPDirectiveResponse::REJECT) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
