@@ -1,3 +1,6 @@
+#ifndef CCSDS_CHANNEL_HPP
+#define CCSDS_CHANNEL_HPP
+
 #pragma once
 
 #include <cstdint>
@@ -270,7 +273,7 @@ public:
 	      repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl), waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
-	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
+	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization), currentlyProcessedCLCW(0),
 	      frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
 	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
@@ -286,7 +289,7 @@ public:
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
-	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
+	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels), currentlyProcessedCLCW(0) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
 		fop.waitQueueFOP = &waitQueueTxTC;
@@ -347,6 +350,12 @@ private:
 	 * Holds the FOP state of the virtual channel
 	 */
 	FrameOperationProcedure fop;
+
+	/**
+    * Buffer holding the master copy of the CLCW that is currently being processed
+	 */
+	CLCW currentlyProcessedCLCW;
+
 
 	/**
 	 * Holds the FARM state of the virtual channel
@@ -538,3 +547,5 @@ private:
 
 	MemoryPool masterChannelPool = MemoryPool();
 };
+
+#endif // CCSDS_CHANNEL_HPP

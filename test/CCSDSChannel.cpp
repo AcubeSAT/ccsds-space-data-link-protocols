@@ -86,8 +86,10 @@ TEST_CASE("CLCW parsing") {
 	CHECK(spare2 == 0);
 	CHECK(reportValue == 105);
 
-	CLCW parsedClcw = CLCW(controlWordType, clcwVersion, statusField, copInEffect, vcId, noRfAvailable, bitLock,
-	                       lockout, wait, retransmit, farmBCounter, reportValue);
+
+	CLCW parsedClcw = CLCW(controlWordType, clcwVersion, statusField, copInEffect, vcId, spare, noRfAvailable, bitLock,
+						   lockout, wait, retransmit, farmBCounter, spare2, reportValue);
+
 
 	CHECK(operationalControlField == parsedClcw.getClcw());
 }

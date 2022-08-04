@@ -1,4 +1,4 @@
 #pragma once
 
-template <class ΜyNotif>
-void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, ΜyNotif Notif);
+template <class MyNotif>
+void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, MyNotif Notif);
