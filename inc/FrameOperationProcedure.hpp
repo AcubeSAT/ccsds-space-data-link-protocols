@@ -326,6 +326,11 @@ private:
 	 */
 	COPDirectiveResponse transferFdu();
 
+    /**
+     * Function that acknowledges all the unacknowledged frames in the txMasterCopyTC buffer before the received report value from the CLCW
+     */
+    void acknowledgePreviousFrames(uint8_t frameSequenceNumber);
+
 public:
 	FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueue,
 	                        etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueue,

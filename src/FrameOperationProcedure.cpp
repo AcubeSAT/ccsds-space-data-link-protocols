@@ -701,3 +701,13 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 	}
 	return COPDirectiveResponse::ACCEPT;
 }
+
+void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
+    for(TransferFrameTC frame : vchan->master_channel().txMasterCopyTC){
+        if(frame.transferFrameSequenceNumber() < frameSequenceNumber && !frame.acknowledged()
+           && frame.isTransmitted()){
+            frame.setAcknowledgement(true);
+        }
+    }
+    expectedAcknowledgementSeqNumber = frameSequenceNumber;
+}
