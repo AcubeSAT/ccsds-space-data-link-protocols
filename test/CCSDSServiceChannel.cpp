@@ -300,7 +300,7 @@ TEST_CASE("Service Channel") {
 	serv_channel.acknowledgeFrame(2, 0);
 	//E13 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM, 12);
-	CHECK(serv_channel.fopState(2) == ACTIVE);
+	CHECK(serv_channel.fopState(2) == INITIAL);
 	//E2 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM8, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);

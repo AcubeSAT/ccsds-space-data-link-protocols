@@ -668,7 +668,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 		CLCW clcw = CLCW(operationalControlField.value());
 		virtualChannel->currentlyProcessedCLCW = CLCW(clcw.getClcw());
 		virtualChannel->fop.validClcwArrival();
-        virtualChannel->fop.acknowledgePreviousFrames( clcw.getReportValue() == 0 ? 255 : clcw.getReportValue() - 1);
+        virtualChannel->fop.acknowledgePreviousFrames( clcw.getReportValue());
 	}
 	// TODO: Will we use secondary headers? If so they need to be processed here and forward to the respective service
 	masterChannel.rxMasterCopyTM.push_back(frame);

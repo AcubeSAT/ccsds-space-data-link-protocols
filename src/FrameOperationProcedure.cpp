@@ -177,6 +177,9 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	}
 
     // Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
+    if(waitQueueFOP->empty()){
+        return COPDirectiveResponse::REJECT;
+    }
     TransferFrameTC* frame = waitQueueFOP->front();
     if ((frame->getServiceType() == ServiceType::TYPE_AD) && (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
         transmitAdFrame();
@@ -704,9 +707,9 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 
 void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
     for(TransferFrameTC frame : vchan->master_channel().txMasterCopyTC){
-        if(frame.transferFrameSequenceNumber() < frameSequenceNumber && !frame.acknowledged()
-           && frame.isTransmitted()){
-            frame.setAcknowledgement(true);
+        if((frame.transferFrameSequenceNumber() < frameSequenceNumber || frame.transferFrameSequenceNumber() > transmitterFrameSeqNumber)
+        && !frame.acknowledged() && frame.isTransmitted()){
+            vchan->master_channel().acknowledgeFrame(frame.transferFrameSequenceNumber());
         }
     }
     expectedAcknowledgementSeqNumber = frameSequenceNumber;
