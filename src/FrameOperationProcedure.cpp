@@ -209,11 +209,11 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 	CLCW clcw = vchan->currentlyProcessedCLCW.getClcw();
 
 	if (clcw.getLockout() == 0) {
-		if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
+		if (clcw.getReportValue() == transmitterFrameSeqNumber) {
 			if (clcw.getRetransmit() == 0) {
 				if (clcw.getWait() == 0) {
-					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
-						// E1
+				    if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
+					    // E1
 						switch (state) {
 							case FOPState::ACTIVE:
 								break;
@@ -282,11 +282,11 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						break;
 				}
 			}
-		} else if (clcw.getReportValue() > expectedAcknowledgementSeqNumber &&
-		           expectedAcknowledgementSeqNumber >= transmitterFrameSeqNumber) {
+		} else if (clcw.getReportValue() < transmitterFrameSeqNumber &&
+		           clcw.getReportValue() >= expectedAcknowledgementSeqNumber) {
 			if (clcw.getRetransmit()== 0) {
 				if (clcw.getWait() == 0) {
-					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
+					if (expectedAcknowledgementSeqNumber == clcw.getReportValue()) {
 						// E5
 						switch (state) {
 							case FOPState::ACTIVE:
@@ -334,7 +334,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 				}
 			} else {
 				if (transmissionLimit == 1) {
-					if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
+					if (expectedAcknowledgementSeqNumber != clcw.getReportValue()) {
 						// E101
 						switch (state) {
 							case FOPState::ACTIVE:
@@ -365,7 +365,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						}
 					}
 				} else if (transmissionLimit > 1) {
-					if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
+					if (expectedAcknowledgementSeqNumber != clcw.getReportValue()) {
 						if (clcw.getWait() == 0) {
 							// E8
 							switch (state) {
