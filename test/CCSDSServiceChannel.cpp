@@ -493,6 +493,8 @@ TEST_CASE("Frame Acknowledgement and Retransmission"){
     MasterChannel master_channel = MasterChannel();
     master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED,
                          255, 10, 10, map_channels);
+    master_channel.addVC(1, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED,
+                         255, 10, 10, map_channels);
 
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
     VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
@@ -502,28 +504,54 @@ TEST_CASE("Frame Acknowledgement and Retransmission"){
     uint8_t packet2[] = {0x10, 0xB1, 0x00, 0x0A, 0x01, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
     uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
 
+    //Initate  AD Service
     serv_channel.initiateAdClcw(0);
+    //Send a TC Frame with the right frame sequence number
     serv_channel.storeTC(packet1,9,0,0,0,ServiceType::TYPE_AD);
     serv_channel.mappRequest(0,0);
     serv_channel.vcGenerationRequestTC(0);
     serv_channel.allFramesGenerationTCRequest();
-    CHECK(serv_channel.getLastMasterCopyTcFrame().isTransmitted() == true);
+    CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
     TransferFrameTC transferFrame = serv_channel.getLastMasterCopyTcFrame();
-    TransferFrameTC* transferFramePtr = &transferFrame;
+    //Receive the same frame
     serv_channel.storeTC(transferFrame.packetData(), transferFrame.getFrameLength());
     serv_channel.allFramesReceptionTCRequest();
     serv_channel.vcReceptionTC(0);
+    //Check the clcw that was created in vcReceptionTC
     serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
     CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
+
+    //Repeat the process with the next frame
     serv_channel.storeTC(packet2,9,0,0,0,ServiceType::TYPE_AD);
     serv_channel.mappRequest(0,0);
     serv_channel.vcGenerationRequestTC(0);
     CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 1);
-    CHECK(serv_channel.getLastMasterCopyTcFrame().isTransmitted() == true);
+    CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
     TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
     serv_channel.storeTC(transferFrame2.packetData(), transferFrame.getFrameLength());
     serv_channel.allFramesReceptionTCRequest();
     serv_channel.vcReceptionTC(0);
     serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
     CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
+
+
+    serv_channel.setVs(1, 10);
+    serv_channel.initiateAdClcw(1);
+    //Set the transmitter frame sequence number outside the FOP window
+    serv_channel.storeTC(packet1,9,1,0,0,ServiceType::TYPE_AD);
+    serv_channel.mappRequest(1,0);
+    serv_channel.vcGenerationRequestTC(1);
+    serv_channel.allFramesGenerationTCRequest();
+    CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
+    CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 10);
+    TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
+    //Receive the same frame
+    serv_channel.storeTC(transferFrame3.packetData(), transferFrame.getFrameLength());
+    serv_channel.allFramesReceptionTCRequest();
+    serv_channel.vcReceptionTC(1);
+    serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
+    CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == false);
+
+
+
 }

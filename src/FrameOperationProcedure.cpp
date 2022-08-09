@@ -43,7 +43,7 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 
 	ad_frame->setToBeRetransmitted(0);
     transmitterFrameSeqNumber++;
-    ad_frame->setToTransmitted();
+    ad_frame->setToProcessedByFOP();
 
 	sentQueueFOP->push_back(ad_frame);
 	adOut = false;
@@ -708,7 +708,7 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
     for(TransferFrameTC frame : vchan->master_channel().txMasterCopyTC){
         if((frame.transferFrameSequenceNumber() < frameSequenceNumber || frame.transferFrameSequenceNumber() > transmitterFrameSeqNumber)
-        && !frame.acknowledged() && frame.isTransmitted()){
+        && !frame.acknowledged() && frame.getProcessedByFOP()){
             vchan->master_channel().acknowledgeFrame(frame.transferFrameSequenceNumber());
         }
     }
