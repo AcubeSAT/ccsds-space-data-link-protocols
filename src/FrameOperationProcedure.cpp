@@ -42,6 +42,8 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 	ad_frame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
 
 	ad_frame->setToBeRetransmitted(0);
+	transmitterFrameSeqNumber++;
+	ad_frame->setToProcessedByFOP();
 
 	sentQueueFOP->push_back(ad_frame);
 	adOut = false;
@@ -77,9 +79,9 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->getServiceType() == ServiceType::TYPE_AD) {
-			frame->setToBeRetransmitted(true);
+	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
+		if (frame.getServiceType() == ServiceType::TYPE_AD) {
+			frame.setToBeRetransmitted(true);
 		}
 	}
 }
@@ -89,9 +91,9 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if ((frame->getServiceType() == ServiceType::TYPE_BC) || (frame->getServiceType() == ServiceType::TYPE_BD)) {
-			frame->setToBeRetransmitted(1);
+	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
+		if ((frame.getServiceType() == ServiceType::TYPE_BC) || (frame.getServiceType() == ServiceType::TYPE_BD)) {
+			frame.setToBeRetransmitted(1);
 		}
 	}
 }
@@ -102,23 +104,9 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
 			pckt->setAcknowledgement(true);
 		}
 	}
-	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
-
-	while (cur_frame != sentQueueFOP->end()) {
-		if ((*cur_frame)->acknowledged()) {
-			expectedAcknowledgementSeqNumber = (*cur_frame)->transferFrameSequenceNumber();
-			sentQueueFOP->erase(cur_frame++);
-		} else {
-			++cur_frame;
-		}
-	}
-	return ;
 }
 
 void FrameOperationProcedure::removeAcknowledgedFrames() {
-
-
-	// Also remove acknowledged frames from Master TX Buffer
 	etl::ilist<TransferFrameTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
 
 	while (cur_packet != vchan->master_channel().txMasterCopyTC.end()) {
@@ -169,7 +157,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
-    // If Ad Out Flag isn't set to ready, the process shall be aborted
+	// If Ad Out Flag isn't set to ready, the process shall be aborted
 	if (adOut == FlagState::READY) {
 		etl::ilist<TransferFrameTC>::iterator frame = vchan->master_channel().txMasterCopyTC.begin();
 
@@ -188,13 +176,17 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 		}
 	}
 
-    // Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
-    TransferFrameTC* frame = waitQueueFOP->front();
-    if ((frame->getServiceType() == ServiceType::TYPE_AD) && (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
-        transmitAdFrame();
-        ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-        return COPDirectiveResponse::ACCEPT;
-    }
+	// Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
+	if (waitQueueFOP->empty()) {
+		return COPDirectiveResponse::REJECT;
+	}
+	TransferFrameTC* frame = waitQueueFOP->front();
+	if ((frame->getServiceType() == ServiceType::TYPE_AD) &&
+	    (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
+		transmitAdFrame();
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
+		return COPDirectiveResponse::ACCEPT;
+	}
 
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
@@ -224,8 +216,8 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 		if (clcw.getReportValue() == transmitterFrameSeqNumber) {
 			if (clcw.getRetransmit() == 0) {
 				if (clcw.getWait() == 0) {
-				    if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
-					    // E1
+					if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
+						// E1
 						switch (state) {
 							case FOPState::ACTIVE:
 								break;
@@ -296,7 +288,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 			}
 		} else if (clcw.getReportValue() < transmitterFrameSeqNumber &&
 		           clcw.getReportValue() >= expectedAcknowledgementSeqNumber) {
-			if (clcw.getRetransmit()== 0) {
+			if (clcw.getRetransmit() == 0) {
 				if (clcw.getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == clcw.getReportValue()) {
 						// E5
@@ -501,7 +493,6 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 				break;
 		}
 	}
-
 
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
@@ -712,4 +703,15 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 		}
 	}
 	return COPDirectiveResponse::ACCEPT;
+}
+
+void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
+	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
+		if ((frame.transferFrameSequenceNumber() < frameSequenceNumber ||
+		     frame.transferFrameSequenceNumber() > transmitterFrameSeqNumber) &&
+		    !frame.acknowledged() && frame.getProcessedByFOP()) {
+			vchan->master_channel().acknowledgeFrame(frame.transferFrameSequenceNumber());
+		}
+	}
+	expectedAcknowledgementSeqNumber = frameSequenceNumber;
 }

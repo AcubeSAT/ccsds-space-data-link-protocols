@@ -255,6 +255,7 @@ public:
 	uint16_t availableInPacketLengthBufferTmTx() {
 		return packetLengthBufferTmTx.available();
 	}
+
 	uint16_t availableInPacketBufferTmTx() {
 		return packetBufferTmTx.available();
 	}
@@ -273,8 +274,9 @@ public:
 	      repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl), waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
-	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization), currentlyProcessedCLCW(0),
-	      frameCountTM(0), fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
+	      currentlyProcessedCLCW(0), frameCountTM(0),
+	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
 	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
@@ -289,7 +291,8 @@ public:
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
-	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels), currentlyProcessedCLCW(0) {
+	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels),
+	      currentlyProcessedCLCW(0) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
 		fop.waitQueueFOP = &waitQueueTxTC;
@@ -352,10 +355,9 @@ private:
 	FrameOperationProcedure fop;
 
 	/**
-    * Buffer holding the master copy of the CLCW that is currently being processed
+	 * Buffer holding the master copy of the CLCW that is currently being processed
 	 */
 	CLCW currentlyProcessedCLCW;
-
 
 	/**
 	 * Holds the FARM state of the virtual channel
@@ -380,7 +382,9 @@ private:
 
 struct MasterChannel {
 	friend class ServiceChannel;
+
 	friend class FrameOperationProcedure;
+
 	friend class FrameAcceptanceReporting;
 
 	/**
@@ -439,6 +443,11 @@ struct MasterChannel {
 	 *  stores TC packet after it has been processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTC* packet);
+
+	/**
+	 * Returns the last stored Transfer Frame in txMasterCopyTc
+	 */
+	TransferFrameTC getLastTxMasterCopyTcFrame();
 
 	/**
 	 * Add virtual channel to master channel
@@ -529,6 +538,16 @@ private:
 	 * Removes TM frames from the RX master buffer
 	 */
 	void removeMasterRx(TransferFrameTM* packet_ptr);
+
+	/**
+	 * Sets the acknowledgement flag of a transfer frame to true
+	 */
+	void acknowledgeFrame(uint8_t frameSequenceNumber);
+
+	/**
+	 * Sets the toBeRetransmitted flag of a transfer frame to true
+	 */
+	void setRetransmitFrame(uint8_t frameSequenceNumber);
 
 	MemoryPool masterChannelPool = MemoryPool();
 };

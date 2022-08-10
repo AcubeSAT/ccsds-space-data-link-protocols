@@ -10,8 +10,8 @@ struct CLCW {
 	     const uint8_t vcId, const uint8_t spare, const bool noRfAvailable, const bool noBitLock, const bool lockout,
 	     const bool wait, const bool retransmit, const uint8_t farmBCounter, bool spare2, uint8_t reportValue)
 	    : clcw(controlWordType << 31U | clcwVersion << 29U | statusField << 26U | copInEffect << 24U | vcId << 18U |
-	           noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U |
-	           retransmit << 11U | farmBCounter << 9U  | reportValue){};
+	           noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U | retransmit << 11U |
+	           farmBCounter << 9U | reportValue){};
 
 public:
 	const uint32_t getClcw() {
@@ -118,7 +118,6 @@ public:
 		return (clcw >> 9U) & 0x3;
 	}
 
-
 	/**
 	 * Next expected transfer frame number
 	 * @return Bits 24-31 of the CLCW (the Report Value).
@@ -127,6 +126,4 @@ public:
 	const uint8_t getReportValue() {
 		return clcw & 0xFF;
 	}
-
-
 };
