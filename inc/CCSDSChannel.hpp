@@ -530,10 +530,10 @@ private:
 	 */
 	etl::list<TransferFrameTM, MaxRxInMasterChannel> rxMasterCopyTM;
 
-	/**
-	 * Removes TM frames from the RX master buffer
-	 */
-	void removeMasterRx(TransferFrameTM* packet_ptr);
+    /**
+     * Removes TM frames from the RX master buffer
+     */
+    void removeMasterRx(TransferFrameTM *packet_ptr);
 
     /**
      * Sets the acknowledgement flag of a transfer frame to true
