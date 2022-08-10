@@ -1,5 +1,4 @@
-#ifndef CCSDS_ALERT_HPP
-#define CCSDS_ALERT_HPP
+#pragma once
 
 enum ServiceChannelNotification : int {
 	NO_SERVICE_EVENT = 0x01,
@@ -75,4 +74,3 @@ enum NotificationType : uint8_t {
 
 };
 
-#endif // CCSDS_ALERT_HPP

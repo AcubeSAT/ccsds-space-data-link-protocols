@@ -76,11 +76,11 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid,
-	                        VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
-	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
-                                           operationalControlFieldTMPresent, frameErrorControlFieldPresent, synchronization,
-	                                       farmSlidingWinWidth, farmPositiveWinWidth, farmNegativeWinWidth, mapChan));
+	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
+	                                             repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
+	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
+	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
+	                                             farmNegativeWinWidth, mapChan));
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
@@ -99,9 +99,9 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	virtualChannels.emplace(vcid,
 	                        VirtualChannel(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
-	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent, synchronization,
-	                                       farmSlidingWinWidth, farmPositiveWinWidth, farmNegativeWinWidth,
-	                                       etl::flat_map<uint8_t, MAPChannel, MaxMapChannels>()));
+	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
+	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
+	                                       farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels>()));
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 

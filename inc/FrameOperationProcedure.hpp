@@ -1,6 +1,3 @@
-#ifndef CCSDS_FOP_H
-#define CCSDS_FOP_H
-
 #pragma once
 
 #include <cstdint>
@@ -339,5 +336,3 @@ public:
 	      tiInitial(FopTimerInitial), transmissionLimit(repetitionCopCtrl), transmissionCount(1),
 	      fopSlidingWindow(FopSlidingWindowInitial), timeoutType(false){};
 };
-
-#endif // CCSDS_FOP_H

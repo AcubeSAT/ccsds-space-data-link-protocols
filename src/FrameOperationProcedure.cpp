@@ -100,12 +100,8 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
 	for (TransferFrameTC* pckt : *sentQueueFOP) {
 		if (pckt->transferFrameSequenceNumber() == frame_seq_num) {
 			pckt->setAcknowledgement(true);
-			return;
 		}
 	}
-}
-
-void FrameOperationProcedure::removeAcknowledgedFrames() {
 	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
 	while (cur_frame != sentQueueFOP->end()) {
@@ -116,6 +112,11 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 			++cur_frame;
 		}
 	}
+	return ;
+}
+
+void FrameOperationProcedure::removeAcknowledgedFrames() {
+
 
 	// Also remove acknowledged frames from Master TX Buffer
 	etl::ilist<TransferFrameTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
@@ -136,7 +137,7 @@ void FrameOperationProcedure::lookForDirective() {
 		for (TransferFrameTC* frame : *sentQueueFOP) {
 			if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
 			     (frame->getServiceType() == ServiceType::TYPE_BD)) &&
-			    frame->getToBeRetransmitted()) {
+			    frame->isToBeRetransmitted()) {
 				bcOut = FlagState::NOT_READY;
 				frame->setToBeRetransmitted(0);
 			}
@@ -168,29 +169,33 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
+    // If Ad Out Flag isn't set to ready, the process shall be aborted
 	if (adOut == FlagState::READY) {
-		for (TransferFrameTC* frame : *sentQueueFOP) {
-			if (frame->getServiceType() == ServiceType::TYPE_AD) {
-				// adOut = FlagState::NOT_READY;
-				frame->setToBeRetransmitted(0);
-				FOPNotification resp = transmitAdFrame();
-				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-				return COPDirectiveResponse::ACCEPT;
+		etl::ilist<TransferFrameTC>::iterator frame = vchan->master_channel().txMasterCopyTC.begin();
+
+		// Check if some transmitted packet is set to be retransmitted
+		while (frame != vchan->master_channel().txMasterCopyTC.end()) {
+			if ((frame->getServiceType() == ServiceType::TYPE_AD) && frame->isTransmitted()) {
+				if (frame->isToBeRetransmitted()) {
+					adOut = FlagState::NOT_READY;
+					frame->setToBeRetransmitted(0);
+					waitQueueFOP->push_front(&frame);
+					transmitAdFrame();
+					return COPDirectiveResponse::ACCEPT;
+				}
 			}
-		}
-		// Search the wait queue for a suitable FDU
-		// The wait queue is supposed to have a maximum capacity of one
-		if (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindow) {
-			TransferFrameTC* frame = waitQueueFOP->front();
-			if (frame->getServiceType() == ServiceType::TYPE_AD) {
-				sentQueueFOP->push_back(frame);
-				waitQueueFOP->pop_front();
-				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-				return COPDirectiveResponse::ACCEPT;
-			}
+			++frame;
 		}
 	}
-	// TODO? I think that look_for_fdu has to be automatically sent once adOut is set to ready
+
+    // Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
+    TransferFrameTC* frame = waitQueueFOP->front();
+    if ((frame->getServiceType() == ServiceType::TYPE_AD) && (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
+        transmitAdFrame();
+        ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
+        return COPDirectiveResponse::ACCEPT;
+    }
+
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
 }
@@ -213,14 +218,14 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
+	CLCW clcw = vchan->currentlyProcessedCLCW.getClcw();
 
-	if (frame->lockout() == 0) {
-		if (frame->reportValue() == expectedAcknowledgementSeqNumber) {
-			if (frame->retransmit() == 0) {
-				if (frame->wait() == 0) {
-					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
-						// E1
+	if (clcw.getLockout() == 0) {
+		if (clcw.getReportValue() == transmitterFrameSeqNumber) {
+			if (clcw.getRetransmit() == 0) {
+				if (clcw.getWait() == 0) {
+				    if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
+					    // E1
 						switch (state) {
 							case FOPState::ACTIVE:
 								break;
@@ -230,12 +235,10 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 								state = FOPState::INITIAL;
 								break;
 							case FOPState::INITIALIZING_WITH_BC_FRAME:
-								frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
 								state = FOPState::ACTIVE;
 								// cancel timer
 								break;
 							case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-								frame->setConfSignal(FDURequestType::REQUEST_POSITIVE_CONFIRM);
 								// bc_accept()??
 								//  cancel timer
 								state = FOPState::ACTIVE;
@@ -291,11 +294,11 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						break;
 				}
 			}
-		} else if (frame->reportValue() > expectedAcknowledgementSeqNumber &&
-		           expectedAcknowledgementSeqNumber >= transmitterFrameSeqNumber) {
-			if (frame->retransmit() == 0) {
-				if (frame->wait() == 0) {
-					if (expectedAcknowledgementSeqNumber == transmitterFrameSeqNumber) {
+		} else if (clcw.getReportValue() < transmitterFrameSeqNumber &&
+		           clcw.getReportValue() >= expectedAcknowledgementSeqNumber) {
+			if (clcw.getRetransmit()== 0) {
+				if (clcw.getWait() == 0) {
+					if (expectedAcknowledgementSeqNumber == clcw.getReportValue()) {
 						// E5
 						switch (state) {
 							case FOPState::ACTIVE:
@@ -343,7 +346,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 				}
 			} else {
 				if (transmissionLimit == 1) {
-					if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
+					if (expectedAcknowledgementSeqNumber != clcw.getReportValue()) {
 						// E101
 						switch (state) {
 							case FOPState::ACTIVE:
@@ -374,8 +377,8 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						}
 					}
 				} else if (transmissionLimit > 1) {
-					if (expectedAcknowledgementSeqNumber != transmitterFrameSeqNumber) {
-						if (frame->wait() == 0) {
+					if (expectedAcknowledgementSeqNumber != clcw.getReportValue()) {
+						if (clcw.getWait() == 0) {
 							// E8
 							switch (state) {
 								case FOPState::ACTIVE:
@@ -408,7 +411,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 						}
 					} else {
 						if (transmissionCount < transmissionLimit) {
-							if (frame->wait() == 0) {
+							if (clcw.getWait() == 0) {
 								//  E10
 								switch (state) {
 									case FOPState::ACTIVE:
@@ -438,7 +441,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 								}
 							}
 						} else {
-							if (frame->wait() == 0) {
+							if (clcw.getWait() == 0) {
 								// E12
 								switch (state) {
 									case FOPState::ACTIVE:
@@ -499,11 +502,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 		}
 	}
 
-	MasterChannelAlert mc = vchan->master_channel().storeOut(frame);
-	if (mc != MasterChannelAlert::NO_MC_ALERT) {
-		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-		return COPDirectiveResponse::REJECT;
-	}
+
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
 }

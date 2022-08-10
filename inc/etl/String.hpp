@@ -1,5 +1,4 @@
-#ifndef CCSDS_TM_PACKETS_STRING_HPP
-#define CCSDS_TM_PACKETS_STRING_HPP
+#pragma once
 
 #include <cstddef>
 #include <etl/cstring.h>
@@ -62,5 +61,3 @@ public:
     explicit String(const char *text) // NOLINTNEXTLINE(google-explicit-constructor)
             : etl::string<MAX_SIZE>(text) {}
 };
-
-#endif // CCSDS_TM_PACKETS_STRING_HPP
