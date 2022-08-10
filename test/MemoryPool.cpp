@@ -26,7 +26,7 @@ TEST_CASE("Packet Insertions") {
 
 		uint8_t* packet = pool.allocatePacket(data, 5);
 		CHECK(packet != nullptr);
-        //TODO: When the buffers are templated change this test
+		// TODO: When the buffers are templated change this test
 		uint8_t* packet2 = pool.allocatePacket(data2, 5);
 		CHECK(packet2 != nullptr);
 		for (unsigned int i = 5; i < 8; i++) {
@@ -81,7 +81,7 @@ TEST_CASE("Packet deletions") {
 
 	SECTION("Delete packet that has not been stored") {
 		pool.deletePacket(packet2, 5);
-        //Also change this
+		// Also change this
 		CHECK(pool.deletePacket(packet2, 5) == true);
 		for (unsigned int i = 5; i < 8; i++) {
 			CHECK(pool.getUsedMemory()[i] == false);
@@ -90,7 +90,7 @@ TEST_CASE("Packet deletions") {
 	SECTION("Delete packet that has been stored") {
 		pool.deletePacket(packet4, 1);
 		CHECK(pool.deletePacket(packet4, 1) == true);
-		CHECK(pool.getUsedMemory()[11] == false); //Also this
+		CHECK(pool.getUsedMemory()[11] == false); // Also this
 
 		pool.deletePacket(packet, 5);
 		CHECK(pool.deletePacket(packet, 5) == true);

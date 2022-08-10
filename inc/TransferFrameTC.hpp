@@ -331,30 +331,30 @@ public:
 	/**
 	 * Indicates that the frame has been passed to the physical layer and supposedly transmitted
 	 */
-	void setToTransmitted(){
+	void setToTransmitted() {
 		transmit = true;
 	}
 
 	/**
 	 * Indicates whether transfer frame has been transmitted
 	 */
-	bool isTransmitted(){
+	bool isTransmitted() {
 		return transmit;
 	}
 
-    /**
-     * Indicates that the frame has gone through the FOP checks
-     */
-    void setToProcessedByFOP(){
-        processedByFOP = true;
-    }
+	/**
+	 * Indicates that the frame has gone through the FOP checks
+	 */
+	void setToProcessedByFOP() {
+		processedByFOP = true;
+	}
 
-    /**
-     * Indicates whether the frame has gone through the FOP checks
-     */
-    bool getProcessedByFOP(){
-        return processedByFOP;
-    }
+	/**
+	 * Indicates whether the frame has gone through the FOP checks
+	 */
+	bool getProcessedByFOP() {
+		return processedByFOP;
+	}
 
 	TransferFrameTC(uint8_t* packet, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
 	                PacketType t = TC)
@@ -380,6 +380,6 @@ private:
 	bool segmentationHeaderPresent;
 	bool ack;
 	bool transmit;
-    bool processedByFOP;
+	bool processedByFOP;
 	uint8_t reps;
 };

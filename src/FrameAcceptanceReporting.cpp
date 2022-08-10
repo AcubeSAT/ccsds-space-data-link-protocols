@@ -3,7 +3,7 @@
 
 COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
-    waitQueue->pop_front();
+	waitQueue->pop_front();
 
 	if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
 		if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
@@ -43,10 +43,12 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
-		           (frame->transferFrameSequenceNumber() < (receiverFrameSeqNumber > farmNegativeWidth) ? receiverFrameSeqNumber - farmNegativeWidth : 256 - farmNegativeWidth)) {
+		           (frame->transferFrameSequenceNumber() < (receiverFrameSeqNumber > farmNegativeWidth)
+		                ? receiverFrameSeqNumber - farmNegativeWidth
+		                : 256 - farmNegativeWidth)) {
 			// E5
 			state = FARMState::LOCKOUT;
-            lockout = FlagState::READY;
+			lockout = FlagState::READY;
 			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		}

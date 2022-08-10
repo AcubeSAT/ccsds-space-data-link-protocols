@@ -42,8 +42,8 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 	ad_frame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
 
 	ad_frame->setToBeRetransmitted(0);
-    transmitterFrameSeqNumber++;
-    ad_frame->setToProcessedByFOP();
+	transmitterFrameSeqNumber++;
+	ad_frame->setToProcessedByFOP();
 
 	sentQueueFOP->push_back(ad_frame);
 	adOut = false;
@@ -157,7 +157,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
-    // If Ad Out Flag isn't set to ready, the process shall be aborted
+	// If Ad Out Flag isn't set to ready, the process shall be aborted
 	if (adOut == FlagState::READY) {
 		etl::ilist<TransferFrameTC>::iterator frame = vchan->master_channel().txMasterCopyTC.begin();
 
@@ -176,16 +176,17 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 		}
 	}
 
-    // Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
-    if(waitQueueFOP->empty()){
-        return COPDirectiveResponse::REJECT;
-    }
-    TransferFrameTC* frame = waitQueueFOP->front();
-    if ((frame->getServiceType() == ServiceType::TYPE_AD) && (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
-        transmitAdFrame();
-        ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-        return COPDirectiveResponse::ACCEPT;
-    }
+	// Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
+	if (waitQueueFOP->empty()) {
+		return COPDirectiveResponse::REJECT;
+	}
+	TransferFrameTC* frame = waitQueueFOP->front();
+	if ((frame->getServiceType() == ServiceType::TYPE_AD) &&
+	    (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
+		transmitAdFrame();
+		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
+		return COPDirectiveResponse::ACCEPT;
+	}
 
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 	return COPDirectiveResponse::REJECT;
@@ -215,8 +216,8 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 		if (clcw.getReportValue() == transmitterFrameSeqNumber) {
 			if (clcw.getRetransmit() == 0) {
 				if (clcw.getWait() == 0) {
-				    if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
-					    // E1
+					if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
+						// E1
 						switch (state) {
 							case FOPState::ACTIVE:
 								break;
@@ -287,7 +288,7 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 			}
 		} else if (clcw.getReportValue() < transmitterFrameSeqNumber &&
 		           clcw.getReportValue() >= expectedAcknowledgementSeqNumber) {
-			if (clcw.getRetransmit()== 0) {
+			if (clcw.getRetransmit() == 0) {
 				if (clcw.getWait() == 0) {
 					if (expectedAcknowledgementSeqNumber == clcw.getReportValue()) {
 						// E5
@@ -492,7 +493,6 @@ COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
 				break;
 		}
 	}
-
 
 	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 	return COPDirectiveResponse::ACCEPT;
@@ -706,11 +706,12 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 }
 
 void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
-    for(TransferFrameTC frame : vchan->master_channel().txMasterCopyTC){
-        if((frame.transferFrameSequenceNumber() < frameSequenceNumber || frame.transferFrameSequenceNumber() > transmitterFrameSeqNumber)
-        && !frame.acknowledged() && frame.getProcessedByFOP()){
-            vchan->master_channel().acknowledgeFrame(frame.transferFrameSequenceNumber());
-        }
-    }
-    expectedAcknowledgementSeqNumber = frameSequenceNumber;
+	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
+		if ((frame.transferFrameSequenceNumber() < frameSequenceNumber ||
+		     frame.transferFrameSequenceNumber() > transmitterFrameSeqNumber) &&
+		    !frame.acknowledged() && frame.getProcessedByFOP()) {
+			vchan->master_channel().acknowledgeFrame(frame.transferFrameSequenceNumber());
+		}
+	}
+	expectedAcknowledgementSeqNumber = frameSequenceNumber;
 }
