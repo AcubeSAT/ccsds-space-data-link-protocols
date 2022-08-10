@@ -12,10 +12,10 @@
 
 class MemoryPool {
 private:
-    /**
-     * @var The size of the block of memory in bytes
-     */
-    static constexpr uint16_t memorySize = 5*128;
+	/**
+	 * @var The size of the block of memory in bytes
+	 */
+	static constexpr uint16_t memorySize = 5 * 128;
 
 	/**
 	 * @var An array that allocates statically memory to be used for the packet data

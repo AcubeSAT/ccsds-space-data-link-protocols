@@ -133,6 +133,8 @@ public:
 		return masterChannel.rxMasterCopyTM.available();
 	}
 
+	TransferFrameTC getLastMasterCopyTcFrame();
+
 #if maxReceivedUnprocessedTcInVirtBuffer > 0
 
 	/**

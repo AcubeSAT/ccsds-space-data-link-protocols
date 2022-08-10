@@ -7,7 +7,6 @@
 #include "etl/basic_string.h"
 #include "Logger.hpp"
 
-
 /**
  * Allows to log additional data of interest
  *
@@ -16,7 +15,7 @@
  * that of a notice
  */
 template <typename T, class CCSDSNotification>
-void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif, T message){
+void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif, T message) {
 	LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif << ":" << message;
 }
 
@@ -24,8 +23,8 @@ template <class CCSDSNotification>
 void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif) {
 	switch (log_verbose) {
 		case 0:
-            LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif;
-            break;
+			LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif;
+			break;
 		case 1:
 			uint16_t a;
 			a = (static_cast<uint16_t>(txRx) << 8U) | (static_cast<uint16_t>(notificationType) << 5U) |

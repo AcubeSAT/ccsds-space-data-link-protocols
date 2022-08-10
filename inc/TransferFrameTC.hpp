@@ -331,21 +331,35 @@ public:
 	/**
 	 * Indicates that the frame has been passed to the physical layer and supposedly transmitted
 	 */
-	void setToTransmitted(){
+	void setToTransmitted() {
 		transmit = true;
 	}
 
 	/**
 	 * Indicates whether transfer frame has been transmitted
 	 */
-	bool isTransmitted(){
+	bool isTransmitted() {
 		return transmit;
+	}
+
+	/**
+	 * Indicates that the frame has gone through the FOP checks
+	 */
+	void setToProcessedByFOP() {
+		processedByFOP = true;
+	}
+
+	/**
+	 * Indicates whether the frame has gone through the FOP checks
+	 */
+	bool getProcessedByFOP() {
+		return processedByFOP;
 	}
 
 	TransferFrameTC(uint8_t* packet, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
 	                PacketType t = TC)
 	    : TransferFrame(t, frameLength, packet), hdr(packet), serviceType(serviceType), ack(false),
-	      toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false) {
+	      toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
 		packet[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
@@ -366,5 +380,6 @@ private:
 	bool segmentationHeaderPresent;
 	bool ack;
 	bool transmit;
+	bool processedByFOP;
 	uint8_t reps;
 };

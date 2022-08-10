@@ -5,22 +5,22 @@
 #include "CLCW.hpp"
 
 TEST_CASE("CCSDS TC Channel Model") {
-    // @todo add more and better test cases :)
+	// @todo add more and better test cases :)
 
-    PhysicalChannel phy_channel = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+	PhysicalChannel phy_channel = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, false, false)},
-                                                                       {3, MAPChannel(3, true, true)}};
+	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, false, false)},
+	                                                                   {3, MAPChannel(3, true, true)}};
 
-    uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
-    MasterChannel master_channel = MasterChannel();
-    master_channel.addVC(3, 1024, true, 32, 32, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255,
-                         10, 10, map_channels);
+	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
+	MasterChannel master_channel = MasterChannel();
+	master_channel.addVC(3, 1024, true, 32, 32, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
+	                     map_channels);
 
-    CHECK(master_channel.virtualChannels.at(3).VCID == 0x03);
-    PhysicalChannel physical_channel =
-            PhysicalChannel(TmTransferFrameSize, TcErrorControlFieldExists, 100, 50, 20000, 5);
-    ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
+	CHECK(master_channel.virtualChannels.at(3).VCID == 0x03);
+	PhysicalChannel physical_channel =
+	    PhysicalChannel(TmTransferFrameSize, TcErrorControlFieldExists, 100, 50, 20000, 5);
+	ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
 }
 
 TEST_CASE("MAPP blocking") {
@@ -31,8 +31,8 @@ TEST_CASE("MAPP blocking") {
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, true, true)}};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(3, 8, true, 32, 32, true, true, true, 11, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
-	                     10, map_channels);
+	master_channel.addVC(3, 8, true, 32, 32, true, true, true, 11, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
+	                     map_channels);
 
 	CHECK(master_channel.virtualChannels.at(3).VCID == 3);
 	ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
@@ -86,10 +86,8 @@ TEST_CASE("CLCW parsing") {
 	CHECK(spare2 == 0);
 	CHECK(reportValue == 105);
 
-
 	CLCW parsedClcw = CLCW(controlWordType, clcwVersion, statusField, copInEffect, vcId, spare, noRfAvailable, bitLock,
-						   lockout, wait, retransmit, farmBCounter, spare2, reportValue);
-
+	                       lockout, wait, retransmit, farmBCounter, spare2, reportValue);
 
 	CHECK(operationalControlField == parsedClcw.getClcw());
 }

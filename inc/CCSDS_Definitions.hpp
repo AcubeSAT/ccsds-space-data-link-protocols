@@ -27,12 +27,16 @@ inline const uint8_t MaxReceivedTmInMapChannel = 5;
 inline const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
 inline const uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
 
-inline const uint8_t MaxReceivedTxTcInFOPSentQueue = 10; ///> Maximum received TX TCs in sent queue (following COP checks).
-inline const uint8_t MaxReceivedRxTcInFOPSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedTxTcInFOPSentQueue =
+    10; ///> Maximum received TX TCs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedRxTcInFOPSentQueue =
+    10; ///> Maximum received RX TCs in sent queue (following COP checks).
 inline const uint8_t MaxReceivedRxTmInVirtBuffer = 10; ///> Maxiumm received RX TMs in Virtual channel buffer
 
-inline const uint8_t MaxReceivedTxTcInFARMSentQueue = 10; ///> Maximum received TX TMs in sent queue (following COP checks).
-inline const uint8_t MaxReceivedRxTcInFARMSentQueue = 10; ///> Maximum received RX TCs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedTxTcInFARMSentQueue =
+    10; ///> Maximum received TX TMs in sent queue (following COP checks).
+inline const uint8_t MaxReceivedRxTcInFARMSentQueue =
+    10; ///> Maximum received RX TCs in sent queue (following COP checks).
 
 inline const uint8_t MaxReceivedTxTcInMasterBuffer = 100; ///> Maximum received TX TC in the master buffer
 
@@ -53,7 +57,8 @@ inline const uint8_t MaxReceivedTxTmOutInVCBuffer =
 inline const uint8_t MaxReceivedTxTmInVCBuffer =
     100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
 
-inline const uint8_t MaxReceivedTxTmOutInMasterBuffer = 100; ///> Maximum received fully-processed TX TMs in the master buffer
+inline const uint8_t MaxReceivedTxTmOutInMasterBuffer =
+    100; ///> Maximum received fully-processed TX TMs in the master buffer
 inline const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
 inline const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
 inline const uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer
