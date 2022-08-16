@@ -278,8 +278,8 @@ public:
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-	      frameCountTM(0), fop(FrameOperationProcedure<256>(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
-	      farm(FrameAcceptanceReporting<256>(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
+	      frameCountTM(0), fop(FrameOperationProcedure<t>(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+	      farm(FrameAcceptanceReporting<t>(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
 	}
@@ -389,6 +389,8 @@ struct MasterChannel {
 	etl::flat_map<uint8_t, VirtualChannel<256>, MaxVirtualChannels> virtualChannels;
 	uint8_t frameCount{};
 
+	static const uint16_t mapSize = t/2;
+
 	MasterChannel()
 	    : virtualChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
 	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), currFrameCountTM(0) {}
@@ -448,7 +450,7 @@ struct MasterChannel {
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-	                         etl::flat_map<uint8_t, MAPChannel<128>, MaxMapChannels> mapChan);
+	                         etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels> mapChan);
 
 	/**
 	 * Add virtual channel to master channel

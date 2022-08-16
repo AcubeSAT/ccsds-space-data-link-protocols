@@ -76,7 +76,7 @@ MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t ma
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
                                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-                                        etl::flat_map<uint8_t, MAPChannel<128>, MaxMapChannels> mapChan) {
+                                        etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels> mapChan) {
 	if (virtualChannels.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, MAX_AMOUNT_OF_VIRT_CHANNELS);
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
@@ -107,7 +107,7 @@ MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t ma
 	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
 	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
-	                                       farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel<128>, MaxMapChannels>()));
+	                                       farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels>()));
 	return MasterChannelAlert::NO_MC_ALERT;
 
 }

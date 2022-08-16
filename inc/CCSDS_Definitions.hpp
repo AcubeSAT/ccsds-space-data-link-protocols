@@ -75,11 +75,8 @@ const uint8_t MaxRxInMasterChannel = 200;
 
 
 const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer = 256; ///> Raw TX TC packets stored directly in the virtual channel buffer.
-const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer =
-    6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
-const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
-    6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
+const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer = 6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
 
 const uint8_t FopSlidingWindowInitial = 255;
