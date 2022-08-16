@@ -1,6 +1,3 @@
-#ifndef CCSDS_TM_PACKETS_FRAMEACCEPTANCEREPORTING_HPP
-#define CCSDS_TM_PACKETS_FRAMEACCEPTANCEREPORTING_HPP
-
 #pragma once
 
 #include <cstdint>
@@ -74,7 +71,5 @@ public:
 	    : waitQueue(waitQueue), sentQueue(sentQueue), vchan(vchan), farmSlidingWinWidth(farmSlidingWinWidth),
 	      farmNegativeWidth(farmNegativeWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
 	      receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY), wait(FlagState::NOT_READY),
-	      retransmit(FlagState::NOT_READY){};
+	      retransmit(FlagState::NOT_READY), state(FARMState::OPEN){};
 };
-
-#endif // CCSDS_TM_PACKETS_FRAMEACCEPTANCEREPORTING_HPP
