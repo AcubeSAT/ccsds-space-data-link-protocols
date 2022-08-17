@@ -197,9 +197,14 @@ public:
 	const uint8_t repetitionTypeAFrame;
 
 	/**
-	 * Determines the number of times COP Control frames will be re-transmitted
+	 * Determines the number of times Type B frames will be re-transmitted
 	 */
-	const uint8_t repetitionCOPCtrl;
+	const uint8_t repetitionTypeBFrame;
+
+	/**
+	 * Determines the number of times a frame will be transmitted in the Physical Layer per Virtual Channel
+	 */
+	const uint8_t vcRepetitions;
 
 	/**
 	 * Determines the number of TM Transfer Frames transmitted
@@ -266,12 +271,12 @@ public:
 	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
 	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
 	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
+	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
 	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
-	      repetitionTypeAFrame(repetitionTypeAFrame), repetitionCOPCtrl(repetitionCopCtrl), waitQueueTxTC(),
+	      repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions), repetitionTypeBFrame(repetitionCopCtrl), waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
@@ -285,7 +290,7 @@ public:
 	VirtualChannel(const VirtualChannel& v)
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
 	      maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
-	      repetitionCOPCtrl(v.repetitionCOPCtrl), frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
+	      repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
 	      sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC), sentQueueRxTC(v.waitQueueRxTC),
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop), farm(v.farm),
 	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
@@ -458,7 +463,7 @@ struct MasterChannel {
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-	                         etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
+	                         const uint8_t vcRepetitions, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 	/**
 	 * Add virtual channel to master channel
@@ -468,7 +473,7 @@ struct MasterChannel {
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth);
+	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions);
 
 private:
 	// Packets stored in frames list, before being processed by the all frames generation service

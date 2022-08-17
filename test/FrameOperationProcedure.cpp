@@ -12,7 +12,7 @@ TEST_CASE("Initiate FOP Directives") {
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
 	MasterChannel master_channel_fop = MasterChannel();
 	master_channel_fop.addVC(3, 1024, true, 32, 32, true, true, true, 32, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
-	                         10, map_channels_fop);
+	                         10, 3, map_channels_fop);
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 

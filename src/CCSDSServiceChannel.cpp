@@ -80,7 +80,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	if (serviceType == ServiceType::TYPE_AD) {
 		packet_s.setRepetitions(virtualChannel->repetitionTypeAFrame);
 	} else if ((serviceType == ServiceType::TYPE_BC) || (serviceType == ServiceType::TYPE_BD)) {
-		packet_s.setRepetitions(virtualChannel->repetitionCOPCtrl);
+		packet_s.setRepetitions(virtualChannel->repetitionTypeBFrame);
 	}
 
 	masterChannel.txMasterCopyTC.push_back(packet_s);
