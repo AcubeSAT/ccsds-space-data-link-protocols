@@ -412,95 +412,6 @@ TEST_CASE("CLCW construction at VC Reception") {
 	MasterChannel master_channel = MasterChannel();
 	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
 	                     map_channels);
-
-TEST_CASE("VC Generation Service TC"){
-	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
-
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-	    {0, MAPChannel(0, true, true)},
-	    {1, MAPChannel(1, false, false)},
-	    {2, MAPChannel(2, true, false)},
-	};
-
-	MasterChannel master_channel = MasterChannel(true);
-	master_channel.addVC(0, 128, true, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED,
-	                     255, 10, 10, map_channels);
-
-	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
-	ServiceChannelNotification err;
-
-	uint8_t packet1[] = {1};
-	uint8_t packet2[] = {47, 31};
-	uint8_t packet3[] = {41, 91, 68, 10};
-	uint8_t packet4[] = {50, 10, 12, 10, 1, 2};
-	uint8_t packet5[] = {50, 10, 12, 10, 1, 2,90,99};
-
-	err = serv_channel.storePacketTC(packet1, 1, 0);
-	CHECK(err == NO_SERVICE_EVENT);
-	err = serv_channel.storePacketTC(packet2, 2, 0);
-	CHECK(err == NO_SERVICE_EVENT);
-	err = serv_channel.storePacketTC(packet3, 4, 0);
-	CHECK(err == NO_SERVICE_EVENT);
-	err = serv_channel.storePacketTC(packet4, 6, 0);
-	CHECK(err == NO_SERVICE_EVENT);
-	err = serv_channel.storePacketTC(packet5, 8, 0);
-	CHECK(err == NO_SERVICE_EVENT);
-
-	err = serv_channel.vcGenerationRequestTC(0);
-	CHECK(err == NO_SERVICE_EVENT);
-	const TransferFrameTC* transferFrame = serv_channel.availablePacketsBeforeAllframes();
-
-	CHECK(transferFrame->packetData()[5] == 0xC0);
-	CHECK(transferFrame->packetData()[6] == 47);
-	CHECK(transferFrame->packetData()[7] == 31);
-
-	serv_channel.popPacketsBeforeAllframes();
-	//Segmentation
-	err = serv_channel.vcGenerationRequestTC(0);
-	transferFrame = serv_channel.availablePacketsBeforeAllframes();
-	CHECK(transferFrame->packetData()[5] == 0x40);
-	CHECK(transferFrame->packetData()[6] == 91);
-	CHECK(transferFrame->packetData()[7] == 68);
-
-	serv_channel.popPacketsBeforeAllframes();
-	transferFrame = serv_channel.availablePacketsBeforeAllframes();
-	CHECK(transferFrame->packetData()[5] == 0x80);
-
-	//Packet that is twice the size of TF
-	serv_channel.popPacketsBeforeAllframes();
-	err = serv_channel.vcGenerationRequestTC(0);
-	transferFrame = serv_channel.availablePacketsBeforeAllframes();
-	CHECK(transferFrame->packetData()[5] == 0x40);
-	CHECK(transferFrame->packetData()[6] == 10);
-	CHECK(transferFrame->packetData()[7] == 12);
-
-	serv_channel.popPacketsBeforeAllframes();
-	transferFrame = serv_channel.availablePacketsBeforeAllframes();
-	CHECK(transferFrame->packetData()[5] == 0x80);
-	CHECK(transferFrame->packetData()[6] == 1);
-	CHECK(transferFrame->packetData()[7] == 2);
-
-	//Packet that is more than twice the size of TF
-	serv_channel.popPacketsBeforeAllframes();
-	err = serv_channel.vcGenerationRequestTC(0);
-	transferFrame = serv_channel.availablePacketsBeforeAllframes();
-
-	CHECK(transferFrame->packetData()[5] == 0x40);
-	CHECK(transferFrame->packetData()[6] == 10);
-	CHECK(transferFrame->packetData()[7] == 12);
-
-	serv_channel.popPacketsBeforeAllframes();
-	transferFrame = serv_channel.availablePacketsBeforeAllframes();
-	CHECK(transferFrame->packetData()[5] == 0x00);
-	CHECK(transferFrame->packetData()[6] == 1);
-	CHECK(transferFrame->packetData()[7] == 2);
-
-	serv_channel.popPacketsBeforeAllframes();
-	transferFrame = serv_channel.availablePacketsBeforeAllframes();
-	CHECK(transferFrame->packetData()[5] == 0x80);
-	CHECK(transferFrame->packetData()[6] == 99);
-
-}
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
 
@@ -581,6 +492,95 @@ TEST_CASE("VC Generation Service TC"){
 	CHECK(clcw3.getLockout() == true);
 	CHECK(err == NO_SERVICE_EVENT);
 	CHECK(err == NO_SERVICE_EVENT);
+}
+
+TEST_CASE("VC Generation Service TC"){
+	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+
+	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+	    {0, MAPChannel(0, true, true)},
+	    {1, MAPChannel(1, false, false)},
+	    {2, MAPChannel(2, true, false)},
+	};
+
+	MasterChannel master_channel = MasterChannel();
+	master_channel.addVC(0, 128, true, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED,
+	                     255, 10, 10, map_channels);
+
+	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+	ServiceChannelNotification err;
+
+	uint8_t packet1[] = {1};
+	uint8_t packet2[] = {47, 31};
+	uint8_t packet3[] = {41, 91, 68, 10};
+	uint8_t packet4[] = {50, 10, 12, 10, 1, 2};
+	uint8_t packet5[] = {50, 10, 12, 10, 1, 2, 90, 99};
+
+	err = serv_channel.storePacketTC(packet1, 1, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet2, 2, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet3, 4, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet4, 6, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet5, 8, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+
+ 	err = serv_channel.vcGenerationRequestTC(0);
+	CHECK(err == NO_SERVICE_EVENT);
+	const TransferFrameTC* transferFrame = serv_channel.availablePacketsBeforeAllframes();
+
+	CHECK(transferFrame->packetData()[5] == 0xC0);
+	CHECK(transferFrame->packetData()[6] == 47);
+	CHECK(transferFrame->packetData()[7] == 31);
+
+	serv_channel.popPacketsBeforeAllframes();
+	//Segmentation
+	err = serv_channel.vcGenerationRequestTC(0);
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x40);
+	CHECK(transferFrame->packetData()[6] == 91);
+	CHECK(transferFrame->packetData()[7] == 68);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x80);
+
+	//Packet that is twice the size of TF
+	serv_channel.popPacketsBeforeAllframes();
+	err = serv_channel.vcGenerationRequestTC(0);
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x40);
+	CHECK(transferFrame->packetData()[6] == 10);
+	CHECK(transferFrame->packetData()[7] == 12);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x80);
+	CHECK(transferFrame->packetData()[6] == 1);
+	CHECK(transferFrame->packetData()[7] == 2);
+
+	//Packet that is more than twice the size of TF
+	serv_channel.popPacketsBeforeAllframes();
+	err = serv_channel.vcGenerationRequestTC(0);
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+
+	CHECK(transferFrame->packetData()[5] == 0x40);
+	CHECK(transferFrame->packetData()[6] == 10);
+	CHECK(transferFrame->packetData()[7] == 12);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x00);
+	CHECK(transferFrame->packetData()[6] == 1);
+	CHECK(transferFrame->packetData()[7] == 2);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x80);
+	CHECK(transferFrame->packetData()[6] == 99);
+
 }
 
 TEST_CASE("Frame Acknowledgement and Retransmission") {

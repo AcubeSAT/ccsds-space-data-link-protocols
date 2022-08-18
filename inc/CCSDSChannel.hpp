@@ -474,7 +474,7 @@ struct MasterChannel {
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
+	                         const bool frameErrorControlFieldTMPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth);
@@ -558,7 +558,7 @@ private:
 	 */
 	void setRetransmitFrame(uint8_t frameSequenceNumber);
 
-	MemoryPool masterChannelPool = MemoryPool();
+    MemoryPool masterChannelPool = MemoryPool();
 };
 
 #endif // CCSDS_CHANNEL_HPP

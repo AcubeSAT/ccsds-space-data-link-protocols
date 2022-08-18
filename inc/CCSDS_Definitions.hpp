@@ -15,6 +15,7 @@ inline const uint16_t TmTransferFrameSize = 128;
 inline const uint8_t TmPrimaryHeaderSize = 6;
 inline const uint8_t TmTrailerSize = 6;
 
+inline const uint16_t TcTransferFrameSize = 3;
 inline const uint8_t TcPrimaryHeaderSize = 5;
 inline const bool TcErrorControlFieldExists = false;
 
@@ -92,6 +93,8 @@ inline const uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 enum FlagState { NOT_READY = 0, READY = 1 };
 
 inline const uint16_t PacketBufferTmSize = 512;
+
+inline const uint16_t PacketBufferTcSize = 512;
 
 inline const uint16_t ClcwBufferSize = 100;
 
