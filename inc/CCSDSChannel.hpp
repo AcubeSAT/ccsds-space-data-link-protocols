@@ -192,17 +192,17 @@ public:
 	const bool blockingTC;
 
 	/**
-	 * Determines the number of times Type A frames will be re-transmitted
+	 * Determines the maximum number of times Type A frames will be re-transmitted
 	 */
 	const uint8_t repetitionTypeAFrame;
 
 	/**
-	 * Determines the number of times Type B frames will be re-transmitted
+	 * Determines the maximum number of times Type B frames will be re-transmitted
 	 */
 	const uint8_t repetitionTypeBFrame;
 
 	/**
-	 * Determines the number of times a frame will be transmitted in the Physical Layer per Virtual Channel
+	 * Determines the number of times a frame will be repeated in transmission in the Physical Layer
 	 */
 	const uint8_t vcRepetitions;
 
