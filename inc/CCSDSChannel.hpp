@@ -455,6 +455,11 @@ struct MasterChannel {
 	TransferFrameTC getLastTxMasterCopyTcFrame();
 
 	/**
+	 * Returns the first stored Transfer Frame in txMasterCopyTC
+	 */
+	 TransferFrameTC geFirstTxMasterCopyTcFrame();
+
+	/**
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,

@@ -135,6 +135,8 @@ public:
 
 	TransferFrameTC getLastMasterCopyTcFrame();
 
+	TransferFrameTC getFirstMasterCopyTcFrame();
+
 #if maxReceivedUnprocessedTcInVirtBuffer > 0
 
 	/**
