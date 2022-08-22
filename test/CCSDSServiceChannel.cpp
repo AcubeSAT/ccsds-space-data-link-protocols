@@ -495,7 +495,7 @@ TEST_CASE("CLCW construction at VC Reception") {
 	CHECK(err == NO_SERVICE_EVENT);
 }
 
-TEST_CASE("Frame Acknowledgement and Retransmission") {
+TEST_CASE("Frame Acknowledgement") {
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {

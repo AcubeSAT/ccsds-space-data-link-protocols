@@ -74,30 +74,28 @@ TEST_CASE("Retransmission"){
 	serv_channel.storeTC(packet1, 9, 0, 0, 0, ServiceType::TYPE_AD);
 	serv_channel.storeTC(packet2,9,0,0,0,ServiceType::TYPE_AD);
 	serv_channel.storeTC(packet3,9,0,0,0,ServiceType::TYPE_AD);
-	serv_channel.mappRequest(0, 0);
-	serv_channel.mappRequest(0, 0);
-	serv_channel.mappRequest(0, 0);
-	serv_channel.vcGenerationRequestTC(0);
-	serv_channel.vcGenerationRequestTC(0);
-	serv_channel.vcGenerationRequestTC(0);
-	serv_channel.allFramesGenerationTCRequest();
-	serv_channel.allFramesGenerationTCRequest();
-	serv_channel.allFramesGenerationTCRequest();
+	for (uint8_t i = 0; i < 3; i++){
+		serv_channel.mappRequest(0, 0);
+		serv_channel.vcGenerationRequestTC(0);
+		serv_channel.allFramesGenerationTCRequest();
+	}
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 2);
 	CHECK(serv_channel.getFirstMasterCopyTcFrame().transferFrameSequenceNumber() == 0);
-	//Receive the first frame
-	TransferFrameTC transferFrame = serv_channel.getFirstMasterCopyTcFrame();
 
+	//Create a CLCW  that indicates that retransmission is needed aka a negative acknowledgement
 	CLCW clcw = CLCW(0,0,0,1,0,0,1,0,0,0,1,0,0,0);
 	uint8_t clcwData[TmTransferFrameSize] = {0};
 	for (uint8_t i = TmPrimaryHeaderSize; i < TmTransferFrameSize ; i++) {
 		// add idle data
 		clcwData[i] = idle_data[i];
 	}
+	//Create a transfer frame that carries the above CLCW
 	TransferFrameTM clcwTransferFrame =
 	    TransferFrameTM(clcwData, TmTransferFrameSize, 0, 0,
 	                    false, false, NoSegmentation,
 	                    FORWARD_ORDERED, clcw.clcw, TM);
+	//Receive the CLCW frame
 	serv_channel.allFramesReceptionTMRequest(clcwData, TmTransferFrameSize);
+	//E10 enters
 	CHECK(serv_channel.fopState(0) ==  RETRANSMIT_WITHOUT_WAIT);
 }
