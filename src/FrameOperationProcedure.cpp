@@ -33,24 +33,25 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 		transmissionCount = 1;
 	}
 
-	TransferFrameTC* ad_frame = waitQueueFOP->front();
+	TransferFrameTC* adFrame = waitQueueFOP->front();
 	if (waitQueueFOP->empty()) {
 		ccsdsLogNotice(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
 		return FOPNotification::WAIT_QUEUE_EMPTY;
 	}
 
-	ad_frame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
+	adFrame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
+	if(!adFrame->isToBeRetransmitted()){
+		transmitterFrameSeqNumber++;;
+	}
+	adFrame->setToBeRetransmitted(false);
+	adFrame->setToProcessedByFOP();
 
-	ad_frame->setToBeRetransmitted(0);
-	transmitterFrameSeqNumber++;
-	ad_frame->setToProcessedByFOP();
-
-	sentQueueFOP->push_back(ad_frame);
+	sentQueueFOP->push_back(adFrame);
 	adOut = false;
 
 	// TODO start the timer
 	// pass the frame into the all frames generation service
-	vchan->master_channel().storeOut(ad_frame);
+	vchan->master_channel().storeOut(adFrame);
 	waitQueueFOP->pop_front();
 	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
@@ -79,9 +80,9 @@ void FrameOperationProcedure::initiateAdRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
-		if (frame.getServiceType() == ServiceType::TYPE_AD) {
-			frame.setToBeRetransmitted(true);
+	for (TransferFrameTC* frame : *sentQueueFOP) {
+		if (frame->getServiceType() == ServiceType::TYPE_AD) {
+			frame->setToBeRetransmitted(true);
 		}
 	}
 }
@@ -91,17 +92,17 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
-		if ((frame.getServiceType() == ServiceType::TYPE_BC) || (frame.getServiceType() == ServiceType::TYPE_BD)) {
-			frame.setToBeRetransmitted(1);
+	for (TransferFrameTC* frame : *sentQueueFOP) {
+		if ((frame->getServiceType() == ServiceType::TYPE_BC) || (frame->getServiceType() == ServiceType::TYPE_BD)) {
+			frame->setToBeRetransmitted(1);
 		}
 	}
 }
 
-void FrameOperationProcedure::acknowledgeFrame(uint8_t frame_seq_num) {
-	for (TransferFrameTC* pckt : *sentQueueFOP) {
-		if (pckt->transferFrameSequenceNumber() == frame_seq_num) {
-			pckt->setAcknowledgement(true);
+void FrameOperationProcedure::acknowledgeFrame(uint8_t frameSeqNumber) {
+	for (TransferFrameTC* frame : *sentQueueFOP) {
+		if (frame->transferFrameSequenceNumber() == frameSeqNumber) {
+			frame->setAcknowledgement(true);
 		}
 	}
 }
@@ -159,20 +160,16 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	// If Ad Out Flag isn't set to ready, the process shall be aborted
 	if (adOut == FlagState::READY) {
-		etl::ilist<TransferFrameTC>::iterator frame = vchan->master_channel().txMasterCopyTC.begin();
-
 		// Check if some transmitted packet is set to be retransmitted
-		while (frame != vchan->master_channel().txMasterCopyTC.end()) {
-			if ((frame->getServiceType() == ServiceType::TYPE_AD) && frame->isTransmitted()) {
+		for(TransferFrameTC* frame : *sentQueueFOP){
+			if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
 				if (frame->isToBeRetransmitted()) {
 					adOut = FlagState::NOT_READY;
-					frame->setToBeRetransmitted(0);
-					waitQueueFOP->push_front(&frame);
+					waitQueueFOP->push_front(frame);
 					transmitAdFrame();
 					return COPDirectiveResponse::ACCEPT;
 				}
 			}
-			++frame;
 		}
 	}
 
@@ -706,11 +703,10 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 }
 
 void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
-	for (TransferFrameTC frame : vchan->master_channel().txMasterCopyTC) {
-		if ((frame.transferFrameSequenceNumber() < frameSequenceNumber ||
-		     frame.transferFrameSequenceNumber() > transmitterFrameSeqNumber) &&
-		    !frame.acknowledged() && frame.getProcessedByFOP()) {
-			vchan->master_channel().acknowledgeFrame(frame.transferFrameSequenceNumber());
+	for (TransferFrameTC* frame : *sentQueueFOP) {
+		if ((frame->transferFrameSequenceNumber() < frameSequenceNumber ||
+		     frame->transferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
+			acknowledgeFrame(frame->transferFrameSequenceNumber());
 		}
 	}
 	expectedAcknowledgementSeqNumber = frameSequenceNumber;

@@ -133,7 +133,15 @@ public:
 		return masterChannel.rxMasterCopyTM.available();
 	}
 
+	/**
+	 * Returns the last frame in the masterCopyTcTx buffer
+	 */
 	TransferFrameTC getLastMasterCopyTcFrame();
+
+	/**
+	 * Returns the first frame in the masterCopyTcTx buffer
+	 */
+	TransferFrameTC getFirstMasterCopyTcFrame();
 
 #if maxReceivedUnprocessedTcInVirtBuffer > 0
 
