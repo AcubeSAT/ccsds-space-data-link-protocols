@@ -64,7 +64,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* packet) {
 }
 
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
-                                        const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+                                        const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
@@ -77,7 +77,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	}
 
 	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
-	                                             repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
+	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                             farmNegativeWinWidth, vcRepetitions, mapChan));

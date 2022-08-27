@@ -267,7 +267,7 @@ public:
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
-	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
 	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
 	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
 	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
@@ -276,12 +276,13 @@ public:
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
-	      repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions), repetitionTypeBFrame(repetitionCopCtrl), waitQueueTxTC(),
+	      repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions), repetitionTypeBFrame(repetitionTypeBFrame),
+	      waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
 	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
 	      currentlyProcessedCLCW(0), frameCountTM(0),
-	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionCopCtrl)),
+	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
 	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
@@ -463,7 +464,7 @@ struct MasterChannel {
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
-	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,

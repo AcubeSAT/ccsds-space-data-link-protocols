@@ -33,24 +33,25 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 		transmissionCount = 1;
 	}
 
-	TransferFrameTC* ad_frame = waitQueueFOP->front();
+	TransferFrameTC* adFrame = waitQueueFOP->front();
 	if (waitQueueFOP->empty()) {
 		ccsdsLogNotice(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
 		return FOPNotification::WAIT_QUEUE_EMPTY;
 	}
 
-	ad_frame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
+	adFrame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
+	if(!adFrame->isToBeRetransmitted()){
+		transmitterFrameSeqNumber++;;
+	}
+	adFrame->setToBeRetransmitted(false);
+	adFrame->setToProcessedByFOP();
 
-	ad_frame->setToBeRetransmitted(0);
-	transmitterFrameSeqNumber++;
-	ad_frame->setToProcessedByFOP();
-
-	sentQueueFOP->push_back(ad_frame);
+	sentQueueFOP->push_back(adFrame);
 	adOut = false;
 
 	// TODO start the timer
 	// pass the frame into the all frames generation service
-	vchan->master_channel().storeOut(ad_frame);
+	vchan->master_channel().storeOut(adFrame);
 	waitQueueFOP->pop_front();
 	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
@@ -164,7 +165,6 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 			if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
 				if (frame->isToBeRetransmitted()) {
 					adOut = FlagState::NOT_READY;
-					frame->setToBeRetransmitted(0);
 					waitQueueFOP->push_front(frame);
 					transmitAdFrame();
 					return COPDirectiveResponse::ACCEPT;
