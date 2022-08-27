@@ -80,7 +80,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 	if (serviceType == ServiceType::TYPE_AD) {
 		packet_s.setRepetitions(virtualChannel->repetitionTypeAFrame);
 	} else if ((serviceType == ServiceType::TYPE_BC) || (serviceType == ServiceType::TYPE_BD)) {
-		packet_s.setRepetitions(virtualChannel->repetitionCOPCtrl);
+		packet_s.setRepetitions(virtualChannel->repetitionTypeBFrame);
 	}
 
 	masterChannel.txMasterCopyTC.push_back(packet_s);
@@ -411,13 +411,11 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	} else {
 		virtChannel.rxInFramesAfterVCReception.push_back(frame);
 	}
-
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
 ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8_t mapid, uint8_t* packet) {
 	VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-
 	// We can't call the MAP Packet Extraction service if no segmentation header is present
 	if (!virtualChannel.segmentHeaderPresent) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_SERVICE_CALL);
@@ -989,4 +987,8 @@ uint16_t ServiceChannel::availableInPacketBufferTmTx(uint8_t gvcid) {
 
 TransferFrameTC ServiceChannel::getLastMasterCopyTcFrame() {
 	return masterChannel.getLastTxMasterCopyTcFrame();
+}
+
+TransferFrameTC ServiceChannel::getFirstMasterCopyTcFrame() {
+	return masterChannel.geFirstTxMasterCopyTcFrame();
 }
