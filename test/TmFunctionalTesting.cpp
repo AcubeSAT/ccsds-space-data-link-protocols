@@ -12,14 +12,15 @@ TEST_CASE("Sending Tm"){
     MasterChannel masterChannel = MasterChannel();
 
 
-    masterChannel.addVC(0, 128, true, 2, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
+    masterChannel.addVC(0, 128, true,3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 20, 20,
                          10);
 
-    masterChannel.addVC(1, 128, false, 2, 2, true, false, 0, false , SynchronizationFlag::FORWARD_ORDERED, 255, 20,
-                         20);
+	masterChannel.addVC(1, 128, false,3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 20, 20,
+	                    10);
 
-    masterChannel.addVC(2, 128, false, 2, 2, false, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 3,
-                         3);
+	masterChannel.addVC(2, 128, false,3, 2, false, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 3, 3,
+	                    10);
+
 
     ServiceChannel serviceChannel = ServiceChannel(masterChannel, physicalChannel);
     uint8_t packetDestination[TmTransferFrameSize] = {0};
@@ -95,14 +96,14 @@ TEST_CASE("Receiving Tm"){
     MasterChannel masterChannel = MasterChannel();
 
 
-    masterChannel.addVC(0, 128, true, 2, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
-                        10);
+	masterChannel.addVC(0, 128, true,3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 20, 20,
+	                    10);
 
-    masterChannel.addVC(1, 128, false, 2, 2, true, false, 0, false , SynchronizationFlag::FORWARD_ORDERED, 255, 20,
-                        20);
+	masterChannel.addVC(1, 128, false,3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 20, 20,
+	                    10);
 
-    masterChannel.addVC(2, 128, false, 2, 2, false, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 3,
-                        3);
+	masterChannel.addVC(2, 128, false,3, 2, false, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 3, 3,
+	                    10);
 
     ServiceChannel serviceChannel = ServiceChannel(masterChannel, physicalChannel);
     uint8_t packetDestination[TmTransferFrameSize] = {0};
