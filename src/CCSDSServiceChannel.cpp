@@ -429,6 +429,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 			masterChannel.txMasterCopyTC.push_back(transferFrameTc);
 			masterChannel.txOutFramesBeforeAllFramesGenerationListTC.push_back(&(masterChannel.txMasterCopyTC.back()));
 		}
+
 		virt_channel.packetLengthBufferTcTx.pop();
 		return NO_SERVICE_EVENT;
 	}
