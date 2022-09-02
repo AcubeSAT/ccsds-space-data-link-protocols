@@ -1,5 +1,4 @@
-#ifndef CCSDS_ALERT_HPP
-#define CCSDS_ALERT_HPP
+#pragma once
 
 enum ServiceChannelNotification : int {
 	NO_SERVICE_EVENT = 0x01,
@@ -29,8 +28,9 @@ enum ServiceChannelNotification : int {
 	NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM = 0x19,
 	RX_INVALID_CRC = 0x1A,
 	INVALID_SERVICE_CALL = 0x1B,
-    PACKET_BUFFER_EMPTY = 0x1C,
-    NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D,
+	PACKET_BUFFER_EMPTY = 0x1C,
+	NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D,
+	MC_RX_INVALID_COUNT = 0x1E,
 	PACKET_BUFFER_TC_EMPTY = 0x1F,
 	TX_TC_BUFFER_FULL = 0x20,
 	SEGMENTATION_UNAVAILABLE = 0x21
@@ -76,5 +76,3 @@ enum NotificationType : uint8_t {
 	TypeFDURequestType = 0x05
 
 };
-
-#endif // CCSDS_ALERT_HPP
