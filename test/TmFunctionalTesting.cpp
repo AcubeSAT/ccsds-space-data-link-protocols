@@ -3,7 +3,7 @@
 #include "CCSDSServiceChannel.hpp"
 #include "CLCW.hpp"
 
-TEST_CASE("Sending Tm"){
+TEST_CASE("Sending TM"){
 
     PhysicalChannel physicalChannel = PhysicalChannel(1024, true, 12, 1024, 220000, 20);
 
