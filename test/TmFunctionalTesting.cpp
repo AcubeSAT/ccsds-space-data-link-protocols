@@ -29,21 +29,23 @@ TEST_CASE("Sending Tm"){
     serviceChannel.initiateAdClcw(0);
     serviceChannel.initiateAdNoClcw(1);
     serviceChannel.initiateAdNoClcw(2);
-
-    for(uint32_t i=0 ; i<50 ; i++){
-        uint16_t packetLength = (rand() % 45 + 14);
-        uint8_t packet[packetLength];
+	uint8_t maximumPacketLength = 45;
+	uint8_t maximumFrameLength = maximumPacketLength+14;
+	uint8_t frame[maximumFrameLength];
+	uint8_t headerLength = 6;
+    for(uint8_t i=0 ; i<50 ; i++){
+        uint16_t frameLength = (rand() % maximumFrameLength);
         for(uint8_t j =0 ; j < 6 ; j++){
-            packet[j] = 0;
+			frame[j] = 0;
         }
-        for(uint16_t j = 6; j < packetLength - 6 ; j++){
-            packet[j] = rand() % 256;
+        for(uint16_t j = headerLength; j < frameLength - headerLength ; j++){
+			frame[j] = rand() % 256;
         }
         uint8_t virtualChannelPicker = rand() % 100;
         if(virtualChannelPicker <= 50){
             uint8_t randomServicePicker = rand() % 4;
             if(randomServicePicker == 0){
-                serviceChannel.storePacketTm(packet, packetLength, 0);
+                serviceChannel.storePacketTm(frame, frameLength, 0);
             }
             else if(randomServicePicker == 1){
                 serviceChannel.vcGenerationService(60,0);
@@ -58,7 +60,7 @@ TEST_CASE("Sending Tm"){
         else if(virtualChannelPicker > 50 && virtualChannelPicker < 60){
             uint8_t randomServicePicker = rand() % 4;
             if(randomServicePicker == 0){
-                serviceChannel.storePacketTm(packet, packetLength, 1);
+                serviceChannel.storePacketTm(frame, frameLength, 1);
             }
             else if(randomServicePicker == 1){
                 serviceChannel.vcGenerationService(60,1);
@@ -73,7 +75,7 @@ TEST_CASE("Sending Tm"){
         else{
             uint8_t randomServicePicker = rand() % 4;
             if(randomServicePicker == 0){
-                serviceChannel.storePacketTm(packet, packetLength, 2);
+                serviceChannel.storePacketTm(frame, frameLength, 2);
             }
             else if(randomServicePicker == 1){
                 serviceChannel.vcGenerationService(60,2);
@@ -112,19 +114,20 @@ TEST_CASE("Receiving Tm"){
     serviceChannel.initiateAdClcw(0);
     serviceChannel.initiateAdNoClcw(1);
     serviceChannel.initiateAdNoClcw(2);
-    uint16_t packetLength = (rand() % 45 + 14);
-    uint8_t packet[packetLength];
-
+	uint8_t maximumPacketLength = 45;
+	uint8_t maximumFrameLength = maximumPacketLength+14;
+	uint8_t frame[maximumFrameLength];
+	uint8_t headerLength = 6;
     for(uint32_t i=0 ; i<50 ; i++) {
         for (uint16_t j = 0; j < TmTransferFrameSize; j++) {
-            packet[j] = rand() % 256;
+            frame[j] = rand() % 256;
         }
     }
     uint8_t virtualChannelPicker = rand() % 100;
     if(virtualChannelPicker <= 50){
         uint8_t randomServicePicker = rand() % 2;
         if(randomServicePicker == 0){
-            serviceChannel.allFramesReceptionTMRequest(packet,TmTransferFrameSize);
+            serviceChannel.allFramesReceptionTMRequest(frame,TmTransferFrameSize);
         }
         else if(randomServicePicker == 1){
             serviceChannel.packetExtractionTM(0, packetDestination);
@@ -133,7 +136,7 @@ TEST_CASE("Receiving Tm"){
     else if(virtualChannelPicker > 50 && virtualChannelPicker < 60){
         uint8_t randomServicePicker = rand() % 2;
         if(randomServicePicker == 0){
-            serviceChannel.allFramesReceptionTMRequest(packet,TmTransferFrameSize);
+            serviceChannel.allFramesReceptionTMRequest(frame,TmTransferFrameSize);
         }
         else if(randomServicePicker == 1){
             serviceChannel.packetExtractionTM(1, packetDestination);
@@ -142,7 +145,7 @@ TEST_CASE("Receiving Tm"){
     else{
         uint8_t randomServicePicker = rand() % 2;
         if(randomServicePicker == 0){
-            serviceChannel.allFramesReceptionTMRequest(packet,TmTransferFrameSize);
+            serviceChannel.allFramesReceptionTMRequest(frame,TmTransferFrameSize);
         }
         else if(randomServicePicker == 1){
             serviceChannel.packetExtractionTM(2, packetDestination);
