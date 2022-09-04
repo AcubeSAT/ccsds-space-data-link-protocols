@@ -95,6 +95,11 @@ ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_IN_BUFFER_FULL);
 		return ServiceChannelNotification::RX_IN_BUFFER_FULL;
 	}
+
+	if (virtualChannel->rxInFramesAfterMCReception.empty()) {
+		ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
+		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+	}
 	TransferFrameTM* packet = virtualChannel->rxInFramesAfterMCReception.front();
 
 	uint16_t frameSize = packet->getPacketLength();

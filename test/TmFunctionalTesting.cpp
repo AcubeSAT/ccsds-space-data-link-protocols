@@ -24,132 +24,132 @@ TEST_CASE("Sending TM"){
 
     ServiceChannel serviceChannel = ServiceChannel(masterChannel, physicalChannel);
     uint8_t packetDestination[TmTransferFrameSize] = {0};
+	uint8_t packetDestination2[TmTransferFrameSize] = {0};
+	uint8_t tmpData[TmTransferFrameSize] = {0};
+	etl::queue<uint16_t, PacketBufferTmSize> packetsVC0;
+	etl::queue<uint16_t, PacketBufferTmSize> packetsVC1;
+	etl::queue<uint16_t, PacketBufferTmSize> packetsVC2;
+	etl::queue<uint16_t, PacketBufferTmSize> packetsVC0Length;
+	etl::queue<uint16_t, PacketBufferTmSize> packetsVC1Length;
+	etl::queue<uint16_t, PacketBufferTmSize> packetsVC2Length;
 
-    //Initialize Services
-    serviceChannel.initiateAdClcw(0);
-    serviceChannel.initiateAdNoClcw(1);
-    serviceChannel.initiateAdNoClcw(2);
 	uint8_t maximumPacketLength = 45;
 	uint8_t maximumFrameLength = maximumPacketLength+14;
 	uint8_t frame[maximumFrameLength];
 	uint8_t headerLength = 6;
-    for(uint8_t i=0 ; i<50 ; i++){
-        uint16_t frameLength = (rand() % maximumFrameLength);
-        for(uint8_t j =0 ; j < 6 ; j++){
+	uint8_t numberOfErrors = 0;
+    for(uint8_t i=0 ; i<50 ; i++) {
+		uint8_t frameLength = (rand() % maximumFrameLength);
+		for (uint8_t j = 0; j < 6; j++) {
 			frame[j] = 0;
-        }
-        for(uint16_t j = headerLength; j < frameLength - headerLength ; j++){
+		}
+		for (uint16_t j = headerLength; j < frameLength - headerLength; j++) {
 			frame[j] = rand() % 256;
-        }
-        uint8_t virtualChannelPicker = rand() % 100;
-        if(virtualChannelPicker <= 50){
-            uint8_t randomServicePicker = rand() % 4;
-            if(randomServicePicker == 0){
-                serviceChannel.storePacketTm(frame, frameLength, 0);
-            }
-            else if(randomServicePicker == 1){
-                serviceChannel.vcGenerationService(60,0);
-            }
-            else if(randomServicePicker == 2){
-                serviceChannel.mcGenerationTMRequest();
-            }
-            else if(randomServicePicker == 3){
-                serviceChannel.allFramesGenerationTMRequest(packetDestination,TmTransferFrameSize);
-            }
-        }
-        else if(virtualChannelPicker > 50 && virtualChannelPicker < 60){
-            uint8_t randomServicePicker = rand() % 4;
-            if(randomServicePicker == 0){
-                serviceChannel.storePacketTm(frame, frameLength, 1);
-            }
-            else if(randomServicePicker == 1){
-                serviceChannel.vcGenerationService(60,1);
-            }
-            else if(randomServicePicker == 2){
-                serviceChannel.mcGenerationTMRequest();
-            }
-            else if(randomServicePicker == 3){
-                serviceChannel.allFramesGenerationTMRequest(packetDestination,TmTransferFrameSize);
-            }
-        }
-        else{
-            uint8_t randomServicePicker = rand() % 4;
-            if(randomServicePicker == 0){
-                serviceChannel.storePacketTm(frame, frameLength, 2);
-            }
-            else if(randomServicePicker == 1){
-                serviceChannel.vcGenerationService(60,2);
-            }
-            else if(randomServicePicker == 2){
-                serviceChannel.mcGenerationTMRequest();
-            }
-            else if(randomServicePicker == 3){
-                serviceChannel.allFramesGenerationTMRequest(packetDestination,TmTransferFrameSize);
-            }
-        }
-    }
-}
-
-TEST_CASE("Receiving Tm"){
-    PhysicalChannel physicalChannel = PhysicalChannel(1024, true, 12, 1024, 220000, 20);
-
-    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels = {};
-
-    MasterChannel masterChannel = MasterChannel();
-
-
-	masterChannel.addVC(0, 128, true,3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 20, 20,
-	                    10);
-
-	masterChannel.addVC(1, 128, false,3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 20, 20,
-	                    10);
-
-	masterChannel.addVC(2, 128, false,3, 2, false, false, 0, true, SynchronizationFlag::FORWARD_ORDERED,255 , 3, 3,
-	                    10);
-
-    ServiceChannel serviceChannel = ServiceChannel(masterChannel, physicalChannel);
-    uint8_t packetDestination[TmTransferFrameSize] = {0};
-
-    //Initialize Services
-    serviceChannel.initiateAdClcw(0);
-    serviceChannel.initiateAdNoClcw(1);
-    serviceChannel.initiateAdNoClcw(2);
-	uint8_t maximumPacketLength = 45;
-	uint8_t maximumFrameLength = maximumPacketLength+14;
-	uint8_t frame[maximumFrameLength];
-	uint8_t headerLength = 6;
-    for(uint32_t i=0 ; i<50 ; i++) {
-        for (uint16_t j = 0; j < TmTransferFrameSize; j++) {
-            frame[j] = rand() % 256;
-        }
-    }
-    uint8_t virtualChannelPicker = rand() % 100;
-    if(virtualChannelPicker <= 50){
-        uint8_t randomServicePicker = rand() % 2;
-        if(randomServicePicker == 0){
-            serviceChannel.allFramesReceptionTMRequest(frame,TmTransferFrameSize);
-        }
-        else if(randomServicePicker == 1){
-            serviceChannel.packetExtractionTM(0, packetDestination);
-        }
-    }
-    else if(virtualChannelPicker > 50 && virtualChannelPicker < 60){
-        uint8_t randomServicePicker = rand() % 2;
-        if(randomServicePicker == 0){
-            serviceChannel.allFramesReceptionTMRequest(frame,TmTransferFrameSize);
-        }
-        else if(randomServicePicker == 1){
-            serviceChannel.packetExtractionTM(1, packetDestination);
-        }
-    }
-    else{
-        uint8_t randomServicePicker = rand() % 2;
-        if(randomServicePicker == 0){
-            serviceChannel.allFramesReceptionTMRequest(frame,TmTransferFrameSize);
-        }
-        else if(randomServicePicker == 1){
-            serviceChannel.packetExtractionTM(2, packetDestination);
-        }
-    }
-
+		}
+		uint8_t virtualChannelPicker = rand() % 100;
+		if (virtualChannelPicker <= 50) {
+			uint8_t randomServicePicker = rand() % 4;
+			if (randomServicePicker == 0) {
+				serviceChannel.storePacketTm(frame, frameLength, 0);
+				for (int j = 6; j < frameLength - 8; ++j) {
+					packetsVC0.push(frame[j]);
+					packetsVC0Length.push(frameLength - 14);
+				}
+			} else if (randomServicePicker == 1) {
+				serviceChannel.vcGenerationService(60, 0);
+			} else if (randomServicePicker == 2) {
+				serviceChannel.mcGenerationTMRequest();
+			} else if (randomServicePicker == 3) {
+				serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
+			}
+		} else if (virtualChannelPicker > 50 && virtualChannelPicker < 60) {
+			uint8_t randomServicePicker = rand() % 4;
+			if (randomServicePicker == 0) {
+				serviceChannel.storePacketTm(frame, frameLength, 1);
+				for (int j = 6; j < frameLength - 8; ++j) {
+					packetsVC1.push(frame[j]);
+					packetsVC1Length.push(frameLength - 14);
+				}
+			} else if (randomServicePicker == 1) {
+				serviceChannel.vcGenerationService(60, 1);
+			} else if (randomServicePicker == 2) {
+				serviceChannel.mcGenerationTMRequest();
+			} else if (randomServicePicker == 3) {
+				serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
+			}
+		} else {
+			uint8_t randomServicePicker = rand() % 4;
+			if (randomServicePicker == 0) {
+				serviceChannel.storePacketTm(frame, frameLength, 2);
+				for (int j = 6; j < frameLength - 8; ++j) {
+					packetsVC2.push(frame[j]);
+					packetsVC2Length.push(frameLength - 14);
+				}
+			} else if (randomServicePicker == 1) {
+				serviceChannel.vcGenerationService(60, 2);
+			} else if (randomServicePicker == 2) {
+				serviceChannel.mcGenerationTMRequest();
+			} else if (randomServicePicker == 3) {
+				serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
+			}
+		}
+		if (packetDestination[0] != 0) {
+			for (int l = 0; l < 10; l++) {
+				uint8_t virtualChannelPicker2 = rand() % 100;
+				if (virtualChannelPicker <= 50) {
+					uint8_t randomServicePicker2 = rand() % 2;
+					if (randomServicePicker2 == 0) {
+						serviceChannel.allFramesReceptionTMRequest(packetDestination2, TmTransferFrameSize);
+					} else if (randomServicePicker2 == 1) {
+						serviceChannel.packetExtractionTM(0, packetDestination2);
+						if (packetDestination2[0] != 0) {
+							uint8_t tmplength = packetsVC0Length.front();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = packetsVC0.front();
+								packetsVC0.pop();
+							}
+						}
+					}
+				} else if (virtualChannelPicker > 50 && virtualChannelPicker < 60) {
+					uint8_t randomServicePicker2 = rand() % 2;
+					if (randomServicePicker2 == 0) {
+						serviceChannel.allFramesReceptionTMRequest(frame, TmTransferFrameSize);
+					} else if (randomServicePicker2 == 1) {
+						serviceChannel.packetExtractionTM(1, packetDestination2);
+						if (packetDestination2[0] != 0) {
+							uint8_t tmplength = packetsVC0Length.front();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = packetsVC0.front();
+								packetsVC0.pop();
+							}
+						}
+					}
+				} else {
+					uint8_t randomServicePicker2 = rand() % 2;
+					if (randomServicePicker2 == 0) {
+						serviceChannel.allFramesReceptionTMRequest(frame, TmTransferFrameSize);
+					} else if (randomServicePicker2 == 1) {
+						serviceChannel.packetExtractionTM(2, packetDestination2);
+						if (packetDestination2[0] != 0) {
+							uint8_t tmplength = packetsVC0Length.front();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = packetsVC0.front();
+								packetsVC0.pop();
+							}
+						}
+					}
+				}
+				if (packetDestination2[0] != 0) {
+					for (uint8_t k = 0; k < frameLength - 14; ++k) {
+						if (tmpData[k] != packetDestination2[k]) {
+							numberOfErrors++;
+						}
+					}
+				}
+			}
+			packetDestination[0] = 0;
+			packetDestination2[0] = 0;
+		}
+	}
+	CHECK(numberOfErrors==0);
 }
