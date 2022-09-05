@@ -42,6 +42,7 @@ TEST_CASE("Sending TM"){
 	uint8_t numberOfErrors = 0;
 	uint8_t headerAndTrailerLength = headerLength+trailerLength;
     for(uint8_t i=0 ; i<50 ; i++) {
+		packetDestination[0]=0;
 		uint8_t frameLength = (rand() % maximumFrameLength);
 		for (uint8_t j = 0; j < 6; j++) {
 			frame[j] = 0;
@@ -64,9 +65,11 @@ TEST_CASE("Sending TM"){
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
 				serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
-				framesSentLength.push(frameLength);
-				for (int j = 0; j < frameLength; ++j) {
-					framesSent.push(packetDestination2[j]);
+				if (packetDestination[0] != 0) {
+					framesSentLength.push(TmTransferFrameSize);
+					for (uint8_t j = 0; j < TmTransferFrameSize; ++j) {
+						framesSent.push(packetDestination[j]);
+					}
 				}
 			}
 		} else if (virtualChannelPicker > 50 && virtualChannelPicker < 60) {
@@ -83,9 +86,11 @@ TEST_CASE("Sending TM"){
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
 				serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
-				framesSentLength.push(frameLength);
-				for (int j = 0; j < frameLength; ++j) {
-					framesSent.push(packetDestination[j]);
+				if (packetDestination[0] != 0) {
+					framesSentLength.push(TmTransferFrameSize);
+					for (uint8_t j = 0; j < TmTransferFrameSize; ++j) {
+						framesSent.push(packetDestination[j]);
+					}
 				}
 			}
 		} else {
@@ -102,16 +107,18 @@ TEST_CASE("Sending TM"){
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
 				serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
-				framesSentLength.push(frameLength);
-				for (int j = 0; j < frameLength; ++j) {
-					framesSent.push(packetDestination[j]);
+				if (packetDestination[0] != 0) {
+					framesSentLength.push(TmTransferFrameSize);
+					for (int j = 0; j < TmTransferFrameSize; ++j) {
+						framesSent.push(packetDestination[j]);
+					}
 				}
 			}
 		}
 		if (packetDestination[0] != 0) {
-			for (int l = 0; l < 10; l++) {
+			for (int l = 0; l < 50; l++) {
 				uint8_t virtualChannelPicker2 = rand() % 100;
-				if (virtualChannelPicker <= 50) {
+				if (virtualChannelPicker2 <= 50) {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
 						if(!framesSentLength.empty()) {
@@ -136,7 +143,7 @@ TEST_CASE("Sending TM"){
 							}
 						}
 					}
-				} else if (virtualChannelPicker > 50 && virtualChannelPicker < 60) {
+				} else if (virtualChannelPicker2 > 50 && virtualChannelPicker < 60) {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
 						if (!framesSentLength.empty()) {
