@@ -232,16 +232,16 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
-	err = serv_channel.allFramesReceptionTMRequest(valid_pckt_TM, 14);
+	err = serv_channel.allFramesReceptionTMRequest(valid_pckt_TM, TmTransferFrameSize);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
-	err = serv_channel.allFramesReceptionTMRequest(invalid_vcid_TM, 14);
+	err = serv_channel.allFramesReceptionTMRequest(invalid_vcid_TM, TmTransferFrameSize);
 	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
 
-	err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, 14);
+	err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, TmTransferFrameSize);
 	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);

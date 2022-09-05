@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <TransferFrame.hpp>
+#include "CCSDS_Definitions.hpp"
 
 static uint16_t crc_16_ccitt_table[]{
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad,
@@ -28,6 +29,10 @@ uint16_t TransferFrame::calculateCRC(const uint8_t* packet, uint16_t len) {
 	// calculate remainder of binary polynomial division
 	for (uint16_t i = 0; i < len; i++) {
 		crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+	}
+
+	for (uint16_t i = 0; i < TmTransferFrameSize-len; i++) {
+		crc = crc_16_ccitt_table[(idle_data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 	}
 
 	return crc;
