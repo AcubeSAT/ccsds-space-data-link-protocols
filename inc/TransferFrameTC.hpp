@@ -1,5 +1,4 @@
-#ifndef CCSDS_TC_PACKET_H
-#define CCSDS_TC_PACKET_H
+#pragma once
 
 #include <CCSDS_Definitions.hpp>
 #include <algorithm>
@@ -197,7 +196,7 @@ public:
 	/**
 	 * Determines whether the packet is marked for retransmission while in the sent queue
 	 */
-	bool getToBeRetransmitted() const {
+	bool isToBeRetransmitted() const {
 		return toBeRetransmitted;
 	}
 
@@ -329,10 +328,38 @@ public:
 		packet[4] = frame_seq_number;
 	}
 
+	/**
+	 * Indicates that the frame has been passed to the physical layer and supposedly transmitted
+	 */
+	void setToTransmitted() {
+		transmit = true;
+	}
+
+	/**
+	 * Indicates whether transfer frame has been transmitted
+	 */
+	bool isTransmitted() {
+		return transmit;
+	}
+
+	/**
+	 * Indicates that the frame has gone through the FOP checks
+	 */
+	void setToProcessedByFOP() {
+		processedByFOP = true;
+	}
+
+	/**
+	 * Indicates whether the frame has gone through the FOP checks
+	 */
+	bool getProcessedByFOP() {
+		return processedByFOP;
+	}
+
 	TransferFrameTC(uint8_t* packet, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
 	                PacketType t = TC)
 	    : TransferFrame(t, frameLength, packet), hdr(packet), serviceType(serviceType), ack(false),
-	      toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
+	      toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
 		packet[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
@@ -342,7 +369,7 @@ public:
 	}
 
 	TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC)
-	    : TransferFrame(PacketType::TC, packetLength, packet), hdr(packet){};
+	    : TransferFrame(PacketType::TC, packetLength, packet), hdr(packet), transmit(false){};
 
 private:
 	bool toBeRetransmitted;
@@ -352,7 +379,7 @@ private:
 	ServiceType serviceType;
 	bool segmentationHeaderPresent;
 	bool ack;
+	bool transmit;
+	bool processedByFOP;
 	uint8_t reps;
 };
-
-#endif // CCSDS_PACKET_H

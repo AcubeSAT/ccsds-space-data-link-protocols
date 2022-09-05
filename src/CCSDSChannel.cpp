@@ -68,25 +68,24 @@ MasterChannelAlert MasterChannel<t>::storeTransmittedOut(TransferFrameTM* packet
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-template <uint16_t t>
-MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
-                                        const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+                                        const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-                                        const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-                                        etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels> mapChan) {
+                                        const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
+                                        etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan) {
 	if (virtualChannels.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, MAX_AMOUNT_OF_VIRT_CHANNELS);
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel<256>(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
-	                                             repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
+	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
+	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
-	                                             farmNegativeWinWidth, mapChan));
+	                                             farmNegativeWinWidth, vcRepetitions, mapChan));
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
@@ -97,7 +96,7 @@ MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t ma
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-                                        const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth) {
+                                        const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions) {
 	if (virtualChannels.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, MAX_AMOUNT_OF_VIRT_CHANNELS);
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
@@ -109,7 +108,6 @@ MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t ma
 	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                       farmNegativeWinWidth, etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels>()));
 	return MasterChannelAlert::NO_MC_ALERT;
-
 }
 
 template <uint16_t t>
@@ -154,6 +152,31 @@ void MasterChannel<t>::removeMasterRx(TransferFrameTM* packet_ptr) {
 			return;
 		}
 	}
+}
+void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
+	for (TransferFrameTC& transferFrame : txMasterCopyTC) {
+		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
+			transferFrame.setAcknowledgement(true);
+			return;
+		}
+	}
+}
+
+void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
+	for (TransferFrameTC transferFrame : txMasterCopyTC) {
+		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
+			transferFrame.setToBeRetransmitted(true);
+			return;
+		}
+	}
+}
+
+TransferFrameTC MasterChannel::getLastTxMasterCopyTcFrame() {
+	return txMasterCopyTC.back();
+}
+
+TransferFrameTC MasterChannel::geFirstTxMasterCopyTcFrame() {
+	return txMasterCopyTC.front();
 }
 
 template class MasterChannel<256>;

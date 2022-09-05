@@ -4,9 +4,9 @@
 template <uint16_t t>
 COPDirectiveResponse FrameAcceptanceReporting<t>::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
-    waitQueue->pop_front();
+	waitQueue->pop_front();
 
-	if ((frame->getServiceType() == ServiceType::TYPE_AD) && (frame->transferFrameHeader().ctrlAndCmdFlag())) {
+	if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
 		if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
 			if (!sentQueue->full()) {
 				// E1
@@ -44,10 +44,12 @@ COPDirectiveResponse FrameAcceptanceReporting<t>::frameArrives() {
 			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
-		           (frame->transferFrameSequenceNumber() < (receiverFrameSeqNumber > farmNegativeWidth) ? receiverFrameSeqNumber - farmNegativeWidth : 256 - farmNegativeWidth)) {
+		           (frame->transferFrameSequenceNumber() < (receiverFrameSeqNumber > farmNegativeWidth)
+		                ? receiverFrameSeqNumber - farmNegativeWidth
+		                : 256 - farmNegativeWidth)) {
 			// E5
 			state = FARMState::LOCKOUT;
-            lockout = FlagState::READY;
+			lockout = FlagState::READY;
 			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
 		}
@@ -58,9 +60,7 @@ COPDirectiveResponse FrameAcceptanceReporting<t>::frameArrives() {
 		farmBCount += 1;
 		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
-	} else if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
-	            (frame->getServiceType() == ServiceType::TYPE_BD)) &&
-	           frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	} else if (frame->getServiceType() == ServiceType::TYPE_BC) {
 		if (frame->controlWordType() == 0) {
 			if (frame->packetPlData()[5] == 0) {
 				// E7

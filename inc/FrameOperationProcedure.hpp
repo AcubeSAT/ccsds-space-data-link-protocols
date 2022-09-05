@@ -1,6 +1,3 @@
-#ifndef CCSDS_FOP_H
-#define CCSDS_FOP_H
-
 #pragma once
 
 #include <cstdint>
@@ -330,6 +327,12 @@ private:
 	 */
 	COPDirectiveResponse transferFdu();
 
+	/**
+	 * Function that acknowledges all the unacknowledged frames in the txMasterCopyTC buffer before the received report
+	 * value from the CLCW
+	 */
+	void acknowledgePreviousFrames(uint8_t frameSequenceNumber);
+
 public:
 	FrameOperationProcedure(VirtualChannel<256>* vchan, etl::list<TransferFrameTC*, s>* waitQueue,
 	                        etl::list<TransferFrameTC*, s>* sentQueue,
@@ -340,5 +343,3 @@ public:
 	      tiInitial(FopTimerInitial), transmissionLimit(repetitionCopCtrl), transmissionCount(1),
 	      fopSlidingWindow(FopSlidingWindowInitial), timeoutType(false){};
 };
-
-#endif // CCSDS_FOP_H

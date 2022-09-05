@@ -1,11 +1,9 @@
-#ifndef CCSDS_TM_PACKETS_MEMORYPOOL_H
-#define CCSDS_TM_PACKETS_MEMORYPOOL_H
+#pragma once
 
 #include <cstdint>
 #include <bitset>
 #include "etl/vector.h"
 #include "Alert.hpp"
-
 
 /**
  * @class MemoryPool This class defines a custom memory pool which is a statically allocated block of memory.
@@ -18,7 +16,7 @@ private:
 	/**
 	 * @var The size of the block of memory in bytes
 	 */
-	static constexpr uint16_t memorySize = T;
+	static constexpr uint16_t memorySize = 5 * 128;
 
 	/**
 	 * @var An array that allocates statically memory to be used for the packet data
@@ -72,5 +70,3 @@ public:
 		return usedMemory;
 	}
 };
-
-#endif // CCSDS_TM_PACKETS_MEMORYPOOL_H
