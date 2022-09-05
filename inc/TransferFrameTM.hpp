@@ -230,6 +230,41 @@ struct TransferFrameTM : public TransferFrame {
 
 	TransferFrameTM(uint8_t* packet, uint16_t packet_length, bool eccFieldExists)
 	    : TransferFrame(PacketType::TM, packet_length, packet), hdr(packet), eccFieldExists(eccFieldExists) {}
+	/**
+	 * Calculates the CRC code
+	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+	 */
+	uint16_t calculateCRC(const uint8_t* packet, uint16_t len) {
+
+		uint16_t crc = 0xFFFF;
+
+		// calculate remainder of binary polynomial division
+		for (uint16_t i = 0; i < len; i++) {
+			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+		}
+
+		for (uint16_t i = 0; i < TmTransferFrameSize-len-2; i++) {
+			crc = crc_16_ccitt_table[(idle_data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+		}
+
+		return crc;
+	}
+
+	/**
+	 * Appends the CRC code (given that the corresponding Error Correction field is present in the given
+	 * virtual channel)
+	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+	 */
+
+	void append_crc() {
+		uint16_t len = frameLength - 2;
+		uint16_t crc = calculateCRC(packet, len);
+
+		// append CRC
+		packet[TmTransferFrameSize-2] = (crc >> 8) & 0xFF;
+		packet[TmTransferFrameSize - 1] = crc & 0xFF;
+	}
+
 
 private:
 	TransferFrameHeaderTM hdr;

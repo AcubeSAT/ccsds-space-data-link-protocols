@@ -207,7 +207,29 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txOutProcessedPacketTM().second == nullptr);
 	*/
 
-	uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t valid_pckt_TM[128];
+	valid_pckt_TM[0] = 0x00;
+	valid_pckt_TM[1] = 0x01;
+	valid_pckt_TM[2] = 0x00;
+	valid_pckt_TM[3] = 0x03;
+	valid_pckt_TM[4] = 0x04;
+	valid_pckt_TM[5] = 0xA2;
+	valid_pckt_TM[6] = 0xB3;
+	valid_pckt_TM[7] = 0x1F;
+	valid_pckt_TM[8] = 0xD6;
+	valid_pckt_TM[9] = 0xA2;
+	valid_pckt_TM[10] = 0xB3;
+	valid_pckt_TM[11] = 0x1F;
+	valid_pckt_TM[12] = 0x7B;
+	valid_pckt_TM[13] = 0x7C;
+	uint8_t len = 14;
+	for (uint16_t i = 0; i < TmTransferFrameSize-len-2; i++) {
+		valid_pckt_TM[i+14]= idle_data[i];
+	}
+	uint16_t crc = 36061;
+	valid_pckt_TM[TmTransferFrameSize-2] = (crc >> 8) & 0xFF;
+	valid_pckt_TM[TmTransferFrameSize - 1] = crc & 0xFF;
+
 	uint8_t invalid_vcid_TM[] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
 	uint8_t invalid_crc_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
@@ -238,13 +260,13 @@ TEST_CASE("Service Channel") {
 
 	err = serv_channel.allFramesReceptionTMRequest(invalid_vcid_TM, TmTransferFrameSize);
 	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
-	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer -1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel -1);
 
 	err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, TmTransferFrameSize);
 	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
-	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer-1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel-1);
 
 	uint8_t resulting_tm_packet[14] = {0};
 

@@ -48,18 +48,6 @@ public:
 	TransferFrame(PacketType t, uint16_t packetLength, uint8_t* packet)
 	    : type(t), frameLength(packetLength), packet(packet){};
 
-	/**
-	 * Appends the CRC code (given that the corresponding Error Correction field is present in the given
-	 * virtual channel)
-	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	void append_crc();
-
-	/**
-	 * Calculates the CRC code
-	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	static uint16_t calculateCRC(const uint8_t* packet, uint16_t len);
 
 protected:
 	uint16_t frameLength;

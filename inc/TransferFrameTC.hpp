@@ -370,6 +370,35 @@ public:
 
 	TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC)
 	    : TransferFrame(PacketType::TC, packetLength, packet), hdr(packet), transmit(false){};
+	/**
+	 * Calculates the CRC code
+	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+	 */
+	uint16_t calculateCRC(const uint8_t* packet, uint16_t len) {
+		uint16_t crc = 0xFFFF;
+
+		// calculate remainder of binary polynomial division
+		for (uint16_t i = 0; i < len; i++) {
+			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+		}
+
+		return crc;
+	}
+
+	/**
+	 * Appends the CRC code (given that the corresponding Error Correction field is present in the given
+	 * virtual channel)
+	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+	 */
+
+	void append_crc() {
+		uint16_t len = frameLength - 2;
+		uint16_t crc = calculateCRC(packet, len);
+
+		// append CRC
+		packet[len] = (crc >> 8) & 0xFF;
+		packet[len + 1] = crc & 0xFF;
+	}
 
 private:
 	bool toBeRetransmitted;
