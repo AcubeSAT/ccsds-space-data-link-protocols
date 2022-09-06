@@ -569,7 +569,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTCRequest() {
 	VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
 	if (vchan.frameErrorControlFieldPresent) {
-		packet->append_crc();
+		packet->appendCRC();
 	}
 
 	masterChannel.storeTransmittedOut(packet);
@@ -588,7 +588,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
 	if (vchan.frameErrorControlFieldPresent) {
-		packet->append_crc();
+		packet->appendCRC();
 	}
 
 	if (packet->getPacketLength() > packet_length) {

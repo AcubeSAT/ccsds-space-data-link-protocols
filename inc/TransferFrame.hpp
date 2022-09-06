@@ -45,11 +45,30 @@ private:
 	PacketType type;
 
 public:
-	TransferFrame(PacketType t, uint16_t packetLength, uint8_t* packet)
-	    : type(t), frameLength(packetLength), packet(packet){};
+	TransferFrame(PacketType t, uint16_t packetLength, uint16_t lengthTransferFrame, uint8_t* packet)
+	    : type(t), lengthPacket(packetLength), lengthTransferFrame(lengthTransferFrame),
+	      packet(packet){};
 
+    virtual ~TransferFrame(){ }
+
+    virtual uint16_t calculateCRC(const uint8_t* packet, uint16_t len) = 0;
+
+    /**
+     * Appends the CRC code (given that the corresponding Error Correction field is present in the given
+     * virtual channel)
+     * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+     */
+    void appendCRC() {
+        uint16_t len = lengthPacket - 2;
+        uint16_t crc = calculateCRC(packet, len);
+
+        // append CRC
+        packet[lengthTransferFrame - 2] = (crc >> 8) & 0xFF;
+        packet[lengthTransferFrame - 1] = crc & 0xFF;
+    }
 
 protected:
-	uint16_t frameLength;
+	uint16_t lengthPacket;
+	uint16_t lengthTransferFrame;
 	uint8_t* packet;
 };
