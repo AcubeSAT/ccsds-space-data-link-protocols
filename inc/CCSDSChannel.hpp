@@ -170,6 +170,7 @@ class VirtualChannel {
 
 	//@TODO: Those variables shouldn't be public
 public:
+	uint16_t l = 128;
 	/**
 	 * Virtual Channel Identifier
 	 */
@@ -269,7 +270,7 @@ public:
 		return packetBufferTmTx.available();
 	}
 
-	VirtualChannel(std::reference_wrapper<MasterChannel<256>> masterChannel, const uint8_t vcid,
+	VirtualChannel(MasterChannel<256> masterChannel, const uint8_t vcid,
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
 	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
 	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
@@ -468,25 +469,25 @@ struct MasterChannel {
 	/**
 	 * Add virtual channel to master channel
 	 */
-	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
-	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
-	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
-	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
-	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-	                         etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels> mapChan);
+	 MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+	                          const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
+	                          const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
+	                          const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
+	                          SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+	                          const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
+	                          const uint8_t vcRepetitions, etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels> mapChan, const uint16_t virtSize);
 
 	/**
 	 * Add virtual channel to master channel
 	 */
-	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
-	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
-	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
-	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions);
+	 MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+	                          const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
+	                          const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
+	                          const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
+	                          SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+	                          const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions);
 
-private:
+ private:
 	// Packets stored in frames list, before being processed by the all frames generation service
 	etl::list<TransferFrameTC*, t> txOutFramesBeforeAllFramesGenerationListTC;
 	// Packets ready to be transmitted having passed through the all frames generation service

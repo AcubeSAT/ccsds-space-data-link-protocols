@@ -3,6 +3,8 @@
 #include "CCSDSLoggerImpl.h"
 #include "MemoryPool.hpp"
 // Virtual Channel
+constexpr uint16_t VirtualSize = 256;
+constexpr uint16_t VirtualSize1 = 512;
 
 template <uint16_t t>
 VirtualChannelAlert VirtualChannel<t>::storeVC(TransferFrameTC* packet) {
@@ -19,6 +21,9 @@ VirtualChannelAlert VirtualChannel<t>::storeVC(TransferFrameTC* packet) {
 
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
+constexpr uint16_t MasterSize = 256;
+constexpr uint16_t MasterSize1 = 512;
+
 
 template <uint16_t t>
 MasterChannelAlert MasterChannel<t>::storeOut(TransferFrameTC* packet) {
@@ -68,20 +73,21 @@ MasterChannelAlert MasterChannel<t>::storeTransmittedOut(TransferFrameTM* packet
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+template <uint16_t t>
+MasterChannelAlert MasterChannel<t>::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
                                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
-                                        etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan) {
+                                        etl::flat_map<uint8_t, MAPChannel<mapSize>, MaxMapChannels> mapChan) {
 	if (virtualChannels.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, MAX_AMOUNT_OF_VIRT_CHANNELS);
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
+	virtualChannels.emplace(vcid, VirtualChannel<256>(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -153,7 +159,9 @@ void MasterChannel<t>::removeMasterRx(TransferFrameTM* packet_ptr) {
 		}
 	}
 }
-void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
+
+template <uint16_t t>
+void MasterChannel<t>::acknowledgeFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC& transferFrame : txMasterCopyTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setAcknowledgement(true);
@@ -162,7 +170,8 @@ void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 	}
 }
 
-void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
+template <uint16_t t>
+void MasterChannel<t>::setRetransmitFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC transferFrame : txMasterCopyTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setToBeRetransmitted(true);
@@ -171,13 +180,15 @@ void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
 	}
 }
 
-TransferFrameTC MasterChannel::getLastTxMasterCopyTcFrame() {
+template <uint16_t t>
+TransferFrameTC MasterChannel<t>::getLastTxMasterCopyTcFrame() {
 	return txMasterCopyTC.back();
 }
 
-TransferFrameTC MasterChannel::geFirstTxMasterCopyTcFrame() {
+template <uint16_t t>
+TransferFrameTC MasterChannel<t>::geFirstTxMasterCopyTcFrame() {
 	return txMasterCopyTC.front();
 }
 
-template class MasterChannel<256>;
-template class VirtualChannel<256>;
+template class MasterChannel<MasterSize>;
+template class VirtualChannel<VirtualSize>;
