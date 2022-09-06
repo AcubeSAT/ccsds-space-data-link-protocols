@@ -114,7 +114,8 @@ private:
 	const uint8_t MAPID; // 6 bits
 
 public:
-	void storeMAPChannel(TransferFrame packet);
+	template<class TransferFrameType>
+	void storeMAPChannel(TransferFrameType packet);
 
 	/**
 	 * Returns availableBufferTC space in the MAP Channel buffer

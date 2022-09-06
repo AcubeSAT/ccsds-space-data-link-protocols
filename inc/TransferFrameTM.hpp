@@ -150,7 +150,7 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	uint16_t getPacketLength() const {
-		return frameLength;
+		return transferFrameLength;
 	}
 
 	uint8_t* packetData() const {
@@ -173,7 +173,7 @@ struct TransferFrameTM : public TransferFrame {
 		if (!operationalControlFieldExists()) {
 			return {};
 		}
-		operationalControlFieldPointer = packet + frameLength - 4 - 2 * eccFieldExists;
+		operationalControlFieldPointer = packet + transferFrameLength - 4 - 2 * eccFieldExists;
 		operationalControlField = (operationalControlFieldPointer[0] << 24U) |
 		                          (operationalControlFieldPointer[1] << 16U) |
 		                          (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
@@ -221,20 +221,21 @@ struct TransferFrameTM : public TransferFrame {
 		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6)) |
 		            (segmentationLengthId << 3) | (firstHeaderPointer & 0x700 >> 8);
 		packet[5] = firstHeaderPointer & 0xFF;
-		uint8_t* ocfPointer = packet + frameLength - 4 - 2 * eccFieldExists;
+		uint8_t* ocfPointer = packet + transferFrameLength - 4 - 2 * eccFieldExists;
 		ocfPointer[0] = operationalControlField >> 24;
 		ocfPointer[1] = (operationalControlField >> 16) & 0xFF;
 		ocfPointer[2] = (operationalControlField >> 8) & 0xFF;
 		ocfPointer[3] = operationalControlField & 0xFF;
 	}
 
-	TransferFrameTM(uint8_t* packet, uint16_t packet_length, bool eccFieldExists)
-	    : TransferFrame(PacketType::TM, packet_length, packet), hdr(packet), eccFieldExists(eccFieldExists) {}
+	TransferFrameTM(uint8_t* packet, uint16_t frameLength, bool eccFieldExists)
+	    : TransferFrame(PacketType::TM, frameLength, packet), hdr(packet),
+	      eccFieldExists(eccFieldExists) {}
 	/**
 	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-	uint16_t calculateCRC(const uint8_t* packet, uint16_t len) {
+	uint16_t calculateCRC(const uint8_t* packet, uint16_t len) override {
 
 		uint16_t crc = 0xFFFF;
 
@@ -243,26 +244,11 @@ struct TransferFrameTM : public TransferFrame {
 			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
-		for (uint16_t i = 0; i < TmTransferFrameSize-len-2; i++) {
+		for (uint16_t i = 0; i < TmTransferFrameSize - len - 2; i++) {
 			crc = crc_16_ccitt_table[(idle_data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
 		return crc;
-	}
-
-	/**
-	 * Appends the CRC code (given that the corresponding Error Correction field is present in the given
-	 * virtual channel)
-	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-
-	void append_crc() {
-		uint16_t len = frameLength - 2;
-		uint16_t crc = calculateCRC(packet, len);
-
-		// append CRC
-		packet[TmTransferFrameSize-2] = (crc >> 8) & 0xFF;
-		packet[TmTransferFrameSize - 1] = crc & 0xFF;
 	}
 
 
