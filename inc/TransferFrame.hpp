@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <CCSDS_Definitions.hpp>
 
 enum PacketType { TC, TM };
 
@@ -45,8 +46,8 @@ private:
 	PacketType type;
 
 public:
-	TransferFrame(PacketType t, uint16_t packetLength, uint16_t lengthTransferFrame, uint8_t* packet)
-	    : type(t), lengthPacket(packetLength), lengthTransferFrame(lengthTransferFrame),
+	TransferFrame(PacketType t, uint16_t transferFrameLength, uint8_t* packet)
+	    : type(t), transferFrameLength(transferFrameLength),
 	      packet(packet){};
 
     virtual ~TransferFrame(){ }
@@ -59,16 +60,17 @@ public:
      * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
      */
     void appendCRC() {
-        uint16_t len = lengthPacket - 2;
+        uint16_t len = transferFrameLength - 2;
         uint16_t crc = calculateCRC(packet, len);
 
+		uint16_t frameLength = (type == PacketType::TC) ? transferFrameLength : TmTransferFrameSize;
+
         // append CRC
-        packet[lengthTransferFrame - 2] = (crc >> 8) & 0xFF;
-        packet[lengthTransferFrame - 1] = crc & 0xFF;
+        packet[frameLength - 2] = (crc >> 8) & 0xFF;
+        packet[frameLength - 1] = crc & 0xFF;
     }
 
 protected:
-	uint16_t lengthPacket;
-	uint16_t lengthTransferFrame;
+	uint16_t transferFrameLength;
 	uint8_t* packet;
 };
