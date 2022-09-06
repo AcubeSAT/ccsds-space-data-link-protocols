@@ -95,6 +95,11 @@ ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_IN_BUFFER_FULL);
 		return ServiceChannelNotification::RX_IN_BUFFER_FULL;
 	}
+
+	if (virtualChannel->rxInFramesAfterMCReception.empty()) {
+		ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
+		return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+	}
 	TransferFrameTM* packet = virtualChannel->rxInFramesAfterMCReception.front();
 
 	uint16_t frameSize = packet->getPacketLength();
@@ -564,7 +569,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTCRequest() {
 	VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
 	if (vchan.frameErrorControlFieldPresent) {
-		packet->append_crc();
+		packet->appendCRC();
 	}
 
 	masterChannel.storeTransmittedOut(packet);
@@ -583,7 +588,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
 	if (vchan.frameErrorControlFieldPresent) {
-		packet->append_crc();
+		packet->appendCRC();
 	}
 
 	if (packet->getPacketLength() > packet_length) {

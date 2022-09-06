@@ -22,7 +22,6 @@ add_library(common OBJECT
         src/CCSDSChannel.cpp
         src/FrameOperationProcedure.cpp
         src/FrameAcceptanceReporting.cpp
-        src/Packet.cpp
         src/logOperators.cpp
         src/MemoryPool.cpp
         src/CLCW.cpp
