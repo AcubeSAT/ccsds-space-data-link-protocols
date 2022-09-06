@@ -73,10 +73,10 @@ public:
 	 * Compares two packets
 	 */
 	friend bool operator==(const TransferFrameTC& packet1, const TransferFrameTC& packet2) {
-		if (packet1.frameLength != packet2.frameLength) {
+		if (packet1.transferFrameLength != packet2.transferFrameLength) {
 			return false;
 		}
-		for (uint16_t i = 0; i < packet1.frameLength; i++) {
+		for (uint16_t i = 0; i < packet1.transferFrameLength; i++) {
 			if (packet1.packetData()[i] != packet2.packetData()[i]) {
 				return false;
 			}
@@ -217,7 +217,7 @@ public:
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t getFrameLength() const {
-		return frameLength;
+		return transferFrameLength;
 	}
 
 	/**
@@ -308,8 +308,8 @@ public:
 	}
 
 	void setPacketLength(uint16_t packet_length) {
-		packet[2] = ((virtualChannelId() & 0x3F) << 2) | (frameLength & 0x300 >> 8);
-		packet[3] = frameLength & 0xFF;
+		packet[2] = ((virtualChannelId() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
+		packet[3] = transferFrameLength & 0xFF;
 	}
 
 	uint16_t packetLength() {
@@ -368,8 +368,22 @@ public:
 		packet[3] = frameLength & 0xFF;
 	}
 
-	TransferFrameTC(uint8_t* packet, uint16_t packetLength, PacketType t = TC)
-	    : TransferFrame(PacketType::TC, packetLength, packet), hdr(packet), transmit(false){};
+	TransferFrameTC(uint8_t* packet, uint16_t frameLength, PacketType t = TC)
+	    : TransferFrame(PacketType::TC, frameLength, packet), hdr(packet), transmit(false){};
+	/**
+	 * Calculates the CRC code
+	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+	 */
+	 uint16_t calculateCRC(const uint8_t* packet, uint16_t len) override {
+		uint16_t crc = 0xFFFF;
+
+		// calculate remainder of binary polynomial division
+		for (uint16_t i = 0; i < len; i++) {
+			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+		}
+
+		return crc;
+	}
 
 private:
 	bool toBeRetransmitted;
