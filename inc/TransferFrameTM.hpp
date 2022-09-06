@@ -229,14 +229,12 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	TransferFrameTM(uint8_t* packet, uint16_t frameLength, bool eccFieldExists)
-	    : TransferFrame(PacketType::TM, frameLength, packet), hdr(packet),
-	      eccFieldExists(eccFieldExists) {}
+	    : TransferFrame(PacketType::TM, frameLength, packet), hdr(packet), eccFieldExists(eccFieldExists) {}
 	/**
 	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t calculateCRC(const uint8_t* packet, uint16_t len) override {
-
 		uint16_t crc = 0xFFFF;
 
 		// calculate remainder of binary polynomial division
@@ -250,7 +248,6 @@ struct TransferFrameTM : public TransferFrame {
 
 		return crc;
 	}
-
 
 private:
 	TransferFrameHeaderTM hdr;
