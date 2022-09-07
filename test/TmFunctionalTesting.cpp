@@ -41,6 +41,7 @@ TEST_CASE("Sending TM"){
 	uint8_t headerLength = 6;
 	uint8_t numberOfErrors = 0;
 	uint8_t headerAndTrailerLength = headerLength+trailerLength;
+	bool flag = 0;
     for(uint8_t i=0 ; i<50 ; i++) {
 		packetDestination[0]=0;
 		uint8_t frameLength = (rand() % maximumFrameLength);
@@ -131,9 +132,10 @@ TEST_CASE("Sending TM"){
 							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 						}
 					} else if (randomServicePicker2 == 1) {
-						serviceChannel.packetExtractionTM(0, packetDestination2);
-						if (packetDestination2[0] != 0) {
+						ServiceChannelNotification ser = serviceChannel.packetExtractionTM(0, packetDestination2);
+						if (ser== ServiceChannelNotification::NO_SERVICE_EVENT) {
 							if (!packetsVC0Length.empty()) {
+								flag = true;
 								uint8_t tmplength = packetsVC0Length.front();
 								packetsVC0Length.pop();
 								for (uint16_t t = 0; t < tmplength; t++) {
@@ -143,7 +145,7 @@ TEST_CASE("Sending TM"){
 							}
 						}
 					}
-				} else if (virtualChannelPicker2 > 50 && virtualChannelPicker < 60) {
+				} else if (virtualChannelPicker2 > 50 && virtualChannelPicker2 < 60) {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
 						if (!framesSentLength.empty()) {
@@ -157,9 +159,10 @@ TEST_CASE("Sending TM"){
 						}
 
 					} else if (randomServicePicker2 == 1) {
-						serviceChannel.packetExtractionTM(1, packetDestination2);
-						if (packetDestination2[0] != 0) {
+						ServiceChannelNotification ser = serviceChannel.packetExtractionTM(1, packetDestination2);
+						if (ser== ServiceChannelNotification::NO_SERVICE_EVENT) {
 							if (!packetsVC1Length.empty()) {
+								flag= true;
 								uint8_t tmplength = packetsVC1Length.front();
 								packetsVC1Length.pop();
 								for (uint16_t t = 0; t < tmplength; t++) {
@@ -182,9 +185,10 @@ TEST_CASE("Sending TM"){
 							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 						}
 					} else if (randomServicePicker2 == 1) {
-						serviceChannel.packetExtractionTM(2, packetDestination2);
-						if (packetDestination2[0] != 0) {
+						ServiceChannelNotification ser = serviceChannel.packetExtractionTM(2, packetDestination2);
+						if (ser== ServiceChannelNotification::NO_SERVICE_EVENT) {
 							if (!packetsVC2Length.empty()) {
+								flag=true;
 								uint8_t tmplength = packetsVC2Length.front();
 								packetsVC2Length.pop();
 								for (uint16_t t = 0; t < tmplength; t++) {
@@ -195,12 +199,13 @@ TEST_CASE("Sending TM"){
 						}
 					}
 				}
-				if (packetDestination2[0] != 0) {
+				if (flag) {
 					for (uint8_t k = 0; k < frameLength - headerAndTrailerLength; ++k) {
 						if (tmpData[k] != packetDestination2[k]) {
 							numberOfErrors++;
 						}
 					}
+					flag= false;
 				}
 			}
 			packetDestination[0] = 0;
