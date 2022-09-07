@@ -606,7 +606,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	memcpy(packet_data + frameSize - trailerSize, idle_data, idleDataSize);
 
 	// Append trailer
-	memcpy(packet_data + TmTransferFrameSize - trailerSize, packet->packetData() + packet_length - trailerSize + 1,
+	memcpy(packet_data + TmTransferFrameSize - trailerSize, packet->packetData() + packet_length - trailerSize,
 	       trailerSize);
 
 	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
