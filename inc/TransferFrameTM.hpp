@@ -184,10 +184,10 @@ struct TransferFrameTM : public TransferFrame {
 		packet[2] = masterChannelFrameCount;
 	}
 
-	TransferFrameTM(uint8_t* packet, uint8_t virtualChannelFrameCount, uint16_t vcid,
+	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
 	                bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
 	                SynchronizationFlag syncFlag, PacketType type = TM)
-	    : TransferFrame(type, TmTransferFrameSize, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
+	    : TransferFrame(type, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
 	      firstHeaderPointer(firstHeaderPointer) {
 		// Transfer Frame Version Number + Spacecraft Id
 		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
@@ -208,7 +208,7 @@ struct TransferFrameTM : public TransferFrame {
 	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
 	                bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
 	                SynchronizationFlag syncFlag, uint32_t operationalControlField, PacketType type = TM)
-	    : TransferFrame(type, TmTransferFrameSize, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
+	    : TransferFrame(type, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
 	      firstHeaderPointer(firstHeaderPointer) {
 		// Transfer Frame Version Number + Spacecraft Id
 		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
@@ -229,7 +229,7 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	TransferFrameTM(uint8_t* packet, uint16_t frameLength, bool eccFieldExists)
-	    : TransferFrame(PacketType::TM, TmTransferFrameSize, packet), hdr(packet),
+	    : TransferFrame(PacketType::TM, frameLength, packet), hdr(packet),
 	      eccFieldExists(eccFieldExists) {}
 	/**
 	 * Calculates the CRC code
