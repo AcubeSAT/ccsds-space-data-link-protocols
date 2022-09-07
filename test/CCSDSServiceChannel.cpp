@@ -11,10 +11,10 @@ TEST_CASE("Service Channel") {
 	// Set up Service Channel
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-	    {0, MAPChannel(0, true, true)},
-	    {1, MAPChannel(1, false, false)},
-	    {2, MAPChannel(2, true, false)},
+	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> map_channels = {
+	    {0, MAPChannel<mapchannellengthtemp>(0, true, true)},
+	    {1, MAPChannel<mapchannellengthtemp>(1, false, false)},
+	    {2, MAPChannel<mapchannellengthtemp>(2, true, false)},
 	};
 
 	MasterChannel master_channel = MasterChannel();
@@ -324,10 +324,10 @@ TEST_CASE("Service Channel") {
 TEST_CASE("VC Generation Service") {
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-	    {0, MAPChannel(0, true, true)},
-	    {1, MAPChannel(1, false, false)},
-	    {2, MAPChannel(2, true, false)},
+	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> map_channels = {
+	    {0, MAPChannel<mapchannellengthtemp>(0, true, true)},
+	    {1, MAPChannel<mapchannellengthtemp>(1, false, false)},
+	    {2, MAPChannel<mapchannellengthtemp>(2, true, false)},
 	};
 
 	MasterChannel master_channel = MasterChannel();
@@ -411,10 +411,10 @@ TEST_CASE("VC Generation Service") {
 TEST_CASE("CLCW construction at VC Reception") {
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-	    {0, MAPChannel(0, true, true)},
-	    {1, MAPChannel(1, false, false)},
-	    {2, MAPChannel(2, true, false)},
+	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> map_channels = {
+	    {0, MAPChannel<mapchannellengthtemp>(0, true, true)},
+	    {1, MAPChannel<mapchannellengthtemp>(1, false, false)},
+	    {2, MAPChannel<mapchannellengthtemp>(2, true, false)},
 	};
 
 	MasterChannel master_channel = MasterChannel();
@@ -506,10 +506,10 @@ TEST_CASE("CLCW construction at VC Reception") {
 TEST_CASE("Frame Acknowledgement") {
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-	    {0, MAPChannel(0, true, true)},
-	    {1, MAPChannel(1, false, false)},
-	    {2, MAPChannel(2, true, false)},
+	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> map_channels = {
+	    {0, MAPChannel<mapchannellengthtemp>(0, true, true)},
+	    {1, MAPChannel<mapchannellengthtemp>(1, false, false)},
+	    {2, MAPChannel<mapchannellengthtemp>(2, true, false)},
 	};
 
 	MasterChannel master_channel = MasterChannel();

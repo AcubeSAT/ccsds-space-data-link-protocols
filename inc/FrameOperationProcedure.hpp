@@ -31,6 +31,7 @@ enum AlertEvent {
 };
 
 class VirtualChannel;
+template <uint16_t T>
 class MAPChannel;
 
 class FrameOperationProcedure {

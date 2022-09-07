@@ -16,6 +16,7 @@ enum FARMState {
 
 class VirtualChannel;
 
+template <uint16_t T>
 class MAPChannel;
 
 /**

@@ -104,6 +104,7 @@ public:
 /**
  * @see Table 5-4 from TC SPACE DATA LINK PROTOCOL
  */
+template <uint16_t T>
 class MAPChannel {
 	friend class ServiceChannel;
 
@@ -144,15 +145,15 @@ protected:
 	/**
 	 * Store unprocessed received TCs
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel> unprocessedPacketListBufferTC;
+	etl::list<TransferFrameTC*, T> unprocessedPacketListBufferTC;
 	/**
 	 * Store unprocessed received TMs
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTmInMapChannel> unprocessedPacketListBufferTM;
+	etl::list<TransferFrameTC*, T> unprocessedPacketListBufferTM;
 	/**
 	 * Store frames before being extracted
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> rxInFramesAfterVCReception;
+	etl::list<TransferFrameTC*, T> rxInFramesAfterVCReception;
 };
 
 /**
@@ -256,7 +257,7 @@ public:
 	 *
 	 *  MAP channels of the virtual channel
 	 */
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels;
+	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> mapChannels;
 
 	uint16_t availableInPacketLengthBufferTmTx() {
 		return packetLengthBufferTmTx.available();
@@ -273,7 +274,7 @@ public:
 	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
 	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
-	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
+	               etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
@@ -470,7 +471,7 @@ struct MasterChannel {
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-	                         const uint8_t vcRepetitions, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
+	                         const uint8_t vcRepetitions, etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> mapChan);
 
 	/**
 	 * Add virtual channel to master channel

@@ -6,8 +6,8 @@
 TEST_CASE("Initiate FOP Directives") {
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels_fop = {{2, MAPChannel(2, true, false)},
-	                                                                       {3, MAPChannel(3, false, false)}};
+	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> map_channels_fop = {{2, MAPChannel<mapchannellengthtemp>(2, true, false)},
+	                                                                       {3, MAPChannel<mapchannellengthtemp>(3, false, false)}};
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
 	MasterChannel master_channel_fop = MasterChannel();
@@ -49,10 +49,10 @@ TEST_CASE("Initiate FOP Directives") {
 TEST_CASE("Retransmission"){
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
-	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-	    {0, MAPChannel(0, true, true)},
-	    {1, MAPChannel(1, false, false)},
-	    {2, MAPChannel(2, true, false)},
+	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> map_channels = {
+	    {0, MAPChannel<mapchannellengthtemp>(0, true, true)},
+	    {1, MAPChannel<mapchannellengthtemp>(1, false, false)},
+	    {2, MAPChannel<mapchannellengthtemp>(2, true, false)},
 	};
 
 	MasterChannel master_channel = MasterChannel();

@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+constexpr uint16_t mapchannellengthtemp = 10;
+
 inline uint8_t const tm_error_control_field_exists = 1;
 inline const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
@@ -21,8 +23,8 @@ inline const bool TcErrorControlFieldExists = false;
 inline const uint16_t MCID = SpacecraftIdentifier;
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
-inline const uint8_t MaxReceivedTcInMapChannel = 5;
-inline const uint8_t MaxReceivedTmInMapChannel = 5;
+inline const uint8_t MaxReceivedTcInMapChannel = 10;
+inline const uint8_t MaxReceivedTmInMapChannel = 10;
 
 inline const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
 inline const uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
@@ -61,7 +63,7 @@ inline const uint8_t MaxReceivedTxTmOutInMasterBuffer =
     100; ///> Maximum received fully-processed TX TMs in the master buffer
 inline const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
 inline const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
-inline const uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer
+inline const uint8_t MaxReceivedRxTcInMAPBuffer = 10; ///> Maximum received RX TCs in MAP buffer
 inline const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100; ///> Maximum received fully processed RX TCs in MAP buffer
 
 inline const uint8_t MaxVirtualChannels = 10;

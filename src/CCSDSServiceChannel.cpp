@@ -67,7 +67,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::INVALID_MAP_ID;
 	}
 
-	MAPChannel* mapChannel = &(virtualChannel->mapChannels.at(mapid));
+	MAPChannel<mapchannellengthtemp>* mapChannel = &(virtualChannel->mapChannels.at(mapid));
 
 	if (mapChannel->unprocessedPacketListBufferTC.full()) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, MAP_CHANNEL_FRAME_BUFFER_FULL);
@@ -155,7 +155,7 @@ ServiceChannelNotification ServiceChannel::storePacketTm(uint8_t* packet, uint16
 // TODO: It shall also be decided based on the virtual channel whether this or vc request will be called based on the VC
 ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapid) {
 	VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-	MAPChannel* mapChannel = &(virtualChannel->mapChannels.at(mapid));
+	MAPChannel<mapchannellengthtemp>* mapChannel = &(virtualChannel->mapChannels.at(mapid));
 
 	if (mapChannel->unprocessedPacketListBufferTC.empty()) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
@@ -411,7 +411,7 @@ ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {
 	// If MAP channels are implemented in this specific VC, write to the MAP buffer
 	if (virtChannel.segmentHeaderPresent) {
 		uint8_t mapid = frame->mapId();
-		MAPChannel& mapChannel = virtChannel.mapChannels.at(mapid);
+		MAPChannel<mapchannellengthtemp>& mapChannel = virtChannel.mapChannels.at(mapid);
 		mapChannel.rxInFramesAfterVCReception.push_back(frame);
 	} else {
 		virtChannel.rxInFramesAfterVCReception.push_back(frame);
@@ -427,7 +427,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 		return ServiceChannelNotification::INVALID_SERVICE_CALL;
 	}
 
-	MAPChannel& mapChannel = virtualChannel.mapChannels.at(mapid);
+	MAPChannel<mapchannellengthtemp>& mapChannel = virtualChannel.mapChannels.at(mapid);
 
 	if (mapChannel.rxInFramesAfterVCReception.empty()) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
@@ -839,7 +839,7 @@ uint8_t ServiceChannel::getFrameCountTM() {
 
 std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::txOutPacketTC(uint8_t vid,
                                                                                             uint8_t mapid) const {
-	const etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel>* mc =
+	const auto mc =
 	    &(masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).unprocessedPacketListBufferTC);
 	if (mc->empty()) {
 		ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
