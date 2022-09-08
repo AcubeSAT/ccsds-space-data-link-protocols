@@ -930,7 +930,6 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 	    TransferFrameTM(transferFrameData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,
 	                    vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.segmentHeaderPresent,
 	                    segmentLengthId, vchan.synchronization, TM);
-
 	masterChannel.txMasterCopyTM.push_back(transferFrameTm);
 	masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
 	return NO_SERVICE_EVENT;
