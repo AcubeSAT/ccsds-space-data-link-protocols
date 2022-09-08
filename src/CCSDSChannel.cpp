@@ -4,7 +4,8 @@
 #include "MemoryPool.hpp"
 // Virtual Channel
 
-VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* packet) {
+template <uint16_t T, uint16_t K>
+VirtualChannelAlert VirtualChannel<T, K>::storeVC(TransferFrameTC* packet) {
 	// Limit the amount of packets that can be stored at any given time
 	if (txUnprocessedPacketListBufferTC.full()) {
 		ccsdsLogNotice(Tx, TypeVirtualChannelAlert, TX_WAIT_QUEUE_FULL);
@@ -76,7 +77,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
+	virtualChannels.emplace(vcid, VirtualChannel<mapchannellengthtemp, vclengthtemp>(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -97,7 +98,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	}
 
 	virtualChannels.emplace(vcid,
-	                        VirtualChannel(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
+	                        VirtualChannel<mapchannellengthtemp, vclengthtemp>(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
 	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,

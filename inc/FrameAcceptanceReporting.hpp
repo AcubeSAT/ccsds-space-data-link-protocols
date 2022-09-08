@@ -14,6 +14,7 @@ enum FARMState {
 	LOCKOUT = 3,
 };
 
+template <uint16_t T, uint16_t K>
 class VirtualChannel;
 
 template <uint16_t T>
@@ -63,9 +64,9 @@ public:
 	/**
 	 * The Virtual Channel in which FOP is initialized
 	 */
-	VirtualChannel* vchan;
+	VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan;
 
-	FrameAcceptanceReporting(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
+	FrameAcceptanceReporting(VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
 	                         etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue,
 	                         const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
 	                         const uint8_t farmNegativeWinWidth)

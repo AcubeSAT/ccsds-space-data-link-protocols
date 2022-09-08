@@ -150,14 +150,14 @@ TEST_CASE("Service Channel") {
 	err = serv_channel.vcReceptionTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
-	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == MaxReceivedRxTcInVirtualChannelBuffer);
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0) == 10);
 	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(0, 0) == MaxReceivedRxTcInMAPBuffer - 1);
 
 	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(1) == MaxReceivedRxTcInMasterBuffer);
 	err = serv_channel.vcReceptionTC(1);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue);
-	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(1) == MaxReceivedRxTcInVirtualChannelBuffer - 1);
+	CHECK(serv_channel.getAvailableRxInFramesAfterVCReception(1) == 10 - 1);
 
 	// Packet extraction
 	err = serv_channel.packetExtractionTC(0, 0, out_buffer);
@@ -422,7 +422,7 @@ TEST_CASE("CLCW construction at VC Reception") {
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
-	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
+	VirtualChannel<mapchannellengthtemp, vclengthtemp> virtualChannel = master_channel.virtualChannels.at(0);
 
 	ServiceChannelNotification err;
 	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};

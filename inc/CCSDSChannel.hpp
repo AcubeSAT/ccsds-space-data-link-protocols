@@ -159,6 +159,7 @@ protected:
 /**
  * @see Table 5-3 from TC SPACE DATA LINK PROTOCOL
  */
+template <uint16_t MAP_T, uint16_t VC_T>
 class VirtualChannel {
 	friend class ServiceChannel;
 
@@ -257,7 +258,7 @@ public:
 	 *
 	 *  MAP channels of the virtual channel
 	 */
-	etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> mapChannels;
+	etl::flat_map<uint8_t, MAPChannel<MAP_T>, MaxMapChannels> mapChannels;
 
 	uint16_t availableInPacketLengthBufferTmTx() {
 		return packetLengthBufferTmTx.available();
@@ -274,7 +275,7 @@ public:
 	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
 	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
-	               etl::flat_map<uint8_t, MAPChannel<mapchannellengthtemp>, MaxMapChannels> mapChan)
+	               etl::flat_map<uint8_t, MAPChannel<MAP_T>, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
@@ -290,7 +291,7 @@ public:
 		mapChannels = mapChan;
 	}
 
-	VirtualChannel(const VirtualChannel& v)
+	VirtualChannel(const VirtualChannel<MAP_T, VC_T>& v)
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
 	      maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
 	      repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
@@ -325,37 +326,37 @@ private:
 	/**
 	 * TM packets after being processed by the MasterChannelReception Service
 	 */
-	etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> rxInFramesAfterMCReception;
+	etl::list<TransferFrameTM*, VC_T> rxInFramesAfterMCReception;
 
 	/**
 	 * Buffer to store incoming packets BEFORE being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueTxTC;
+	etl::list<TransferFrameTC*, VC_T> waitQueueTxTC;
 
 	/**
 	 * Buffer to store incoming packets AFTER being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueRxTC;
+	etl::list<TransferFrameTC*, VC_T> waitQueueRxTC;
 
 	/**
 	 * Buffer to store outcoming packets AFTER being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue> sentQueueTxTC;
+	etl::list<TransferFrameTC*, VC_T> sentQueueTxTC;
 
 	/**
 	 * Buffer to storeOut outcoming packets AFTER being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue> sentQueueRxTC;
+	etl::list<TransferFrameTC*, VC_T> sentQueueRxTC;
 
 	/**
 	 * Buffer to store incoming packets AFTER being processed by FARM
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer> rxInFramesAfterVCReception;
+	etl::list<TransferFrameTC*, VC_T> rxInFramesAfterVCReception;
 
 	/**
 	 * Buffer to storeOut unprocessed packets that are directly processed in the virtual instead of MAP channel
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedPacketListBufferTC;
+	etl::list<TransferFrameTC*, VC_T> txUnprocessedPacketListBufferTC;
 
 	/**
 	 * Holds the FOP state of the virtual channel
@@ -399,7 +400,7 @@ struct MasterChannel {
 	 * Virtual channels of the master channel
 	 */
 	// TODO: Type aliases because this is getting out of hand
-	etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels> virtualChannels;
+	etl::flat_map<uint8_t, VirtualChannel<mapchannellengthtemp, vclengthtemp>, MaxVirtualChannels> virtualChannels;
 	uint8_t frameCount{};
 
 	MasterChannel()
@@ -565,4 +566,5 @@ private:
 	MemoryPool masterChannelPool = MemoryPool();
 };
 
+template class VirtualChannel<mapchannellengthtemp, vclengthtemp>;
 #endif // CCSDS_CHANNEL_HPP

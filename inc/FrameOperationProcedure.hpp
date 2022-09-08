@@ -30,8 +30,10 @@ enum AlertEvent {
 	ALRT_LOCKOUT = 6,
 };
 
+template <uint16_t MAP_T, uint16_t VC_T>
 class VirtualChannel;
-template <uint16_t T>
+
+template <uint16_t MAP_T>
 class MAPChannel;
 
 class FrameOperationProcedure {
@@ -61,7 +63,7 @@ public:
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFARM;
 
-	VirtualChannel* vchan;
+	VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan;
 
 private:
 	/**
@@ -334,7 +336,7 @@ private:
 	void acknowledgePreviousFrames(uint8_t frameSequenceNumber);
 
 public:
-	FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueue,
+	FrameOperationProcedure(VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan, etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueue,
 	                        etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueue,
 	                        const uint8_t repetitionCopCtrl)
 	    : waitQueueFOP(waitQueue), sentQueueFOP(sentQueue), vchan(vchan), state(FOPState::INITIAL),

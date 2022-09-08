@@ -7,6 +7,7 @@
 #include <cstdint>
 
 constexpr uint16_t mapchannellengthtemp = 10;
+constexpr uint16_t vclengthtemp = 10;
 
 inline uint8_t const tm_error_control_field_exists = 1;
 inline const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
@@ -61,8 +62,7 @@ inline const uint8_t MaxReceivedTxTmInVCBuffer =
 
 inline const uint8_t MaxReceivedTxTmOutInMasterBuffer =
     100; ///> Maximum received fully-processed TX TMs in the master buffer
-inline const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
-inline const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
+inline const uint8_t MaxReceivedRxTcInMasterBuffer = 10; ///> Maximum received unprocessed RX TCs in the master buffer
 inline const uint8_t MaxReceivedRxTcInMAPBuffer = 10; ///> Maximum received RX TCs in MAP buffer
 inline const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100; ///> Maximum received fully processed RX TCs in MAP buffer
 
@@ -80,10 +80,10 @@ inline const uint8_t MaxTxInMasterChannel = 200;
 inline const uint8_t MaxRxInMasterChannel = 200;
 
 inline const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer =
-    6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
+    10; ///> Raw TX TC packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
 inline const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
-    6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
+    10; ///> Raw TX TM packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
 
 inline const uint8_t FopSlidingWindowInitial = 255;
