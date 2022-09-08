@@ -47,10 +47,10 @@ TEST_CASE("Sending TM") {
 	for (uint8_t i = 0; i < maximumServiceCallsTx; i++) {
 		packetDestination[0] = 0;
 		uint8_t frameLength = (rand() % maximumFrameLength);
-		for (uint8_t j = 0; j < 6; j++) {
+		for (uint8_t j = 0; j < headerLength; j++) {
 			frame[j] = 0;
 		}
-		for (uint16_t j = headerLength; j < frameLength - headerLength; j++) {
+		for (uint16_t j = headerLength; j < frameLength - trailerLength; j++) {
 			frame[j] = rand() % 256;
 		}
 		uint8_t virtualChannelPicker = rand() % 100;
@@ -59,7 +59,7 @@ TEST_CASE("Sending TM") {
 			if (randomServicePicker == 0) {
 				serviceChannel.storePacketTm(frame, frameLength, 0);
 				packetsVC0Length.push(frameLength - headerAndTrailerLength);
-				for (int j = 6; j < frameLength - 8; ++j) {
+				for (int j = headerLength; j < frameLength - trailerLength; ++j) {
 					packetsVC0.push(frame[j]);
 				}
 			} else if (randomServicePicker == 1) {
@@ -205,14 +205,17 @@ TEST_CASE("Sending TM") {
 					for (uint8_t k = 0; k < tmplength; ++k) {
 						if (tmpData[k] != packetDestination2[k]) {
 							numberOfErrors++;
+							printf("%d ",tmpData[k]);
+							printf("%d\n",packetDestination2[k]);
+
 						}
 					}
 					flag = false;
 				}
 			}
-			ser = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
-			ser2 = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
  		}
+		ser = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
+		ser2 = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	}
 	CHECK(numberOfErrors == 0);
 }
