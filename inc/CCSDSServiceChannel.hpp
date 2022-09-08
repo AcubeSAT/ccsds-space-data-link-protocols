@@ -20,7 +20,7 @@ private:
 	 * The Master Channel essentially stores the configuration of your channel. It partitions the physical
 	 * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic
 	 */
-	MasterChannel masterChannel;
+	AbstractMasterChannel masterChannel;
 	/**
 	 * PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame
 	 * length

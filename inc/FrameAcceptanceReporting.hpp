@@ -14,7 +14,7 @@ enum FARMState {
 	LOCKOUT = 3,
 };
 
-template <uint16_t T, uint16_t K>
+template <uint16_t MAP_T, uint16_t VC_T>
 class VirtualChannel;
 
 template <uint16_t T>
@@ -23,6 +23,8 @@ class MAPChannel;
 /**
  * @see p. 6 from COP-1 CCSDS
  */
+
+template <uint16_t MAP_T, uint16_t VC_T>
 class FrameAcceptanceReporting {
 	friend class ServiceChannel;
 
@@ -55,18 +57,18 @@ public:
 	/**
 	 * Buffer for storing packets, BEFORE being processed by FARM.
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue;
+	etl::list<TransferFrameTC*, VC_T>* waitQueue;
 	/**
 	 * Buffer for storing packets, AFTER being processed by FARM.
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue;
+	etl::list<TransferFrameTC*, VC_T>* sentQueue;
 
 	/**
 	 * The Virtual Channel in which FOP is initialized
 	 */
-	VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan;
+	VirtualChannel<MAP_T, VC_T>* vchan;
 
-	FrameAcceptanceReporting(VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
+	FrameAcceptanceReporting(VirtualChannel<MAP_T, VC_T>* vchan, etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue,
 	                         etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue,
 	                         const uint8_t farmSlidingWinWidth, const uint8_t farmPositiveWinWidth,
 	                         const uint8_t farmNegativeWinWidth)

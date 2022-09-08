@@ -18,6 +18,9 @@
 #include "MemoryPool.hpp"
 #include "CLCW.hpp"
 
+class AbstractMasterChannel {};
+
+template <uint16_t MAP_T, uint16_t VC_T, uint16_t MC_T>
 class MasterChannel;
 
 /**
@@ -163,9 +166,9 @@ template <uint16_t MAP_T, uint16_t VC_T>
 class VirtualChannel {
 	friend class ServiceChannel;
 
-	friend class MasterChannel;
+    friend class AbstractMasterChannel;
 
-	friend class FrameOperationProcedure;
+    template <uint16_t, uint16_t> friend class FrameOperationProcedure;
 
 	//@TODO: Those variables shouldn't be public
 public:
@@ -318,7 +321,7 @@ public:
 	 */
 	VirtualChannelAlert add_map(const uint8_t mapid);
 
-	MasterChannel& master_channel() {
+    AbstractMasterChannel& master_channel() {
 		return masterChannel;
 	}
 
@@ -361,7 +364,7 @@ private:
 	/**
 	 * Holds the FOP state of the virtual channel
 	 */
-	FrameOperationProcedure fop;
+	FrameOperationProcedure<MAP_T, VC_T> fop;
 
 	/**
 	 * Buffer holding the master copy of the CLCW that is currently being processed
@@ -371,12 +374,12 @@ private:
 	/**
 	 * Holds the FARM state of the virtual channel
 	 */
-	FrameAcceptanceReporting farm;
+	FrameAcceptanceReporting<MAP_T, VC_T> farm;
 
 	/**
 	 * The Master Channel the Virtual Channel belongs in
 	 */
-	std::reference_wrapper<MasterChannel> masterChannel;
+	std::reference_wrapper<AbstractMasterChannel> masterChannel;
 
 	/**
 	 *  Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
@@ -389,18 +392,18 @@ private:
 	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
 };
 
-struct MasterChannel {
+template <uint16_t MAP_T, uint16_t VC_T, uint16_t MC_T>
+struct MasterChannel : private AbstractMasterChannel {
 	friend class ServiceChannel;
 
-	friend class FrameOperationProcedure;
-
-	friend class FrameAcceptanceReporting;
+    template <uint16_t, uint16_t> friend class FrameOperationProcedure;
+    template <uint16_t, uint16_t> friend class FrameAcceptanceReporting;
 
 	/**
 	 * Virtual channels of the master channel
 	 */
 	// TODO: Type aliases because this is getting out of hand
-	etl::flat_map<uint8_t, VirtualChannel<mapchannellengthtemp, vclengthtemp>, MaxVirtualChannels> virtualChannels;
+	etl::flat_map<uint8_t, VirtualChannel<MAP_T, VC_T>> virtualChannels;
 	uint8_t frameCount{};
 
 	MasterChannel()
@@ -505,13 +508,6 @@ private:
 	// Packets ready to be transmitted having passed through the all frames generation service
 	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationListTM;
 
-	// TC packets that are received, before being received by the all frames reception service
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTC;
-	// TM packets that are ready to be transmitted to higher procedures following all frames generation service
-	etl::list<TransferFrameTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTC;
-
-	// Buffer to store TM packets that are processed by the packet and VC Generation services
-	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedPacketListBufferTM;
 
 	/**
 	 * Buffer holding the master copy of TC TX packets that are currently being processed
@@ -566,5 +562,6 @@ private:
 	MemoryPool masterChannelPool = MemoryPool();
 };
 
+template class MasterChannel<mapchannellengthtemp, vclengthtemp, mclengthtemp>;
 template class VirtualChannel<mapchannellengthtemp, vclengthtemp>;
 #endif // CCSDS_CHANNEL_HPP

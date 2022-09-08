@@ -8,6 +8,8 @@
 
 constexpr uint16_t mapchannellengthtemp = 10;
 constexpr uint16_t vclengthtemp = 10;
+constexpr uint16_t mclengthtemp = 10;
+
 
 inline uint8_t const tm_error_control_field_exists = 1;
 inline const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA

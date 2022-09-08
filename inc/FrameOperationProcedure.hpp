@@ -36,34 +36,35 @@ class VirtualChannel;
 template <uint16_t MAP_T>
 class MAPChannel;
 
+template <uint16_t MAP_T, uint16_t VC_T>
 class FrameOperationProcedure {
 	friend class ServiceChannel;
-	friend class MasterChannel;
+    template <uint16_t, uint16_t, uint16_t> friend class MasterChannel;
 
 public:
 	/**
 	 * TC Packets stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFOP;
+	etl::list<TransferFrameTC*, VC_T>* waitQueueFOP;
 	/**
 	 * TC Packets stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFOP;
+	etl::list<TransferFrameTC*, VC_T>* sentQueueFOP;
 
 	/**
 	 * TC Packets stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFARM;
+	etl::list<TransferFrameTC*, VC_T>* waitQueueFARM;
 	/**
 	 * TC Packets stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFARM;
+	etl::list<TransferFrameTC*, VC_T>* sentQueueFARM;
 
-	VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan;
+	VirtualChannel<MAP_T, VC_T>* vchan;
 
 private:
 	/**
@@ -336,7 +337,7 @@ private:
 	void acknowledgePreviousFrames(uint8_t frameSequenceNumber);
 
 public:
-	FrameOperationProcedure(VirtualChannel<mapchannellengthtemp, vclengthtemp>* vchan, etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueue,
+	FrameOperationProcedure(VirtualChannel<MAP_T, VC_T>* vchan, etl::list<TransferFrameTC*, VC_T>* waitQueue,
 	                        etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueue,
 	                        const uint8_t repetitionCopCtrl)
 	    : waitQueueFOP(waitQueue), sentQueueFOP(sentQueue), vchan(vchan), state(FOPState::INITIAL),
