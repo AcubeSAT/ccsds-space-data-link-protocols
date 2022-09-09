@@ -4,8 +4,8 @@
 #include "MemoryPool.hpp"
 // Virtual Channel
 
-template <uint16_t T, uint16_t K>
-VirtualChannelAlert VirtualChannel<T, K>::storeVC(TransferFrameTC* packet) {
+template <uint16_t T, uint16_t K, class _MC>
+VirtualChannelAlert VirtualChannel<T, K, _MC>::storeVC(TransferFrameTC* packet) {
 	// Limit the amount of packets that can be stored at any given time
 	if (txUnprocessedPacketListBufferTC.full()) {
 		ccsdsLogNotice(Tx, TypeVirtualChannelAlert, TX_WAIT_QUEUE_FULL);
@@ -20,7 +20,8 @@ VirtualChannelAlert VirtualChannel<T, K>::storeVC(TransferFrameTC* packet) {
 // Technically not a packet, but it has identical information
 // @todo consider another data structure
 
-MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* packet) {
+template <uint16_t T, uint16_t K, uint16_t L>
+MasterChannelAlert MasterChannel<T, K, L>::storeOut(TransferFrameTC* packet) {
 	if (txOutFramesBeforeAllFramesGenerationListTC.full()) {
 		// Log that buffer is full
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, OUT_FRAMES_LIST_FULL);
@@ -33,7 +34,8 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* packet) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::storeOut(TransferFrameTM* packet) {
+template <uint16_t T, uint16_t K, uint16_t L>
+MasterChannelAlert MasterChannel<T, K, L>::storeOut(TransferFrameTM* packet) {
 	if (txOutFramesBeforeAllFramesGenerationListTM.full()) {
 		// Log that buffer is full
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, OUT_FRAMES_LIST_FULL);
@@ -44,7 +46,8 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTM* packet) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTC* packet) {
+template <uint16_t T, uint16_t K, uint16_t L>
+MasterChannelAlert MasterChannel<T, K, L>::storeTransmittedOut(TransferFrameTC* packet) {
 	if (txToBeTransmittedFramesAfterAllFramesGenerationListTC.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
@@ -54,7 +57,8 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTC* packet) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* packet) {
+template <uint16_t T, uint16_t K, uint16_t L>
+MasterChannelAlert MasterChannel<T, K, L>::storeTransmittedOut(TransferFrameTM* packet) {
 	if (txToBeTransmittedFramesAfterAllFramesGenerationListTM.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
@@ -64,7 +68,8 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* packet) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+template <uint16_t T, uint16_t K, uint16_t L>
+MasterChannelAlert MasterChannel<T, K, L>::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
@@ -77,7 +82,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel<mapchannellengthtemp, vclengthtemp>(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
+	virtualChannels.emplace(vcid, VirtualChannel<mapchannellengthtemp, vclengthtemp, MasterChannel>(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -85,7 +90,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+template <uint16_t T, uint16_t K, uint16_t L>
+MasterChannelAlert MasterChannel<T, K, L>::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
@@ -98,7 +104,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	}
 
 	virtualChannels.emplace(vcid,
-	                        VirtualChannel<mapchannellengthtemp, vclengthtemp>(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
+	                        VirtualChannel<mapchannellengthtemp, vclengthtemp, MasterChannel>(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
 	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
 	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -106,7 +112,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-void MasterChannel::removeMasterTx(TransferFrameTC* packet_ptr) {
+template <uint16_t T, uint16_t K, uint16_t L>
+void MasterChannel<T, K, L>::removeMasterTx(TransferFrameTC* packet_ptr) {
 	etl::list<TransferFrameTC, MaxTxInMasterChannel>::iterator it;
 	for (it = txMasterCopyTC.begin(); it != txMasterCopyTC.end(); ++it) {
 		if (&it == packet_ptr) {
@@ -116,7 +123,8 @@ void MasterChannel::removeMasterTx(TransferFrameTC* packet_ptr) {
 	}
 }
 
-void MasterChannel::removeMasterTx(TransferFrameTM* packet_ptr) {
+template <uint16_t T, uint16_t K, uint16_t L>
+void MasterChannel<T, K, L>::removeMasterTx(TransferFrameTM* packet_ptr) {
 	etl::list<TransferFrameTM, MaxTxInMasterChannel>::iterator it;
 	for (it = txMasterCopyTM.begin(); it != txMasterCopyTM.end(); ++it) {
 		if (&it == packet_ptr) {
@@ -126,7 +134,8 @@ void MasterChannel::removeMasterTx(TransferFrameTM* packet_ptr) {
 	}
 }
 
-void MasterChannel::removeMasterRx(TransferFrameTC* packet_ptr) {
+template <uint16_t T, uint16_t K, uint16_t L>
+void MasterChannel<T, K, L>::removeMasterRx(TransferFrameTC* packet_ptr) {
 	etl::list<TransferFrameTC, MaxRxInMasterChannel>::iterator it;
 	for (it = rxMasterCopyTC.begin(); it != rxMasterCopyTC.end(); ++it) {
 		if (&it == packet_ptr) {
@@ -136,7 +145,8 @@ void MasterChannel::removeMasterRx(TransferFrameTC* packet_ptr) {
 	}
 }
 
-void MasterChannel::removeMasterRx(TransferFrameTM* packet_ptr) {
+template <uint16_t T, uint16_t K, uint16_t L>
+void MasterChannel<T, K, L>::removeMasterRx(TransferFrameTM* packet_ptr) {
 	etl::list<TransferFrameTM, MaxRxInMasterChannel>::iterator it;
 	for (it = rxMasterCopyTM.begin(); it != rxMasterCopyTM.end(); ++it) {
 		if (&it == packet_ptr) {
@@ -145,7 +155,9 @@ void MasterChannel::removeMasterRx(TransferFrameTM* packet_ptr) {
 		}
 	}
 }
-void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
+
+template <uint16_t T, uint16_t K, uint16_t L>
+void MasterChannel<T, K, L>::acknowledgeFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC& transferFrame : txMasterCopyTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setAcknowledgement(true);
@@ -154,7 +166,8 @@ void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 	}
 }
 
-void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
+template <uint16_t T, uint16_t K, uint16_t L>
+void MasterChannel<T, K, L>::setRetransmitFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC transferFrame : txMasterCopyTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setToBeRetransmitted(true);
@@ -163,10 +176,12 @@ void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
 	}
 }
 
-TransferFrameTC MasterChannel::getLastTxMasterCopyTcFrame() {
+template <uint16_t T, uint16_t K, uint16_t L>
+TransferFrameTC MasterChannel<T, K, L>::getLastTxMasterCopyTcFrame() {
 	return txMasterCopyTC.back();
 }
 
-TransferFrameTC MasterChannel::geFirstTxMasterCopyTcFrame() {
+template <uint16_t T, uint16_t K, uint16_t L>
+TransferFrameTC MasterChannel<T, K, L>::geFirstTxMasterCopyTcFrame() {
 	return txMasterCopyTC.front();
 }

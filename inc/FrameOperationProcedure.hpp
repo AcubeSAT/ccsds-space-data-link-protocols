@@ -4,6 +4,7 @@
 #include <TransferFrameTC.hpp>
 #include <etl/list.h>
 #include <Alert.hpp>
+#include <CCSDSChannel.hpp>
 
 /**
  *@see p. 5.1.2 from COP-1 CCSDS
@@ -30,16 +31,21 @@ enum AlertEvent {
 	ALRT_LOCKOUT = 6,
 };
 
-template <uint16_t MAP_T, uint16_t VC_T>
+template <uint16_t MAP_T, uint16_t VC_T, class MC>
 class VirtualChannel;
 
 template <uint16_t MAP_T>
 class MAPChannel;
 
-template <uint16_t MAP_T, uint16_t VC_T>
+template <uint16_t MAP_T, uint16_t VC_T, uint16_t MC_T>
+class MasterChannelChannel;
+
+template <uint16_t MAP_T, uint16_t VC_T, class MC>
 class FrameOperationProcedure {
-	friend class ServiceChannel;
-    template <uint16_t, uint16_t, uint16_t> friend class MasterChannel;
+
+    template <uint16_t, uint16_t, uint16_t> friend class ServiceChannel;
+
+	template <uint16_t, uint16_t, uint16_t> friend class MasterChannel;
 
 public:
 	/**
@@ -64,7 +70,7 @@ public:
 	 */
 	etl::list<TransferFrameTC*, VC_T>* sentQueueFARM;
 
-	VirtualChannel<MAP_T, VC_T>* vchan;
+	VirtualChannel<MAP_T, VC_T, MC>* vchan;
 
 private:
 	/**
@@ -337,7 +343,7 @@ private:
 	void acknowledgePreviousFrames(uint8_t frameSequenceNumber);
 
 public:
-	FrameOperationProcedure(VirtualChannel<MAP_T, VC_T>* vchan, etl::list<TransferFrameTC*, VC_T>* waitQueue,
+	FrameOperationProcedure(VirtualChannel<MAP_T, VC_T, MC>* vchan, etl::list<TransferFrameTC*, VC_T>* waitQueue,
 	                        etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueue,
 	                        const uint8_t repetitionCopCtrl)
 	    : waitQueueFOP(waitQueue), sentQueueFOP(sentQueue), vchan(vchan), state(FOPState::INITIAL),

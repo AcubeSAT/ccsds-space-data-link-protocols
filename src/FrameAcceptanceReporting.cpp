@@ -1,8 +1,8 @@
 #include <FrameAcceptanceReporting.hpp>
 #include "CCSDSLogger.h"
 
-template <uint16_t MAP_T, uint16_t VC_T>
-COPDirectiveResponse FrameAcceptanceReporting<MAP_T, VC_T>::frameArrives() {
+template <uint16_t MAP_T, uint16_t VC_T, class _MC>
+COPDirectiveResponse FrameAcceptanceReporting<MAP_T, VC_T, _MC>::frameArrives() {
 	TransferFrameTC* frame = waitQueue->front();
 	waitQueue->pop_front();
 
@@ -90,8 +90,8 @@ COPDirectiveResponse FrameAcceptanceReporting<MAP_T, VC_T>::frameArrives() {
 	return COPDirectiveResponse::REJECT;
 }
 
-template <uint16_t MAP_T, uint16_t VC_T>
-COPDirectiveResponse FrameAcceptanceReporting<MAP_T, VC_T>::bufferRelease() {
+template <uint16_t MAP_T, uint16_t VC_T, class _MC>
+COPDirectiveResponse FrameAcceptanceReporting<MAP_T, VC_T, _MC>::bufferRelease() {
 	if (state == FARMState::LOCKOUT) {
 		state = FARMState::OPEN;
 		wait = FlagState::NOT_READY;

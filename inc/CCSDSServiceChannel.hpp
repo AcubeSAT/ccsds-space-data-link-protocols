@@ -14,13 +14,15 @@ enum SegmentLengthID { SegmentationMiddle = 0x0, SegmentationStart = 0x1, Segmen
  * bidirectional interface between the receiving and transmitting parties
  */
 
+template <uint16_t MAP_T, uint16_t VC_T, uint16_t MC_T>
 class ServiceChannel {
 private:
 	/**
 	 * The Master Channel essentially stores the configuration of your channel. It partitions the physical
 	 * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic
 	 */
-	AbstractMasterChannel masterChannel;
+    MasterChannel<MAP_T, VC_T, MC_T> masterChannel;
+
 	/**
 	 * PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame
 	 * length
@@ -398,7 +400,7 @@ public:
 			ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
 			return ServiceChannelNotification::INVALID_VC_ID;
 		}
-		const VirtualChannel<mapchannellengthtemp, vclengthtemp>& virtualChannel = masterChannel.virtualChannels.at(vid);
+		const VirtualChannel<mapchannellengthtemp, vclengthtemp, MasterChannel>& virtualChannel = masterChannel.virtualChannels.at(vid);
 		if (!virtualChannel.segmentHeaderPresent) {
 			return ServiceChannelNotification::INVALID_MAP_ID;
 		}
@@ -482,3 +484,5 @@ public:
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 };
+
+template class ServiceChannel<mapchannellengthtemp, vclengthtemp, mclengthtemp>;

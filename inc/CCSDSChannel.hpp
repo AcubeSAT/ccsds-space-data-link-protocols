@@ -18,8 +18,6 @@
 #include "MemoryPool.hpp"
 #include "CLCW.hpp"
 
-class AbstractMasterChannel {};
-
 template <uint16_t MAP_T, uint16_t VC_T, uint16_t MC_T>
 class MasterChannel;
 
@@ -109,7 +107,7 @@ public:
  */
 template <uint16_t T>
 class MAPChannel {
-	friend class ServiceChannel;
+    template <uint16_t, uint16_t, uint16_t> friend class ServiceChannel;
 
 private:
 	/**
@@ -162,13 +160,12 @@ protected:
 /**
  * @see Table 5-3 from TC SPACE DATA LINK PROTOCOL
  */
-template <uint16_t MAP_T, uint16_t VC_T>
+template <uint16_t MAP_T, uint16_t VC_T, class MC>
 class VirtualChannel {
-	friend class ServiceChannel;
 
-    friend class AbstractMasterChannel;
+    template <uint16_t, uint16_t, uint16_t> friend class ServiceChannel;
 
-    template <uint16_t, uint16_t> friend class FrameOperationProcedure;
+	template <uint16_t, uint16_t, class> friend class FrameOperationProcedure;
 
 	//@TODO: Those variables shouldn't be public
 public:
@@ -271,7 +268,7 @@ public:
 		return packetBufferTmTx.available();
 	}
 
-	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
+	VirtualChannel(std::reference_wrapper<MC> masterChannel, const uint8_t vcid,
 	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
 	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
 	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
@@ -288,13 +285,13 @@ public:
 	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
 	      currentlyProcessedCLCW(0), frameCountTM(0),
-	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
-	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
+	      fop(FrameOperationProcedure<MAP_T, VC_T, MC>(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
+	      farm(FrameAcceptanceReporting<MAP_T, VC_T, MC>(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
 	}
 
-	VirtualChannel(const VirtualChannel<MAP_T, VC_T>& v)
+	VirtualChannel(const VirtualChannel<MAP_T, VC_T, MC>& v)
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
 	      maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
 	      repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
@@ -321,9 +318,10 @@ public:
 	 */
 	VirtualChannelAlert add_map(const uint8_t mapid);
 
-    AbstractMasterChannel& master_channel() {
-		return masterChannel;
-	}
+    /**
+	 * The Master Channel the Virtual Channel belongs in
+	 */
+    std::reference_wrapper<MC> masterChannel;
 
 private:
 	/**
@@ -364,7 +362,7 @@ private:
 	/**
 	 * Holds the FOP state of the virtual channel
 	 */
-	FrameOperationProcedure<MAP_T, VC_T> fop;
+	FrameOperationProcedure<MAP_T, VC_T, MC> fop;
 
 	/**
 	 * Buffer holding the master copy of the CLCW that is currently being processed
@@ -374,12 +372,7 @@ private:
 	/**
 	 * Holds the FARM state of the virtual channel
 	 */
-	FrameAcceptanceReporting<MAP_T, VC_T> farm;
-
-	/**
-	 * The Master Channel the Virtual Channel belongs in
-	 */
-	std::reference_wrapper<AbstractMasterChannel> masterChannel;
+	FrameAcceptanceReporting<MAP_T, VC_T, MC> farm;
 
 	/**
 	 *  Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
@@ -393,17 +386,18 @@ private:
 };
 
 template <uint16_t MAP_T, uint16_t VC_T, uint16_t MC_T>
-struct MasterChannel : private AbstractMasterChannel {
-	friend class ServiceChannel;
+struct MasterChannel {
 
-    template <uint16_t, uint16_t> friend class FrameOperationProcedure;
-    template <uint16_t, uint16_t> friend class FrameAcceptanceReporting;
+    template <uint16_t, uint16_t, uint16_t> friend class ServiceChannel;
+
+    template <uint16_t, uint16_t, class> friend class FrameOperationProcedure;
+    template <uint16_t, uint16_t, class> friend class FrameAcceptanceReporting;
 
 	/**
 	 * Virtual channels of the master channel
 	 */
 	// TODO: Type aliases because this is getting out of hand
-	etl::flat_map<uint8_t, VirtualChannel<MAP_T, VC_T>> virtualChannels;
+	etl::flat_map<uint8_t, VirtualChannel<MAP_T, VC_T, MasterChannel>, MC_T> virtualChannels;
 	uint8_t frameCount{};
 
 	MasterChannel()
@@ -563,5 +557,7 @@ private:
 };
 
 template class MasterChannel<mapchannellengthtemp, vclengthtemp, mclengthtemp>;
-template class VirtualChannel<mapchannellengthtemp, vclengthtemp>;
+template class VirtualChannel<mapchannellengthtemp, vclengthtemp, MasterChannel<mapchannellengthtemp, vclengthtemp, mclengthtemp>>;
+template class FrameAcceptanceReporting<mapchannellengthtemp, vclengthtemp, MasterChannel<mapchannellengthtemp, vclengthtemp, mclengthtemp>>;
+
 #endif // CCSDS_CHANNEL_HPP
