@@ -31,9 +31,9 @@ TEST_CASE("Sending TM") {
 	etl::queue<uint16_t, PacketBufferTmSize> framesSent;
 	etl::queue<uint16_t, PacketBufferTmSize> framesSentLength;
 	uint8_t trailerLength = 6;
-	uint8_t maximumPacketLength = 45;
+	uint8_t maximumPacketLength = 50;
 	uint8_t maximumFrameLength = maximumPacketLength + 12;
-	uint8_t frame[maximumFrameLength];
+	uint8_t frame[TmTransferFrameSize];
 	uint8_t headerLength = 6;
 	uint8_t numberOfErrors = 0;
 	uint8_t tmplength = 0;
