@@ -46,7 +46,7 @@ TEST_CASE("Sending TM") {
 	for (uint8_t i = 0; i < maximumServiceCallsTx; i++) {
 		packetDestination[0] = 0;
 //		uint8_t frameLength = (rand() % maximumPacketLength);
-		uint8_t frameLength = maximumPacketLength;
+		uint8_t frameLength = rand() % maximumPacketLength;
 		for (uint16_t j = 0; j < frameLength; j++) {
 //			frame[j] = rand() % 256;
 			frame[j] = i;
@@ -55,11 +55,27 @@ TEST_CASE("Sending TM") {
 		if (virtualChannelPicker <= 50) {
 			uint8_t randomServicePicker = rand() % 4;
 			if (randomServicePicker == 0) {
+
+				printf("Push frame VC0 - length(%d): \n", frameLength);
+
+				for (uint16_t i = 0; i < frameLength; i++){
+					printf("%d ", frame[i]);
+				}
+				printf("\n");
+
 				serviceChannel.storePacketTm(frame, frameLength, 0);
 				packetsVC0Length.push(frameLength);
 				for (int j = 0; j < frameLength; j++) {
 					packetsVC0.push(frame[j]);
 				}
+                printf("Buffer0: ");
+                for (size_t i = 0; i < packetsVC0.size(); i++)
+                {
+                    printf("%d ", packetsVC0.front());
+                    packetsVC0.push(packetsVC0.front());
+                    packetsVC0.pop();
+                }
+                printf("\n");
 			} else if (randomServicePicker == 1) {
 				serviceChannel.vcGenerationService(60, 0);
 			} else if (randomServicePicker == 2) {
@@ -76,11 +92,24 @@ TEST_CASE("Sending TM") {
 		} else if (virtualChannelPicker > 50 && virtualChannelPicker < 60) {
 			uint8_t randomServicePicker = rand() % 4;
 			if (randomServicePicker == 0) {
+                printf("Push frame VC1 - length(%d): \n", frameLength);
+                for (uint16_t i = 0; i < frameLength; i++){
+                    printf("%d ", frame[i]);
+                }
+                printf("\n");
 				serviceChannel.storePacketTm(frame, frameLength, 1);
 				packetsVC1Length.push(frameLength);
 				for (int j = 0; j < frameLength; j++) {
 					packetsVC1.push(frame[j]);
 				}
+                printf("Buffer0: ");
+                for (size_t i = 0; i < packetsVC1.size(); i++)
+                {
+                    printf("%d ", packetsVC1.front());
+                    packetsVC1.push(packetsVC1.front());
+                    packetsVC1.pop();
+                }
+				printf("\n");
 			} else if (randomServicePicker == 1) {
 				serviceChannel.vcGenerationService(60, 1);
 			} else if (randomServicePicker == 2) {
@@ -97,12 +126,25 @@ TEST_CASE("Sending TM") {
 		} else {
 			uint8_t randomServicePicker = rand() % 4;
 			if (randomServicePicker == 0) {
+                printf("Push frame VC2 - length(%d): \n", frameLength);
+                for (uint16_t i = 0; i < frameLength; i++){
+                    printf("%d ", frame[i]);
+                }
+                printf("\n");
 				serviceChannel.storePacketTm(frame, frameLength, 2);
 				packetsVC2Length.push(frameLength);
 				for (int j = 0; j < frameLength; j++) {
 					packetsVC2.push(frame[j]);
 				}
-			} else if (randomServicePicker == 1) {
+                printf("Buffer2: ");
+                for (size_t i = 0; i < packetsVC2.size(); i++)
+                {
+                    printf("%d ", packetsVC2.front());
+                    packetsVC2.push(packetsVC2.front());
+                    packetsVC2.pop();
+                }
+                printf("\n");
+            } else if (randomServicePicker == 1) {
 				serviceChannel.vcGenerationService(60, 2);
 			} else if (randomServicePicker == 2) {
 				serviceChannel.mcGenerationTMRequest();
@@ -122,33 +164,48 @@ TEST_CASE("Sending TM") {
 				if (virtualChannelPicker2 <= 50) {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
-						tmplength = framesSentLength.front();
-						framesSentLength.pop();
-						for (uint16_t t = 0; t < tmplength; t++) {
-							tmpData[t] = framesSent.front();
-							framesSent.pop();
+                        if (!framesSentLength.empty()) {
+							tmplength = framesSentLength.front();
+							framesSentLength.pop();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = framesSent.front();
+								framesSent.pop();
+							}
 						}
 						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 					} else if (randomServicePicker2 == 1) {
 						ser = serviceChannel.packetExtractionTM(0, packetDestination2);
 						if (ser == ServiceChannelNotification::NO_SERVICE_EVENT) {
-							flag = true;
-							tmplength = packetsVC0Length.front();
-							packetsVC0Length.pop();
-							for (uint16_t t = 0; t < tmplength; t++) {
-								tmpData[t] = packetsVC0.front();
-								packetsVC0.pop();
+                            if (!framesSentLength.empty()) {
+								flag = true;
+								tmplength = packetsVC0Length.front();
+								packetsVC0Length.pop();
+								for (uint16_t t = 0; t < tmplength; t++) {
+									tmpData[t] = packetsVC0.front();
+									packetsVC0.pop();
+								}
 							}
+                            printf("Popping frame VC0 - length(%d): \n", frameLength);
+                            printf("Buffer0: ");
+                            for (size_t i = 0; i < packetsVC0.size(); i++)
+                            {
+                                printf("%d ", packetsVC0.front());
+                                packetsVC0.push(packetsVC0.front());
+                                packetsVC0.pop();
+                            }
+                            printf("\n");
 						}
 					}
 				} else if (virtualChannelPicker2 > 50 && virtualChannelPicker2 < 60) {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
-						tmplength = framesSentLength.front();
-						framesSentLength.pop();
-						for (uint16_t t = 0; t < tmplength; t++) {
-							tmpData[t] = framesSent.front();
-							framesSent.pop();
+                        if (!framesSentLength.empty()) {
+							tmplength = framesSentLength.front();
+							framesSentLength.pop();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = framesSent.front();
+								framesSent.pop();
+							}
 						}
 						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 
@@ -164,16 +221,27 @@ TEST_CASE("Sending TM") {
 									packetsVC1.pop();
 								}
 							}
+                            printf("Popping frame VC1 - length(%d): \n", frameLength);
+                            printf("Buffer1: ");
+                            for (size_t i = 0; i < packetsVC1.size(); i++)
+                            {
+                                printf("%d ", packetsVC1.front());
+                                packetsVC1.push(packetsVC1.front());
+                                packetsVC1.pop();
+                            }
+                            printf("\n");
 						}
 					}
 				} else {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
-						tmplength = framesSentLength.front();
-						framesSentLength.pop();
-						for (uint16_t t = 0; t < tmplength; t++) {
-							tmpData[t] = framesSent.front();
-							framesSent.pop();
+                        if (!framesSentLength.empty()) {
+							tmplength = framesSentLength.front();
+							framesSentLength.pop();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = framesSent.front();
+								framesSent.pop();
+							}
 						}
 						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 					} else if (randomServicePicker2 == 1) {
@@ -186,10 +254,22 @@ TEST_CASE("Sending TM") {
 								tmpData[t] = packetsVC2.front();
 								packetsVC2.pop();
 							}
+                            printf("Popping frame VC2 - length(%d): \n", frameLength);
+                            printf("Buffer2: ");
+                            for (size_t i = 0; i < packetsVC2.size(); i++)
+                            {
+                                printf("%d ", packetsVC2.front());
+                                packetsVC2.push(packetsVC2.front());
+                                packetsVC2.pop();
+                            }
+                            printf("\n");
 						}
 					}
 				}
 				if (flag) {
+                    printf("\n -------------------------------------\n");
+					printf("Packet temp: ");
+
 					for (uint8_t k = 0; k < tmplength; k++) {
 						printf("%d ", tmpData[k]);
 						printf("%d\n", packetDestination2[k]);
@@ -198,6 +278,16 @@ TEST_CASE("Sending TM") {
 							printf("FAILURE :");
 						}
 					}
+
+					printf("\n");
+                    printf("Packet dest: ");
+
+					for (uint8_t k = 0; k < tmplength; k++) {
+                        printf("%d ", packetDestination2[k]);
+                    }
+
+					printf("\n");
+
 					flag = false;
 				}
 			}
