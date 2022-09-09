@@ -40,15 +40,16 @@ TEST_CASE("Sending TM") {
 	ServiceChannelNotification ser;
 	ServiceChannelNotification ser2;
 	bool flag = false;
-	uint8_t maximumServiceCallsTx=50;
-	uint8_t maximumServiceCallsRx=10;
+	uint8_t maximumServiceCallsTx = 50;
+	uint8_t maximumServiceCallsRx = 10;
 
 	for (uint8_t i = 0; i < maximumServiceCallsTx; i++) {
 		packetDestination[0] = 0;
-		uint8_t frameLength = (rand() % maximumPacketLength);
-
+//		uint8_t frameLength = (rand() % maximumPacketLength);
+		uint8_t frameLength = maximumPacketLength;
 		for (uint16_t j = 0; j < frameLength; j++) {
-			frame[j] = rand() % 256;
+//			frame[j] = rand() % 256;
+			frame[j] = i;
 		}
 		uint8_t virtualChannelPicker = rand() % 100;
 		if (virtualChannelPicker <= 50) {
@@ -65,7 +66,7 @@ TEST_CASE("Sending TM") {
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
 				ser2 = serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
-				if (ser2==ServiceChannelNotification::NO_SERVICE_EVENT) {
+				if (ser2 == ServiceChannelNotification::NO_SERVICE_EVENT) {
 					framesSentLength.push(TmTransferFrameSize);
 					for (uint8_t j = 0; j < TmTransferFrameSize; j++) {
 						framesSent.push(packetDestination[j]);
@@ -85,8 +86,8 @@ TEST_CASE("Sending TM") {
 			} else if (randomServicePicker == 2) {
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
-				ser2=serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
-				if (ser2==ServiceChannelNotification::NO_SERVICE_EVENT) {
+				ser2 = serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
+				if (ser2 == ServiceChannelNotification::NO_SERVICE_EVENT) {
 					framesSentLength.push(TmTransferFrameSize);
 					for (uint8_t j = 0; j < TmTransferFrameSize; j++) {
 						framesSent.push(packetDestination[j]);
@@ -107,7 +108,7 @@ TEST_CASE("Sending TM") {
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
 				ser2 = serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
-				if (ser2==ServiceChannelNotification::NO_SERVICE_EVENT) {
+				if (ser2 == ServiceChannelNotification::NO_SERVICE_EVENT) {
 					framesSentLength.push(TmTransferFrameSize);
 					for (int j = 0; j < TmTransferFrameSize; j++) {
 						framesSent.push(packetDestination[j]);
@@ -115,47 +116,41 @@ TEST_CASE("Sending TM") {
 				}
 			}
 		}
-		if (ser2==ServiceChannelNotification::NO_SERVICE_EVENT) {
+		if (ser2 == ServiceChannelNotification::NO_SERVICE_EVENT) {
 			for (int l = 0; l < maximumServiceCallsRx; l++) {
 				uint8_t virtualChannelPicker2 = rand() % 100;
 				if (virtualChannelPicker2 <= 50) {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
-						if (!framesSentLength.empty()) {
-							tmplength = framesSentLength.front();
-							framesSentLength.pop();
-							for (uint16_t t = 0; t < tmplength; t++) {
-								tmpData[t] = framesSent.front();
-								framesSent.pop();
-							}
-							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
+						tmplength = framesSentLength.front();
+						framesSentLength.pop();
+						for (uint16_t t = 0; t < tmplength; t++) {
+							tmpData[t] = framesSent.front();
+							framesSent.pop();
 						}
+						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 					} else if (randomServicePicker2 == 1) {
 						ser = serviceChannel.packetExtractionTM(0, packetDestination2);
 						if (ser == ServiceChannelNotification::NO_SERVICE_EVENT) {
-							if (!packetsVC0Length.empty()) {
-								flag = true;
-								tmplength = packetsVC0Length.front();
-								packetsVC0Length.pop();
-								for (uint16_t t = 0; t < tmplength; t++) {
-									tmpData[t] = packetsVC0.front();
-									packetsVC0.pop();
-								}
+							flag = true;
+							tmplength = packetsVC0Length.front();
+							packetsVC0Length.pop();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = packetsVC0.front();
+								packetsVC0.pop();
 							}
 						}
 					}
 				} else if (virtualChannelPicker2 > 50 && virtualChannelPicker2 < 60) {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
-						if (!framesSentLength.empty()) {
-							tmplength = framesSentLength.front();
-							framesSentLength.pop();
-							for (uint16_t t = 0; t < tmplength; t++) {
-								tmpData[t] = framesSent.front();
-								framesSent.pop();
-							}
-							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
+						tmplength = framesSentLength.front();
+						framesSentLength.pop();
+						for (uint16_t t = 0; t < tmplength; t++) {
+							tmpData[t] = framesSent.front();
+							framesSent.pop();
 						}
+						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 
 					} else if (randomServicePicker2 == 1) {
 						ser = serviceChannel.packetExtractionTM(1, packetDestination2);
@@ -174,34 +169,30 @@ TEST_CASE("Sending TM") {
 				} else {
 					uint8_t randomServicePicker2 = rand() % 2;
 					if (randomServicePicker2 == 0) {
-						if (!framesSentLength.empty()) {
-							tmplength = framesSentLength.front();
-							framesSentLength.pop();
-							for (uint16_t t = 0; t < tmplength; t++) {
-								tmpData[t] = framesSent.front();
-								framesSent.pop();
-							}
-							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
+						tmplength = framesSentLength.front();
+						framesSentLength.pop();
+						for (uint16_t t = 0; t < tmplength; t++) {
+							tmpData[t] = framesSent.front();
+							framesSent.pop();
 						}
+						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 					} else if (randomServicePicker2 == 1) {
 						ser = serviceChannel.packetExtractionTM(2, packetDestination2);
 						if (ser == ServiceChannelNotification::NO_SERVICE_EVENT) {
-							if (!packetsVC2Length.empty()) {
-								flag = true;
-								tmplength = packetsVC2Length.front();
-								packetsVC2Length.pop();
-								for (uint16_t t = 0; t < tmplength; t++) {
-									tmpData[t] = packetsVC2.front();
-									packetsVC2.pop();
-								}
+							flag = true;
+							tmplength = packetsVC2Length.front();
+							packetsVC2Length.pop();
+							for (uint16_t t = 0; t < tmplength; t++) {
+								tmpData[t] = packetsVC2.front();
+								packetsVC2.pop();
 							}
 						}
 					}
 				}
 				if (flag) {
 					for (uint8_t k = 0; k < tmplength; k++) {
-                        printf("%d ",tmpData[k]);
-                        printf("%d\n",packetDestination2[k]);
+						printf("%d ", tmpData[k]);
+						printf("%d\n", packetDestination2[k]);
 						if (tmpData[k] != packetDestination2[k]) {
 							numberOfErrors++;
 							printf("FAILURE :");
@@ -210,7 +201,7 @@ TEST_CASE("Sending TM") {
 					flag = false;
 				}
 			}
- 		}
+		}
 		ser = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 		ser2 = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	}
