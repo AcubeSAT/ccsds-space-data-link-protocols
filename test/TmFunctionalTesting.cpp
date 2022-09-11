@@ -31,7 +31,7 @@ TEST_CASE("Sending TM") {
 	etl::queue<uint16_t, PacketBufferTmSize> framesSent;
 	etl::queue<uint16_t, PacketBufferTmSize> framesSentLength;
 	uint8_t trailerLength = 6;
-	uint8_t maximumPacketLength = 50;
+	uint8_t maximumPacketLength = 20;
 	uint8_t maximumFrameLength = maximumPacketLength + 12;
 	uint8_t frame[TmTransferFrameSize];
 	uint8_t headerLength = 6;
@@ -41,12 +41,12 @@ TEST_CASE("Sending TM") {
 	ServiceChannelNotification ser2;
 	bool flag = false;
 	uint8_t maximumServiceCallsTx = 50;
-	uint8_t maximumServiceCallsRx = 10;
+	uint8_t maximumServiceCallsRx = 20;
+	uint8_t frameLength = maximumPacketLength;
 
 	for (uint8_t i = 0; i < maximumServiceCallsTx; i++) {
 		packetDestination[0] = 0;
 //		uint8_t frameLength = (rand() % maximumPacketLength);
-		uint8_t frameLength = rand() % maximumPacketLength;
 		for (uint16_t j = 0; j < frameLength; j++) {
 //			frame[j] = rand() % 256;
 			frame[j] = i;
@@ -77,15 +77,20 @@ TEST_CASE("Sending TM") {
                 }
                 printf("\n");
 			} else if (randomServicePicker == 1) {
-				serviceChannel.vcGenerationService(60, 0);
+				serviceChannel.vcGenerationService(20, 0);
 			} else if (randomServicePicker == 2) {
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
 				ser2 = serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
+
 				if (ser2 == ServiceChannelNotification::NO_SERVICE_EVENT) {
 					framesSentLength.push(TmTransferFrameSize);
 					for (uint8_t j = 0; j < TmTransferFrameSize; j++) {
 						framesSent.push(packetDestination[j]);
+					}
+					printf("Sent Frame(%d): \n", TmTransferFrameSize);
+					for (uint16_t i = 0; i < TmTransferFrameSize; i++){
+						printf("%d ", packetDestination[i]);
 					}
 				}
 			}
@@ -102,7 +107,7 @@ TEST_CASE("Sending TM") {
 				for (int j = 0; j < frameLength; j++) {
 					packetsVC1.push(frame[j]);
 				}
-                printf("Buffer0: ");
+                printf("Buffer1: ");
                 for (size_t i = 0; i < packetsVC1.size(); i++)
                 {
                     printf("%d ", packetsVC1.front());
@@ -111,7 +116,7 @@ TEST_CASE("Sending TM") {
                 }
 				printf("\n");
 			} else if (randomServicePicker == 1) {
-				serviceChannel.vcGenerationService(60, 1);
+				serviceChannel.vcGenerationService(20, 1);
 			} else if (randomServicePicker == 2) {
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
@@ -120,6 +125,10 @@ TEST_CASE("Sending TM") {
 					framesSentLength.push(TmTransferFrameSize);
 					for (uint8_t j = 0; j < TmTransferFrameSize; j++) {
 						framesSent.push(packetDestination[j]);
+					}
+					printf("Sent Frame(%d): \n", TmTransferFrameSize);
+					for (uint16_t i = 0; i < TmTransferFrameSize; i++){
+						printf("%d ", packetDestination[i]);
 					}
 				}
 			}
@@ -145,15 +154,20 @@ TEST_CASE("Sending TM") {
                 }
                 printf("\n");
             } else if (randomServicePicker == 1) {
-				serviceChannel.vcGenerationService(60, 2);
+				serviceChannel.vcGenerationService(20, 2);
 			} else if (randomServicePicker == 2) {
 				serviceChannel.mcGenerationTMRequest();
 			} else if (randomServicePicker == 3) {
 				ser2 = serviceChannel.allFramesGenerationTMRequest(packetDestination, TmTransferFrameSize);
+
 				if (ser2 == ServiceChannelNotification::NO_SERVICE_EVENT) {
 					framesSentLength.push(TmTransferFrameSize);
 					for (int j = 0; j < TmTransferFrameSize; j++) {
 						framesSent.push(packetDestination[j]);
+					}
+					printf("Sent Frame(%d): \n", TmTransferFrameSize);
+					for (uint16_t i = 0; i < TmTransferFrameSize; i++){
+						printf("%d ", packetDestination[i]);
 					}
 				}
 			}
@@ -171,8 +185,14 @@ TEST_CASE("Sending TM") {
 								tmpData[t] = framesSent.front();
 								framesSent.pop();
 							}
+							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 						}
-						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
+						printf("Frame received: ");
+						for (size_t i = 0; i < TmTransferFrameSize; i++)
+						{
+							printf("%d ", tmpData[i]);
+						}
+						printf("\n");
 					} else if (randomServicePicker2 == 1) {
 						ser = serviceChannel.packetExtractionTM(0, packetDestination2);
 						if (ser == ServiceChannelNotification::NO_SERVICE_EVENT) {
@@ -206,9 +226,15 @@ TEST_CASE("Sending TM") {
 								tmpData[t] = framesSent.front();
 								framesSent.pop();
 							}
-						}
-						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
+							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 
+						}
+						printf("Frame received: ");
+						for (size_t i = 0; i < TmTransferFrameSize; i++)
+						{
+							printf("%d ", tmpData[i]);
+						}
+						printf("\n");
 					} else if (randomServicePicker2 == 1) {
 						ser = serviceChannel.packetExtractionTM(1, packetDestination2);
 						if (ser == ServiceChannelNotification::NO_SERVICE_EVENT) {
@@ -242,8 +268,14 @@ TEST_CASE("Sending TM") {
 								tmpData[t] = framesSent.front();
 								framesSent.pop();
 							}
+							serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
 						}
-						serviceChannel.allFramesReceptionTMRequest(tmpData, TmTransferFrameSize);
+						printf("Frame received: ");
+						for (size_t i = 0; i < TmTransferFrameSize; i++)
+						{
+							printf("%d ", tmpData[i]);
+						}
+						printf("\n");
 					} else if (randomServicePicker2 == 1) {
 						ser = serviceChannel.packetExtractionTM(2, packetDestination2);
 						if (ser == ServiceChannelNotification::NO_SERVICE_EVENT) {
@@ -290,9 +322,9 @@ TEST_CASE("Sending TM") {
 
 					flag = false;
 				}
+				ser = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 			}
 		}
-		ser = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 		ser2 = ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	}
 	CHECK(numberOfErrors == 0);
