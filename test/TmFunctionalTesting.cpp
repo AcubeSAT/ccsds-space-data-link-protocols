@@ -98,19 +98,29 @@ ServiceChannelNotification randomServiceCallRx(bool* flag, uint8_t* sentPacket, 
 }
 
 TEST_CASE("TM Tx and Rx Testing") {
-	PhysicalChannel physicalChannel = PhysicalChannel(1024, true, 12, 1024, 220000, 20);
+	PhysicalChannel physicalChannel = PhysicalChannel(1024, true,
+	                                                  12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels = {};
 
 	MasterChannel masterChannel = MasterChannel();
 
-	masterChannel.addVC(0, 128, true, 3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 20, 20,
+	masterChannel.addVC(0, 128, true, 3, 2,
+	                    true, false, 0,
+	                    true, SynchronizationFlag::FORWARD_ORDERED,
+	                    255, 20, 20,
 	                    10);
 
-	masterChannel.addVC(1, 128, false, 3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 20, 20,
+	masterChannel.addVC(1, 128, false, 3, 2,
+	                    true, false, 0,
+	                    true, SynchronizationFlag::FORWARD_ORDERED,
+	                    255, 20, 20,
 	                    10);
 
-	masterChannel.addVC(2, 128, false, 3, 2, true, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 3, 3, 10);
+	masterChannel.addVC(2, 128, false, 3, 2,
+	                    true, false, 0,
+	                    true, SynchronizationFlag::FORWARD_ORDERED,
+	                    255, 3, 3, 10);
 
 	ServiceChannel serviceChannel = ServiceChannel(masterChannel, physicalChannel);
 	uint8_t sentFrame[TmTransferFrameSize] = {0};
@@ -145,29 +155,41 @@ TEST_CASE("TM Tx and Rx Testing") {
 		}
 		virtualChannelPicker = rand() % probabilityMaximumNumber;
 		if (virtualChannelPicker <= VC1UpperBoundProbability) {
-			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC0,
-			                                          &packetsVC0Length, &framesSent, &framesSentLength, sentFrame, 0);
+			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel,
+			                                          &packetsVC0,&packetsVC0Length,
+			                                          &framesSent,&framesSentLength,
+			                                          sentFrame, 0);
 		} else if (virtualChannelPicker > VC2LowerBoundProbability && virtualChannelPicker < VC2UpperBoundProbability) {
-			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC1,
-			                                          &packetsVC1Length, &framesSent, &framesSentLength, sentFrame, 1);
+			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel,
+			                                          &packetsVC1,&packetsVC1Length,
+			                                          &framesSent, &framesSentLength,
+			                                          sentFrame, 1);
 		} else {
-			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC2,
-			                                          &packetsVC2Length, &framesSent, &framesSentLength, sentFrame, 2);
+			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel,
+			                                          &packetsVC2,&packetsVC2Length,
+			                                          &framesSent,&framesSentLength,
+			                                          sentFrame, 2);
 		}
 
 		if (serviceNotification == ServiceChannelNotification::NO_SERVICE_EVENT) {
 			for (uint16_t l = 0; l < maximumServiceCallsRx; l++) {
 				uint8_t virtualChannelPicker2 = rand() % probabilityMaximumNumber;
 				if (virtualChannelPicker2 <= VC1UpperBoundProbability) {
-					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC0,
-					                    &packetsVC0Length, &framesSent, &framesSentLength, receivedPacket, 0);
+					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength,
+					                    &serviceChannel, &packetsVC0,
+					                    &packetsVC0Length, &framesSent,
+					                    &framesSentLength, receivedPacket, 0);
 				} else if (virtualChannelPicker2 > VC2LowerBoundProbability &&
 				           virtualChannelPicker2 < VC2UpperBoundProbability) {
-					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC1,
-					                    &packetsVC1Length, &framesSent, &framesSentLength, receivedPacket, 1);
+					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength,
+					                    &serviceChannel, &packetsVC1,
+					                    &packetsVC1Length, &framesSent,
+					                    &framesSentLength, receivedPacket, 1);
 				} else {
-					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC2,
-					                    &packetsVC2Length, &framesSent, &framesSentLength, receivedPacket, 2);
+					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength,
+					                    &serviceChannel, &packetsVC2,
+					                    &packetsVC2Length, &framesSent,
+					                    &framesSentLength, receivedPacket, 2);
 				}
 				if (extractedPacket) {
 					printf("\n -------------------------------------\n");
