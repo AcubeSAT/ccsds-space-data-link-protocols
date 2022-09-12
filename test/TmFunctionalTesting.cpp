@@ -85,7 +85,7 @@ ServiceChannelNotification randomServiceCallRx(bool* flag, uint8_t* sentPacket, 
 					packetsVC->pop();
 				}
 			}
-			printf("Popping frame VC%d - length(%d): \n",vid, *sentPacketLength);
+			printf("Popping frame VC%d - length(%d): \n", vid, *sentPacketLength);
 			printf("Buffer%d: ", vid);
 			for (size_t i = 0; i < packetsVC->size(); i++) {
 				printf("%d ", packetsVC->front());
@@ -134,10 +134,10 @@ TEST_CASE("TM Tx and Rx Testing") {
 	uint16_t maximumServiceCallsRx = 50;
 	uint16_t frameLength = maximumPacketLength;
 	uint8_t virtualChannelPicker;
-	uint8_t VC1UpperBoundProbability =50;
-	uint8_t VC2UpperBoundProbability =60;
-	uint8_t VC2LowerBoundProbability=50;
-	uint8_t probabilityMaximumNumber=100;
+	uint8_t VC1UpperBoundProbability = 50;
+	uint8_t VC2UpperBoundProbability = 60;
+	uint8_t VC2LowerBoundProbability = 50;
+	uint8_t probabilityMaximumNumber = 100;
 
 	for (uint16_t i = 0; i < maximumServiceCallsTx; i++) {
 		for (uint16_t j = 0; j < frameLength; j++) {
@@ -145,28 +145,29 @@ TEST_CASE("TM Tx and Rx Testing") {
 		}
 		virtualChannelPicker = rand() % probabilityMaximumNumber;
 		if (virtualChannelPicker <= VC1UpperBoundProbability) {
-			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC0, &packetsVC0Length, &framesSent,
-			                           &framesSentLength, sentFrame, 0);
+			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC0,
+			                                          &packetsVC0Length, &framesSent, &framesSentLength, sentFrame, 0);
 		} else if (virtualChannelPicker > VC2LowerBoundProbability && virtualChannelPicker < VC2UpperBoundProbability) {
-			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC1, &packetsVC1Length, &framesSent,
-			                           &framesSentLength, sentFrame, 1);
+			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC1,
+			                                          &packetsVC1Length, &framesSent, &framesSentLength, sentFrame, 1);
 		} else {
-			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC2, &packetsVC2Length, &framesSent,
-			                           &framesSentLength, sentFrame, 2);
+			serviceNotification = randomServiceCallTx(frameLength, frame, &serviceChannel, &packetsVC2,
+			                                          &packetsVC2Length, &framesSent, &framesSentLength, sentFrame, 2);
 		}
 
 		if (serviceNotification == ServiceChannelNotification::NO_SERVICE_EVENT) {
 			for (uint16_t l = 0; l < maximumServiceCallsRx; l++) {
 				uint8_t virtualChannelPicker2 = rand() % probabilityMaximumNumber;
 				if (virtualChannelPicker2 <= VC1UpperBoundProbability) {
-					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC0, &packetsVC0Length,
-					                    &framesSent, &framesSentLength, receivedPacket, 0);
-				} else if (virtualChannelPicker2 > VC2LowerBoundProbability && virtualChannelPicker2 < VC2UpperBoundProbability) {
-					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC1, &packetsVC1Length,
-					                    &framesSent, &framesSentLength, receivedPacket, 1);
+					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC0,
+					                    &packetsVC0Length, &framesSent, &framesSentLength, receivedPacket, 0);
+				} else if (virtualChannelPicker2 > VC2LowerBoundProbability &&
+				           virtualChannelPicker2 < VC2UpperBoundProbability) {
+					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC1,
+					                    &packetsVC1Length, &framesSent, &framesSentLength, receivedPacket, 1);
 				} else {
-					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC2, &packetsVC2Length,
-					                    &framesSent, &framesSentLength, receivedPacket, 2);
+					randomServiceCallRx(&extractedPacket, sentPacket, &sentPacketLength, &serviceChannel, &packetsVC2,
+					                    &packetsVC2Length, &framesSent, &framesSentLength, receivedPacket, 2);
 				}
 				if (extractedPacket) {
 					printf("\n -------------------------------------\n");
