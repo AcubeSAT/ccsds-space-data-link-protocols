@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Specify the directories for #includes
 include_directories("${PROJECT_SOURCE_DIR}/inc" "${PROJECT_SOURCE_DIR}/lib/etl/include")
 
+add_compile_options(-Wvla)
+
 add_custom_target(check
         COMMAND ./cppcheck.sh
         COMMAND ./vera.sh
