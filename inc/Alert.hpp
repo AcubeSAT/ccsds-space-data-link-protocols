@@ -28,9 +28,9 @@ enum ServiceChannelNotification : int {
 	NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM = 0x19,
 	RX_INVALID_CRC = 0x1A,
 	INVALID_SERVICE_CALL = 0x1B,
-    PACKET_BUFFER_EMPTY = 0x1C,
-    NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D,
-    MC_RX_INVALID_COUNT = 0x1E,
+	PACKET_BUFFER_EMPTY = 0x1C,
+	NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D,
+	MC_RX_INVALID_COUNT = 0x1E,
 };
 
 enum SynchronizationFlag : bool { OCTET = 0, FORWARD_ORDERED = 1 };
@@ -73,4 +73,3 @@ enum NotificationType : uint8_t {
 	TypeFDURequestType = 0x05
 
 };
-
