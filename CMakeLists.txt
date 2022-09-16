@@ -27,6 +27,7 @@ add_library(common OBJECT
         src/logOperators.cpp
         src/MemoryPool.cpp
         src/CLCW.cpp
+        src/ChannelPool.cpp
         )
 
 # Specify the .cpp files for the executables
