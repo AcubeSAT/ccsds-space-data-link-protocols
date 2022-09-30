@@ -1,0 +1,26 @@
+#pragma once
+
+#include "CCSDSChannel.hpp"
+#include "TransferFrameTM.hpp"
+#include <arpa/inet.h>
+#include "iomanip"
+#include "iostream"
+#include "netinet/in.h"
+#include "sys/socket.h"
+#include "unistd.h"
+#include "Logger.hpp"
+
+class FrameSender{
+private:
+	const uint16_t port = 10014;
+	sockaddr_in destination;
+	int socket;
+
+public:
+	FrameSender();
+	~FrameSender();
+
+	void sendFrameToYamcs(TransferFrameTM& frame);
+
+
+};

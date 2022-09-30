@@ -5,7 +5,7 @@ project(ccsds_tm_packets)
 set(CMAKE_CXX_STANDARD 17)
 
 # Specify the directories for #includes
-include_directories("${PROJECT_SOURCE_DIR}/inc" "${PROJECT_SOURCE_DIR}/lib/etl/include")
+include_directories("${PROJECT_SOURCE_DIR}/inc" "${PROJECT_SOURCE_DIR}/lib/etl/include" "${PROJECT_SOURCE_DIR}/inc/Platform/x86")
 
 add_custom_target(check
         COMMAND ./cppcheck.sh
@@ -17,7 +17,7 @@ add_custom_target(check
 # Specify the .cpp files common across all targets
 add_library(common OBJECT
         src/Logger.cpp
-        src/Platform/x86/Logger.cpp
+        #src/Platform/x86/Logger.cpp
         src/CCSDSServiceChannel.cpp
         src/CCSDSChannel.cpp
         src/FrameOperationProcedure.cpp
@@ -25,14 +25,15 @@ add_library(common OBJECT
         src/logOperators.cpp
         src/MemoryPool.cpp
         src/CLCW.cpp
+        src/Platform/x86
         )
 
 # Specify the .cpp files for the executables
 file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
 add_executable(ccsds_tm_packets
-        src/main.cpp
+        #src/main.cpp
         $<TARGET_OBJECTS:common>
-        #        ${x86_main_SRC}
+                ${x86_main_SRC}
         )
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")

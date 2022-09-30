@@ -1,7 +1,6 @@
 #include <Logger.hpp>
 #include <etl/String.hpp>
 #include <iostream>
-
 #include <chrono>
 #include <iomanip>
 
