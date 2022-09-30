@@ -244,7 +244,7 @@ struct TransferFrameTM : public TransferFrame {
 			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
-		for (uint16_t i = 0; i < TmTransferFrameSize - len - 2; i++) {
+		for (uint16_t i = 0; i < TmTransferFrameSize - len - 4*operationalControlFieldExists() - 2; i++) {
 			crc = crc_16_ccitt_table[(idle_data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
