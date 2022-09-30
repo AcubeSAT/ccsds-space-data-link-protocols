@@ -606,7 +606,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	memcpy(packet_data + frameSize - trailerSize, idle_data, idleDataSize);
 
 	// Append trailer
-	memcpy(packet_data + TmTransferFrameSize - trailerSize, packet->packetData() + packet_length - trailerSize + 1,
+	memcpy(packet_data + TmTransferFrameSize - trailerSize, packet->packetData() + packet_length - trailerSize,
 	       trailerSize);
 
 	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
@@ -924,15 +924,16 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 	}
 	uint8_t* transferFrameData = masterChannel.masterChannelPool.allocatePacket(
 	    tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
-	vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
-	SegmentLengthID segmentLengthId = NoSegmentation;
-	TransferFrameTM transferFrameTm =
-	    TransferFrameTM(transferFrameData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,
-	                    vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.segmentHeaderPresent,
-	                    segmentLengthId, vchan.synchronization, TM);
-
-	masterChannel.txMasterCopyTM.push_back(transferFrameTm);
-	masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
+	if (transferFrameData != NULL) {
+		vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
+		SegmentLengthID segmentLengthId = NoSegmentation;
+		TransferFrameTM transferFrameTm =
+		    TransferFrameTM(transferFrameData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,
+		                    vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.segmentHeaderPresent,
+		                    segmentLengthId, vchan.synchronization, TM);
+		masterChannel.txMasterCopyTM.push_back(transferFrameTm);
+		masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
+	}
 	return NO_SERVICE_EVENT;
 }
 
