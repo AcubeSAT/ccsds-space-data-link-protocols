@@ -66,6 +66,11 @@ public:
 	}
 
 	/**
+	 * Empty default constructor
+	 */
+	PhysicalChannel() : maxFrameLength(0), errorControlFieldPresent(false), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0){}
+
+	/**
 	 * Determines whether Error Control field is present
 	 */
 	bool getErrorControlFieldPresent() const {
@@ -472,7 +477,7 @@ struct MasterChannel {
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
 	                         const uint8_t vcRepetitions, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
-	/**
+	/**g
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
