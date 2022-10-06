@@ -477,7 +477,7 @@ struct MasterChannel {
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
 	                         const uint8_t vcRepetitions, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
-	/**g
+	/**
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
