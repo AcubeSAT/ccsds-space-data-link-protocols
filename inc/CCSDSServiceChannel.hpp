@@ -481,4 +481,6 @@ public:
 	// This is honestly a bit confusing
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
+	//Default constructor
+	ServiceChannel() : masterChannel(), physicalChannel(){};
 };

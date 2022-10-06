@@ -66,6 +66,11 @@ public:
 	}
 
 	/**
+	 * Empty default constructor
+	 */
+	PhysicalChannel() : maxFrameLength(0), errorControlFieldPresent(false), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0){}
+
+	/**
 	 * Determines whether Error Control field is present
 	 */
 	bool getErrorControlFieldPresent() const {
