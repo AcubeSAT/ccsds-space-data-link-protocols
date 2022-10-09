@@ -142,18 +142,7 @@ public:
 	 * Returns the first frame in the masterCopyTcTx buffer
 	 */
 	TransferFrameTC getFirstMasterCopyTcFrame();
-
-#if maxReceivedUnprocessedTcInVirtBuffer > 0
-
-	/**
-	 *  Requests to process the last packet stored in the buffer of the specific virtual channel
-	 * (possible more if blocking is enabled). The packets are segmented or blocked together
-	 * and then stored in the buffer of the virtual channel
-	 */
-	ServiceChannelNotif vcpp_request(uint8_t vid);
-
-#endif
-
+	
 	/**
 	 * The Master Channel Generation Service shall be used to insert Transfer Frame
 	 * Secondary Header and/or Operational Control Field service data units into Transfer Frames

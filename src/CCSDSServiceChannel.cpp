@@ -907,16 +907,22 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 
 	uint16_t currentTransferFrameDataLength = 0;
 	static uint8_t tmpData[TmTransferFrameSize] = {0};
+
 	while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
-	       !vchan.packetLengthBufferTmTx.empty()) {
-		for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
-			tmpData[i + TmPrimaryHeaderSize] = vchan.packetBufferTmTx.front();
-			vchan.packetBufferTmTx.pop();
+           !vchan.packetLengthBufferTmTx.empty()) {
+        for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
+            tmpData[i + TmPrimaryHeaderSize] = vchan.packetBufferTmTx.front();
+            vchan.packetBufferTmTx.pop();
+        }
+        currentTransferFrameDataLength += packetLength;
+        vchan.packetLengthBufferTmTx.pop();
+        packetLength = vchan.packetLengthBufferTmTx.front();
+		// If blocking is disabled, stop the operation on the first packet
+		if (!vchan.blockingTC){
+			break;
 		}
-		currentTransferFrameDataLength += packetLength;
-		vchan.packetLengthBufferTmTx.pop();
-		packetLength = vchan.packetLengthBufferTmTx.front();
-	}
+    }
+
 	for (uint8_t i = 0; i < TmTrailerSize; i++) {
 		if (currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
 			tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
