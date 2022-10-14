@@ -13,14 +13,14 @@
 class FrameSender{
 private:
 	const uint16_t port = 10014;
-	sockaddr_in destination;
+	struct sockaddr_in destination;
 	int socket;
 
 public:
 	FrameSender();
 	~FrameSender();
 
-	void sendFrameToYamcs(TransferFrameTM& frame);
+	void sendFrameToYamcs(const TransferFrameTM& frame);
 
 
 };

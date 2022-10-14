@@ -31,6 +31,12 @@ int main(){
 	err = serv_channel.vcGenerationService(maxTransferFrameData, 0);
 
 	const TransferFrameTM* transferFrame = serv_channel.packetMasterChannel();
+
 	FrameSender frameSender = FrameSender();
-	frameSender.sendFrameToYamcs((TransferFrameTM&)transferFrame);
+
+	const TransferFrameTM& transferFramep = *transferFrame;
+	for(uint8_t i = 0; i < 4 ; i++) {
+		frameSender.sendFrameToYamcs(transferFramep);
+		sleep(2);
+	}
 }
