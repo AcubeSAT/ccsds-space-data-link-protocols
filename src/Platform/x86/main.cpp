@@ -19,24 +19,20 @@ int main(){
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 	ServiceChannelNotification err;
 
-	uint8_t packet1[] = {1, 54, 32, 49, 12, 23};
-	uint8_t packet2[] = {47, 31, 65, 81, 25, 44, 76, 99, 13};
-	uint8_t packet3[] = {41, 91, 68, 10};
-	uint8_t vid = 0 & 0x3F;
+	uint8_t packet[] = {0, 0, 0, 0, 0xd, 0x92, 0xb7, 17, 2, 0x0, 0x0, 0xa, 0xd, 17, 0x2, 0x38,0x0};
 
-	serv_channel.storePacketTm(packet1, 6, 0);
-	serv_channel.storePacketTm(packet2, 9, 0);
-	serv_channel.storePacketTm(packet3, 4, 0);
-	uint16_t maxTransferFrameData = 15;
-	err = serv_channel.vcGenerationService(maxTransferFrameData, 0);
+	serv_channel.storePacketTm(packet, 17, 0);
+	uint16_t maxTransferFrameData = 20;
+	serv_channel.vcGenerationService(maxTransferFrameData, 0);
 
 	const TransferFrameTM* transferFrame = serv_channel.packetMasterChannel();
 
 	FrameSender frameSender = FrameSender();
 
-	const TransferFrameTM& transferFramep = *transferFrame;
-	for(uint8_t i = 0; i < 4 ; i++) {
-		frameSender.sendFrameToYamcs(transferFramep);
+	TransferFrameTM transferFrameTm = TransferFrameTM(packet, 17, 0,0, false, false, 0, FORWARD_ORDERED, TM);
+
+	for(uint8_t i = 0; i < 6 ; i++) {
+		frameSender.sendFrameToYamcs(transferFrameTm);
 		sleep(2);
 	}
 }

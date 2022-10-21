@@ -28,13 +28,13 @@ FrameSender::FrameSender() {
 		//LOG_DEBUG <<"Listening";
 	}
 	//TCP Socket Accept
-	int clientSocket = accept(socket,(sockaddr*)&destination, (socklen_t*)&destination);
+	clientSocket = accept(socket,(sockaddr*)&destination, (socklen_t*)&destination);
 	if (clientSocket<0){
 		printf("\nTCP socket acceptance failed\n");
 	}
 	else{
 		printf("\nAccepted\n");
-		sleep(20);
+		sleep(5);
 		//LOG_DEBUG <<"Accepted";
 	}
 
@@ -46,6 +46,7 @@ FrameSender::~FrameSender() {
 
 void FrameSender::sendFrameToYamcs(const TransferFrameTM& frame) {
 	String<TmTransferFrameSize> createdFrame(frame.packetData(), TmTransferFrameSize);
-	auto bytesSent = ::send(socket, createdFrame.c_str(), createdFrame.length(), MSG_NOSIGNAL);
-	LOG_DEBUG << bytesSent << " bytes sent";
+	auto bytesSent = ::send(clientSocket, createdFrame.c_str(), createdFrame.length(), MSG_NOSIGNAL);
+
+		LOG_DEBUG << bytesSent << " bytes sent";
 }

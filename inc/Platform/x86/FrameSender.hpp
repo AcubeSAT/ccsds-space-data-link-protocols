@@ -15,6 +15,7 @@ private:
 	const uint16_t port = 10014;
 	struct sockaddr_in destination;
 	int socket;
+	int clientSocket;
 
 public:
 	FrameSender();
