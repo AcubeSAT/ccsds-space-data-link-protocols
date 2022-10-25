@@ -172,7 +172,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
 	const uint16_t maxFrameLength = virtualChannel->maxFrameLengthTC;
 	bool segmentationEnabled = virtualChannel->segmentHeaderPresent;
-	bool blocking_enabled = virtualChannel->blockingTC;
+	bool blocking_enabled = virtualChannel->blocking;
 
 	const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
@@ -918,7 +918,7 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 		vchan.packetLengthBufferTmTx.pop();
 		packetLength = vchan.packetLengthBufferTmTx.front();
 		// If blocking is disabled, stop the operation on the first packet
-		if (!vchan.blockingTC) {
+		if (!vchan.blocking) {
 			break;
 		}
 	}
