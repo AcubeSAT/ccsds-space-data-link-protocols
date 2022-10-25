@@ -172,7 +172,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
 	const uint16_t maxFrameLength = virtualChannel->maxFrameLengthTC;
 	bool segmentationEnabled = virtualChannel->segmentHeaderPresent;
-	bool blocking_enabled = virtualChannel->blockingTC;
+	bool blocking_enabled = virtualChannel->blocking;
 
 	const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
@@ -907,6 +907,7 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 
 	uint16_t currentTransferFrameDataLength = 0;
 	static uint8_t tmpData[TmTransferFrameSize] = {0};
+
 	while (currentTransferFrameDataLength + packetLength <= transferFrameDataLength &&
 	       !vchan.packetLengthBufferTmTx.empty()) {
 		for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
@@ -916,7 +917,12 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 		currentTransferFrameDataLength += packetLength;
 		vchan.packetLengthBufferTmTx.pop();
 		packetLength = vchan.packetLengthBufferTmTx.front();
+		// If blocking is disabled, stop the operation on the first packet
+		if (!vchan.blocking) {
+			break;
+		}
 	}
+
 	for (uint8_t i = 0; i < TmTrailerSize; i++) {
 		if (currentTransferFrameDataLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
 			tmpData[currentTransferFrameDataLength + TmPrimaryHeaderSize + i] = 0;
