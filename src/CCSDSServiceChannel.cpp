@@ -378,17 +378,12 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 
 		// Counting how many TFs will be created
 		uint8_t noOfSegments = (uint8_t)packetLength / TcTransferFrameSize;
+		uint8_t remainder = !(packetLength % TcTransferFrameSize == 0);
 
-		uint8_t remainder;
-		if (packetLength % TcTransferFrameSize == 0) {
-			remainder = 0;
-		} else {
-			remainder = 1;
-		}
 		noOfSegments += remainder;
 
 		while (currentSegment < noOfSegments) {
-			if (BeforeAllFramesGenerationListCapacity() < noOfSegments) {
+			if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.available() < noOfSegments) {
 				return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 			}
 
@@ -399,7 +394,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 				virt_channel.packetBufferTcTx.pop();
 			}
 
-			uint8_t trailerSize = TcErrorControlFieldExists ? 16 : 0;
+			uint8_t trailerSize = TcErrorControlFieldExists ? 2 : 0;
 			// TF trailer
 			for (uint8_t i = 0; i < trailerSize; i++) {
 				if (currentPacketSize + TcPrimaryHeaderSize + i < TcTransferFrameSize) {
@@ -447,7 +442,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		packetLength = virt_channel.packetLengthBufferTcTx.front();
 	}
 
-	uint8_t trailerSize = TcErrorControlFieldExists ? 16 : 0;
+	uint8_t trailerSize = TcErrorControlFieldExists ? 2 : 0;
 	// Allocate space for trailer
 	for (uint8_t i = 0; i < trailerSize; i++) {
 		if (currentTransferFrameDataLength + TcPrimaryHeaderSize + i < TcTransferFrameSize) {
