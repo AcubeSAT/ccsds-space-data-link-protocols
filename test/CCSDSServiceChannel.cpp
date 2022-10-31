@@ -513,8 +513,8 @@ TEST_CASE("VC Generation Service TC"){
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, 128, true, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED,
-	                     255, 10, 10, map_channels);
+	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 	ServiceChannelNotification err;

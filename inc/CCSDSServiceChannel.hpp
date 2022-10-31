@@ -56,14 +56,6 @@ public:
 	}
 
 	/**
-	 * This method returns the number of Transfer Frames that can be stored at the
-	 * txOutFramesBeforeAllFramesGenerationListTC buffer.
-	 */
-	uint8_t BeforeAllFramesGenerationListCapacity(){
-	    return masterChannel.txOutFramesBeforeAllFramesGenerationListTC.available();
-	}
-
-	/**
 	 * Made for testing, this method returns the transfer frame on the front of the
 	 * txOutFramesBeforeAllFramesGenerationListTC buffer.
 	 */
@@ -167,7 +159,7 @@ public:
 	 * Returns the first frame in the masterCopyTcTx buffer
 	 */
 	TransferFrameTC getFirstMasterCopyTcFrame();
-	
+
 	/**
 	 * The Master Channel Generation Service shall be used to insert Transfer Frame
 	 * Secondary Header and/or Operational Control Field service data units into Transfer Frames
@@ -504,6 +496,6 @@ public:
 	// This is honestly a bit confusing
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
-	//Default constructor
+	// Default constructor
 	ServiceChannel() : masterChannel(), physicalChannel(){};
 };
