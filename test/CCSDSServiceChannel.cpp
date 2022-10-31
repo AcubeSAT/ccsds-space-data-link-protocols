@@ -18,12 +18,12 @@ TEST_CASE("Service Channel") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
+	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
 
-	master_channel.addVC(1, 128, false, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3, 3);
+	master_channel.addVC(1, 128, false, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3, 3, 3);
 
-	master_channel.addVC(2, 128, false, 2, 2, false, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3, 3,
+	master_channel.addVC(2, 128, false, 2, 2, false, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3, 3, 3,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -207,22 +207,30 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txOutProcessedPacketTM().second == nullptr);
 	*/
 
-	uint8_t valid_pckt_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
-	uint8_t invalid_vcid_TM[] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
-	uint8_t invalid_crc_TM[] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
+	uint8_t valid_pckt_TM[128] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t len = 14;
+	for (uint16_t i = 0; i < TmTransferFrameSize-len-2; i++) {
+		valid_pckt_TM[i+14]= idle_data[i];
+	}
+	uint16_t crc = 36061;
+	valid_pckt_TM[TmTransferFrameSize-2] = (crc >> 8) & 0xFF;
+	valid_pckt_TM[TmTransferFrameSize - 1] = crc & 0xFF;
+
+	uint8_t invalid_vcid_TM[TmTransferFrameSize] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t invalid_crc_TM[TmTransferFrameSize] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
 	// Packets that carry a CLCW
-	uint8_t valid_no_crc_TM[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x0};
-	uint8_t valid_no_crc_TM2[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x0};
-	uint8_t valid_no_crc_TM3[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x0};
-	uint8_t valid_no_crc_TM4[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x01};
-	uint8_t valid_no_crc_TM5[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x01};
-	uint8_t valid_no_crc_TM6[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x01};
-	uint8_t valid_no_crc_TM7[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x01};
-	uint8_t valid_no_crc_TM8[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x04};
-	uint8_t valid_no_crc_TM9[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x05};
-	uint8_t valid_no_crc_TM10[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x05};
-	uint8_t valid_no_crc_TM11[] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x05};
+	uint8_t valid_no_crc_TM[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x0};
+	uint8_t valid_no_crc_TM2[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x0};
+	uint8_t valid_no_crc_TM3[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x0};
+	uint8_t valid_no_crc_TM4[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x01};
+	uint8_t valid_no_crc_TM5[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x01};
+	uint8_t valid_no_crc_TM6[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x01};
+	uint8_t valid_no_crc_TM7[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x01};
+	uint8_t valid_no_crc_TM8[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x04};
+	uint8_t valid_no_crc_TM9[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x05};
+	uint8_t valid_no_crc_TM10[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x05};
+	uint8_t valid_no_crc_TM11[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x05};
 
 	// TM Reception
 
@@ -232,19 +240,19 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
-	err = serv_channel.allFramesReceptionTMRequest(valid_pckt_TM, 14);
+	err = serv_channel.allFramesReceptionTMRequest(valid_pckt_TM, TmTransferFrameSize);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
-	err = serv_channel.allFramesReceptionTMRequest(invalid_vcid_TM, 14);
+	err = serv_channel.allFramesReceptionTMRequest(invalid_vcid_TM, TmTransferFrameSize);
 	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
-	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer -1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel -1);
 
-	err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, 14);
+	err = serv_channel.allFramesReceptionTMRequest(invalid_crc_TM, TmTransferFrameSize);
 	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
-	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
-	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel - 1);
+	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer-1);
+	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxRxInMasterChannel-1);
 
 	uint8_t resulting_tm_packet[14] = {0};
 
@@ -323,7 +331,7 @@ TEST_CASE("VC Generation Service TM"){
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
+	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -410,8 +418,9 @@ TEST_CASE("CLCW construction at VC Reception") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
+	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
+
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
 
@@ -583,7 +592,7 @@ TEST_CASE("VC Generation Service TC"){
 
 }
 
-TEST_CASE("Frame Acknowledgement and Retransmission") {
+TEST_CASE("Frame Acknowledgement") {
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
@@ -593,9 +602,9 @@ TEST_CASE("Frame Acknowledgement and Retransmission") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
+	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
-	master_channel.addVC(1, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10,
+	master_channel.addVC(1, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
