@@ -7,7 +7,7 @@
 TEST_CASE("CCSDS TC Channel Model") {
 	// @todo add more and better test cases :)
 
-	PhysicalChannel phy_channel = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+	PhysicalChannel phy_channel = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, false, false)},
 	                                                                   {3, MAPChannel(3, true, true)}};
@@ -19,14 +19,14 @@ TEST_CASE("CCSDS TC Channel Model") {
 
 	CHECK(master_channel.virtualChannels.at(3).VCID == 0x03);
 	PhysicalChannel physical_channel =
-	    PhysicalChannel(TmTransferFrameSize, TcErrorControlFieldExists, 100, 50, 20000, 5);
+	    PhysicalChannel(TmTransferFrameSize, 100, 50, 20000, 5);
 	ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
 }
 
 TEST_CASE("MAPP blocking") {
 	ServiceChannelNotification err;
 	PhysicalChannel physical_channel =
-	    PhysicalChannel(TmTransferFrameSize, TcErrorControlFieldExists, 100, 50, 20000, 5);
+	    PhysicalChannel(TmTransferFrameSize, 100, 50, 20000, 5);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, true, true)}};
 

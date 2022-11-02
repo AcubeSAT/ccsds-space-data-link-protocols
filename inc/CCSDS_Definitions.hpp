@@ -16,7 +16,6 @@ inline const uint8_t TmPrimaryHeaderSize = 6;
 inline const uint8_t TmTrailerSize = 6;
 
 inline const uint8_t TcPrimaryHeaderSize = 5;
-inline const bool TcErrorControlFieldExists = false;
 
 inline const uint16_t MCID = SpacecraftIdentifier;
 
