@@ -98,8 +98,8 @@ ServiceChannelNotification randomServiceCallRx(bool* flag, uint8_t* sentPacket, 
 }
 
 TEST_CASE("TM Tx and Rx Testing") {
-	PhysicalChannel physicalChannel = PhysicalChannel(1024, true,
-	                                                  12, 1024, 220000, 20);
+	PhysicalChannel physicalChannel = PhysicalChannel(1024,12, 1024,
+	                                                  220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels = {};
 
