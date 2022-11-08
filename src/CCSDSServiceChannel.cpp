@@ -239,80 +239,6 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-#if MaxReceivedUnprocessedTxTcInVirtBuffer > 0
-
-ServiceChannelNotif ServiceChannel::vcpp_request(uint8_t vid) {
-	VirtualChannel* virt_channel = &(masterChannel.virtChannels.at(vid));
-
-	if (virt_channel->txUnprocessedPacketList.empty()) {
-		return ServiceChannelNotif::NO_TX_PACKETS_TO_PROCESS;
-	}
-
-	if (virt_channel->txWaitQueueTC.full()) {
-		return ServiceChannelNotif::VC_MC_FRAME_BUFFER_FULL;
-		;
-	}
-	TransferFrameTC* packet = virt_channel->txUnprocessedPacketList.front();
-
-	const uint16_t max_frame_length = virt_channel->maxFrameLength;
-	bool segmentation_enabled = virt_channel->segmentHeaderPresent;
-	bool blocking_enabled = virt_channel->blocking;
-
-	const uint16_t max_packet_length = max_frame_length - (tc_primary_header_size + segmentation_enabled * 1U);
-
-	if (packet->packet_length() > max_packet_length) {
-		if (segmentation_enabled) {
-			// Check if there is enough space in the buffer of the virtual channel to store_out all the segments
-			uint8_t tf_n =
-			    (packet->packet_length() / max_packet_length) + (packet->packet_length() % max_packet_length != 0);
-
-			if (virt_channel->txWaitQueueTC.capacity() >= tf_n) {
-				// Break up packet
-				virt_channel->txUnprocessedPacketList.pop_front();
-
-				// First portion
-				uint16_t seg_header = 0x40;
-
-				TransferFrameTC t_packet = TransferFrameTC(packet->packet_data(), max_packet_length, seg_header,
-				                                           packet->global_virtual_channel_id(), packet->map_id(),
-				                                           packet->spacecraft_id(), packet->service_type());
-				virt_channel->store(&t_packet);
-
-				// Middle portion
-				t_packet.set_segmentation_header(0x00);
-				for (uint8_t i = 1; i < (tf_n - 1); i++) {
-					t_packet.set_packet_data(&packet->packet_data()[i * max_packet_length]);
-					virt_channel->store(&t_packet);
-				}
-
-				// Last portion
-				t_packet.set_segmentation_header(0x80);
-				t_packet.set_packet_data(&packet->packet_data()[(tf_n - 1) * max_packet_length]);
-				t_packet.set_packet_length(packet->packet_length() % max_packet_length);
-				virt_channel->store(&t_packet);
-			}
-		} else {
-			return ServiceChannelNotif::PACKET_EXCEEDS_MAX_SIZE;
-		}
-	} else {
-		// We've already checked whether there is enough space in the buffer so we can simply remove the packet from
-		// the buffer.
-		virt_channel->txUnprocessedPacketList.pop_front();
-
-		if (blocking_enabled) {
-			virt_channel->store(packet);
-		} else {
-			if (segmentation_enabled) {
-				packet->set_segmentation_header(0xc0);
-			}
-			virt_channel->storeTC(packet);
-		}
-	}
-	return ServiceChannelNotif::NO_SERVICE_EVENT;
-}
-
-#endif
-
 ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 	if (masterChannel.txProcessedPacketListBufferTM.empty()) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_RX_PACKETS_TO_PROCESS);
@@ -502,7 +428,6 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	 */
 
 	// Check for valid TFVN
-
 	if (frame->getTransferFrameVersionNumber() != 0) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_TFVN);
 		return ServiceChannelNotification::RX_INVALID_TFVN;

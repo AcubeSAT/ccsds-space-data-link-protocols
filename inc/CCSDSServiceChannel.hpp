@@ -28,11 +28,6 @@ private:
 	 */
 	PhysicalChannel physicalChannel;
 
-	// @todo Think about whether we need to keep the size of the packets in a queue. Technically, we can determine this
-	// from the header of the frame. Not sure what makes more sense
-
-	uint8_t packetCountTM;
-
 	/**
 	 * Variable to indicate that a CLCW has been constructed and should be sent
 	 */
