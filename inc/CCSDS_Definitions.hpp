@@ -6,95 +6,92 @@
 
 #include <cstdint>
 
-inline uint8_t const tm_error_control_field_exists = 1;
-inline const uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
+inline constexpr uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those inline constants don't need to be global and can be defined in the class instead
 
-inline const uint16_t TmTransferFrameSize = 128;
-inline const uint8_t TmPrimaryHeaderSize = 6;
-inline const uint8_t TmTrailerSize = 6;
+inline constexpr uint16_t TmTransferFrameSize = 128;
+inline constexpr uint8_t TmPrimaryHeaderSize = 6;
+inline constexpr uint8_t TmTrailerSize = 6;
 
 inline const uint8_t TcPrimaryHeaderSize = 5;
 
-inline const uint16_t MCID = SpacecraftIdentifier;
+inline constexpr uint16_t MCID = SpacecraftIdentifier;
 
 // @todo Make this specific to each MAP/virtual channel. Probably requires some clever memory management
-inline const uint8_t MaxReceivedTcInMapChannel = 5;
-inline const uint8_t MaxReceivedTmInMapChannel = 5;
+inline constexpr uint8_t MaxReceivedTcInMapChannel = 5;
+inline constexpr uint8_t MaxReceivedTmInMapChannel = 5;
 
-inline const uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
-inline const uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
+inline constexpr uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
+inline constexpr uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
 
-inline const uint8_t MaxReceivedTxTcInFOPSentQueue =
+inline constexpr uint8_t MaxReceivedTxTcInFOPSentQueue =
     10; ///> Maximum received TX TCs in sent queue (following COP checks).
-inline const uint8_t MaxReceivedRxTcInFOPSentQueue =
+inline constexpr uint8_t MaxReceivedRxTcInFOPSentQueue =
     10; ///> Maximum received RX TCs in sent queue (following COP checks).
-inline const uint8_t MaxReceivedRxTmInVirtBuffer = 10; ///> Maxiumm received RX TMs in Virtual channel buffer
+inline constexpr uint8_t MaxReceivedRxTmInVirtBuffer = 10; ///> Maxiumm received RX TMs in Virtual channel buffer
 
-inline const uint8_t MaxReceivedTxTcInFARMSentQueue =
+inline constexpr uint8_t MaxReceivedTxTcInFARMSentQueue =
     10; ///> Maximum received TX TMs in sent queue (following COP checks).
-inline const uint8_t MaxReceivedRxTcInFARMSentQueue =
+inline constexpr uint8_t MaxReceivedRxTcInFARMSentQueue =
     10; ///> Maximum received RX TCs in sent queue (following COP checks).
 
-inline const uint8_t MaxReceivedTxTcInMasterBuffer = 100; ///> Maximum received TX TC in the master buffer
+inline constexpr uint8_t MaxReceivedTxTcInMasterBuffer = 100; ///> Maximum received TX TC in the master buffer
 
 /**
  * Maximum received TX TCs in the master buffer, ready to be transmitted to the lower procedures (doesn't include
  * repetitions)
  */
-inline const uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
+inline constexpr uint8_t MaxReceivedTxTcOutInMasterBuffer = 100;
 
 /**
  * Maximum received TX TMs in the master buffer, ready to be transmitted to the lower procedures (doesn't include
  * repetitions)
  */
-inline const uint8_t MaxReceivedTxTmInMasterBuffer = 100;
+inline constexpr uint8_t MaxReceivedTxTmInMasterBuffer = 100;
 
-inline const uint8_t MaxReceivedTxTmOutInVCBuffer =
+inline constexpr uint8_t MaxReceivedTxTmOutInVCBuffer =
     100; ///> Maximum received TM in the master buffer, after passing through the all frames generation service
 inline const uint8_t MaxReceivedTxTmInVCBuffer =
     100; ///> Maximum received TM in the master buffer, before being passed to the all frames generation service
 
-inline const uint8_t MaxReceivedTxTmOutInMasterBuffer =
+inline constexpr uint8_t MaxReceivedTxTmOutInMasterBuffer =
     100; ///> Maximum received fully-processed TX TMs in the master buffer
-inline const uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
-inline const uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
-inline const uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer
-inline const uint8_t MaxReceivedRxTcOutInMasterBuffer = 100; ///> Maximum received fully processed RX TCs in MAP buffer
+inline constexpr uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
+inline constexpr uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
+inline constexpr uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer
+inline constexpr uint8_t MaxReceivedRxTcOutInMasterBuffer = 100; ///> Maximum received fully processed RX TCs in MAP buffer
 
-inline const uint8_t MaxVirtualChannels = 10;
-inline const uint8_t MaxMapChannels = 3;
+inline constexpr uint8_t MaxVirtualChannels = 10;
+inline constexpr uint8_t MaxMapChannels = 3;
 
 // Number of master copies of TX transfer frames that are stored in the master channel. This holds all the transfer
 // frames that are stored in all services
-inline const uint8_t MaxTxInMasterChannel = 200;
+inline constexpr uint8_t MaxTxInMasterChannel = 200;
 /**
  * Number of master copies of RX transfer frames that are stored in the master channel.
  * This holds all the transfer frames that are stored in all services
  */
 
-inline const uint8_t MaxRxInMasterChannel = 200;
+inline constexpr uint8_t MaxRxInMasterChannel = 200;
 
-inline const uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer =
+inline constexpr uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer =
     6; ///> Raw TX TC packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
-inline const uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
+inline constexpr uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
     6; ///> Raw TX TM packets stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
 
-inline const uint8_t FopSlidingWindowInitial = 255;
-inline const uint8_t FopTimerInitial = 60; // sec
+inline constexpr uint8_t FopSlidingWindowInitial = 255;
+inline constexpr uint8_t FopTimerInitial = 60; // sec
 
-inline const uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
+inline constexpr uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 
 enum FlagState { NOT_READY = 0, READY = 1 };
 
-inline const uint16_t PacketBufferTmSize = 512;
+inline constexpr uint16_t PacketBufferTmSize = 512;
 
-inline const uint16_t ClcwBufferSize = 100;
-
-inline const uint8_t idle_data[] = {
+inline constexpr uint8_t idle_data[] = {
     0x53, 0x45, 0x24, 0x3,  0xce, 0xf0, 0xd2, 0x75, 0x50, 0xb9, 0x57, 0x24, 0x70, 0x83, 0xa8, 0x4e, 0x44, 0xd4, 0xa6,
     0x90, 0xc2, 0x9d, 0x1a, 0xb,  0x42, 0xe9, 0x42, 0x66, 0x28, 0x80, 0x5e, 0x30, 0x1f, 0x75, 0x3b, 0x5,  0xcb, 0x93,
     0xe3, 0x2d, 0xfc, 0xc4, 0x3c, 0x91, 0xd0, 0x17, 0xde, 0xf3, 0x9d, 0xb6, 0x6a, 0xcf, 0x3,  0x3a, 0x5b, 0x67, 0x78,
@@ -179,7 +176,7 @@ inline const uint8_t idle_data[] = {
     0x8b, 0x30, 0x5,  0xd3, 0x7,  0x28, 0xf9, 0x4,  0x7c, 0x9c, 0x86, 0x24, 0xc8, 0x65, 0x5a, 0x65, 0xa3, 0xfa, 0xfa,
     0xe1, 0xac};
 
-static uint16_t crc_16_ccitt_table[]{
+inline constexpr uint16_t crc_16_ccitt_table[]{
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad,
     0xe1ce, 0xf1ef, 0x1231, 0x0210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6, 0x9339, 0x8318, 0xb37b, 0xa35a,
     0xd3bd, 0xc39c, 0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401, 0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b,
@@ -199,6 +196,7 @@ static uint16_t crc_16_ccitt_table[]{
     0xfd2e, 0xed0f, 0xdd6c, 0xcd4d, 0xbdaa, 0xad8b, 0x9de8, 0x8dc9, 0x7c26, 0x6c07, 0x5c64, 0x4c45, 0x3ca2, 0x2c83,
     0x1ce0, 0x0cc1, 0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
     0x2e93, 0x3eb2, 0x0ed1, 0x1ef0};
-inline uint16_t const logger_max_message_size = 512;
 
-inline uint8_t const log_verbose = 0;
+inline constexpr uint16_t logger_max_message_size = 512;
+
+inline constexpr uint8_t log_verbose = 0;
