@@ -31,11 +31,6 @@ private:
 	const uint16_t maxFrameLength;
 
 	/**
-	 * Determines whether Error Control field is present
-	 */
-	const bool errorControlFieldPresent;
-
-	/**
 	 * Sets the maximum number of transfer frames that can be transferred in a single data unit
 	 */
 	const uint16_t maxFramePdu;
@@ -56,9 +51,9 @@ private:
 	const uint16_t repetitions;
 
 public:
-	PhysicalChannel(const uint16_t maxFrameLength, const bool errorControlPresent, const uint16_t maxFramesPdu,
+	PhysicalChannel(const uint16_t maxFrameLength, const uint16_t maxFramesPdu,
 	                const uint16_t maxPduLength, const uint32_t bitrate, const uint16_t repetitions)
-	    : maxFrameLength(maxFrameLength), errorControlFieldPresent(errorControlPresent), maxFramePdu(maxFramesPdu),
+	    : maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu),
 	      maxPDULength(maxPduLength), bitrate(bitrate), repetitions(repetitions) {}
 
 	uint16_t getMaxFrameLength() const {
@@ -68,14 +63,7 @@ public:
 	/**
 	 * Empty default constructor
 	 */
-	PhysicalChannel() : maxFrameLength(0), errorControlFieldPresent(false), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0){}
-
-	/**
-	 * Determines whether Error Control field is present
-	 */
-	bool getErrorControlFieldPresent() const {
-		return errorControlFieldPresent;
-	}
+	PhysicalChannel() : maxFrameLength(0), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0){}
 
 	/**
 	 * Sets the maximum number of transfer frames that can be transferred in a single data unit

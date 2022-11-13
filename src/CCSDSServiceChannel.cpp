@@ -537,6 +537,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
 	// Finally, remove master copy
 	masterChannel.removeMasterTx(packet);
+	masterChannel.masterChannelPool.deletePacket(packet->packetData(), packet->getPacketLength());
 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
@@ -855,16 +856,17 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 	}
 	uint8_t* transferFrameData = masterChannel.masterChannelPool.allocatePacket(
 	    tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
-	if (transferFrameData != NULL) {
-		vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
-		SegmentLengthID segmentLengthId = NoSegmentation;
-		TransferFrameTM transferFrameTm =
-		    TransferFrameTM(transferFrameData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,
-		                    vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.segmentHeaderPresent,
-		                    segmentLengthId, vchan.synchronization, TM);
-		masterChannel.txMasterCopyTM.push_back(transferFrameTm);
-		masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
+	if (transferFrameData == nullptr) {
+		return MEMORY_POOL_FULL;
 	}
+	vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
+	SegmentLengthID segmentLengthId = NoSegmentation;
+	TransferFrameTM transferFrameTm =
+	    TransferFrameTM(transferFrameData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,
+	                    vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.segmentHeaderPresent,
+	                    segmentLengthId, vchan.synchronization, TM);
+	masterChannel.txMasterCopyTM.push_back(transferFrameTm);
+	masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));
 	return NO_SERVICE_EVENT;
 }
 
@@ -895,6 +897,9 @@ ServiceChannelNotification ServiceChannel::segmentationTm(uint8_t numberOfTransf
 		}
 		uint8_t* transferFrameData = masterChannel.masterChannelPool.allocatePacket(
 		    tmpData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize);
+		if (transferFrameData == nullptr) {
+			return MEMORY_POOL_FULL;
+		}
 		vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
 		TransferFrameTM transferFrameTm =
 		    TransferFrameTM(transferFrameData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,

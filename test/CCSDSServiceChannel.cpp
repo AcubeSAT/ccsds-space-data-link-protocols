@@ -9,7 +9,7 @@ TEST_CASE("Service Channel") {
 	ServiceChannelNotification err;
 
 	// Set up Service Channel
-	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
 	    {0, MAPChannel(0, true, true)},
@@ -322,7 +322,7 @@ TEST_CASE("Service Channel") {
 }
 
 TEST_CASE("VC Generation Service") {
-	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
 	    {0, MAPChannel(0, true, true)},
@@ -409,7 +409,7 @@ TEST_CASE("VC Generation Service") {
 }
 
 TEST_CASE("CLCW construction at VC Reception") {
-	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
 	    {0, MAPChannel(0, true, true)},
@@ -504,7 +504,7 @@ TEST_CASE("CLCW construction at VC Reception") {
 }
 
 TEST_CASE("Frame Acknowledgement") {
-	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, false, 12, 1024, 220000, 20);
+	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
 	    {0, MAPChannel(0, true, true)},
