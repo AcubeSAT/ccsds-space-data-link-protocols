@@ -7,11 +7,11 @@ TEST_CASE("TransferFrameTC Generation") {
 	TransferFrameTC pckt = TransferFrameTC(data, 5);
 
 	CHECK(pckt.segmentationHeader() == 5);
-	CHECK(pckt.packetData()[0] == 0);
-	CHECK(pckt.packetData()[1] == 11);
-	CHECK(pckt.packetData()[2] == 128);
-	CHECK(pckt.packetData()[3] == 33);
-	CHECK(pckt.packetData()[4] == 4);
+	CHECK(pckt.getTransferFrameData()[0] == 0);
+	CHECK(pckt.getTransferFrameData()[1] == 11);
+	CHECK(pckt.getTransferFrameData()[2] == 128);
+	CHECK(pckt.getTransferFrameData()[3] == 33);
+	CHECK(pckt.getTransferFrameData()[4] == 4);
 }
 
 TEST_CASE("TC Header Generation") {

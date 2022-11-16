@@ -9,7 +9,7 @@ uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> index = findFit(packetLength);
 	uint16_t start = index.first;
 	if (index.second == NO_SPACE) {
-		LOG_ERROR << "There is no space in memory pool for the packet.";
+		LOG_ERROR << "There is no space in memory pool for the Transfer Frame.";
 		return nullptr;
 	}
 	std::memcpy(memory + start, packet, packetLength * sizeof(uint8_t));

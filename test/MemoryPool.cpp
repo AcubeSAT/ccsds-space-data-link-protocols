@@ -20,7 +20,7 @@ TEST_CASE("Packet Insertions") {
 			CHECK(pool.getMemory()[i] == data[i]);
 		}
 	}
-	SECTION("Bigger packet than empty space") {
+	SECTION("Bigger Transfer Frame than empty space") {
 		// Initialize memory pool
 		MemoryPool pool = MemoryPool();
 
@@ -79,7 +79,7 @@ TEST_CASE("Packet deletions") {
 	uint8_t* packet4 = pool.allocatePacket(data4, 1);
 	uint8_t* packet5 = pool.allocatePacket(data5, 1);
 
-	SECTION("Delete packet that has not been stored") {
+	SECTION("Delete Transfer Frame that has not been stored") {
 		pool.deletePacket(packet2, 5);
 		// Also change this
 		CHECK(pool.deletePacket(packet2, 5) == true);
@@ -87,7 +87,7 @@ TEST_CASE("Packet deletions") {
 			CHECK(pool.getUsedMemory()[i] == false);
 		}
 	}
-	SECTION("Delete packet that has been stored") {
+	SECTION("Delete Transfer Frame that has been stored") {
 		pool.deletePacket(packet4, 1);
 		CHECK(pool.deletePacket(packet4, 1) == true);
 		CHECK(pool.getUsedMemory()[11] == false); // Also this

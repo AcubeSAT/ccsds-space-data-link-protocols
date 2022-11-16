@@ -93,7 +93,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txOutPacketTC(0).second == packet_a);
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 3U);
 
-	// Process first type-A packet
+	// Process first type-A transferFrameData
 	err = serv_channel.vcGenerationRequestTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txOutPacketTC(0).second == packet_b);
@@ -114,19 +114,19 @@ TEST_CASE("Service Channel") {
 
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	// Process first type-B packet
+	// Process first type-B transferFrame
 	err = serv_channel.vcGenerationRequestTC(0);
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txOutPacketTC(0).second == packet_c);
 
-	// Process second type-A packet
+	// Process second type-A transferFrame
 	err = serv_channel.vcGenerationRequestTC(0);
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	// Rx side
-	// new packet
+	// new transferFrameData
 	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
 	uint8_t packet2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0xAE, 0x3B, 0xC8, 0x58, 0x81};
 	uint8_t out_buffer[10] = {0};
@@ -184,7 +184,7 @@ TEST_CASE("Service Channel") {
 	//    err = serv_channel.all_frames_generation_request();
 	//    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
 	//
-	//    //TransferFrameTC packet = *serv_channel.get_tx_processed_packet();
+	//    //TransferFrameTC transferFrameData = *serv_channel.get_tx_processed_packet();
 	//
 	//    CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
 
@@ -196,7 +196,7 @@ TEST_CASE("Service Channel") {
 	serv_channel.storeTM(pckt_TM, 9, 0, 0);
 
 	const TransferFrameTM *packet_TM = serv_channel.txOutPacketTM().second;
-	CHECK(packet_TM->getPacketLength() == 9);
+	CHECK(packet_TM->getAuxiliaryTransferFrameLength() == 9);
 	CHECK(packet_a->getTransferFrameVersionNumber() == 0);
 	CHECK(packet_TM->getMasterChannelFrameCount() == 0);
 	CHECK(packet_TM->getVirtualChannelFrameCount() == 2);
@@ -257,7 +257,7 @@ TEST_CASE("Service Channel") {
 	uint8_t resulting_tm_packet[14] = {0};
 
 	err = serv_channel.packetExtractionTM(0, resulting_tm_packet);
-	// Valid packet passes to lower procedures
+	// Valid transferFrame passes to lower procedures
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
@@ -297,7 +297,7 @@ TEST_CASE("Service Channel") {
 	//    CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 	serv_channel.initiateAdNoClcw(2);
-	// Process first type-A packet
+	// Process first type-A Transfer Frame
 	err = serv_channel.vcGenerationRequestTC(2);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
@@ -536,7 +536,7 @@ TEST_CASE("Frame Acknowledgement") {
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	serv_channel.storeTC(transferFrame.packetData(), transferFrame.getFrameLength());
+	serv_channel.storeTC(transferFrame.getTransferFrameData(), transferFrame.getFrameLength());
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.vcReceptionTC(0);
 	// Check the clcw that was created in vcReceptionTC
@@ -550,7 +550,7 @@ TEST_CASE("Frame Acknowledgement") {
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 1);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
-	serv_channel.storeTC(transferFrame2.packetData(), transferFrame.getFrameLength());
+	serv_channel.storeTC(transferFrame2.getTransferFrameData(), transferFrame.getFrameLength());
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.vcReceptionTC(0);
 	serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
@@ -567,7 +567,7 @@ TEST_CASE("Frame Acknowledgement") {
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 10);
 	TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	serv_channel.storeTC(transferFrame3.packetData(), transferFrame.getFrameLength());
+	serv_channel.storeTC(transferFrame3.getTransferFrameData(), transferFrame.getFrameLength());
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.vcReceptionTC(1);
 	serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);

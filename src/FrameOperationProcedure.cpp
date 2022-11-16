@@ -160,7 +160,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	// If Ad Out Flag isn't set to ready, the process shall be aborted
 	if (adOut == FlagState::READY) {
-		// Check if some transmitted packet is set to be retransmitted
+		// Check if some transmitted transferFrame is set to be retransmitted
 		for(TransferFrameTC* frame : *sentQueueFOP){
 			if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
 				if (frame->isToBeRetransmitted()) {

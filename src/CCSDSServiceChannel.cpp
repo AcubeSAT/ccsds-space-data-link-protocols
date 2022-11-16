@@ -102,7 +102,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8
 	}
 	TransferFrameTM* packet = virtualChannel->rxInFramesAfterMCReception.front();
 
-	uint16_t frameSize = packet->getPacketLength();
+	uint16_t frameSize = packet->getAuxiliaryTransferFrameLength();
 	uint8_t headerSize = 5 + virtualChannel->secondaryHeaderTMLength;
 	uint8_t trailerSize =
 	    4 * packet->operationalControlFieldExists() + 2 * virtualChannel->frameErrorControlFieldPresent;
@@ -188,7 +188,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
 				// First portion
 				TransferFrameTC t_packet =
-				    TransferFrameTC(packet->packetData(), maxPacketLength, packet->virtualChannelId(),
+				    TransferFrameTC(packet->getTransferFrameData(), maxPacketLength, packet->virtualChannelId(),
 				                    packet->getServiceType(), virtualChannel->segmentHeaderPresent);
 				// t_packet.setSegmentationHeader(mapid | 0x40);
 				virtualChannel->storeVC(&t_packet);
@@ -196,13 +196,13 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 				// Middle portion
 				// t_packet.setSegmentationHeader(mapid | 0x00);
 				for (uint8_t i = 1; i < (tf_n - 1); i++) {
-					t_packet.setPacketData(&packet->packetData()[i * maxPacketLength]);
+					t_packet.setTransferFrameData(&packet->getTransferFrameData()[i * maxPacketLength]);
 					virtualChannel->storeVC(&t_packet);
 				}
 
 				// Last portion
 				// t_packet.setSegmentationHeader(mapid | 0x80);
-				t_packet.setPacketData(&packet->packetData()[(tf_n - 1) * maxPacketLength]);
+				t_packet.setTransferFrameData(&packet->getTransferFrameData()[(tf_n - 1) * maxPacketLength]);
 
 				t_packet.setPacketLength(packet->getFrameLength() % maxPacketLength);
 				virtualChannel->storeVC(&t_packet);
@@ -226,7 +226,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 			// - You'll need to allocate a new chunk of memory (unless you go with data structures that don't require
 			// contiguous memory but I'm also against that)
 
-			// for now just send packet as-is
+			// for now just send transferFrameData as-is
 			virtualChannel->storeVC(packet);
 		} else {
 			if (segmentationEnabled) {
@@ -367,7 +367,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 
 	uint8_t trailerSize = 2 * virtualChannel.frameErrorControlFieldPresent;
 
-	memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
+	memcpy(packet, frame->getTransferFrameData() + headerSize, frameSize - headerSize - trailerSize);
 
 	mapChannel.rxInFramesAfterVCReception.pop_front();
 	masterChannel.removeMasterRx(frame);
@@ -395,7 +395,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 	uint8_t headerSize = TcPrimaryHeaderSize; // Segment header is present
 	uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldPresent;
 
-	memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
+	memcpy(packet, frame->getTransferFrameData() + headerSize, frameSize - headerSize - trailerSize);
 
 	virtualChannel->rxInFramesAfterVCReception.pop_front();
 
@@ -439,16 +439,16 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 		return ServiceChannelNotification::RX_INVALID_SCID;
 	}
 
-	// TransferFrameTC length is checked upon storing the packet in the MC
+	// TransferFrameTC length is checked upon storing the transferFrameData in the MC
 
 	// If present in channel, check if CRC is valid
 	bool eccFieldExists = virtualChannel.frameErrorControlFieldPresent;
 
 	if (eccFieldExists) {
 		uint16_t len = frame->packetLength() - 2;
-		uint16_t crc = frame->calculateCRC(frame->packetData(), len);
+		uint16_t crc = frame->calculateCRC(frame->getTransferFrameData(), len);
 
-		uint16_t packet_crc = (static_cast<uint16_t>(frame->packetData()[len]) << 8) | frame->packetData()[len + 1];
+		uint16_t packet_crc = (static_cast<uint16_t>(frame->getTransferFrameData()[len]) << 8) | frame->getTransferFrameData()[len + 1];
 		if (crc != packet_crc) {
 			ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
 			// Invalid packet is discarded and service aborted
@@ -472,7 +472,7 @@ std::optional<TransferFrameTC> ServiceChannel::getTxProcessedPacket() {
 
 	TransferFrameTC packet = *masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
 
-	// TODO: Here the packet should probably be deleted from the master buffer
+	// TODO: Here the transferFrameData should probably be deleted from the master buffer
 	return packet;
 }
 
@@ -516,11 +516,11 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 		packet->appendCRC();
 	}
 
-	if (packet->getPacketLength() > packet_length) {
+	if (packet->getAuxiliaryTransferFrameLength() > packet_length) {
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
 
-	uint16_t frameSize = packet->getPacketLength();
+	uint16_t frameSize = packet->getAuxiliaryTransferFrameLength();
 	uint16_t idleDataSize = TmTransferFrameSize - frameSize;
 	uint8_t trailerSize = 4 * packet->operationalControlFieldExists() + 2 * vchan.frameErrorControlFieldPresent;
 
@@ -537,7 +537,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 	masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.pop_front();
 	// Finally, remove master copy
 	masterChannel.removeMasterTx(packet);
-	masterChannel.masterChannelPool.deletePacket(packet->packetData(), packet->getPacketLength());
+	masterChannel.masterChannelPool.deletePacket(packet->packetData(), packet->getAuxiliaryTransferFrameLength());
 
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
@@ -566,14 +566,14 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	}
 
 	if (eccFieldExists) {
-		uint16_t len = frame.getPacketLength() - 2;
+		uint16_t len = frame.getAuxiliaryTransferFrameLength() - 2;
 		uint16_t crc = frame.calculateCRC(frame.packetData(), len);
 
 		uint16_t packet_crc =
 		    ((static_cast<uint16_t>(frame.packetData()[len]) << 8) & 0xFF00) | frame.packetData()[len + 1];
 		if (crc != packet_crc) {
 			ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
-			// Invalid packet is discarded and service aborted
+			// Invalid transferFrameData is discarded and service aborted
 			return ServiceChannelNotification::RX_INVALID_CRC;
 		}
 	}

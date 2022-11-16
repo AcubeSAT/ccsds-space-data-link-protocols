@@ -375,7 +375,7 @@ private:
 	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTmTx;
 
 	/**
-	 *  Queue that stores the packet data that will eventually be concatenated to transfer frame data
+	 *  Queue that stores the transferFrameData data that will eventually be concatenated to transfer frame data
 	 */
 	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
 };
@@ -412,14 +412,14 @@ struct MasterChannel {
 	/**
 	 *
 	 * @param packet TM
-	 *  stores TM packet in order to be processed by the All Frames Generation Service
+	 *  stores TM transferFrameData in order to be processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeOut(TransferFrameTM* packet);
 
 	/**
 	 *
 	 * @param packet TM
-	 *  stores TM packet after it has been processed by the All Frames Generation Service
+	 *  stores TM transferFrameData after it has been processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTM* packet);
 
@@ -433,14 +433,14 @@ struct MasterChannel {
 	/**
 	 *
 	 * @param packet TC
-	 *  stores TC packet in order to be processed by the All Frames Generation Service
+	 *  stores TC transferFrameData in order to be processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeOut(TransferFrameTC* packet);
 
 	/**
 	 *
 	 * @param packet TC
-	 *  stores TC packet after it has been processed by the All Frames Generation Service
+	 *  stores TC transferFrameData after it has been processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTC* packet);
 
@@ -501,7 +501,7 @@ private:
 	// TM packets that are ready to be transmitted to higher procedures following all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTC;
 
-	// Buffer to store TM packets that are processed by the packet and VC Generation services
+	// Buffer to store TM packets that are processed by the transferFrameData and VC Generation services
 	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedPacketListBufferTM;
 
 	/**

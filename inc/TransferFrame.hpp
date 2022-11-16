@@ -6,8 +6,8 @@
 enum PacketType { TC, TM };
 
 struct TransferFrameHeader {
-	TransferFrameHeader(uint8_t* pckt) {
-		packetHeader = pckt;
+	TransferFrameHeader(uint8_t* frameData) {
+		transferFrameHeader = frameData;
 	}
 
 	/**
@@ -17,10 +17,10 @@ struct TransferFrameHeader {
 	 */
 	uint16_t spacecraftId(enum PacketType packetType) const {
 		if (packetType == TC) {
-			return (static_cast<uint16_t>(packetHeader[0] & 0x03) << 8U) | (static_cast<uint16_t>(packetHeader[1]));
+			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x03) << 8U) | (static_cast<uint16_t>(transferFrameHeader[1]));
 		} else {
-			return ((static_cast<uint16_t>(packetHeader[0]) & 0x3F) << 2U) |
-			       ((static_cast<uint16_t>(packetHeader[1])) & 0xC0) >> 6U;
+			return ((static_cast<uint16_t>(transferFrameHeader[0]) & 0x3F) << 2U) |
+			       ((static_cast<uint16_t>(transferFrameHeader[1])) & 0xC0) >> 6U;
 		}
 	}
 
@@ -31,14 +31,14 @@ struct TransferFrameHeader {
 	 */
 	uint8_t vcid(enum PacketType packetType) const {
 		if (packetType == TC) {
-			return (packetHeader[2] >> 2U) & 0x3F;
+			return (transferFrameHeader[2] >> 2U) & 0x3F;
 		} else {
-			return ((packetHeader[1] & 0x0E)) >> 1U;
+			return ((transferFrameHeader[1] & 0x0E)) >> 1U;
 		}
 	}
 
 protected:
-	uint8_t* packetHeader;
+	uint8_t* transferFrameHeader;
 };
 
 class TransferFrame {
@@ -47,7 +47,7 @@ private:
 
 public:
 	TransferFrame(PacketType t, uint16_t transferFrameLength, uint8_t* packet)
-	    : type(t), transferFrameLength(transferFrameLength), packet(packet){};
+	    : type(t), auxiliaryTransferFrameLength(transferFrameLength), transferFrameData(packet){};
 
 	virtual ~TransferFrame() {}
 
@@ -59,17 +59,21 @@ public:
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	void appendCRC() {
-		uint16_t len = transferFrameLength - 2;
-		uint16_t crc = calculateCRC(packet, len);
+		uint16_t len = auxiliaryTransferFrameLength - 2;
+		uint16_t crc = calculateCRC(transferFrameData, len);
 
-		uint16_t frameLength = (type == PacketType::TC) ? transferFrameLength : TmTransferFrameSize;
+		uint16_t frameLength = (type == PacketType::TC) ? auxiliaryTransferFrameLength : TmTransferFrameSize;
 
 		// append CRC
-		packet[frameLength - 2] = (crc >> 8) & 0xFF;
-		packet[frameLength - 1] = crc & 0xFF;
+		transferFrameData[frameLength - 2] = (crc >> 8) & 0xFF;
+		transferFrameData[frameLength - 1] = crc & 0xFF;
 	}
 
 protected:
-	uint16_t transferFrameLength;
-	uint8_t* packet;
+	/**
+	 * @var auxiliaryTransferFrameLength is the length containing the Primary Header Length, the Data Field Length and the Trailer Length
+	 * In the case of the TM transfer frame this might be smaller than the predetermined constant TM Transfer Frame Size due to the variable data length size.
+	 */
+	uint16_t auxiliaryTransferFrameLength;
+	uint8_t* transferFrameData;
 };
