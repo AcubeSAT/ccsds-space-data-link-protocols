@@ -184,6 +184,14 @@ struct TransferFrameTM : public TransferFrame {
 		packet[2] = masterChannelFrameCount;
 	}
 
+	TransferFrameHeaderTM getTransferFrameHeaderTM(){
+		return hdr;
+	}
+
+	uint8_t * getTransferFrameDataField(){
+	    return packet + 6;
+	}
+
 	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
 	                bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
 	                SynchronizationFlag syncFlag, PacketType type = TM)

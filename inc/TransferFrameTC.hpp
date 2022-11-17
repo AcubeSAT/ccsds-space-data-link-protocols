@@ -297,6 +297,14 @@ public:
 		return packet;
 	}
 
+	TransferFrameHeaderTC getTransferFrameHeaderTC(){
+		return hdr;
+	}
+
+	uint8_t * getTransferFrameDataField(){
+		return packet + 5;
+	}
+
 	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
 	void setSegmentationHeader(uint8_t segmentation_hdr) {
