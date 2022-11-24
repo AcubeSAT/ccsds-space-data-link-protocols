@@ -55,6 +55,23 @@ public:
 	}
 
 	/**
+	 * Made for testing, this method returns the transfer frame on the front of the
+	 * txOutFramesBeforeAllFramesGenerationListTC buffer.
+	 */
+	TransferFrameTC* availablePacketsBeforeAllframes() const {
+		return masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
+	}
+
+	/**
+	 * Made for testing
+	 * This method pops the front of txOutFramesBeforeAllFramesGenerationListTC buffer, so we can check
+	 * the next transfer frame.
+	 */
+	void popPacketsBeforeAllframes() {
+		masterChannel.txOutFramesBeforeAllFramesGenerationListTC.pop_front();
+	}
+
+	/**
 	 * Stores an incoming  TC packet in the ring buffer
 	 *
 	 * @param packet Data of the packet
@@ -137,7 +154,7 @@ public:
 	 * Returns the first frame in the masterCopyTcTx buffer
 	 */
 	TransferFrameTC getFirstMasterCopyTcFrame();
-	
+
 	/**
 	 * The Master Channel Generation Service shall be used to insert Transfer Frame
 	 * Secondary Header and/or Operational Control Field service data units into Transfer Frames
@@ -154,6 +171,15 @@ public:
 	 * @see p. 4.3.5 from TC Space Data Link Protocol
 	 */
 	ServiceChannelNotification vcGenerationRequestTC(uint8_t vid);
+
+	/**
+	 * Method that stores a TC packet pointer and the TC packet data to the packetLengthBufferTcTx and packetBufferTcTx
+	 * queues
+	 * @param packet pointer to the packet data
+	 * @param packetLength length of the packet
+	 * @param vid virtual channel id
+	 */
+	ServiceChannelNotification storePacketTC(uint8_t* packet, uint16_t packetLength, uint8_t vid);
 
 	/**
 	 * The Virtual Channel Reception Function shall perform the Frame Acceptance and
@@ -467,4 +493,5 @@ public:
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 	//Default constructor
 	ServiceChannel() : masterChannel(), physicalChannel(){};
+
 };

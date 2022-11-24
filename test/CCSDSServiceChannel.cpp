@@ -47,23 +47,23 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txAvailableTC(0, 1) == MaxReceivedTcInMapChannel);
 	CHECK(serv_channel.txAvailableTC(0, 2) == MaxReceivedTcInMapChannel);
 
-	err = serv_channel.storeTC(pckt_type_a, 9, 8, 0, 0, ServiceType::TYPE_AD);
+	err = serv_channel.storePacketTC(pckt_type_a, 9, 8);
 	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
 
-	serv_channel.storeTC(pckt_type_a, 9, 0, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTC(pckt_type_a, 9, 0);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 1);
 	const TransferFrameTC* packet_a = serv_channel.txOutPacketTC().second;
 	CHECK(packet_a->getFrameLength() == 9);
 	CHECK(packet_a->getServiceType() == ServiceType::TYPE_AD);
 	CHECK((serv_channel.txOutPacketTC(0, 0).second == packet_a));
 
-	serv_channel.storeTC(pckt_type_b, 10, 0, 0, 0, ServiceType::TYPE_BC);
+	serv_channel.storePacketTC(pckt_type_b, 10, 0);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 2);
 	const TransferFrameTC* packet_b = serv_channel.txOutPacketTC().second;
 	CHECK(packet_b->getFrameLength() == 10);
 	CHECK(packet_b->getServiceType() == ServiceType::TYPE_BC);
 
-	serv_channel.storeTC(pckt_type_a2, 3, 0, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTC(pckt_type_a2, 3, 0);
 	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel - 3);
 	const TransferFrameTC* packet_c = serv_channel.txOutPacketTC().second;
 	CHECK(packet_c->getFrameLength() == 3);
@@ -131,8 +131,8 @@ TEST_CASE("Service Channel") {
 	uint8_t packet2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0xAE, 0x3B, 0xC8, 0x58, 0x81};
 	uint8_t out_buffer[10] = {0};
 
-	serv_channel.storeTC(packet1, 10);
-	serv_channel.storeTC(packet2, 10);
+	serv_channel.storePacketTC(packet1, 10, 0);
+	serv_channel.storePacketTC(packet2, 10, 0);
 
 	// All frames reception
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
@@ -290,7 +290,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
 	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
-	serv_channel.storeTC(pckt_type_a, 9, 2, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTC(pckt_type_a, 9, 2);
 	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel - 1);
 	err = serv_channel.mappRequest(2, 0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
@@ -428,9 +428,9 @@ TEST_CASE("CLCW construction at VC Reception") {
 	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
 	uint8_t packet2[] = {0x10, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
 	uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	serv_channel.storeTC(packet1, 10);
-	serv_channel.storeTC(packet2, 10);
-	serv_channel.storeTC(packet3, 10);
+	serv_channel.storePacketTC(packet1, 10, 0);
+	serv_channel.storePacketTC(packet2, 10, 0);
+	serv_channel.storePacketTC(packet3, 10, 0);
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.allFramesReceptionTCRequest();
@@ -529,14 +529,14 @@ TEST_CASE("Frame Acknowledgement") {
 	// Initate  AD Service
 	serv_channel.initiateAdClcw(0);
 	// Send a TC Frame with the right frame sequence number
-	serv_channel.storeTC(packet1, 9, 0, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTC(packet1, 9, 0);
 	serv_channel.mappRequest(0, 0);
 	serv_channel.vcGenerationRequestTC(0);
 	serv_channel.allFramesGenerationTCRequest();
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	serv_channel.storeTC(transferFrame.packetData(), transferFrame.getFrameLength());
+	serv_channel.storePacketTC(transferFrame.packetData(), transferFrame.getFrameLength(), 0);
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.vcReceptionTC(0);
 	// Check the clcw that was created in vcReceptionTC
@@ -544,13 +544,13 @@ TEST_CASE("Frame Acknowledgement") {
 	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
 
 	// Repeat the process with the next frame
-	serv_channel.storeTC(packet2, 9, 0, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTC(packet2, 9, 0);
 	serv_channel.mappRequest(0, 0);
 	serv_channel.vcGenerationRequestTC(0);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 1);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
-	serv_channel.storeTC(transferFrame2.packetData(), transferFrame.getFrameLength());
+	serv_channel.storePacketTC(transferFrame2.packetData(), transferFrame.getFrameLength(), 0);
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.vcReceptionTC(0);
 	serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
@@ -559,7 +559,7 @@ TEST_CASE("Frame Acknowledgement") {
 	serv_channel.setVs(1, 10);
 	serv_channel.initiateAdClcw(1);
 	// Set the transmitter frame sequence number outside the FOP window
-	serv_channel.storeTC(packet1, 9, 1, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTC(packet1, 9, 1);
 	serv_channel.mappRequest(1, 0);
 	serv_channel.vcGenerationRequestTC(1);
 	serv_channel.allFramesGenerationTCRequest();
@@ -567,9 +567,98 @@ TEST_CASE("Frame Acknowledgement") {
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 10);
 	TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	serv_channel.storeTC(transferFrame3.packetData(), transferFrame.getFrameLength());
+	serv_channel.storePacketTC(transferFrame3.packetData(), transferFrame.getFrameLength(), 1);
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.vcReceptionTC(1);
 	serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == false);
+}
+
+TEST_CASE("VC Generation Service TC"){
+	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
+
+	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+	    {0, MAPChannel(0, true, true)},
+	    {1, MAPChannel(1, false, false)},
+	    {2, MAPChannel(2, true, false)},
+	};
+
+	MasterChannel master_channel = MasterChannel();
+	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	                     map_channels);
+
+	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+	ServiceChannelNotification err;
+
+	uint8_t packet1[] = {1};
+	uint8_t packet2[] = {47, 31};
+	uint8_t packet3[] = {41, 91, 68, 10};
+	uint8_t packet4[] = {50, 10, 12, 10, 1, 2};
+	uint8_t packet5[] = {50, 10, 12, 10, 1, 2, 90, 99};
+
+	err = serv_channel.storePacketTC(packet1, 1, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet2, 2, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet3, 4, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet4, 6, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+	err = serv_channel.storePacketTC(packet5, 8, 0);
+	CHECK(err == NO_SERVICE_EVENT);
+
+	err = serv_channel.vcGenerationRequestTC(0);
+	CHECK(err == NO_SERVICE_EVENT);
+	const TransferFrameTC* transferFrame = serv_channel.availablePacketsBeforeAllframes();
+
+	CHECK(transferFrame->packetData()[5] == 0xC0);
+	CHECK(transferFrame->packetData()[6] == 47);
+	CHECK(transferFrame->packetData()[7] == 31);
+
+	serv_channel.popPacketsBeforeAllframes();
+	//Segmentation
+	err = serv_channel.vcGenerationRequestTC(0);
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x40);
+	CHECK(transferFrame->packetData()[6] == 91);
+	CHECK(transferFrame->packetData()[7] == 68);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x80);
+
+	//Packet that is twice the size of TF
+	serv_channel.popPacketsBeforeAllframes();
+	err = serv_channel.vcGenerationRequestTC(0);
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x40);
+	CHECK(transferFrame->packetData()[6] == 10);
+	CHECK(transferFrame->packetData()[7] == 12);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x80);
+	CHECK(transferFrame->packetData()[6] == 1);
+	CHECK(transferFrame->packetData()[7] == 2);
+
+	//Packet that is more than twice the size of TF
+	serv_channel.popPacketsBeforeAllframes();
+	err = serv_channel.vcGenerationRequestTC(0);
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+
+	CHECK(transferFrame->packetData()[5] == 0x40);
+	CHECK(transferFrame->packetData()[6] == 10);
+	CHECK(transferFrame->packetData()[7] == 12);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x00);
+	CHECK(transferFrame->packetData()[6] == 1);
+	CHECK(transferFrame->packetData()[7] == 2);
+
+	serv_channel.popPacketsBeforeAllframes();
+	transferFrame = serv_channel.availablePacketsBeforeAllframes();
+	CHECK(transferFrame->packetData()[5] == 0x80);
+	CHECK(transferFrame->packetData()[6] == 99);
+
 }

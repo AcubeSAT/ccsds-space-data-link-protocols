@@ -267,9 +267,9 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 
 ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 	VirtualChannel& virt_channel = masterChannel.virtualChannels.at(vid);
-	if (virt_channel.txUnprocessedPacketListBufferTC.empty()) {
-		ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
-		return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
+
+	if (virt_channel.packetLengthBufferTcTx.empty()) {
+		return PACKET_BUFFER_TC_EMPTY;
 	}
 
 	if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.full()) {
@@ -277,23 +277,155 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 		return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
 	}
 
-	TransferFrameTC& frame = *virt_channel.txUnprocessedPacketListBufferTC.front();
-	COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
+	uint16_t packetLength = virt_channel.packetLengthBufferTcTx.front();
 
-	err = virt_channel.fop.transferFdu();
+	// Allocate space for the Primary Header
+	static uint8_t tmpData[TcTransferFrameSize] = {0};
 
-	MasterChannelAlert mc = virt_channel.master_channel().storeOut(&frame);
-	if (mc != MasterChannelAlert::NO_MC_ALERT) {
-		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-		return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+	uint8_t currentSegment = 0;
+
+	// segmentation
+	if (packetLength > TcTransferFrameSize) {
+		if (!virt_channel.segmentHeaderPresent) {
+			return SEGMENTATION_UNAVAILABLE;
+		}
+
+		// Counting how many TFs will be created
+		uint8_t noOfSegments = (uint8_t)packetLength / TcTransferFrameSize;
+		uint8_t remainder = !(packetLength % TcTransferFrameSize == 0);
+
+		noOfSegments += remainder;
+
+		while (currentSegment < noOfSegments) {
+			if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.available() < noOfSegments) {
+				return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
+			}
+
+			uint16_t currentPacketSize = packetLength > TcTransferFrameSize ? TcTransferFrameSize : packetLength;
+
+			for (uint16_t i = 0; i < currentPacketSize; i++) {
+				tmpData[TcPrimaryHeaderSize + i] = virt_channel.packetBufferTcTx.front();
+				virt_channel.packetBufferTcTx.pop();
+			}
+
+			uint8_t trailerSize = TcErrorControlFieldExists ? 2 : 0;
+			// TF trailer
+			for (uint8_t i = 0; i < trailerSize; i++) {
+				if (currentPacketSize + TcPrimaryHeaderSize + i < TcTransferFrameSize) {
+					tmpData[currentPacketSize + TcPrimaryHeaderSize + i] = 0;
+				}
+			}
+
+			uint8_t* transferFrameData = masterChannel.masterChannelPool.allocatePacket(
+			    tmpData, currentPacketSize + TcPrimaryHeaderSize + trailerSize);
+			TransferFrameTC transferFrameTc =
+			    TransferFrameTC(transferFrameData, currentPacketSize + TcPrimaryHeaderSize + trailerSize, TC);
+
+			if (currentSegment == 0) {
+				uint8_t segHeader = 0x40 | (vid >> 2U); // will possibly change
+				transferFrameTc.setSegmentationHeader(segHeader);
+
+			} else if (currentSegment < noOfSegments - 1) {
+				uint8_t segHeader = vid >> 2U;
+				transferFrameTc.setSegmentationHeader(segHeader);
+			} else {
+				uint8_t segHeader = 0x80 | (vid >> 2U);
+				transferFrameTc.setSegmentationHeader(segHeader);
+			}
+			packetLength -= TcTransferFrameSize;
+			currentSegment++;
+
+			COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
+
+			err = virt_channel.fop.transferFdu();
+
+			MasterChannelAlert mc = virt_channel.master_channel().storeOut(&transferFrameTc);
+			if (mc != MasterChannelAlert::NO_MC_ALERT) {
+				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
+				return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+			}
+
+			if (err == COPDirectiveResponse::REJECT) {
+				ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
+				return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+			}
+
+			masterChannel.txMasterCopyTC.push_back(transferFrameTc);
+			masterChannel.txOutFramesBeforeAllFramesGenerationListTC.push_back(&(masterChannel.txMasterCopyTC.back()));
+		}
+
+		virt_channel.packetLengthBufferTcTx.pop();
+		return NO_SERVICE_EVENT;
+	}
+	uint16_t currentTransferFrameDataLength = 0;
+
+	// Blocking
+	while (currentTransferFrameDataLength + packetLength <= TcTransferFrameSize &&
+	       !virt_channel.packetLengthBufferTcTx.empty()) {
+		for (uint16_t i = currentTransferFrameDataLength; i < currentTransferFrameDataLength + packetLength; i++) {
+			tmpData[TcPrimaryHeaderSize + i] = virt_channel.packetBufferTcTx.front();
+			virt_channel.packetBufferTcTx.pop();
+		}
+		currentTransferFrameDataLength += packetLength;
+		virt_channel.packetLengthBufferTcTx.pop();
+		packetLength = virt_channel.packetLengthBufferTcTx.front();
 	}
 
-	if (err == COPDirectiveResponse::REJECT) {
-		ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
-		return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+	uint8_t trailerSize = TcErrorControlFieldExists ? 2 : 0;
+	// Allocate space for trailer
+	for (uint8_t i = 0; i < trailerSize; i++) {
+		if (currentTransferFrameDataLength + TcPrimaryHeaderSize + i < TcTransferFrameSize) {
+			tmpData[currentTransferFrameDataLength + TcPrimaryHeaderSize + i] = 0;
+		}
 	}
-	virt_channel.txUnprocessedPacketListBufferTC.pop_front();
-	return ServiceChannelNotification::NO_SERVICE_EVENT;
+
+	if (currentTransferFrameDataLength != 0) {
+		uint8_t* transferFrameData = masterChannel.masterChannelPool.allocatePacket(
+		    tmpData, currentTransferFrameDataLength + TcPrimaryHeaderSize + trailerSize);
+		TransferFrameTC transferFrameTc =
+		    TransferFrameTC(transferFrameData, currentTransferFrameDataLength + TcPrimaryHeaderSize + trailerSize, TC);
+
+		uint8_t segHeader = 0xC0 | (vid >> 2U);
+		transferFrameTc.setSegmentationHeader(segHeader);
+
+		COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
+
+		err = virt_channel.fop.transferFdu();
+
+		MasterChannelAlert mc = virt_channel.master_channel().storeOut(&transferFrameTc);
+		if (mc != MasterChannelAlert::NO_MC_ALERT) {
+			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
+			return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+		}
+
+		if (err == COPDirectiveResponse::REJECT) {
+			ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
+			return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+		}
+
+		masterChannel.txMasterCopyTC.push_back(transferFrameTc);
+		masterChannel.txOutFramesBeforeAllFramesGenerationListTC.push_back(&(masterChannel.txMasterCopyTC.back()));
+	}
+	return NO_SERVICE_EVENT;
+}
+
+ServiceChannelNotification ServiceChannel::storePacketTC(uint8_t* packet, uint16_t packetLength, uint8_t vid) {
+	// Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
+	if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+		// If it doesn't, abort operation
+		ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+		return ServiceChannelNotification::INVALID_VC_ID;
+	}
+	VirtualChannel* virt_channel = &(masterChannel.virtualChannels.at(vid));
+
+	if (packetLength <= virt_channel->packetBufferTcTx.available()) {
+		virt_channel->packetLengthBufferTcTx.push(packetLength);
+		for (uint16_t i = 0; i < packetLength; i++) {
+			virt_channel->packetBufferTcTx.push(packet[i]);
+		}
+		return NO_SERVICE_EVENT;
+	}
+	return TX_TC_BUFFER_FULL;
 }
 
 ServiceChannelNotification ServiceChannel::vcReceptionTC(uint8_t vid) {

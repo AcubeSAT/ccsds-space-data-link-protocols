@@ -378,6 +378,16 @@ private:
 	 *  Queue that stores the packet data that will eventually be concatenated to transfer frame data
 	 */
 	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
+
+	/**
+    *  Queue that stores the pointers of the TC packets that will eventually be concatenated to transfer frame data.
+	 */
+	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTcTx;
+
+	/**
+     *  Queue that stores the TC packet data that will eventually be concatenated to transfer frame data
+	 */
+	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTcTx;
 };
 
 struct MasterChannel {
@@ -452,7 +462,7 @@ struct MasterChannel {
 	/**
 	 * Returns the first stored Transfer Frame in txMasterCopyTC
 	 */
-	 TransferFrameTC geFirstTxMasterCopyTcFrame();
+	TransferFrameTC geFirstTxMasterCopyTcFrame();
 
 	/**
 	 * Add virtual channel to master channel
