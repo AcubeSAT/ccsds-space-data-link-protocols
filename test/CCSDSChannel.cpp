@@ -39,10 +39,6 @@ TEST_CASE("MAPP blocking") {
 
 	uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
-	err = serv_channel.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_AD);
-
-	CHECK(serv_channel.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel - 1);
-
 	// TODO: Rework with Memory Pool
 	// serv_channel.mappRequest(3, 2);
 

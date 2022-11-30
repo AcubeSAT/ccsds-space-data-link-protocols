@@ -146,6 +146,28 @@ protected:
 	 * Store frames before being extracted
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> rxInFramesAfterVCReception;
+    /**
+      * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
+      * Applicable to Type-A Frames
+      */
+    etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeA;
+
+    /**
+     * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data.
+     * Applicable to Type-A Frames
+     */
+    etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeA;
+    /**
+     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
+     * Applicable to Type-B Frames
+     */
+    etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeB;
+
+    /**
+     * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data.
+     * Applicable to Type-A Frames
+     */
+    etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeB;
 };
 
 /**
@@ -395,13 +417,12 @@ struct MasterChannel {
 	uint8_t frameCount{};
 
 	MasterChannel()
-	    : virtualChannels(), txOutFramesBeforeAllFramesGenerationListTC(),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(), currFrameCountTM(0) {}
+	    : virtualChannels(), txToBeTransmittedFramesAfterAllFramesGenerationListTC(), txOutFramesBeforeAllFramesGenerationListTC(), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtualChannels(m.virtualChannels), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
+          txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
 	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), currFrameCountTM(m.currFrameCountTM) {
 		for (auto& vc : virtualChannels) {
@@ -483,7 +504,7 @@ private:
 
 	// TM packets stored in frames list, before being processed by the vc generation service
 	etl::list<TransferFrameTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCGenerationListTM;
-	// Packets ready to be transmitted having passed through the vc generatiooperationalControlFieldTMPresentn service
+	// Packets ready to be transmitted having passed through the vc generation service
 	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInVCBuffer> txToBeTransmittedFramesAfterMCGenerationListTM;
 
 	// TM packets stored in frames list, before being processed by the vc reception service
@@ -554,7 +575,8 @@ private:
 	 */
 	void setRetransmitFrame(uint8_t frameSequenceNumber);
 
-	MemoryPool masterChannelPool = MemoryPool();
+	MemoryPool masterChannelPoolTM = MemoryPool();
+    MemoryPool masterChannelPoolTC = MemoryPool();
 };
 
 #endif // CCSDS_CHANNEL_HPP
