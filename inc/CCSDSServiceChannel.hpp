@@ -50,33 +50,6 @@ public:
 		return masterChannel.txProcessedPacketListBufferTM.front();
 	}
 
-	uint16_t availableMcTxTM() const {
-		return masterChannel.txProcessedPacketListBufferTM.available();
-	}
-
-	/**
-	 * This service is used for storing incoming TM packets in the master channel. It also includes the
-	 * Virtual Channel Generation Service
-	 *
-	 * @param packet Data of the packet
-	 * @param packetLength TransferFrameTC length
-	 * @param gvcid Global Virtual Channel ID
-	 * @param scid Spacecraft ID
-	 */
-
-	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
-
-    /**
-     * Service that generates a transfer frame by combining the packet data to transfer frame data and initializes the
-     * transfer frame primary header
-     * @param transferFrameDataLength the maximum transfer frame data length
-     * @param vid the virtual channel id
-     * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
-     * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
-     * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
-     */
-	ServiceChannelNotification vcGenerationServiceTC(uint16_t transferFrameDataLength, uint8_t vid);
-
 	/**
 	 * Service that generates a transfer frame by combining the packet data to transfer frame data and initializes the
 	 * transfer frame primary header
