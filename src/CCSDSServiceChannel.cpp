@@ -97,15 +97,19 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTM(uint16_t transf
 
 ServiceChannelNotification ServiceChannel::storePacketTc(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
                                                          ServiceType service_type) {
-
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        // If it doesn't, abort operation
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
     }
 
-    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
-    MAPChannel* mapChannel = &(vchan->mapChannels.at(mapid));
+	VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
+
+    if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
+        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+        return ServiceChannelNotification::INVALID_MAP_ID;
+    }
+
+	MAPChannel* mapChannel = &(vchan->mapChannels.at(mapid));
 
     etl::queue<uint16_t, PacketBufferTmSize> *packetLengthBufferTcTx;
     etl::queue<uint8_t, PacketBufferTmSize> *packetBufferTcTx;
@@ -146,8 +150,19 @@ ServiceChannelNotification ServiceChannel::storePacketTm(uint8_t* packet, uint16
 // TODO: MAP Request service shall be rewritten to support allocation in the Memory Pool
 // TODO: It shall also be decided based on the virtual channel whether this or vc request will be called based on the VC
 ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength, ServiceType service_type) {
-	VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-	MAPChannel& mapChannel = virtualChannel.mapChannels.at(mapid);
+    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
+    VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
+
+    if (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end()) {
+        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+        return ServiceChannelNotification::INVALID_MAP_ID;
+    }
+
+    MAPChannel& mapChannel = virtualChannel.mapChannels.at(mapid);
 
     etl::queue<uint16_t, PacketBufferTmSize> *packetLengthBufferTcTx;
     etl::queue<uint8_t, PacketBufferTmSize> *packetBufferTcTx;
