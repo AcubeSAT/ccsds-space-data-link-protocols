@@ -147,8 +147,6 @@ ServiceChannelNotification ServiceChannel::storePacketTm(uint8_t* packet, uint16
 	return VC_MC_FRAME_BUFFER_FULL;
 }
 
-// TODO: MAP Request service shall be rewritten to support allocation in the Memory Pool
-// TODO: It shall also be decided based on the virtual channel whether this or vc request will be called based on the VC
 ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength, ServiceType service_type) {
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
