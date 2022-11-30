@@ -147,7 +147,7 @@ ServiceChannelNotification ServiceChannel::storePacketTm(uint8_t* packet, uint16
 	return VC_MC_FRAME_BUFFER_FULL;
 }
 
-ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength, ServiceType service_type) {
+ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength, ServiceType serviceType) {
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
@@ -165,7 +165,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
     etl::queue<uint16_t, PacketBufferTmSize> *packetLengthBufferTcTx;
     etl::queue<uint8_t, PacketBufferTmSize> *packetBufferTcTx;
 
-    if (service_type == ServiceType::TYPE_AD){
+    if (serviceType == ServiceType::TYPE_AD){
         packetLengthBufferTcTx = &mapChannel.packetLengthBufferTcTxTypeA;
         packetBufferTcTx = &mapChannel.packetBufferTcTxTypeA;
     }
@@ -193,7 +193,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
 	const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
-    segmentationTC(numberOfTransferFrames, maxPacketLength, transferFrameDataLength, vid, mapid, service_type);
+    segmentationTC(numberOfTransferFrames, maxPacketLength, transferFrameDataLength, vid, mapid, serviceType);
 	ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }

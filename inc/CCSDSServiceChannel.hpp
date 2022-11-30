@@ -99,10 +99,15 @@ public:
 	/**
 	 * Requests to process the last packet stored in the buffer of the specific MAPP channel
 	 * (possible more if blocking is enabled). The packets are segmented or blocked together
-	 * and then transferred to the buffer of the virtual channel
+	 * from data of the memory pool and then transferred to the buffer of the virtual channel
+	 * @param vid                       Virtual Channel ID
+	 * @param mapid                     MAP Id
+	 * @param transferFrameDataLength   Data length of the transfer frame
+	 * @param serviceType               Service type of resulting frame. Only packets from the respective service will
+	 *                                  be grouped together
 	 */
 	ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength,
-	                                       ServiceType service_type);
+	                                       ServiceType serviceType);
 
 	uint16_t availableSpaceBufferTxTM() const {
 		return masterChannel.txMasterCopyTM.available();
