@@ -2,6 +2,7 @@
 #include "cstring"
 #include "Logger.hpp"
 #include "Alert.hpp"
+#include "CCSDS_Definitions.hpp"
 
 MemoryPool::MemoryPool() {}
 
