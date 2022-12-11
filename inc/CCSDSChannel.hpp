@@ -51,10 +51,10 @@ private:
 	const uint16_t repetitions;
 
 public:
-	PhysicalChannel(const uint16_t maxFrameLength, const uint16_t maxFramesPdu,
-	                const uint16_t maxPduLength, const uint32_t bitrate, const uint16_t repetitions)
-	    : maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu),
-	      maxPDULength(maxPduLength), bitrate(bitrate), repetitions(repetitions) {}
+	PhysicalChannel(const uint16_t maxFrameLength, const uint16_t maxFramesPdu, const uint16_t maxPduLength,
+	                const uint32_t bitrate, const uint16_t repetitions)
+	    : maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength), bitrate(bitrate),
+	      repetitions(repetitions) {}
 
 	uint16_t getMaxFrameLength() const {
 		return maxFrameLength;
@@ -63,7 +63,7 @@ public:
 	/**
 	 * Empty default constructor
 	 */
-	PhysicalChannel() : maxFrameLength(0), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0){}
+	PhysicalChannel() : maxFrameLength(0), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0) {}
 
 	/**
 	 * Sets the maximum number of transfer frames that can be transferred in a single data unit
@@ -107,7 +107,7 @@ private:
 	const uint8_t MAPID; // 6 bits
 
 public:
-	template<class TransferFrameType>
+	template <class TransferFrameType>
 	void storeMAPChannel(TransferFrameType packet);
 
 	/**
@@ -146,28 +146,28 @@ protected:
 	 * Store frames before being extracted
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> rxInFramesAfterVCReception;
-    /**
-      * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
-      * Applicable to Type-A Frames
-      */
-    etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeA;
+	/**
+	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
+	 * Applicable to Type-A Frames
+	 */
+	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeA;
 
-    /**
-     * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data.
-     * Applicable to Type-A Frames
-     */
-    etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeA;
-    /**
-     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
-     * Applicable to Type-B Frames
-     */
-    etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeB;
+	/**
+	 * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data.
+	 * Applicable to Type-A Frames
+	 */
+	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeA;
+	/**
+	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
+	 * Applicable to Type-B Frames
+	 */
+	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeB;
 
-    /**
-     * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data.
-     * Applicable to Type-A Frames
-     */
-    etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeB;
+	/**
+	 * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data.
+	 * Applicable to Type-A Frames
+	 */
+	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeB;
 };
 
 /**
@@ -292,10 +292,9 @@ public:
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
 	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blocking(blockingTC),
-	      repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions), repetitionTypeBFrame(repetitionTypeBFrame),
-	      waitQueueTxTC(),
-	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
-	      frameErrorControlFieldPresent(frameErrorControlFieldPresent),
+	      repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions),
+	      repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
+	      sentQueueRxTC(), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
 	      currentlyProcessedCLCW(0), frameCountTM(0),
 	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
@@ -307,11 +306,12 @@ public:
 	VirtualChannel(const VirtualChannel& v)
 	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
 	      maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
-	      repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
-	      sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC), sentQueueRxTC(v.waitQueueRxTC),
-	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop), farm(v.farm),
-	      masterChannel(v.masterChannel), blocking(v.blocking), synchronization(v.synchronization),
-	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
+	      repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM),
+	      waitQueueTxTC(v.waitQueueTxTC), sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC),
+	      sentQueueRxTC(v.waitQueueRxTC), txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC),
+	      fop(v.fop), farm(v.farm), masterChannel(v.masterChannel), blocking(v.blocking),
+	      synchronization(v.synchronization), secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
+	      secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels),
 	      currentlyProcessedCLCW(0) {
@@ -417,12 +417,13 @@ struct MasterChannel {
 	uint8_t frameCount{};
 
 	MasterChannel()
-	    : virtualChannels(), txToBeTransmittedFramesAfterAllFramesGenerationListTC(), txOutFramesBeforeAllFramesGenerationListTC(), currFrameCountTM(0) {}
+	    : virtualChannels(), txToBeTransmittedFramesAfterAllFramesGenerationListTC(),
+	      txOutFramesBeforeAllFramesGenerationListTC(), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtualChannels(m.virtualChannels), frameCount(m.frameCount),
 	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
-          txToBeTransmittedFramesAfterAllFramesGenerationListTC(
+	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
 	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
 	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), currFrameCountTM(m.currFrameCountTM) {
 		for (auto& vc : virtualChannels) {
@@ -473,7 +474,7 @@ struct MasterChannel {
 	/**
 	 * Returns the first stored Transfer Frame in txMasterCopyTC
 	 */
-	 TransferFrameTC geFirstTxMasterCopyTcFrame();
+	TransferFrameTC geFirstTxMasterCopyTcFrame();
 
 	/**
 	 * Add virtual channel to master channel
@@ -494,7 +495,8 @@ struct MasterChannel {
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions);
+	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
+	                         const uint8_t vcRepetitions);
 
 private:
 	// Packets stored in frames list, before being processed by the all frames generation service
@@ -576,7 +578,7 @@ private:
 	void setRetransmitFrame(uint8_t frameSequenceNumber);
 
 	MemoryPool masterChannelPoolTM = MemoryPool();
-    MemoryPool masterChannelPoolTC = MemoryPool();
+	MemoryPool masterChannelPoolTC = MemoryPool();
 };
 
 #endif // CCSDS_CHANNEL_HPP
