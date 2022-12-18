@@ -156,7 +156,7 @@ protected:
 	 * @brief Queue that stores the packet data that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-A Frames
 	 */
-	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeA;
+	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTcTxTypeA;
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-B Frames

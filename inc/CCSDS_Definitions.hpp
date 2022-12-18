@@ -91,6 +91,7 @@ inline constexpr uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 enum FlagState { NOT_READY = 0, READY = 1 };
 
 inline constexpr uint16_t PacketBufferTmSize = 512;
+inline constexpr uint16_t PacketBufferTcSize = 512;
 
 inline constexpr uint8_t idle_data[] = {
     0x53, 0x45, 0x24, 0x3,  0xce, 0xf0, 0xd2, 0x75, 0x50, 0xb9, 0x57, 0x24, 0x70, 0x83, 0xa8, 0x4e, 0x44, 0xd4, 0xa6,

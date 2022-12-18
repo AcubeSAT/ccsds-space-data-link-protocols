@@ -40,6 +40,27 @@ private:
 
 	etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
+    /**
+     * Auxiliary function for blocking of packets stored in the stored packet buffer
+     * @param transferFrameDataLength   The length of the data field of the TM Transfer frame
+     * @param packetLength              The length of the next packet in the stored TM packet buffer
+     * @param vcid                      Virtual Channel ID
+     * @return                          A Service Channel Notification
+     */
+    ServiceChannelNotification blockingTM(uint16_t transferFrameDataLength, uint16_t packetLength, uint8_t vid);
+
+    /**
+     * Auxiliary function for blocking of packets stored in the stored packet buffer
+     * @param transferFrameDataLength   The length of the data field of the TM Transfer frame
+     * @param packetLength              The length of the next packet in the stored TM packet buffer
+     * @param vcid                      Virtual Channel ID
+     * @param mapid                     MAP Channel ID
+     * @param serviceType              Service Type for differentiation of Type-A and Type-B frames
+     * @return                          A Service Channel Notification
+     */
+    ServiceChannelNotification blockingTC(uint16_t transferFrameDataLength, uint16_t packetLength,
+                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
+
 public:
 	// Public methods that are called by the scheduler
 
@@ -264,16 +285,7 @@ public:
 	 */
 	uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
 
-    /**
-	 * Function used by the vcGenerationServiceTM function to implement the blocking of packets stored in packetBufferTmTx
-	 * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the
-	 * vcGenerationServiceTM parameter
-	 * @param packetLength The length of the next packet in the packetBufferTmTx
-	 * @return A Service Channel Notification as it is the case with vcGenerationServiceTM
-	 */
-	ServiceChannelNotification blockingTm(uint16_t transferFrameDataLength, uint16_t packetLength, uint8_t gvcid);
-
-    /**
+	/**
      * Auxiliary function used to implement the segmentation of packets
      * @param numberOfTransferFrames The number of transfer frames that the packet will segmented into
      * @param transferFrameDataLength The length of the data field

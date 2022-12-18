@@ -479,6 +479,8 @@ TEST_CASE("CLCW construction at VC Reception") {
 }
 
 TEST_CASE("Frame Acknowledgement") {
+    ServiceChannelNotification err;
+
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
@@ -504,47 +506,90 @@ TEST_CASE("Frame Acknowledgement") {
 	// Initate  AD Service
 	serv_channel.initiateAdClcw(0);
 	// Send a TC Frame with the right frame sequence number
-	serv_channel.storePacketTc(packet1, 10, 0, 0, ServiceType::TYPE_AD);
-	serv_channel.mappRequest(0, 0, 10, ServiceType::TYPE_AD);
-	serv_channel.vcGenerationRequestTC(0);
-	serv_channel.allFramesGenerationTCRequest();
+	err = serv_channel.storePacketTc(packet1, 10, 0, 0, ServiceType::TYPE_AD);
+	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.mappRequest(0, 0, 10, ServiceType::TYPE_AD);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.vcGenerationRequestTC(0);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.allFramesGenerationTCRequest();
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
+
 	TransferFrameTC transferFrame = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	serv_channel.storeTC(transferFrame.packetData(), transferFrame.getFrameLength());
-	serv_channel.allFramesReceptionTCRequest();
-	serv_channel.vcReceptionTC(0);
+	err = serv_channel.storeTC(transferFrame.packetData(), transferFrame.getFrameLength());
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.allFramesReceptionTCRequest();
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.vcReceptionTC(0);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
 	// Check the clcw that was created in vcReceptionTC
-	serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
+	err = serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TcTransferFrameSize);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
 
 	// Repeat the process with the next frame
-	serv_channel.storePacketTc(packet2, 9, 0, 0, ServiceType::TYPE_AD);
-	serv_channel.mappRequest(0, 0, 9, ServiceType::TYPE_AD);
-	serv_channel.vcGenerationRequestTC(0);
+	err = serv_channel.storePacketTc(packet2, 9, 0, 0, ServiceType::TYPE_AD);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.mappRequest(0, 0, 9, ServiceType::TYPE_AD);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.vcGenerationRequestTC(0);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 1);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
-	serv_channel.storeTC(transferFrame2.packetData(), transferFrame.getFrameLength());
-	serv_channel.allFramesReceptionTCRequest();
-	serv_channel.vcReceptionTC(0);
-	serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
+
+	err = serv_channel.storeTC(transferFrame2.packetData(), transferFrame.getFrameLength());
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.allFramesReceptionTCRequest();
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.vcReceptionTC(0);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TcTransferFrameSize);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
 
 	serv_channel.setVs(1, 10);
 	serv_channel.initiateAdClcw(1);
 	// Set the transmitter frame sequence number outside the FOP window
-	serv_channel.storePacketTc(packet1, 9, 1, 0, ServiceType::TYPE_AD);
-	serv_channel.mappRequest(1, 0, 9, ServiceType::TYPE_AD);
-	serv_channel.vcGenerationRequestTC(1);
-	serv_channel.allFramesGenerationTCRequest();
+	err = serv_channel.storePacketTc(packet1, 9, 1, 0, ServiceType::TYPE_AD);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.mappRequest(1, 0, 9, ServiceType::TYPE_AD);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.vcGenerationRequestTC(1);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.allFramesGenerationTCRequest();
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 10);
+
 	TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	serv_channel.storeTC(transferFrame3.packetData(), transferFrame.getFrameLength());
-	serv_channel.allFramesReceptionTCRequest();
-	serv_channel.vcReceptionTC(1);
-	serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
+	err = serv_channel.storeTC(transferFrame3.packetData(), transferFrame.getFrameLength());
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.allFramesReceptionTCRequest();
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.vcReceptionTC(1);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+	err = serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
+    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == false);
 }
