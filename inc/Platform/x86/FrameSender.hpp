@@ -21,7 +21,8 @@ public:
 	FrameSender();
 	~FrameSender();
 
-	void sendFrameToYamcs(const TransferFrameTM& frame);
+	void sendFrameToYamcs(uint8_t* frame, uint16_t frameLength);
+
 
 
 };

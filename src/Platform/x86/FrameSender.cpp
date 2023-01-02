@@ -34,7 +34,7 @@ FrameSender::FrameSender() {
 	}
 	else{
 		printf("\nAccepted\n");
-		sleep(5);
+		sleep(15);
 		//LOG_DEBUG <<"Accepted";
 	}
 
@@ -44,9 +44,8 @@ FrameSender::~FrameSender() {
 
 }
 
-void FrameSender::sendFrameToYamcs(const TransferFrameTM& frame) {
-	String<TmTransferFrameSize> createdFrame(frame.packetData(), TmTransferFrameSize);
+void FrameSender::sendFrameToYamcs(uint8_t* frame, uint16_t frameLength) {
+	String<TmTransferFrameSize> createdFrame(frame, frameLength);
 	auto bytesSent = ::send(clientSocket, createdFrame.c_str(), createdFrame.length(), MSG_NOSIGNAL);
-
-		LOG_DEBUG << bytesSent << " bytes sent";
+	LOG_DEBUG << bytesSent << " bytes sent";
 }

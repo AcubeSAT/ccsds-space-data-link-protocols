@@ -6,7 +6,7 @@
 
 #include <cstdint>
 
-inline constexpr uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
+inline constexpr uint16_t SpacecraftIdentifier = 171; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those inline constants don't need to be global and can be defined in the class instead
 
