@@ -28,11 +28,6 @@ private:
 	 */
 	PhysicalChannel physicalChannel;
 
-	// @todo Think about whether we need to keep the size of the packets in a queue. Technically, we can determine this
-	// from the header of the frame. Not sure what makes more sense
-
-	uint8_t packetCountTM;
-
 	/**
 	 * Variable to indicate that a CLCW has been constructed and should be sent
 	 */
@@ -142,18 +137,7 @@ public:
 	 * Returns the first frame in the masterCopyTcTx buffer
 	 */
 	TransferFrameTC getFirstMasterCopyTcFrame();
-
-#if maxReceivedUnprocessedTcInVirtBuffer > 0
-
-	/**
-	 *  Requests to process the last packet stored in the buffer of the specific virtual channel
-	 * (possible more if blocking is enabled). The packets are segmented or blocked together
-	 * and then stored in the buffer of the virtual channel
-	 */
-	ServiceChannelNotif vcpp_request(uint8_t vid);
-
-#endif
-
+	
 	/**
 	 * The Master Channel Generation Service shall be used to insert Transfer Frame
 	 * Secondary Header and/or Operational Control Field service data units into Transfer Frames
@@ -481,4 +465,6 @@ public:
 	// This is honestly a bit confusing
 	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
+	//Default constructor
+	ServiceChannel() : masterChannel(), physicalChannel(){};
 };

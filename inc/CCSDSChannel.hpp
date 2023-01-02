@@ -31,11 +31,6 @@ private:
 	const uint16_t maxFrameLength;
 
 	/**
-	 * Determines whether Error Control field is present
-	 */
-	const bool errorControlFieldPresent;
-
-	/**
 	 * Sets the maximum number of transfer frames that can be transferred in a single data unit
 	 */
 	const uint16_t maxFramePdu;
@@ -56,9 +51,9 @@ private:
 	const uint16_t repetitions;
 
 public:
-	PhysicalChannel(const uint16_t maxFrameLength, const bool errorControlPresent, const uint16_t maxFramesPdu,
+	PhysicalChannel(const uint16_t maxFrameLength, const uint16_t maxFramesPdu,
 	                const uint16_t maxPduLength, const uint32_t bitrate, const uint16_t repetitions)
-	    : maxFrameLength(maxFrameLength), errorControlFieldPresent(errorControlPresent), maxFramePdu(maxFramesPdu),
+	    : maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu),
 	      maxPDULength(maxPduLength), bitrate(bitrate), repetitions(repetitions) {}
 
 	uint16_t getMaxFrameLength() const {
@@ -66,11 +61,9 @@ public:
 	}
 
 	/**
-	 * Determines whether Error Control field is present
+	 * Empty default constructor
 	 */
-	bool getErrorControlFieldPresent() const {
-		return errorControlFieldPresent;
-	}
+	PhysicalChannel() : maxFrameLength(0), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0){}
 
 	/**
 	 * Sets the maximum number of transfer frames that can be transferred in a single data unit
@@ -190,7 +183,7 @@ public:
 	/**
 	 * Determines whether smaller data units can be combined into a single transfer frame
 	 */
-	const bool blockingTC;
+	const bool blocking;
 
 	/**
 	 * Determines the maximum number of times Type A frames will be re-transmitted
@@ -276,7 +269,7 @@ public:
 	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
 	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blockingTC(blockingTC),
+	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blocking(blockingTC),
 	      repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions), repetitionTypeBFrame(repetitionTypeBFrame),
 	      waitQueueTxTC(),
 	      sentQueueTxTC(), waitQueueRxTC(), sentQueueRxTC(),
@@ -295,7 +288,7 @@ public:
 	      repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM), waitQueueTxTC(v.waitQueueTxTC),
 	      sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC), sentQueueRxTC(v.waitQueueRxTC),
 	      txUnprocessedPacketListBufferTC(v.txUnprocessedPacketListBufferTC), fop(v.fop), farm(v.farm),
-	      masterChannel(v.masterChannel), blockingTC(v.blockingTC), synchronization(v.synchronization),
+	      masterChannel(v.masterChannel), blocking(v.blocking), synchronization(v.synchronization),
 	      secondaryHeaderTMPresent(v.secondaryHeaderTMPresent), secondaryHeaderTMLength(v.secondaryHeaderTMLength),
 	      frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
 	      operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels),
