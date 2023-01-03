@@ -863,7 +863,7 @@ ServiceChannelNotification ServiceChannel::blockingTm(uint16_t transferFrameData
 	SegmentLengthID segmentLengthId = NoSegmentation;
 	TransferFrameTM transferFrameTm =
 	    TransferFrameTM(transferFrameData, currentTransferFrameDataLength + TmPrimaryHeaderSize + TmTrailerSize,
-	                    vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.segmentHeaderPresent,
+	                    vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.secondaryHeaderTMPresent,
 	                    segmentLengthId, vchan.synchronization, TM);
 	masterChannel.txMasterCopyTM.push_back(transferFrameTm);
 	masterChannel.txProcessedPacketListBufferTM.push_back(&(masterChannel.txMasterCopyTM.back()));

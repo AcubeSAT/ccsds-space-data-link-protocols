@@ -188,7 +188,7 @@ struct TransferFrameTM : public TransferFrame {
 	                bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
 	                SynchronizationFlag syncFlag, PacketType type = TM)
 	    : TransferFrame(type, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
-	      firstHeaderPointer(firstHeaderPointer) {
+	      firstHeaderPointer(0) {
 		// Transfer Frame Version Number + Spacecraft Id
 		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field

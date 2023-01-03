@@ -15,7 +15,7 @@ int main(){
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, 128, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, false, SynchronizationFlag::OCTET, 255, 10, 10, 3,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -45,6 +45,8 @@ int main(){
 	printf("\nNumber of Packet Sent %d", frameMaker.getNumberOfPackets());
 
 	FrameSender frameSender = FrameSender();
-	frameSender.sendFrameToYamcs(frame.first, frameMaker.getFrameLength());
-
+	for(uint8_t i = 0 ; i < 8 ; i++) {
+		frameSender.sendFrameToYamcs(frame.first, frameMaker.getFrameLength());
+		sleep(2);
+	}
 }
