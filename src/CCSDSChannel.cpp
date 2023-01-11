@@ -48,7 +48,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTC* packet) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
 	}
-	txToBeTransmittedFramesAfterAllFramesGenerationListTC.push_back(packet);
+    txToBeTransmittedFramesAfterAllFramesGenerationListTC.push_back(packet);
 	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
 	return MasterChannelAlert::NO_MC_ALERT;
 }

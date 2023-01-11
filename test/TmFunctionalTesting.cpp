@@ -34,7 +34,7 @@ ServiceChannelNotification randomServiceCallTx(uint16_t frameLength, uint8_t* fr
 		printf("\n");
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	} else if (randomServicePicker == 1) {
-		serviceChannel->vcGenerationService(10, gcvid);
+		serviceChannel->vcGenerationServiceTM(10, gcvid);
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	} else if (randomServicePicker == 2) {
 		serviceChannel->mcGenerationTMRequest();
