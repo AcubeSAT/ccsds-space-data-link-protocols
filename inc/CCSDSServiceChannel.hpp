@@ -95,8 +95,10 @@ public:
 	                                         ServiceType service_type);
 
     /**
-     * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx
-     * queues
+     * Serves as the main entry point from the upper layers
+     * Stores the raw packet data along with the length of the packet so they can be later turned into transfer frames
+     * so they can be later transmitted
+     *
      * @param packet pointer to the packet data
      * @param packetLength length of the packet
      * @param vid the virtual channel id

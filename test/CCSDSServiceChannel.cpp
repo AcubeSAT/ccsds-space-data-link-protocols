@@ -531,7 +531,7 @@ TEST_CASE("Frame Acknowledgement") {
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	// Check the clcw that was created in vcReceptionTC
-	err = serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TcTransferFrameSize);
+	err = serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), MaxTcTransferFrameSize);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
 
@@ -557,7 +557,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.vcReceptionTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	err = serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), TcTransferFrameSize);
+	err = serv_channel.allFramesReceptionTMRequest(serv_channel.getClcwTransferFrameDataBuffer(), MaxTcTransferFrameSize);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
 

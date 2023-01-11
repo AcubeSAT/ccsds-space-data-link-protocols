@@ -14,7 +14,7 @@ inline constexpr uint16_t TmTransferFrameSize = 128;
 inline constexpr uint8_t TmPrimaryHeaderSize = 6;
 inline constexpr uint8_t TmTrailerSize = 6;
 
-inline constexpr uint16_t TcTransferFrameSize = 128;
+inline constexpr uint16_t MaxTcTransferFrameSize = 128;
 inline const uint8_t TcPrimaryHeaderSize = 5;
 
 inline constexpr uint16_t MCID = SpacecraftIdentifier;

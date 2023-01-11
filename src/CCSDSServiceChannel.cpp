@@ -180,7 +180,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 		return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
 	}
 
-    static uint8_t tmpData[TcTransferFrameSize] = {0, 0, 0, 0, 0};
+    static uint8_t tmpData[MaxTcTransferFrameSize] = {0, 0, 0, 0, 0};
 	TransferFrameTC* packet = mapChannel.unprocessedPacketListBufferTC.front();
 
     uint16_t packetLength = packetLengthBufferTcTx->front();
@@ -189,7 +189,6 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
     const uint16_t maxFrameLength = virtualChannel.maxFrameLengthTC;
 	bool segmentationEnabled = virtualChannel.segmentHeaderPresent;
-	bool blocking_enabled = virtualChannel.blocking;
 
 	const uint16_t maxPacketLength = maxFrameLength - (TcPrimaryHeaderSize + segmentationEnabled * 1U);
 
@@ -792,20 +791,16 @@ uint8_t* ServiceChannel::getClcwTransferFrameDataBuffer() {
 ServiceChannelNotification ServiceChannel::blockingTC(uint16_t transferFrameDataLength, uint16_t packetLength,
                                                       uint8_t vid, uint8_t mapid, ServiceType serviceType){
     uint16_t currentTransferFrameDataLength = 0;
-    static uint8_t tmpData[TcTransferFrameSize] = {0};
+    static uint8_t tmpData[MaxTcTransferFrameSize] = {0};
 
-	// Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        // If it doesn't, abort operation
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
     }
 
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
-    // If Segment Header present, check if MAP channel Id does not exist in the relevant MAP Channels map
     if (vchan.segmentHeaderPresent && (vchan.mapChannels.find(mapid) == vchan.mapChannels.end())) {
-        // If it doesn't, abort the operation
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
         return ServiceChannelNotification::INVALID_MAP_ID;
     }
@@ -918,7 +913,7 @@ ServiceChannelNotification ServiceChannel::segmentationTC(uint8_t numberOfTransf
     uint16_t currentTransferFrameDataLength = 0;
 	uint8_t tcTrailerSize = 2*virtualChannel.frameErrorControlFieldPresent;
 
-    static uint8_t tmpData[TcTransferFrameSize] = {0};
+    static uint8_t tmpData[MaxTcTransferFrameSize] = {0};
     for (uint16_t i = 0; i < numberOfTransferFrames; i++) {
         currentTransferFrameDataLength =
             packetLength > transferFrameDataLength ? transferFrameDataLength : packetLength;
@@ -933,7 +928,7 @@ ServiceChannelNotification ServiceChannel::segmentationTC(uint8_t numberOfTransf
             segmentLengthId = SegmentaionEnd;
         }
         for (uint8_t j = 0; j < TmTrailerSize; j++) {
-            if (currentTransferFrameDataLength + TcPrimaryHeaderSize + i < TcTransferFrameSize) {
+            if (currentTransferFrameDataLength + TcPrimaryHeaderSize + i < MaxTcTransferFrameSize) {
                 tmpData[currentTransferFrameDataLength + TcPrimaryHeaderSize + i] = 0;
             }
         }
