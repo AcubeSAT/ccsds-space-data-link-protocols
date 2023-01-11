@@ -16,11 +16,8 @@ TEST_CASE("Initiate FOP Directives") {
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 
-	serv_channel_fop.storeTC(data, 11, 3, 2, 10, ServiceType::TYPE_AD);
-
-	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel - 1);
-
-	serv_channel_fop.mappRequest(3, 2);
+	serv_channel_fop.storePacketTc(data, 11, 3, 2, ServiceType::TYPE_AD);
+	serv_channel_fop.mappRequest(3, 2, 11, ServiceType::TYPE_AD);
 
 	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
 
@@ -71,11 +68,11 @@ TEST_CASE("Retransmission"){
 
 	//Send 3 frames
 	serv_channel.initiateAdClcw(0);
-	serv_channel.storeTC(packet1, 9, 0, 0, 0, ServiceType::TYPE_AD);
-	serv_channel.storeTC(packet2,9,0,0,0,ServiceType::TYPE_AD);
-	serv_channel.storeTC(packet3,9,0,0,0,ServiceType::TYPE_AD);
+	serv_channel.storePacketTc(packet1, 9, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTc(packet2, 9, 0, 0, ServiceType::TYPE_AD);
+	serv_channel.storePacketTc(packet3, 9, 0, 0, ServiceType::TYPE_AD);
 	for (uint8_t i = 0; i < 3; i++){
-		serv_channel.mappRequest(0, 0);
+		serv_channel.mappRequest(0, 0, 9, ServiceType::TYPE_AD);
 		serv_channel.vcGenerationRequestTC(0);
 		serv_channel.allFramesGenerationTCRequest();
 	}

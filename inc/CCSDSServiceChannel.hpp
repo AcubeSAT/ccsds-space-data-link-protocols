@@ -40,6 +40,27 @@ private:
 
 	etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
+    /**
+     * Auxiliary function for blocking of packets stored in the stored packet buffer
+     * @param transferFrameDataLength   The length of the data field of the TM Transfer frame
+     * @param packetLength              The length of the next packet in the stored TM packet buffer
+     * @param vcid                      Virtual Channel ID
+     * @return                          A Service Channel Notification
+     */
+    ServiceChannelNotification blockingTM(uint16_t transferFrameDataLength, uint16_t packetLength, uint8_t vid);
+
+    /**
+     * Auxiliary function for blocking of packets stored in the stored packet buffer
+     * @param transferFrameDataLength   The length of the data field of the TM Transfer frame
+     * @param packetLength              The length of the next packet in the stored TM packet buffer
+     * @param vcid                      Virtual Channel ID
+     * @param mapid                     MAP Channel ID
+     * @param serviceType              Service Type for differentiation of Type-A and Type-B frames
+     * @return                          A Service Channel Notification
+     */
+    ServiceChannelNotification blockingTC(uint16_t transferFrameDataLength, uint16_t packetLength,
+                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
+
 public:
 	// Public methods that are called by the scheduler
 
@@ -50,54 +71,39 @@ public:
 		return masterChannel.txProcessedPacketListBufferTM.front();
 	}
 
-	uint16_t availableMcTxTM() const {
-		return masterChannel.txProcessedPacketListBufferTM.available();
-	}
-
-	/**
-	 * Stores an incoming  TC packet in the ring buffer
-	 *
-	 * @param packet Data of the packet
-	 * @param packetLength TransferFrameTC length
-	 * @param gvcid Global Virtual Channel ID
-	 * @param mapid MAP ID
-	 * @param sduid SDU ID
-	 * @param serviceType Service Type - Type-A or Type-B
-	 */
-	ServiceChannelNotification storeTC(uint8_t* packet, uint16_t packetLength, uint8_t gvcid, uint8_t mapid,
-	                                   uint16_t sduid, ServiceType serviceType);
-
-	/**
-	 * This service is used for storing incoming TM packets in the master channel. It also includes the
-	 * Virtual Channel Generation Service
-	 *
-	 * @param packet Data of the packet
-	 * @param packetLength TransferFrameTC length
-	 * @param gvcid Global Virtual Channel ID
-	 * @param scid Spacecraft ID
-	 */
-
-	ServiceChannelNotification storeTM(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
-
 	/**
 	 * Service that generates a transfer frame by combining the packet data to transfer frame data and initializes the
 	 * transfer frame primary header
-	 * @param maxTransferFrameDataLength the maximum transfer frame data legnth
+	 * @param transferFrameDataLength the maximum transfer frame data length
 	 * @param gvcid the global virtual channel id
 	 * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
 	 * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
 	 * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
 	 */
-	ServiceChannelNotification vcGenerationService(uint16_t maxTransferFrameDataLength, uint8_t gvcid);
+	ServiceChannelNotification vcGenerationServiceTM(uint16_t transferFrameDataLength, uint8_t vid);
 
-	/**
-	 * Method that stores a TM packet pointer and the TM  packet data to the packetLengthBufferTmTx and packetBufferTmTx
-	 * queues
-	 * @param packet pointer to the packet data
-	 * @param packetLength length of the packet
-	 * @param gvcid the global virtual channel id
-	 */
-	ServiceChannelNotification storePacketTm(uint8_t* packet, uint16_t packetLength, uint8_t gvcid);
+    /**
+     * Method that stores a packet pointer and the packet data to the relevant buffers
+     * queues
+     * @param packet        Pointer to the packet data
+     * @param packetLength  Length of the packet
+     * @param vid           Virtual channel id
+     * @param mapid         MAP channel id
+     * @param service_type  Service Type
+     */
+    ServiceChannelNotification storePacketTc(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
+	                                         ServiceType service_type);
+
+    /**
+     * Serves as the main entry point from the upper layers
+     * Stores the raw packet data along with the length of the packet so they can be later turned into transfer frames
+     * so they can be later transmitted
+     *
+     * @param packet pointer to the packet data
+     * @param packetLength length of the packet
+     * @param vid the virtual channel id
+     */
+	ServiceChannelNotification storePacketTm(uint8_t* packet, uint16_t packetLength, uint8_t vid);
 
 	/**
 	 * This service is used for extracting RX TM packet. It signals the end of the TM Rx chain
@@ -116,9 +122,15 @@ public:
 	/**
 	 * Requests to process the last packet stored in the buffer of the specific MAPP channel
 	 * (possible more if blocking is enabled). The packets are segmented or blocked together
-	 * and then transferred to the buffer of the virtual channel
+	 * from data of the memory pool and then transferred to the buffer of the virtual channel
+	 * @param vid                       Virtual Channel ID
+	 * @param mapid                     MAP Id
+	 * @param transferFrameDataLength   Data length of the transfer frame
+	 * @param serviceType               Service type of resulting frame. Only packets from the respective service will
+	 *                                  be grouped together
 	 */
-	ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid);
+	ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength,
+	                                       ServiceType serviceType);
 
 	uint16_t availableSpaceBufferTxTM() const {
 		return masterChannel.txMasterCopyTM.available();
@@ -163,15 +175,15 @@ public:
 	 */
 	ServiceChannelNotification vcReceptionTC(uint8_t vid);
 
-	/**
-	 * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
-	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
-	 * rate to the Channel Coding Sublayer.
-	 * @see p. 4.3.8 from TC Space Data Link Protocol
-	 */
-	ServiceChannelNotification allFramesGenerationTCRequest();
+    /**
+     * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
+     * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
+     * rate to the Channel Coding Sublayer.
+     * @see p. 4.3.8 from TC Space Data Link Protocol
+     */
+    ServiceChannelNotification allFramesGenerationTCRequest();
 
-	/**
+    /**
 	 * The  All  Frames  Reception  Function  shall  be  used  to  perform  error  control
 	 * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
 	 * rate to the Channel Coding Sublayer. Also writes the received packet to the provided pointer.
@@ -276,24 +288,26 @@ public:
 	uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
 
 	/**
-	 * Function used by the vcGenerationService function to implement the blocking of packets stored in packetBufferTmTx
-	 * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the
-	 * vcGenerationService parameter
-	 * @param packetLength The length of the next packet in the packetBufferTmTx
-	 * @return A Service Channel Notification as it is the case with vcGenerationService
-	 */
-	ServiceChannelNotification blockingTm(uint16_t transferFrameDataLength, uint16_t packetLength, uint8_t gvcid);
+     * Auxiliary function used to implement the segmentation of packets
+     * @param numberOfTransferFrames The number of transfer frames that the packet will segmented into
+     * @param transferFrameDataLength The length of the data field
+     * @param packetLength The length of the next packet in the buffer
+     * @return Service Channel Notification
+     */
+    ServiceChannelNotification segmentationTC(uint8_t numberOfTransferFrames, uint16_t packetLength,
+	                                          uint16_t transferFrameDataLength, uint8_t vid, uint8_t mapid,
+	                                          ServiceType service_type);
 
-	/**
-	 * Function used by the vcGenerationService function to implement the segmentation of packets stored in
+    /**
+	 * Function used by the vcGenerationServiceTM function to implement the segmentation of packets stored in
 	 * packetBufferTmTx
 	 * @param numberOfTransferFrames The number of transfer frames that the packet will segmented into
 	 * @param transferFrameDataLength The length of the data field of the TM Transfer frame, taken by the
-	 * vcGenerationService parameter
+	 * vcGenerationServiceTM parameter
 	 * @param packetLength The length of the next packet in the packetBufferTmTx
-	 * @return A Service Channel Notification as it is the case with vcGenerationService
+	 * @return A Service Channel Notification as it is the case with vcGenerationServiceTM
 	 */
-	ServiceChannelNotification segmentationTm(uint8_t numberOfTransferFrames, uint16_t packetLength,
+	ServiceChannelNotification segmentationTM(uint8_t numberOfTransferFrames, uint16_t packetLength,
 	                                          uint16_t transferFrameDataLength, uint8_t gvcid);
 
 	/**
@@ -349,14 +363,15 @@ public:
 		}
 		return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
 	}
-	/**
-	 * Available number of outcoming TX frames in master channel buffer
-	 */
-	uint16_t txOutAvailable() const {
-		return masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.available();
-	}
 
-	/**
+    /**
+     * Available number of outcoming TX frames in master channel buffer
+     */
+    uint16_t txOutAvailable() const {
+        return masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.available();
+    }
+
+    /**
 	 * Available number of outcoming TC RX frames in master channel buffer
 	 */
 	uint16_t rxOutAvailableTC() const {
