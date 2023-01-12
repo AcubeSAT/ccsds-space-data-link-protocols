@@ -21,7 +21,7 @@ uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 
 bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
 	int32_t indexInMemory = packet - &memory[0];
-	if (indexInMemory >= 0 && indexInMemory <= memorySize - 1) {
+	if (indexInMemory >= 0 && indexInMemory < memorySize && indexInMemory + packetLength < memorySize) {
 		for (uint16_t deletionIndex = indexInMemory; deletionIndex < indexInMemory + packetLength; deletionIndex++)
 			usedMemory.set(deletionIndex, false);
 		return true;
