@@ -135,7 +135,12 @@ ServiceChannelNotification ServiceChannel::storePacketTc(uint8_t *packet, uint16
 
 
 ServiceChannelNotification ServiceChannel::storePacketTm(uint8_t* packet, uint16_t packetLength, uint8_t vid) {
-	VirtualChannel* vchan = &(masterChannel.virtualChannels.at(vid));
+    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
+    }
+
+    VirtualChannel* vchan = &(masterChannel.virtualChannels.at(vid));
 
 	if (packetLength <= vchan->packetBufferTmTx.available()) {
 		vchan->packetLengthBufferTmTx.push(packetLength);
