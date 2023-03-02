@@ -4,7 +4,7 @@
 #include <bitset>
 #include "etl/vector.h"
 #include "Alert.hpp"
-
+#include "CCSDS_Definitions.hpp"
 /**
  * @class MemoryPool This class defines a custom memory pool which is a statically allocated block of memory.
  * This helps better keep track of data and reduce the memory needed for storing them.
