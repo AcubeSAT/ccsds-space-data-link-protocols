@@ -53,7 +53,3 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 uint8_t* MemoryPool::getMemory() {
 	return &memory[0];
 }
-
-std::bitset<MemoryPoolMemorySize> MemoryPool::getUsedMemory() {
-	return usedMemory;
-}
