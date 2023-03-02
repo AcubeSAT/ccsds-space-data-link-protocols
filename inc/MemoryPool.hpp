@@ -29,7 +29,7 @@ private:
 	std::bitset<memorySize> usedMemory = std::bitset<memorySize>(0);
 
 public:
-	MemoryPool();
+	MemoryPool() = default;
 
 	/**
 	 * This method finds the head of a contiguous block in the memory pool of a given size
@@ -64,5 +64,7 @@ public:
 	/**
 	 * @return the bitset that shows if each memory slot is used.
 	 */
-	std::bitset<memorySize> getUsedMemory();
+	std::bitset<memorySize> &getUsedMemory(){
+	    return usedMemory;
+    }
 };
