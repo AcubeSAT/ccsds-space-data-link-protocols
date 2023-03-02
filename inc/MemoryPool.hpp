@@ -2,7 +2,8 @@
 
 #include <cstdint>
 #include <bitset>
-#include "etl/vector.h"
+#include "etl/map.h"
+
 #include "Alert.hpp"
 #include "CCSDS_Definitions.hpp"
 /**
@@ -23,10 +24,10 @@ private:
 	uint8_t memory[memorySize];
 
 	/**
-	 * @var a bitset that shows if each memory slot is used. If bit in place "i" is False (0), memory slot "i" is empty
-	 * and if bit is True (1), the corresponding memory slot is used.
+	 * @var Keep track of currently used slots. It uses an ordered map to keep track of the beginning position of each stored packet mapped
+     * to the packet's length. We used this instead of an interval tree since we are assuming non-overlapping intervals 
 	 */
-	std::bitset<memorySize> usedMemory = std::bitset<memorySize>(0);
+    etl::map<uint16_t, uint16_t, maxAllocatedPackets> usedMemory;
 
 public:
 	MemoryPool() = default;
@@ -64,7 +65,7 @@ public:
 	/**
 	 * @return the bitset that shows if each memory slot is used.
 	 */
-	std::bitset<memorySize> &getUsedMemory(){
+	etl::map<uint16_t, uint16_t, maxAllocatedPackets> &getUsedMemory(){
 	    return usedMemory;
     }
 };

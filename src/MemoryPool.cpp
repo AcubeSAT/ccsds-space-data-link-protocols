@@ -12,16 +12,16 @@ uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 		return nullptr;
 	}
 	std::memcpy(memory + start, packet, packetLength * sizeof(uint8_t));
-	for (uint16_t memoryIndex = start; memoryIndex < start + packetLength; memoryIndex++)
-		usedMemory.set(memoryIndex, true);
+	
+	usedMemory[index.value()] = packetLength;
+
 	return memory + start;
 }
 
 bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
 	int32_t indexInMemory = packet - &memory[0];
 	if (indexInMemory >= 0 && indexInMemory + packetLength < memorySize) {
-		for (uint16_t deletionIndex = indexInMemory; deletionIndex < indexInMemory + packetLength; deletionIndex++)
-			usedMemory.set(deletionIndex, false);
+		usedMemory.erase(indexInMemory);
 		return true;
 	}
 	LOG<Logger::error>() << "Packet not found, index is out of bounds";
@@ -31,6 +31,9 @@ bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
 std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> fit;
 	uint16_t windowLength = 0;
+	auto it_begin = usedMemory.begin();
+    auto it_end = usedMemory.end();
+	
 	for (uint16_t memoryIndex = 0; memoryIndex < memorySize; memoryIndex++) {
 		if (!usedMemory[memoryIndex]) {
 			windowLength++;
