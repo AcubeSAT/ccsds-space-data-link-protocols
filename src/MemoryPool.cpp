@@ -4,8 +4,6 @@
 #include "Alert.hpp"
 #include "CCSDS_Definitions.hpp"
 
-MemoryPool::MemoryPool() {}
-
 uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> index = findFit(packetLength);
 	uint16_t start = index.first;
@@ -52,8 +50,4 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 
 uint8_t* MemoryPool::getMemory() {
 	return &memory[0];
-}
-
-std::bitset<MemoryPoolMemorySize> MemoryPool::getUsedMemory() {
-	return usedMemory;
 }
