@@ -15,7 +15,7 @@ private:
 	/**
 	 * @var The size of the block of memory in bytes
 	 */
-	static constexpr uint16_t memorySize = 5 * 128;
+	static constexpr uint16_t memorySize = MemoryPoolMemorySize;
 
 	/**
 	 * @var An array that allocates statically memory to be used for the packet data
@@ -23,8 +23,8 @@ private:
 	uint8_t memory[memorySize];
 
 	/**
-	 * @var a bitset that shows if each memory slot is used. If bit in place "i" is False(0) -> memory slot "i" is empty
-	 * and if bit is true(1) -> the corresponding memory slot is used.
+	 * @var a bitset that shows if each memory slot is used. If bit in place "i" is False (0), memory slot "i" is empty
+	 * and if bit is True (1), the corresponding memory slot is used.
 	 */
 	std::bitset<memorySize> usedMemory = std::bitset<memorySize>(0);
 
@@ -32,19 +32,19 @@ public:
 	MemoryPool();
 
 	/**
-	 * This method finds the first empty space in the memory pool that can fit the data
-	 * @param packetLength length of the data.
-	 * @return A MasterChannelAlert if there was not enough space for the data else returns the index of the first
+	 * This method finds the head of a contiguous block in the memory pool of a given size
+	 * @param packetLength length of the data (bytes)
+	 * @return A `MasterChannelAlert` is raised if there was not enough space for the data, else returns the index of the first
 	 * memory where the data will be stored.
 	 */
 	std::pair<uint16_t, MasterChannelAlert> findFit(uint16_t packetLength);
 
 	/**
-	 * Method that copies the packet data to the first available chunk of memory of the memory pool.
-	 * Calls the findFit method in order to find the index of the array that is first available.
+	 * Method that copies the packet data to the first contiguous block of memory of the memory pool.
+	 * Calls the `findFit` method in order to find the index of the array that is first available.
 	 * @param packet pointer to the packet data.
 	 * @param packetLength the length of the packet data.
-	 * @return an uint8_t pointer to the packet data in the memory pool or nullptr if packet could not be allocated.
+	 * @return `uint8_t` pointer to the packet data in the memory pool or `nullptr` if packet could not be allocated.
 	 */
 	uint8_t* allocatePacket(uint8_t* packet, uint16_t packetLength);
 
