@@ -87,6 +87,7 @@ inline constexpr uint8_t FopSlidingWindowInitial = 255;
 inline constexpr uint8_t FopTimerInitial = 60; // sec
 
 inline constexpr uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
+inline constexpr uint16_t MaxAllocatedPackets = 50; // Size of memory pool
 
 enum FlagState { NOT_READY = 0, READY = 1 };
 

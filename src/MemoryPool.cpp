@@ -13,7 +13,7 @@ uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 	}
 	std::memcpy(memory + start, packet, packetLength * sizeof(uint8_t));
 	
-	usedMemory[index.value()] = packetLength;
+	usedMemory[index.first] = packetLength;
 
 	return memory + start;
 }
@@ -38,8 +38,8 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 		return fit;
 	}
 
-    const etl::imap<uint16_t, uint16_t, etl::less<uint16_t>>::iterator it_begin = usedMemory.begin();
-    const etl::imap<uint16_t, uint16_t, etl::less<uint16_t>>::iterator it_end = --usedMemory.end();
+    const etl::imap<uint16_t, uint16_t>::iterator it_begin = usedMemory.begin();
+    const etl::imap<uint16_t, uint16_t>::iterator it_end = --usedMemory.end();
 
 	// Check whether list is empty or the packet can fit in the beginning
 	if (usedMemory.empty() || (it_begin->first >= packetLength)){
@@ -50,14 +50,14 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 
     uint16_t gap_size;
 
-    etl::imap<uint16_t, uint16_t, etl::less<uint16_t>>::iterator it = it_begin;
+    etl::imap<uint16_t, uint16_t>::iterator it = it_begin;
 
 	for (it; it != it_end; it++){
-        gap_size = next(it)->first - (it->first + it->second);
+        gap_size = etl::next(it)->first - (it->first + it->second);
 		if (gap_size >= packetLength){
 			usedMemory[it->first + it->second] = packetLength;
 			fit.first = it->first + it->second;
-			return it->first + it->second;
+			return fit;
 		}  		
     }
 
@@ -67,7 +67,7 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 	if (gap_size >= packetLength){
 		usedMemory[it_end->first + it_end->second] = packetLength;
 		fit.first = it_end->first + it_end->second;
-		return it_end->first + it_end->second;
+		return fit;
 	}
 
 	LOG_ERROR << "There is no space in memory pool for the packet.";

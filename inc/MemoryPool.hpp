@@ -18,6 +18,10 @@ private:
 	 */
 	static constexpr uint16_t memorySize = MemoryPoolMemorySize;
 
+    /**
+     * @var Maximum number of packets that can be allocated to the memory buffer
+     */
+    static constexpr uint16_t maxAllocatedPackets = MaxAllocatedPackets;
 	/**
 	 * @var An array that allocates statically memory to be used for the packet data
 	 */
