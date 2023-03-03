@@ -18,20 +18,21 @@ private:
 	 */
 	static constexpr uint16_t memorySize = MemoryPoolMemorySize;
 
-    /**
-     * @var Maximum number of packets that can be allocated to the memory buffer
-     */
-    static constexpr uint16_t maxAllocatedPackets = MaxAllocatedPackets;
+	/**
+	 * @var Maximum number of packets that can be allocated to the memory buffer
+	 */
+	static constexpr uint16_t maxAllocatedPackets = MaxAllocatedPackets;
 	/**
 	 * @var An array that allocates statically memory to be used for the packet data
 	 */
 	uint8_t memory[memorySize];
 
 	/**
-	 * @var Keep track of currently used slots. It uses an ordered map to keep track of the beginning position of each stored packet mapped
-     * to the packet's length. We used this instead of an interval tree since we are assuming non-overlapping intervals 
+	 * @var Keep track of currently used slots. It uses an ordered map to keep track of the beginning position of each
+	 * stored packet mapped to the packet's length. We used this instead of an interval tree since we are assuming
+	 * non-overlapping intervals
 	 */
-    etl::map<uint16_t, uint16_t, maxAllocatedPackets> usedMemory;
+	etl::map<uint16_t, uint16_t, maxAllocatedPackets> usedMemory;
 
 public:
 	MemoryPool() = default;
@@ -39,8 +40,8 @@ public:
 	/**
 	 * This method finds the head of a contiguous block in the memory pool of a given size
 	 * @param packetLength length of the data (bytes)
-	 * @return A `MasterChannelAlert` is raised if there was not enough space for the data, else returns the index of the first
-	 * memory where the data will be stored.
+	 * @return A `MasterChannelAlert` is raised if there was not enough space for the data, else returns the index of
+	 * the first memory where the data will be stored.
 	 */
 	std::pair<uint16_t, MasterChannelAlert> findFit(uint16_t packetLength);
 
@@ -69,7 +70,7 @@ public:
 	/**
 	 * @return the bitset that shows if each memory slot is used.
 	 */
-	etl::map<uint16_t, uint16_t, maxAllocatedPackets> &getUsedMemory(){
-	    return usedMemory;
-    }
+	etl::map<uint16_t, uint16_t, maxAllocatedPackets>& getUsedMemory() {
+		return usedMemory;
+	}
 };

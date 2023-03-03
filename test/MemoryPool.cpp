@@ -31,7 +31,6 @@ TEST_CASE("Packet Insertions") {
 		CHECK(packet2 != nullptr);
 		CHECK(pool.getUsedMemory()[0] == 5);
 		CHECK(pool.getUsedMemory()[5] == 5);
-
 	}
 	SECTION("Packet insertions with some space left") {
 		// Initialize memory pool
@@ -41,7 +40,7 @@ TEST_CASE("Packet Insertions") {
 		uint8_t* packet3 = pool.allocatePacket(data3, 1);
 		CHECK(packet3 != nullptr);
 		CHECK(pool.getUsedMemory()[0] == 5);
-		CHECK(pool.getUsedMemory()[5]== 1);
+		CHECK(pool.getUsedMemory()[5] == 1);
 		CHECK(pool.getMemory()[5] == 100);
 
 		uint8_t* packet4 = pool.allocatePacket(data4, 1);
@@ -83,8 +82,8 @@ TEST_CASE("Packet deletions") {
 	SECTION("Delete packet that has not been stored") {
 		pool.deletePacket(packet2, 5);
 		CHECK(pool.deletePacket(packet2, 5) == true);
-    	CHECK(pool.deletePacket(packet2, 5) == true);
-    	CHECK(pool.getUsedMemory()[5] == 0);
+		CHECK(pool.deletePacket(packet2, 5) == true);
+		CHECK(pool.getUsedMemory()[5] == 0);
 	}
 
 	SECTION("Delete packet that has been stored") {
