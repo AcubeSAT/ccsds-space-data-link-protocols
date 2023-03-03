@@ -90,7 +90,7 @@ TEST_CASE("Packet deletions") {
 	SECTION("Delete packet that has been stored") {
 		pool.deletePacket(packet4, 1);
 		CHECK(pool.deletePacket(packet4, 1) == true);
-		CHECK(pool.getUsedMemory()[11] == 0); // Also this
+		CHECK(pool.getUsedMemory()[11] == 0);
 
 		pool.deletePacket(packet, 5);
 		CHECK(pool.deletePacket(packet, 5) == true);

@@ -33,7 +33,6 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 	fit.second = MasterChannelAlert::NO_MC_ALERT;
 	
 	if (packetLength > memorySize){
-		LOG_ERROR << "There is no space in memory pool for the packet.";
 		fit.second = NO_SPACE;
 		return fit;
 	}
@@ -63,14 +62,13 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 
 	gap_size = memorySize - (it_end->first + it_end->second);
 	
-	// Check whether list is empty or the packet can fit in the beginning	
+	// Check whether list is empty or the packet can fit in the end
 	if (gap_size >= packetLength){
 		usedMemory[it_end->first + it_end->second] = packetLength;
 		fit.first = it_end->first + it_end->second;
 		return fit;
 	}
 
-	LOG_ERROR << "There is no space in memory pool for the packet.";
 	fit.second = NO_SPACE;
 	return fit;
 }
