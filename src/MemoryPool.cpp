@@ -37,35 +37,35 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 		return fit;
 	}
 
-	const etl::imap<uint16_t, uint16_t>::iterator it_begin = usedMemory.begin();
-	const etl::imap<uint16_t, uint16_t>::iterator it_end = --usedMemory.end();
+	const etl::imap<uint16_t, uint16_t>::iterator iteratorBegin = usedMemory.begin();
+	const etl::imap<uint16_t, uint16_t>::iterator iteratorEnd = --usedMemory.end();
 
 	// Check whether list is empty or the packet can fit in the beginning
-	if (usedMemory.empty() || (it_begin->first >= packetLength)) {
+	if (usedMemory.empty() || (iteratorBegin->first >= packetLength)) {
 		usedMemory[0] = packetLength;
 		fit.first = 0;
 		return fit;
 	}
 
-	uint16_t gap_size;
+	uint16_t gapSize;
 
-	etl::imap<uint16_t, uint16_t>::iterator it = it_begin;
+	etl::imap<uint16_t, uint16_t>::iterator mapIterator = iteratorBegin;
 
-	for (it; it != it_end; it++) {
-		gap_size = etl::next(it)->first - (it->first + it->second);
-		if (gap_size >= packetLength) {
-			usedMemory[it->first + it->second] = packetLength;
-			fit.first = it->first + it->second;
+	for (mapIterator; mapIterator != iteratorEnd; mapIterator++) {
+		gapSize = etl::next(mapIterator)->first - (mapIterator->first + mapIterator->second);
+		if (gapSize >= packetLength) {
+			usedMemory[mapIterator->first + mapIterator->second] = packetLength;
+			fit.first = mapIterator->first + mapIterator->second;
 			return fit;
 		}
 	}
 
-	gap_size = memorySize - (it_end->first + it_end->second);
+	gapSize = memorySize - (iteratorEnd->first + iteratorEnd->second);
 
 	// Check whether list is empty or the packet can fit in the end
-	if (gap_size >= packetLength) {
-		usedMemory[it_end->first + it_end->second] = packetLength;
-		fit.first = it_end->first + it_end->second;
+	if (gapSize >= packetLength) {
+		usedMemory[iteratorEnd->first + iteratorEnd->second] = packetLength;
+		fit.first = iteratorEnd->first + iteratorEnd->second;
 		return fit;
 	}
 
