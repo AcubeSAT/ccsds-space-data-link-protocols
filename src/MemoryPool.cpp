@@ -30,23 +30,47 @@ bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
 
 std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> fit;
-	uint16_t windowLength = 0;
-	auto it_begin = usedMemory.begin();
-    auto it_end = usedMemory.end();
+	fit.second = MasterChannelAlert::NO_MC_ALERT;
 	
-	for (uint16_t memoryIndex = 0; memoryIndex < memorySize; memoryIndex++) {
-		if (!usedMemory[memoryIndex]) {
-			windowLength++;
-		} else if (usedMemory[memoryIndex]) {
-			windowLength = 0;
-		}
-		if (windowLength == packetLength) {
-			fit.first = memoryIndex - packetLength + 1;
-			fit.second = NO_MC_ALERT;
-			return fit;
-		}
+	if (packetLength > memorySize){
+		LOG_ERROR << "There is no space in memory pool for the packet.";
+		fit.second = NO_SPACE;
+		return fit;
 	}
-	fit.first = 0;
+
+    const etl::imap<uint16_t, uint16_t, etl::less<uint16_t>>::iterator it_begin = usedMemory.begin();
+    const etl::imap<uint16_t, uint16_t, etl::less<uint16_t>>::iterator it_end = --usedMemory.end();
+
+	// Check whether list is empty or the packet can fit in the beginning
+	if (usedMemory.empty() || (it_begin->first >= packetLength)){
+		usedMemory[0] = packetLength; 
+		fit.first = 0;
+		return fit;
+	}
+
+    uint16_t gap_size;
+
+    etl::imap<uint16_t, uint16_t, etl::less<uint16_t>>::iterator it = it_begin;
+
+	for (it; it != it_end; it++){
+        gap_size = next(it)->first - (it->first + it->second);
+		if (gap_size >= packetLength){
+			usedMemory[it->first + it->second] = packetLength;
+			fit.first = it->first + it->second;
+			return it->first + it->second;
+		}  		
+    }
+
+	gap_size = memorySize - (it_end->first + it_end->second);
+	
+	// Check whether list is empty or the packet can fit in the beginning	
+	if (gap_size >= packetLength){
+		usedMemory[it_end->first + it_end->second] = packetLength;
+		fit.first = it_end->first + it_end->second;
+		return it_end->first + it_end->second;
+	}
+
+	LOG_ERROR << "There is no space in memory pool for the packet.";
 	fit.second = NO_SPACE;
 	return fit;
 }
