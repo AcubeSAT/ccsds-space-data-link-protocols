@@ -12,16 +12,16 @@ uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 		return nullptr;
 	}
 	std::memcpy(memory + start, packet, packetLength * sizeof(uint8_t));
-	for (uint16_t memoryIndex = start; memoryIndex < start + packetLength; memoryIndex++)
-		usedMemory.set(memoryIndex, true);
+
+	usedMemory[index.first] = packetLength;
+
 	return memory + start;
 }
 
 bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
 	int32_t indexInMemory = packet - &memory[0];
 	if (indexInMemory >= 0 && indexInMemory + packetLength < memorySize) {
-		for (uint16_t deletionIndex = indexInMemory; deletionIndex < indexInMemory + packetLength; deletionIndex++)
-			usedMemory.set(deletionIndex, false);
+		usedMemory.erase(indexInMemory);
 		return true;
 	}
 	LOG<Logger::error>() << "Packet not found, index is out of bounds";
@@ -30,20 +30,45 @@ bool MemoryPool::deletePacket(uint8_t* packet, uint16_t packetLength) {
 
 std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> fit;
-	uint16_t windowLength = 0;
-	for (uint16_t memoryIndex = 0; memoryIndex < memorySize; memoryIndex++) {
-		if (!usedMemory[memoryIndex]) {
-			windowLength++;
-		} else if (usedMemory[memoryIndex]) {
-			windowLength = 0;
-		}
-		if (windowLength == packetLength) {
-			fit.first = memoryIndex - packetLength + 1;
-			fit.second = NO_MC_ALERT;
+	fit.second = MasterChannelAlert::NO_MC_ALERT;
+
+	if (packetLength > memorySize) {
+		fit.second = NO_SPACE;
+		return fit;
+	}
+
+	const etl::imap<uint16_t, uint16_t>::iterator iteratorBegin = usedMemory.begin();
+	const etl::imap<uint16_t, uint16_t>::iterator iteratorEnd = --usedMemory.end();
+
+	// Check whether list is empty or the packet can fit in the beginning
+	if (usedMemory.empty() || (iteratorBegin->first >= packetLength)) {
+		usedMemory[0] = packetLength;
+		fit.first = 0;
+		return fit;
+	}
+
+	uint16_t gapSize;
+
+	etl::imap<uint16_t, uint16_t>::iterator mapIterator = iteratorBegin;
+
+	for (mapIterator; mapIterator != iteratorEnd; mapIterator++) {
+		gapSize = etl::next(mapIterator)->first - (mapIterator->first + mapIterator->second);
+		if (gapSize >= packetLength) {
+			usedMemory[mapIterator->first + mapIterator->second] = packetLength;
+			fit.first = mapIterator->first + mapIterator->second;
 			return fit;
 		}
 	}
-	fit.first = 0;
+
+	gapSize = memorySize - (iteratorEnd->first + iteratorEnd->second);
+
+	// Check whether list is empty or the packet can fit in the end
+	if (gapSize >= packetLength) {
+		usedMemory[iteratorEnd->first + iteratorEnd->second] = packetLength;
+		fit.first = iteratorEnd->first + iteratorEnd->second;
+		return fit;
+	}
+
 	fit.second = NO_SPACE;
 	return fit;
 }
