@@ -47,7 +47,7 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
             $<TARGET_OBJECTS:common>
             ${test_main_SRC}
             ${test_SRC})
-    target_link_libraries(tests Catch2::Catch2)
+    target_link_libraries(tests Catch2::Catch2WithMain)
 ENDIF ()
 set_target_properties(common PROPERTIES COMPILE_DEFINITIONS LOGLEVEL_TRACE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
