@@ -42,7 +42,7 @@ cppcheck:
       - ./cppcheck-html-report
 
 clang-tidy:
-  image: spacedot/clang-tools:13.0.0-html-1.3.7
+  image: spacedot/clang-tools:13.0.0-html-1.4.1
   stage: analyze
   script:
     - cd $CI_PROJECT_DIR
@@ -70,7 +70,7 @@ clang-analyzer:
       - ./scan-build-html-report
 
 doxygen:
-  image: spacedot/doxygen:1.9.2-awesomecss-1.6.0
+  image: spacedot/doxygen:1.9.4-4-awesomecss-1.6.0
   stage: analyze
   script:
     - cd $CI_PROJECT_DIR
@@ -104,7 +104,7 @@ tests:
     - cd build
     - cmake .. -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make tests -j$(nproc)
     - lcov -q --capture --initial --directory . -o coverage_base
-    - ./tests --use-colour yes
+    - ./tests --colour-mode ansi
     - lcov -q --capture --directory . -o coverage_tests
     - lcov -q -a coverage_base -a coverage_tests -o coverage_total_unfiltered
     - lcov -q --remove coverage_total_unfiltered "${PWD}/lib/*" "${PWD}/CMakeFiles/*" "${PWD}/test/*" "${PWD}/src/main.cpp" -o coverage_total_filtered
