@@ -19,8 +19,8 @@ TEST_CASE("TC Header Generation") {
 	uint8_t data[] = {200, 155, 32, 40, 66};
 	TransferFrameHeaderTC transfer_frame_header_tc = TransferFrameHeaderTC(data);
 	CHECK(transfer_frame_header_tc.bypassFlag() == 0x0);
-	CHECK(transfer_frame_header_tc.vcid(TC) == 0x08);
-	CHECK(transfer_frame_header_tc.spacecraftId(TC) == 0x9B);
+	CHECK(transfer_frame_header_tc.vcid() == 0x08);
+	CHECK(transfer_frame_header_tc.spacecraftId() == 0x9B);
 	CHECK(transfer_frame_header_tc.ctrlAndCmdFlag() == 0x0);
 	CHECK(transfer_frame_header_tc.transferFrameLength() == 0x28);
 }
@@ -28,10 +28,10 @@ TEST_CASE("TC Header Generation") {
 TEST_CASE("TM Header Generation") {
 	uint8_t data[] = {200, 184, 99, 23, 40, 190};
 	TransferFrameHeaderTM transfer_frame_header_tm = TransferFrameHeaderTM(data);
-	CHECK(transfer_frame_header_tm.spacecraftId(TM) == 0x22);
+	CHECK(transfer_frame_header_tm.spacecraftId() == 0x22);
 	CHECK(transfer_frame_header_tm.operationalControlFieldFlag() == 0x0);
-	CHECK(transfer_frame_header_tm.vcid(TM) == 0x04);
-	CHECK(transfer_frame_header_tm.masterChannelFrameCount() == 0x63);
+	CHECK(transfer_frame_header_tm.vcid() == 0x04);
+	CHECK(transfer_frame_header_tm.getmasterChannelFrameCount() == 0x63);
 	CHECK(transfer_frame_header_tm.virtualChannelFrameCount() == 0x17);
 	CHECK(transfer_frame_header_tm.transferFrameSecondaryHeaderFlag() == 0x0);
 	CHECK(transfer_frame_header_tm.synchronizationFlag() == 0x0);

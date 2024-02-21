@@ -33,7 +33,21 @@ public:
 	 */
 	TransferFrameHeaderTC(uint8_t* pckt) : TransferFrameHeader(pckt) {}
 
-	/**
+    /**
+     * The ID of the spacecraft
+     */
+    uint16_t spacecraftId() const {
+        return TransferFrameHeader::spacecraftId(PacketType::TC);
+    }
+
+    /**
+     * The virtual channel ID this frame is transferred in
+     */
+    uint8_t vcid() const {
+        return TransferFrameHeader::vcid(PacketType::TC);
+    }
+
+    /**
 	 * The bypass Flag determines whether the packet will bypass FARM checks
 	 * @details Bit 2 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
