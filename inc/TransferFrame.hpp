@@ -25,16 +25,16 @@ struct TransferFrameHeader {
 	}
 
 	/**
-	 * The virtual channel ID this channel is transferred in
+	 * The virtual channel ID this frame is transferred in
 	 * 			TC: Bits 16–21 of the Transfer Frame Primary Header
 	 * 			TM: Bits 12–14 of the Transfer Frame Primary Header
 	 */
 	uint8_t vcid(enum PacketType packetType) const {
-		if (packetType == TC) {
-			return (transferFrameHeader[2] >> 2U) & 0x3F;
-		} else {
-			return ((transferFrameHeader[1] & 0x0E)) >> 1U;
-		}
+	    if (packetType == TC) {
+            return (transferFrameHeader[2] >> 2U) & 0x3F;
+        } else {
+	        return ((transferFrameHeader[1] & 0x0E)) >> 1U;
+	    }
 	}
 
 protected:

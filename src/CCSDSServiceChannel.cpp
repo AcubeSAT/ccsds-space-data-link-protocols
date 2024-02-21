@@ -105,7 +105,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTM(uint8_t vid, uint8
 	uint16_t frameSize = packet->getAuxiliaryTransferFrameLength();
 	uint8_t headerSize = 5 + virtualChannel->secondaryHeaderTMLength;
 	uint8_t trailerSize =
-	    4 * packet->operationalControlFieldExists() + 2 * virtualChannel->frameErrorControlFieldPresent;
+	    4 * packet->hdr.operationalControlFieldFlag() + 2 * virtualChannel->frameErrorControlFieldPresent;
 	memcpy(packet_target, packet->packetData() + headerSize + 1, frameSize - headerSize - trailerSize);
 
 	virtualChannel->rxInFramesAfterMCReception.pop_front();
@@ -254,7 +254,7 @@ ServiceChannelNotification ServiceChannel::mcGenerationTMRequest() {
 	// TODO: Process secondary headers
 
 	// set master channel frame counter
-	packet->setMasterChannelFrameCount(masterChannel.currFrameCountTM);
+	packet->hdr.setMasterChannelFrameCount(masterChannel.currFrameCountTM);
 
 	// increment master channel frame counter
 	masterChannel.currFrameCountTM = masterChannel.currFrameCountTM <= 254 ? masterChannel.currFrameCountTM : 0;
@@ -509,7 +509,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 
 	TransferFrameTM* packet = masterChannel.txToBeTransmittedFramesAfterMCGenerationListTM.front();
 
-	uint8_t vid = packet->virtualChannelId();
+	uint8_t vid = packet->hdr.vcid();
 	VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
 	if (vchan.frameErrorControlFieldPresent) {
@@ -522,7 +522,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTMRequest(uint8_t*
 
 	uint16_t frameSize = packet->getAuxiliaryTransferFrameLength();
 	uint16_t idleDataSize = TmTransferFrameSize - frameSize;
-	uint8_t trailerSize = 4 * packet->operationalControlFieldExists() + 2 * vchan.frameErrorControlFieldPresent;
+	uint8_t trailerSize = 4 * packet->hdr.operationalControlFieldFlag() + 2 * vchan.frameErrorControlFieldPresent;
 
 	// Copy frame without the trailer
 	memcpy(packet_data, packet->packetData(), frameSize - trailerSize);
@@ -579,7 +579,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
 	}
 	// Master Channel Reception
 
-	uint8_t mc_lost_frames = frame.getMasterChannelFrameCount();
+	uint8_t mc_lost_frames = frame.hdr.getmasterChannelFrameCount();
 
 	// Check if master channel frames have been lost
 	uint8_t mc_counter_diff = (mc_lost_frames - masterChannel.currFrameCountTM) % 0xFF;

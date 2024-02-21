@@ -12,6 +12,20 @@ public:
 	 */
 	TransferFrameHeaderTM(uint8_t* frameData) : TransferFrameHeader(frameData) {}
 
+    /**
+     * The ID of the spacecraft
+     */
+    uint16_t spacecraftId() const {
+        return TransferFrameHeader::spacecraftId(PacketType::TM);
+    }
+
+    /**
+     * The virtual channel ID this frame is transferred in
+     */
+    uint8_t vcid() const {
+        return TransferFrameHeader::vcid(PacketType::TM);
+    }
+
 	/**
 	 * The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
 	 * @details Bit  15  of  the  Transfer  Frame  Primary  Header
@@ -27,9 +41,13 @@ public:
 	 * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
-	uint8_t masterChannelFrameCount() const {
+	uint8_t getmasterChannelFrameCount() const {
 		return transferFrameHeader[2];
 	}
+
+    void setMasterChannelFrameCount(uint8_t masterChannelFrameCount) {
+        transferFrameHeader[2] = masterChannelFrameCount;
+    }
 
 	/**
 	 * contain  a  sequential  binary  count (modulo-256) of each Transfer Frame transmitted within a
@@ -106,48 +124,10 @@ public:
 };
 
 struct TransferFrameTM : public TransferFrame {
-	/**
-	 * The Virtual Channel Identifier provides the identification of the Virtual Channel.
-	 * @details Bits 12–14 of the Transfer Frame Primary Header.
-	 * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t virtualChannelId() const {
-		return (transferFrameData[1] & 0xE) >> 1U;
-	}
-
-	/**
-	 * This  8-bit  field  shall  contain  a  sequential  binary  count  (modulo-256)  of  each
-	 * Transfer Frame transmitted within a specific Master Channel.
-	 * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header.
-	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t getMasterChannelFrameCount() const {
-		return transferFrameData[2];
-	}
-
-	/**
-	 * This  8-bit  field  shall  contain  a  sequential  binary  count  (modulo-256)  of  each
-	 * Transfer Frame transmitted within a specific Virtual Channel.
-	 * @details Bits  24-31  of  the  Transfer  Frame  Primary  Header.
-	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t getVirtualChannelFrameCount() const {
-		return transferFrameData[3];
-	}
-
-	/**
-	 *
-	 *  Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
-	 *                      b) Synchronization Flag (1 bit)
-	 *                      c) TransferFrame Order Flag (1 bit)
-	 *                      d) Segment Length Identifier (2 bits)
-	 *                      e) First Header Pointer (11 bits)
-	 * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
-	 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
-	 */
-	uint16_t getTransferFrameDataFieldStatus() const {
-		return static_cast<uint16_t>((transferFrameData[4]) << 8) | transferFrameData[5];
-	}
+    /**
+     * Used for accessing fields inside the frame's primary header
+     */
+    TransferFrameHeaderTM hdr;
 
 	uint16_t getAuxiliaryTransferFrameLength() const {
 		return auxiliaryTransferFrameLength;
@@ -157,9 +137,6 @@ struct TransferFrameTM : public TransferFrame {
 		return transferFrameData;
 	}
 
-	bool operationalControlFieldExists() const {
-		return transferFrameData[1] & 0x1;
-	}
 	uint8_t segmentLengthId() const {
 		return (transferFrameData[4] >> 3) & 0x3;
 	}
@@ -170,7 +147,7 @@ struct TransferFrameTM : public TransferFrame {
 	std::optional<uint32_t> getOperationalControlField() const {
 		uint32_t operationalControlField;
 		uint8_t* operationalControlFieldPointer;
-		if (!operationalControlFieldExists()) {
+		if (!hdr.operationalControlFieldFlag()) {
 			return {};
 		}
 		operationalControlFieldPointer = transferFrameData + auxiliaryTransferFrameLength - 4 - 2 * eccFieldExists;
@@ -178,10 +155,6 @@ struct TransferFrameTM : public TransferFrame {
 		                          (operationalControlFieldPointer[1] << 16U) |
 		                          (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
 		return operationalControlField;
-	}
-
-	void setMasterChannelFrameCount(uint8_t masterChannelFrameCount) {
-		transferFrameData[2] = masterChannelFrameCount;
 	}
 
 	TransferFrameTM(uint8_t* transferFrameData, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
@@ -244,7 +217,7 @@ struct TransferFrameTM : public TransferFrame {
 			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
-		for (uint16_t i = 0; i < TmTransferFrameSize - len - 4*operationalControlFieldExists() - 2; i++) {
+		for (uint16_t i = 0; i < TmTransferFrameSize - len - 4*hdr.operationalControlFieldFlag() - 2; i++) {
 			crc = crc_16_ccitt_table[(idle_data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
@@ -253,7 +226,6 @@ struct TransferFrameTM : public TransferFrame {
 
 
 private:
-	TransferFrameHeaderTM hdr;
 	uint8_t scid;
 	bool eccFieldExists;
 	uint16_t firstHeaderPointer;
