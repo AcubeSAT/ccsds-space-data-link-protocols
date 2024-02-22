@@ -89,7 +89,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.txOutProcessedPacketTC().second == packet_a);
 
 	CHECK(packet_a->acknowledged() == false);
-	CHECK(packet_a->transferFrameSequenceNumber() == 0);
+	CHECK(packet_a->hdr.getTransferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(0, 0);
 
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
@@ -278,7 +278,7 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.pushSentQueue(2);
-	CHECK(packet_a->transferFrameSequenceNumber() == 0);
+	CHECK(packet_a->hdr.getTransferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(2, 0);
 	// E13 change of state
 	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM, 12);
@@ -545,7 +545,7 @@ TEST_CASE("Frame Acknowledgement") {
 
 	err = serv_channel.vcGenerationRequestTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 1);
+	CHECK(serv_channel.getLastMasterCopyTcFrame().hdr.getTransferFrameSequenceNumber() == 1);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
 
@@ -577,7 +577,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.allFramesGenerationTCRequest();
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
-	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 10);
+	CHECK(serv_channel.getLastMasterCopyTcFrame().hdr.getTransferFrameSequenceNumber() == 10);
 
 	TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame

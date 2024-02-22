@@ -28,6 +28,13 @@ enum FDURequestType : uint8_t {
 
 struct TransferFrameHeaderTC : public TransferFrameHeader {
 public:
+    /**
+     * @see p. 4.1.2.2 from TC SPACE DATA LINK PROTOCOL
+     */
+    uint8_t transferFrameVersionNumber() const {
+        return (packetHeader[0] >> 6) & 0x3;
+    }
+
 	/**
 	 * @see p. 4.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -74,10 +81,27 @@ public:
 	uint16_t transferFrameLength() const {
 		return (static_cast<uint16_t>(packetHeader[2] & 0x03) << 8U) | (static_cast<uint16_t>(packetHeader[3]));
 	}
+
+    /**
+     * @return Bits 32–39 of the Transfer Frame Primary Header (the Frame Sequence Number, N(S)).
+     * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL.
+     */
+    uint8_t getTransferFrameSequenceNumber() const {
+        return packetHeader[4];
+    }
+
+    void setTransferFrameSequenceNumber(uint8_t frame_seq_number) {
+        packetHeader[4] = frame_seq_number;
+    }
 };
 
 class TransferFrameTC : public TransferFrame {
 public:
+    /**
+     * Used for accessing fields inside the frame's primary header
+     */
+    TransferFrameHeaderTC hdr;
+
 	void setConfSignal(FDURequestType reqSignal) {
 		confSignal = reqSignal;
 		// TODO Maybe signal the higher procedures here instead of having them manually take care of them
@@ -218,15 +242,7 @@ public:
 		toBeRetransmitted = f;
 	}
 
-	/**
-	 * @return TC transfer frame primary header (the first 5 octets of the TC transfer frame)
-	 * @see p. 4.1.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	TransferFrameHeaderTC transferFrameHeader() const {
-		return hdr;
-	}
-
-	/**
+    /**
 	 * @return Bits 22–31 of the Transfer Frame Primary Header (the Frame Length)
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -242,14 +258,6 @@ public:
 		return packet[5];
 	}
 
-	/**
-	 * @return Bits  16–21  of  the  Transfer  Frame  Primary  Header (the  Virtual Channel Identifier (VCID)).
-	 * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t virtualChannelId() const {
-		return (packet[2] & 0xFC) >> 2;
-	};
-
 	// Assumes MAP Id exists
 	// TODO: Replace with std::optional
 	uint8_t mapId() const {
@@ -259,23 +267,12 @@ public:
 		return 0;
 	}
 
-	uint8_t getTransferFrameVersionNumber() const {
-		return (packet[0] >> 6) & 0x3;
-	}
 	/**
 	 * @return Bits  6–15  of  the  Transfer  Frame  Primary  Header (the  Spacecraft Identifier (SCID)).
 	 * @see p. 4.1.2.5 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t spacecraftId() const {
 		return SpacecraftIdentifier;
-	}
-
-	/**
-	 * @return Bits 32–39 of the Transfer Frame Primary Header (the Frame Sequence Number, N(S)).
-	 * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL.
-	 */
-	uint8_t transferFrameSequenceNumber() const {
-		return packet[4];
 	}
 
 	/**
@@ -322,7 +319,7 @@ public:
 	}
 
 	void setPacketLength(uint16_t packet_length) {
-		packet[2] = ((virtualChannelId() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
+		packet[2] = ((hdr.vcid() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
 		packet[3] = transferFrameLength & 0xFF;
 	}
 
@@ -336,10 +333,6 @@ public:
 
 	void setAcknowledgement(bool acknowledgement) {
 		ack = acknowledgement;
-	}
-
-	void setTransferFrameSequenceNumber(uint8_t frame_seq_number) {
-		packet[4] = frame_seq_number;
 	}
 
 	/**
@@ -403,7 +396,6 @@ private:
 	bool toBeRetransmitted;
 	// This is used by COP to signal the higher procedures
 	FDURequestType confSignal;
-	TransferFrameHeaderTC hdr;
 	ServiceType serviceType;
 	bool segmentationHeaderPresent;
 	bool ack;

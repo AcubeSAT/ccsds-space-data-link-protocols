@@ -39,7 +39,7 @@ FOPNotification FrameOperationProcedure::transmitAdFrame() {
 		return FOPNotification::WAIT_QUEUE_EMPTY;
 	}
 
-	adFrame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
+	adFrame->hdr.setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
 	if(!adFrame->isToBeRetransmitted()){
 		transmitterFrameSeqNumber++;;
 	}
@@ -101,7 +101,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 
 void FrameOperationProcedure::acknowledgeFrame(uint8_t frameSeqNumber) {
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->transferFrameSequenceNumber() == frameSeqNumber) {
+		if (frame->hdr.getTransferFrameSequenceNumber() == frameSeqNumber) {
 			frame->setAcknowledgement(true);
 		}
 	}
@@ -180,7 +180,7 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	}
 	TransferFrameTC* frame = waitQueueFOP->front();
 	if ((frame->getServiceType() == ServiceType::TYPE_AD) &&
-	    (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
+	    (frame->hdr.getTransferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
 		transmitAdFrame();
 		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
@@ -659,7 +659,7 @@ void FrameOperationProcedure::bdReject() {
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
 
-	if (frame->transferFrameHeader().bypassFlag() == 0) {
+	if (frame->hdr.bypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_AD) {
 			if (!waitQueueFOP->full()) {
 				// E19
@@ -705,9 +705,9 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 
 void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if ((frame->transferFrameSequenceNumber() < frameSequenceNumber ||
-		     frame->transferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
-			acknowledgeFrame(frame->transferFrameSequenceNumber());
+		if ((frame->hdr.getTransferFrameSequenceNumber() < frameSequenceNumber ||
+		     frame->hdr.getTransferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
+			acknowledgeFrame(frame->hdr.getTransferFrameSequenceNumber());
 		}
 	}
 	expectedAcknowledgementSeqNumber = frameSequenceNumber;

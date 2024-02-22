@@ -21,7 +21,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
 
-	uint8_t vid = pckt.virtualChannelId();
+	uint8_t vid = pckt.hdr.vcid();
 	uint8_t mapid = pckt.mapId();
 
 	// Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
@@ -380,7 +380,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	}
 
 	TransferFrameTC* frame = masterChannel.rxInFramesBeforeAllFramesReceptionListTC.front();
-	VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(frame->virtualChannelId());
+	VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(frame->hdr.vcid());
 
 	if (virtualChannel.waitQueueRxTC.full()) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
@@ -394,7 +394,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	 */
 
 	// Check for valid TFVN
-	if (frame->getTransferFrameVersionNumber() != 0) {
+	if (frame->hdr.transferFrameVersionNumber() != 0) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_TFVN);
 		return ServiceChannelNotification::RX_INVALID_TFVN;
 	}
@@ -456,7 +456,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTCRequest() {
     TransferFrameTC* packet = masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
     masterChannel.txOutFramesBeforeAllFramesGenerationListTC.pop_front();
 
-    uint8_t vid = packet->virtualChannelId();
+    uint8_t vid = packet->hdr.vcid();
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
     if (vchan.frameErrorControlFieldPresent) {
