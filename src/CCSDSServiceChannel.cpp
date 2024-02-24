@@ -16,7 +16,7 @@ ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t pac
 
 	TransferFrameTC pckt = TransferFrameTC(packet, packetLength);
 
-	if (pckt.getFrameLength() != packetLength) {
+	if (pckt.hdr.transferFrameLength() != packetLength) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
@@ -328,7 +328,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 
 	TransferFrameTC* frame = mapChannel.rxInFramesAfterVCReception.front();
 
-	uint16_t frameSize = frame->packetLength();
+	uint16_t frameSize = frame->hdr.transferFrameLength();
 	uint8_t headerSize = TcPrimaryHeaderSize + 1; // Segment header is present
 
 	uint8_t trailerSize = 2 * virtualChannel.frameErrorControlFieldPresent;
@@ -357,7 +357,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 
 	TransferFrameTC* frame = virtualChannel->rxInFramesAfterVCReception.front();
 
-	uint16_t frameSize = frame->packetLength();
+	uint16_t frameSize = frame->hdr.transferFrameLength();
 	uint8_t headerSize = TcPrimaryHeaderSize; // Segment header is present
 	uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldPresent;
 
@@ -400,7 +400,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	}
 
 	// Check for valid SCID
-	if (frame->spacecraftId() != SpacecraftIdentifier) {
+	if (frame->hdr.spacecraftId() != SpacecraftIdentifier) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
 		return ServiceChannelNotification::RX_INVALID_SCID;
 	}
@@ -411,7 +411,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 	bool eccFieldExists = virtualChannel.frameErrorControlFieldPresent;
 
 	if (eccFieldExists) {
-		uint16_t len = frame->packetLength() - 2;
+		uint16_t len = frame->hdr.transferFrameLength() - 2;
 		uint16_t crc = frame->calculateCRC(frame->packetData(), len);
 
 		uint16_t packet_crc = (static_cast<uint16_t>(frame->packetData()[len]) << 8) | frame->packetData()[len + 1];
@@ -584,7 +584,7 @@ ServiceChannelNotification ServiceChannel::frameTransmission(uint8_t* tframe) {
         masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.pop_front();
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     }
-    memcpy(tframe, frame, frame->getFrameLength());
+    memcpy(tframe, frame, frame->hdr.transferFrameLength());
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 

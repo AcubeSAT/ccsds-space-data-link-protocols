@@ -242,14 +242,6 @@ public:
 		toBeRetransmitted = f;
 	}
 
-    /**
-	 * @return Bits 22–31 of the Transfer Frame Primary Header (the Frame Length)
-	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint16_t getFrameLength() const {
-		return transferFrameLength;
-	}
-
 	/**
 	 * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
@@ -265,14 +257,6 @@ public:
 			return packet[5] & 0x3F;
 		}
 		return 0;
-	}
-
-	/**
-	 * @return Bits  6–15  of  the  Transfer  Frame  Primary  Header (the  Spacecraft Identifier (SCID)).
-	 * @see p. 4.1.2.5 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint16_t spacecraftId() const {
-		return SpacecraftIdentifier;
 	}
 
 	/**
@@ -323,10 +307,6 @@ public:
 		packet[3] = transferFrameLength & 0xFF;
 	}
 
-	uint16_t packetLength() {
-		return (static_cast<uint16_t>(packet[2] & 0x3) << 8) | packet[3];
-	}
-
 	void setServiceType(ServiceType service_type) {
 		serviceType = service_type;
 	}
@@ -371,7 +351,7 @@ public:
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
 		packet[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
 		packet[1] = SpacecraftIdentifier & 0xFF;
-		packet[2] = ((gvcid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
+		packet[2] = ((gvcid & 0x3F) << 2) | ((frameLength & 0x300) >> 8);
 		packet[3] = frameLength & 0xFF;
 	}
 
