@@ -60,30 +60,28 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
 	} else if (frame->getServiceType() == ServiceType::TYPE_BC) {
-		if (frame->controlWordType() == 0) {
-			if (frame->packetPlData()[5] == 0) {
-				// E7
-				farmBCount += 1;
-				retransmit = FlagState::NOT_READY;
+        if (frame->packetPlData()[5] == 0) {
+            // E7
+            farmBCount += 1;
+            retransmit = FlagState::NOT_READY;
 
-				if (state == FARMState::WAIT) {
-					wait = FlagState::NOT_READY;
-				} else if (state == FARMState::LOCKOUT) {
-					wait = FlagState::NOT_READY;
-					lockout = FlagState::NOT_READY;
-				}
-				state = FARMState::OPEN;
-				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-				return COPDirectiveResponse::ACCEPT;
-			} else if (frame->packetPlData()[5] == 130 && frame->packetPlData()[6] == 0) {
-				// E8
-				farmBCount += 1;
-				retransmit = FlagState::NOT_READY;
-				receiverFrameSeqNumber = frame->packetPlData()[6];
-				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-				return COPDirectiveResponse::ACCEPT;
-			}
-		}
+            if (state == FARMState::WAIT) {
+                wait = FlagState::NOT_READY;
+            } else if (state == FARMState::LOCKOUT) {
+                wait = FlagState::NOT_READY;
+                lockout = FlagState::NOT_READY;
+            }
+            state = FARMState::OPEN;
+            ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
+            return COPDirectiveResponse::ACCEPT;
+        } else if (frame->packetPlData()[5] == 130 && frame->packetPlData()[6] == 0) {
+            // E8
+            farmBCount += 1;
+            retransmit = FlagState::NOT_READY;
+            receiverFrameSeqNumber = frame->packetPlData()[6];
+            ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
+            return COPDirectiveResponse::ACCEPT;
+        }
 	}
 	// Invalid Directive
 	return COPDirectiveResponse::REJECT;
