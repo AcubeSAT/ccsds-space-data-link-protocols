@@ -40,20 +40,6 @@ private:
 
 	etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
-
-
-    /**
-     * Auxiliary function for blocking of packets stored in the stored packet buffer
-     * @param transferFrameDataLength   The length of the data field of the TM Transfer frame
-     * @param packetLength              The length of the next packet in the stored TM packet buffer
-     * @param vcid                      Virtual Channel ID
-     * @param mapid                     MAP Channel ID
-     * @param serviceType              Service Type for differentiation of Type-A and Type-B frames
-     * @return                          A Service Channel Notification
-     */
-    ServiceChannelNotification blockingTC(uint16_t transferFrameDataLength, uint16_t packetLength,
-                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
-
 public:
 	// Public methods that are called by the scheduler
 
@@ -110,20 +96,21 @@ public:
     }
 
     /**
-     * Read first packet of the TC MAP channel buffer (unprocessedPacketListBufferTC)
-     */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
-
-    /**
      * Read first TC packet of the virtual channel buffer (txUnprocessedPacketListBufferTC)
      */
     std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid) const;
+
+    /**
+     * Read first packet of the TC MAP channel buffer (unprocessedPacketListBufferTC)
+     */
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
 
     /**
      * Return the last stored packet from txMasterCopyTC
      */
     std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC() const;
 
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutProcessedPacketTC() const;
 
     //     - MAP Packet Processing
     /**
@@ -136,6 +123,18 @@ public:
     ServiceChannelNotification segmentationTC(uint8_t numberOfTransferFrames, uint16_t packetLength,
                                               uint16_t transferFrameDataLength, uint8_t vid, uint8_t mapid,
                                               ServiceType service_type);
+
+    /**
+     * Auxiliary function for blocking of packets stored in the stored packet buffer
+     * @param transferFrameDataLength   The length of the data field of the TM Transfer frame
+     * @param packetLength              The length of the next packet in the stored TM packet buffer
+     * @param vcid                      Virtual Channel ID
+     * @param mapid                     MAP Channel ID
+     * @param serviceType              Service Type for differentiation of Type-A and Type-B frames
+     * @return                          A Service Channel Notification
+     */
+    ServiceChannelNotification blockingTC(uint16_t transferFrameDataLength, uint16_t packetLength,
+                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
     /**
      * Method that stores a packet pointer and the packet data to the relevant buffers
@@ -395,10 +394,6 @@ public:
      */
     uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
 
-    uint16_t availableSpaceBufferRxTM() const {
-        return masterChannel.rxMasterCopyTM.available();
-    }
-
     /**
      * Return the last stored packet from txMasterCopyTM
      */
@@ -408,7 +403,6 @@ public:
      * Return the last processed packet
      */
     std::pair<ServiceChannelNotification, const TransferFrameTM*> txOutProcessedPacketTM() const;
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutProcessedPacketTC() const;
 
     /**
      * Fetch packet in the top of the MC buffer
@@ -498,6 +492,10 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
+    }
+
+    uint16_t availableSpaceBufferRxTM() const {
+        return masterChannel.rxMasterCopyTM.available();
     }
 
     uint8_t getFrameCountTM(uint8_t vid);
