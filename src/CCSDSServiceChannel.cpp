@@ -25,17 +25,6 @@ std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::tx
     return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, vc->front());
 }
 
-std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::txOutPacketTC(uint8_t vid,
-                                                                                            uint8_t mapid) const {
-    const etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel>* mc =
-            &(masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).unprocessedPacketListBufferTC);
-    if (mc->empty()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
-        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
-    }
-
-    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, mc->front());
-}
 
 std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::txOutPacketTC() const {
     if (masterChannel.txMasterCopyTC.empty()) {
@@ -53,6 +42,17 @@ std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::tx
     ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT,
                      masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.front());
+}
+
+std::optional<TransferFrameTC> ServiceChannel::getTxProcessedPacket() {
+    if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.empty()) {
+        return {};
+    }
+
+    TransferFrameTC packet = *masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
+
+    // TODO: Here the packet should probably be deleted from the master buffer
+    return packet;
 }
 
 //     - MAP Packet Processing
@@ -231,11 +231,9 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
 
     if (serviceType == ServiceType::TYPE_AD){
         packetLengthBufferTcTx = &mapChannel.packetLengthBufferTcTxTypeA;
-        packetBufferTcTx = &mapChannel.packetBufferTcTxTypeA;
     }
     else {
         packetLengthBufferTcTx = &mapChannel.packetLengthBufferTcTxTypeB;
-        packetBufferTcTx = &mapChannel.packetBufferTcTxTypeB;
     }
 
     if (virtualChannel.waitQueueTxTC.full()) {
@@ -245,6 +243,7 @@ ServiceChannelNotification ServiceChannel::mappRequest(uint8_t vid, uint8_t mapi
     }
 
     static uint8_t tmpData[MaxTcTransferFrameSize] = {0, 0, 0, 0, 0};
+    // @TODO also unused
     TransferFrameTC* packet = mapChannel.unprocessedPacketListBufferTC.front();
 
     uint16_t packetLength = packetLengthBufferTcTx->front();
@@ -282,6 +281,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
 
     err = virt_channel.fop.transferFdu();
 
+    // TODO: Investigate why both transferFdu() and this method push frames to txOutFramesBeforeAllFramesGenerationListTC (using storeOut())
     MasterChannelAlert mc = virt_channel.master_channel().storeOut(&frame);
     if (mc != MasterChannelAlert::NO_MC_ALERT) {
         ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
@@ -294,18 +294,6 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTC(uint8_t vid) {
     }
     virt_channel.txUnprocessedPacketListBufferTC.pop_front();
     return ServiceChannelNotification::NO_SERVICE_EVENT;
-}
-
-
-std::optional<TransferFrameTC> ServiceChannel::getTxProcessedPacket() {
-    if (masterChannel.txOutFramesBeforeAllFramesGenerationListTC.empty()) {
-        return {};
-    }
-
-    TransferFrameTC packet = *masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
-
-    // TODO: Here the packet should probably be deleted from the master buffer
-    return packet;
 }
 
 //         -- FOP Directives
@@ -491,6 +479,19 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTCRequest() {
 }
 
 // TC TransferFrame - Receiving End (TC Rx)
+
+// Utility and debugging
+std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::txOutPacketTC(uint8_t vid,
+                                                                                            uint8_t mapid) const {
+    const etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel>* mc =
+            &(masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).unprocessedPacketListBufferTC);
+    if (mc->empty()) {
+        ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
+        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
+    }
+
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, mc->front());
+}
 
 //     - All Frames Reception
 ServiceChannelNotification ServiceChannel::storeTC(uint8_t* packet, uint16_t packetLength) {
@@ -704,6 +705,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
     memcpy(packet, frame->packetData() + headerSize, frameSize - headerSize - trailerSize);
 
     mapChannel.rxInFramesAfterVCReception.pop_front();
+    // TODO: allFramesReceptionTCRequest() adds only one frame to rxMasterCopyTC, and yet there are 2 removals:one here and one in allFramesReceptionTCRequest()
     masterChannel.removeMasterRx(frame);
 
     return ServiceChannelNotification::NO_SERVICE_EVENT;

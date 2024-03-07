@@ -58,7 +58,7 @@ public:
     TransferFrameTC getLastMasterCopyTcFrame();
 
     /**
-     * Available number of outcoming TX frames in master channel buffer
+     * Available space in master channel buffer
      */
     uint16_t txOutAvailable() const {
         return masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.available();
@@ -76,34 +76,9 @@ public:
     }
 
     /**
-     * Available space in TC MAP channel buffer
-     */
-    uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
-        const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderPresent) {
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
-        if (virtualChannel.segmentHeaderPresent &&
-            (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
-        return virtualChannel.mapChannels.at(mapid).availableBufferTC();
-    }
-
-    /**
      * Read first TC packet of the virtual channel buffer (txUnprocessedPacketListBufferTC)
      */
     std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid) const;
-
-    /**
-     * Read first packet of the TC MAP channel buffer (unprocessedPacketListBufferTC)
-     */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
 
     /**
      * Return the last stored packet from txMasterCopyTC
@@ -111,6 +86,11 @@ public:
     std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC() const;
 
     std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutProcessedPacketTC() const;
+
+    /**
+     * @return The front TC TransferFrame from txOutFramesBeforeAllFramesGenerationListTC
+     */
+    std::optional<TransferFrameTC> getTxProcessedPacket();
 
     //     - MAP Packet Processing
     /**
@@ -172,11 +152,6 @@ public:
      * @see p. 4.3.5 from TC Space Data Link Protocol
      */
     ServiceChannelNotification vcGenerationRequestTC(uint8_t vid);
-
-    /**
-     * @return The front TC TransferFrame from txOutFramesBeforeAllFramesGenerationListTC
-     */
-    std::optional<TransferFrameTC> getTxProcessedPacket();
 
     //         -- FOP Directives
 
@@ -271,7 +246,12 @@ public:
 
     //     - Utility and Debugging
     /**
-	 * Available number of outcoming TC RX frames in master channel buffer
+     * Read first packet of the TC MAP channel buffer (unprocessedPacketListBufferTC)
+     */
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutPacketTC(uint8_t vid, uint8_t mapid) const;
+
+    /**
+	 * Available space in master channel buffer
 	 */
     uint16_t rxOutAvailableTC() const {
         return masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTC.available();
@@ -317,6 +297,26 @@ public:
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
         return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).rxInFramesAfterVCReception.available();
+    }
+
+    /**
+     * Available space in TC MAP channel buffer
+     */
+    uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
+        const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
+        if (!virtualChannel.segmentHeaderPresent) {
+            return ServiceChannelNotification::INVALID_MAP_ID;
+        }
+        if (virtualChannel.segmentHeaderPresent &&
+            (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+            return ServiceChannelNotification::INVALID_MAP_ID;
+        }
+        return virtualChannel.mapChannels.at(mapid).availableBufferTC();
     }
 
     //     - All Frames Reception

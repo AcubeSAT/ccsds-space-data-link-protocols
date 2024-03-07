@@ -140,6 +140,7 @@ protected:
 	etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel> unprocessedPacketListBufferTC;
 	/**
 	 * Store unprocessed received TMs
+	 * @TODO i don't think that this should exist,since MAP channels exist for TC Frames only
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTmInMapChannel> unprocessedPacketListBufferTM;
 	/**
@@ -347,7 +348,7 @@ private:
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueTxTC;
 
 	/**
-	 * Buffer to store incoming packets AFTER being processed by COP
+	 * Buffer to store incoming packets BEFORE being processed by COP
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueRxTC;
 
