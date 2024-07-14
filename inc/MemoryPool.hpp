@@ -23,13 +23,13 @@ private:
 	 */
 	static constexpr uint16_t maxAllocatedPackets = MaxAllocatedPackets;
 	/**
-	 * @var An array that allocates statically memory to be used for the packet data
+	 * @var An array that allocates statically memory to be used for the transferFrameData data
 	 */
 	uint8_t memory[memorySize];
 
 	/**
 	 * @var Keep track of currently used slots. It uses an ordered map to keep track of the beginning position of each
-	 * stored packet mapped to the packet's length. We used this instead of an interval tree since we are assuming
+	 * stored transferFrameData mapped to the transferFrameData's length. We used this instead of an interval tree since we are assuming
 	 * non-overlapping intervals
 	 */
 	etl::map<uint16_t, uint16_t, maxAllocatedPackets> usedMemory;
@@ -46,19 +46,19 @@ public:
 	std::pair<uint16_t, MasterChannelAlert> findFit(uint16_t packetLength);
 
 	/**
-	 * Method that copies the packet data to the first contiguous block of memory of the memory pool.
+	 * Method that copies the transferFrameData data to the first contiguous block of memory of the memory pool.
 	 * Calls the `findFit` method in order to find the index of the array that is first available.
-	 * @param packet pointer to the packet data.
-	 * @param packetLength the length of the packet data.
-	 * @return `uint8_t` pointer to the packet data in the memory pool or `nullptr` if packet could not be allocated.
+	 * @param packet pointer to the transferFrameData data.
+	 * @param packetLength the length of the transferFrameData data.
+	 * @return `uint8_t` pointer to the transferFrameData data in the memory pool or `nullptr` if transferFrameData could not be allocated.
 	 */
 	uint8_t* allocatePacket(uint8_t* packet, uint16_t packetLength);
 
 	/**
-	 * This method is called when we want to delete the data of a packet.
-	 * @param packet pointer to the packet data in the pool.
+	 * This method is called when we want to delete the data of a transferFrameData.
+	 * @param packet pointer to the transferFrameData data in the pool.
 	 * @param packetLength length of the data.
-	 * @return true if the delete was successful and false if the packet was not found.
+	 * @return true if the delete was successful and false if the transferFrameData was not found.
 	 */
 	bool deletePacket(uint8_t* packet, uint16_t packetLength);
 

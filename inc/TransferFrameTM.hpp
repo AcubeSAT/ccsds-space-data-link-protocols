@@ -10,7 +10,7 @@ public:
 	/**
 	 * @see p. 4.1.2 from TM SPACE DATA LINK PROTOCOL
 	 */
-	TransferFrameHeaderTM(uint8_t* pckt) : TransferFrameHeader(pckt) {}
+	TransferFrameHeaderTM(uint8_t* frameData) : TransferFrameHeader(frameData) {}
 
 	/**
 	 * The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
@@ -18,7 +18,7 @@ public:
 	 * @see p. 4.1.2.4 from TM SPACE DATA LINK PROTOCOL
 	 */
 	bool operationalControlFieldFlag() const {
-		return (packetHeader[1]) & 0x01;
+		return (transferFrameHeader[1]) & 0x01;
 	}
 
 	/**
@@ -28,7 +28,7 @@ public:
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t masterChannelFrameCount() const {
-		return packetHeader[2];
+		return transferFrameHeader[2];
 	}
 
 	/**
@@ -38,7 +38,7 @@ public:
 	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t virtualChannelFrameCount() const {
-		return packetHeader[3];
+		return transferFrameHeader[3];
 	}
 
 	/**
@@ -48,7 +48,7 @@ public:
 	 */
 
 	bool transferFrameSecondaryHeaderFlag() const {
-		return (packetHeader[4] & 0x80) >> 7U;
+		return (transferFrameHeader[4] & 0x80) >> 7U;
 	}
 
 	/**
@@ -58,7 +58,7 @@ public:
 	 */
 
 	bool synchronizationFlag() const {
-		return (packetHeader[4] & 0x40) >> 6U;
+		return (transferFrameHeader[4] & 0x40) >> 6U;
 	}
 
 	/**
@@ -69,7 +69,7 @@ public:
 	 * @see p. 4.1.2.7.4 from TM SPACE DATA LINK PROTOCOL
 	 */
 	bool packetOrderFlag() const {
-		return (packetHeader[4] & 0x20) >> 5U;
+		return (transferFrameHeader[4] & 0x20) >> 5U;
 	}
 
 	/**
@@ -77,7 +77,7 @@ public:
 	 * Bits 35 and 36 of the Transfer Frame Primary Header.
 	 */
 	uint8_t segmentLengthId() const {
-		return (packetHeader[4] >> 3) & 0x3;
+		return (transferFrameHeader[4] >> 3) & 0x3;
 	}
 
 	/**
@@ -88,7 +88,7 @@ public:
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t firstHeaderPointer() const {
-		return (static_cast<uint16_t>((packetHeader[4]) & 0x07)) << 8U | (static_cast<uint16_t>((packetHeader[5])));
+		return (static_cast<uint16_t>((transferFrameHeader[4]) & 0x07)) << 8U | (static_cast<uint16_t>((transferFrameHeader[5])));
 	}
 
 	/**
@@ -101,7 +101,7 @@ public:
 	 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t transferFrameDataFieldStatus() const {
-		return (static_cast<uint16_t>((packetHeader[4])) << 8U | (static_cast<uint16_t>((packetHeader[5]))));
+		return (static_cast<uint16_t>((transferFrameHeader[4])) << 8U | (static_cast<uint16_t>((transferFrameHeader[5]))));
 	}
 };
 
@@ -112,7 +112,7 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t virtualChannelId() const {
-		return (packet[1] & 0xE) >> 1U;
+		return (transferFrameData[1] & 0xE) >> 1U;
 	}
 
 	/**
@@ -122,7 +122,7 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t getMasterChannelFrameCount() const {
-		return packet[2];
+		return transferFrameData[2];
 	}
 
 	/**
@@ -132,7 +132,7 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t getVirtualChannelFrameCount() const {
-		return packet[3];
+		return transferFrameData[3];
 	}
 
 	/**
@@ -146,22 +146,22 @@ struct TransferFrameTM : public TransferFrame {
 	 * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t getTransferFrameDataFieldStatus() const {
-		return static_cast<uint16_t>((packet[4]) << 8) | packet[5];
+		return static_cast<uint16_t>((transferFrameData[4]) << 8) | transferFrameData[5];
 	}
 
-	uint16_t getPacketLength() const {
+	uint16_t getFrameLength() const {
 		return transferFrameLength;
 	}
 
-	uint8_t* packetData() const {
-		return packet;
+	uint8_t* frameData() const {
+		return transferFrameData;
 	}
 
 	bool operationalControlFieldExists() const {
-		return packet[1] & 0x1;
+		return transferFrameData[1] & 0x1;
 	}
 	uint8_t segmentLengthId() const {
-		return (packet[4] >> 3) & 0x3;
+		return (transferFrameData[4] >> 3) & 0x3;
 	}
 
 	/**
@@ -173,7 +173,7 @@ struct TransferFrameTM : public TransferFrame {
 		if (!operationalControlFieldExists()) {
 			return {};
 		}
-		operationalControlFieldPointer = packet + transferFrameLength - 4 - 2 * eccFieldExists;
+		operationalControlFieldPointer = transferFrameData + transferFrameLength - 4 - 2 * eccFieldExists;
 		operationalControlField = (operationalControlFieldPointer[0] << 24U) |
 		                          (operationalControlFieldPointer[1] << 16U) |
 		                          (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
@@ -181,67 +181,67 @@ struct TransferFrameTM : public TransferFrame {
 	}
 
 	void setMasterChannelFrameCount(uint8_t masterChannelFrameCount) {
-		packet[2] = masterChannelFrameCount;
+        transferFrameData[2] = masterChannelFrameCount;
 	}
 
-	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
-	                bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
-	                SynchronizationFlag syncFlag, PacketType type = TM)
-	    : TransferFrame(type, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
-	      firstHeaderPointer(firstHeaderPointer) {
+	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
+                    bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
+                    SynchronizationFlag syncFlag, FrameType type = TM)
+	    : TransferFrame(type, frameLength, frameData), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists),
+          firstHeaderPointer(firstHeaderPointer) {
 		// Transfer Frame Version Number + Spacecraft Id
-		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
+		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
-		packet[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1);
+		frameData[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1);
 		// Master Channel Frame Count is set by the MC Generation Service
-		packet[2] = 0;
-		packet[3] = virtualChannelFrameCount;
+		frameData[2] = 0;
+        frameData[3] = virtualChannelFrameCount;
 		// Data field status. TransferFrame Order Flag and Segment Length ID are unused
-		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6)) |
-		            (segmentationLengthId << 3) | (firstHeaderPointer & 0x700 >> 8);
-		packet[5] = firstHeaderPointer & 0xFF;
+		frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6)) |
+                       (segmentationLengthId << 3) | (firstHeaderPointer & 0x700 >> 8);
+        frameData[5] = firstHeaderPointer & 0xFF;
 	}
 
 	/**
 	 * Constructor with operational control field
 	 */
-	TransferFrameTM(uint8_t* packet, uint16_t packetLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
-	                bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
-	                SynchronizationFlag syncFlag, uint32_t operationalControlField, PacketType type = TM)
-	    : TransferFrame(type, packetLength, packet), hdr(packet), scid(scid), eccFieldExists(eccFieldExists),
-	      firstHeaderPointer(firstHeaderPointer) {
+	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
+                    bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
+                    SynchronizationFlag syncFlag, uint32_t operationalControlField, FrameType type = TM)
+	    : TransferFrame(type, frameLength, frameData), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists),
+          firstHeaderPointer(firstHeaderPointer) {
 		// Transfer Frame Version Number + Spacecraft Id
-		packet[0] = SpacecraftIdentifier & 0xE0 >> 4;
+		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
-		packet[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1) | 1;
+		frameData[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1) | 1;
 		// Master Channel Frame Count is set by the MC Generation Service
-		packet[2] = 0;
-		packet[3] = virtualChannelFrameCount;
+		frameData[2] = 0;
+        frameData[3] = virtualChannelFrameCount;
 		// Data field status. TransferFrame Order Flag and Segment Length ID are unused
-		packet[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6)) |
-		            (segmentationLengthId << 3) | (firstHeaderPointer & 0x700 >> 8);
-		packet[5] = firstHeaderPointer & 0xFF;
-		uint8_t* ocfPointer = packet + transferFrameLength - 4 - 2 * eccFieldExists;
+		frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6)) |
+                       (segmentationLengthId << 3) | (firstHeaderPointer & 0x700 >> 8);
+        frameData[5] = firstHeaderPointer & 0xFF;
+		uint8_t* ocfPointer = frameData + transferFrameLength - 4 - 2 * eccFieldExists;
 		ocfPointer[0] = operationalControlField >> 24;
 		ocfPointer[1] = (operationalControlField >> 16) & 0xFF;
 		ocfPointer[2] = (operationalControlField >> 8) & 0xFF;
 		ocfPointer[3] = operationalControlField & 0xFF;
 	}
 
-	TransferFrameTM(uint8_t* packet, uint16_t frameLength, bool eccFieldExists)
-	    : TransferFrame(PacketType::TM, frameLength, packet), hdr(packet),
-	      eccFieldExists(eccFieldExists) {}
+	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, bool eccFieldExists)
+	    : TransferFrame(FrameType::TM, frameLength, frameData), hdr(frameData),
+          eccFieldExists(eccFieldExists) {}
 	/**
 	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-	uint16_t calculateCRC(const uint8_t* packet, uint16_t len) override {
+	uint16_t calculateCRC(const uint8_t* data, uint16_t len) override {
 
 		uint16_t crc = 0xFFFF;
 
 		// calculate remainder of binary polynomial division
 		for (uint16_t i = 0; i < len; i++) {
-			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+			crc = crc_16_ccitt_table[(data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
 		for (uint16_t i = 0; i < TmTransferFrameSize - len - 4*operationalControlFieldExists() - 2; i++) {

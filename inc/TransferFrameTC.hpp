@@ -10,7 +10,7 @@
 class TransferFrameTC;
 
 /**
- *  The packet's service type
+ *  The transferFrameData's service type
  * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
  */
 enum class ServiceType {
@@ -31,25 +31,25 @@ public:
 	/**
 	 * @see p. 4.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-	TransferFrameHeaderTC(uint8_t* pckt) : TransferFrameHeader(pckt) {}
+	TransferFrameHeaderTC(uint8_t* frameData) : TransferFrameHeader(frameData) {}
 
 	/**
-	 * The bypass Flag determines whether the packet will bypass FARM checks
+	 * The bypass Flag determines whether the transferFrameData will bypass FARM checks
 	 * @details Bit 2 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
 	 */
 	bool bypassFlag() const {
-		return (packetHeader[0] >> 5U) & 0x01;
+		return (transferFrameHeader[0] >> 5U) & 0x01;
 	}
 
 	/**
-	 * The control and command Flag determines whether the packet carries control commands (Type-C) or
+	 * The control and command Flag determines whether the transferFrameData carries control commands (Type-C) or
 	 * data (Type-D)
 	 * @details Bit 3 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	bool ctrlAndCmdFlag() const {
-		return (packetHeader[0] >> 4U) & 0x01;
+		return (transferFrameHeader[0] >> 4U) & 0x01;
 	}
 
 	/**
@@ -58,7 +58,7 @@ public:
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint16_t transferFrameLength() const {
-		return (static_cast<uint16_t>(packetHeader[2] & 0x03) << 8U) | (static_cast<uint16_t>(packetHeader[3]));
+		return (static_cast<uint16_t>(transferFrameHeader[2] & 0x03) << 8U) | (static_cast<uint16_t>(transferFrameHeader[3]));
 	}
 };
 
@@ -70,14 +70,14 @@ public:
 	}
 
 	/**
-	 * Compares two packets
+	 * Compares two frames
 	 */
-	friend bool operator==(const TransferFrameTC& packet1, const TransferFrameTC& packet2) {
-		if (packet1.transferFrameLength != packet2.transferFrameLength) {
+	friend bool operator==(const TransferFrameTC& frame1, const TransferFrameTC& frame2) {
+		if (frame1.transferFrameLength != frame2.transferFrameLength) {
 			return false;
 		}
-		for (uint16_t i = 0; i < packet1.transferFrameLength; i++) {
-			if (packet1.packetData()[i] != packet2.packetData()[i]) {
+		for (uint16_t i = 0; i < frame1.transferFrameLength; i++) {
+			if (frame1.frameData()[i] != frame2.frameData()[i]) {
 				return false;
 			}
 		}
@@ -86,8 +86,9 @@ public:
 
 	// TODO: Handle CLCWs without any ambiguities
 
+    // seems redundant?
 	const uint8_t* packetPlData() const {
-		return packet;
+		return transferFrameData;
 	}
 
 	// see p. 4.2.1.1.2 from TC SPACE DATA LINK PROTOCOL
@@ -98,7 +99,7 @@ public:
 	 * @see p. 4.2.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t controlWordType() const {
-		return (packet[0] & 0x80 >> 7U);
+		return (transferFrameData[0] & 0x80 >> 7U);
 	}
 
 	/**
@@ -107,7 +108,7 @@ public:
 	 *
 	 */
 	uint8_t statusField() const {
-		return (packet[0] & 0x1C) >> 2U;
+		return (transferFrameData[0] & 0x1C) >> 2U;
 	}
 
 	/**
@@ -116,7 +117,7 @@ public:
 	 * @see p. 4.2.1.5 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t copInEffect() const {
-		return packet[0] & 0x03;
+		return transferFrameData[0] & 0x03;
 	}
 
 	/**
@@ -125,7 +126,7 @@ public:
 	 * @see p. 4.2.1.6 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t vcIdentification() const {
-		return (packet[1] & 0xFC) >> 2U;
+		return (transferFrameData[1] & 0xFC) >> 2U;
 	}
 
 	/**
@@ -135,7 +136,7 @@ public:
 	 * @see p. 4.2.1.8.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t noRfAvail() const {
-		return (packet[2] & 0x80) >> 7U;
+		return (transferFrameData[2] & 0x80) >> 7U;
 	}
 
 	/**
@@ -143,7 +144,7 @@ public:
 	 * @see p. 4.2.1.8.3 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t noBitLock() const {
-		return (packet[2] & 0x20) >> 5U;
+		return (transferFrameData[2] & 0x20) >> 5U;
 	}
 
 	/**
@@ -151,7 +152,7 @@ public:
 	 * @see p. 4.2.1.8.4 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t lockout() const {
-		return (packet[2] & 0x20) >> 5U;
+		return (transferFrameData[2] & 0x20) >> 5U;
 	}
 
 	/**
@@ -159,7 +160,7 @@ public:
 	 * @see p. 4.1.2.8.5 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t wait() const {
-		return (packet[2] & 0x10) >> 4U;
+		return (transferFrameData[2] & 0x10) >> 4U;
 	}
 
 	/**
@@ -167,7 +168,7 @@ public:
 	 * @see p. 4.2.1.8.6 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t retransmit() const {
-		return (packet[2] & 0x08) >> 3U;
+		return (transferFrameData[2] & 0x08) >> 3U;
 	}
 
 	/**
@@ -175,7 +176,7 @@ public:
 	 * @see p. 4.2.1.9 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t farmBCounter() const {
-		return (packet[2] & 0x06) >> 1U;
+		return (transferFrameData[2] & 0x06) >> 1U;
 	}
 
 	/**
@@ -183,7 +184,7 @@ public:
 	 * @see p. 4.2.11.1 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t reportValue() const {
-		return packet[3];
+		return transferFrameData[3];
 	}
 
 	/**
@@ -194,7 +195,7 @@ public:
 	}
 
 	/**
-	 * Determines whether the packet is marked for retransmission while in the sent queue
+	 * Determines whether the transferFrameData is marked for retransmission while in the sent queue
 	 */
 	bool isToBeRetransmitted() const {
 		return toBeRetransmitted;
@@ -225,7 +226,7 @@ public:
 	 */
 	// TODO: Use std::optional
 	uint8_t segmentationHeader() const {
-		return packet[5];
+		return transferFrameData[5];
 	}
 
 	/**
@@ -233,20 +234,20 @@ public:
 	 * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
 	 */
 	uint8_t virtualChannelId() const {
-		return (packet[2] & 0xFC) >> 2;
+		return (transferFrameData[2] & 0xFC) >> 2;
 	};
 
 	// Assumes MAP Id exists
 	// TODO: Replace with std::optional
 	uint8_t mapId() const {
 		if (segmentationHeaderPresent) {
-			return packet[5] & 0x3F;
+			return transferFrameData[5] & 0x3F;
 		}
 		return 0;
 	}
 
 	uint8_t getTransferFrameVersionNumber() const {
-		return (packet[0] >> 6) & 0x3;
+		return (transferFrameData[0] >> 6) & 0x3;
 	}
 	/**
 	 * @return Bits  6–15  of  the  Transfer  Frame  Primary  Header (the  Spacecraft Identifier (SCID)).
@@ -261,15 +262,15 @@ public:
 	 * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL.
 	 */
 	uint8_t transferFrameSequenceNumber() const {
-		return packet[4];
+		return transferFrameData[4];
 	}
 
 	/**
 	 * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	ServiceType getServiceType() const {
-		bool bypass = (packet[0] >> 6) & 0x1;
-		bool ctrl = (packet[0] >> 5) & 0x1;
+		bool bypass = (transferFrameData[0] >> 6) & 0x1;
+		bool ctrl = (transferFrameData[0] >> 5) & 0x1;
 
 		if (bypass && ctrl) {
 			return ServiceType::TYPE_BC;
@@ -293,27 +294,27 @@ public:
 		return reps;
 	}
 
-	uint8_t* packetData() const {
-		return packet;
+	uint8_t* frameData() const {
+		return transferFrameData;
 	}
 
 	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
 	void setSegmentationHeader(uint8_t segmentation_hdr) {
-		packet[5] = segmentation_hdr;
+        transferFrameData[5] = segmentation_hdr;
 	}
 
-	void setPacketData(uint8_t* packet_data) {
-		packet = packet_data;
+	void setFrameData(uint8_t* frame_data) {
+        transferFrameData = frame_data;
 	}
 
-	void setPacketLength(uint16_t packet_length) {
-		packet[2] = ((virtualChannelId() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
-		packet[3] = transferFrameLength & 0xFF;
+	void setFrameLength() {
+        transferFrameData[2] = ((virtualChannelId() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
+        transferFrameData[3] = transferFrameLength & 0xFF;
 	}
 
-	uint16_t packetLength() {
-		return (static_cast<uint16_t>(packet[2] & 0x3) << 8) | packet[3];
+	uint16_t frameLength() {
+		return (static_cast<uint16_t>(transferFrameData[2] & 0x3) << 8) | transferFrameData[3];
 	}
 
 	void setServiceType(ServiceType service_type) {
@@ -325,7 +326,7 @@ public:
 	}
 
 	void setTransferFrameSequenceNumber(uint8_t frame_seq_number) {
-		packet[4] = frame_seq_number;
+        transferFrameData[4] = frame_seq_number;
 	}
 
 	/**
@@ -356,30 +357,30 @@ public:
 		return processedByFOP;
 	}
 
-	TransferFrameTC(uint8_t* packet, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
-	                PacketType t = TC)
-	    : TransferFrame(t, frameLength, packet), hdr(packet), serviceType(serviceType), ack(false),
-	      toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
+	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
+                    FrameType t = TC)
+	    : TransferFrame(t, frameLength, frameData), hdr(frameData), serviceType(serviceType), ack(false),
+          toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
-		packet[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
-		packet[1] = SpacecraftIdentifier & 0xFF;
-		packet[2] = ((gvcid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
-		packet[3] = frameLength & 0xFF;
+        frameData[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
+        frameData[1] = SpacecraftIdentifier & 0xFF;
+        frameData[2] = ((gvcid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
+        frameData[3] = frameLength & 0xFF;
 	}
 
-	TransferFrameTC(uint8_t* packet, uint16_t frameLength, PacketType t = TC)
-	    : TransferFrame(PacketType::TC, frameLength, packet), hdr(packet), transmit(false){};
+	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, FrameType t = TC)
+	    : TransferFrame(FrameType::TC, frameLength, frameData), hdr(frameData), transmit(false){};
 	/**
 	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-	 uint16_t calculateCRC(const uint8_t* packet, uint16_t len) override {
+	 uint16_t calculateCRC(const uint8_t* data, uint16_t len) override {
 		uint16_t crc = 0xFFFF;
 
 		// calculate remainder of binary polynomial division
 		for (uint16_t i = 0; i < len; i++) {
-			crc = crc_16_ccitt_table[(packet[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+			crc = crc_16_ccitt_table[(data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
 		}
 
 		return crc;

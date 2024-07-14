@@ -92,7 +92,7 @@ public:
 	}
 
 	/**
-	 * Indicates whether the receiver doesn't accept any packets
+	 * Indicates whether the receiver doesn't accept any transfer frames
 	 * @return Bit 19 of the CLCW (the Wait Flag)
 	 * @see p. 4.1.2.8.5 from TC SPACE DATA LINK PROTOCOL
 	 */

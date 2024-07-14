@@ -58,24 +58,24 @@ TEST_CASE("Service Channel") {
 
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.mappRequest(0, 0, 9, ServiceType::TYPE_AD);
-    const TransferFrameTC* packet_a = serv_channel.txOutPacketTC().second;
+    const TransferFrameTC* frame_a = serv_channel.txOutFrameTC().second;
 
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 
 	err = serv_channel.mappRequest(0, 0, 10, ServiceType::TYPE_BD);
-    const TransferFrameTC* packet_c = serv_channel.txOutPacketTC().second;
-    CHECK(packet_c->getFrameLength() == 17);
-    CHECK(packet_c->getServiceType() == ServiceType::TYPE_BD);
+    const TransferFrameTC* frame_c = serv_channel.txOutFrameTC().second;
+    CHECK(frame_c->getFrameLength() == 17);
+    CHECK(frame_c->getServiceType() == ServiceType::TYPE_BD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.txOutPacketTC(0).second == packet_a);
+    CHECK(serv_channel.txOutFrameTC(0).second == frame_a);
 
     // VC Generation Service
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2U);
 
-	// Process first type-A packet
+	// Process first type-A transferFrameData
 	err = serv_channel.vcGenerationRequestTC(0);
-    CHECK(serv_channel.txOutPacketTC(0).second == packet_c);
+    CHECK(serv_channel.txOutFrameTC(0).second == frame_c);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
 	err = serv_channel.pushSentQueue(0);
@@ -84,32 +84,32 @@ TEST_CASE("Service Channel") {
 	err = serv_channel.allFramesGenerationTCRequest();
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	TransferFrameTC packet = *serv_channel.getTxProcessedPacket();
+	TransferFrameTC transferFrameTc = *serv_channel.getTxProcessedFrame();
 
-	CHECK(serv_channel.txOutProcessedPacketTC().second == packet_a);
+	CHECK(serv_channel.txOutProcessedFrameTC().second == frame_a);
 
-	CHECK(packet_a->acknowledged() == false);
-	CHECK(packet_a->transferFrameSequenceNumber() == 0);
+	CHECK(frame_a->acknowledged() == false);
+	CHECK(frame_a->transferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(0, 0);
 
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	// Process first type-B packet
+	// Process first type-B transferFrameData
 	err = serv_channel.vcGenerationRequestTC(0);
 
-	// Try to process extra type-A packet
+	// Try to process extra type-A transferFrameData
 	err = serv_channel.vcGenerationRequestTC(0);
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
 
 	// Rx side
-	// new packet
-	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	uint8_t packet2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0xAE, 0x3B, 0xC8, 0x58, 0x81};
+	// new transferFrameData
+	uint8_t frame1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+	uint8_t frame2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0xAE, 0x3B, 0xC8, 0x58, 0x81};
 	uint8_t out_buffer[10] = {0};
 
-	serv_channel.storeTC(packet1, 10);
-	serv_channel.storeTC(packet2, 10);
+    serv_channel.storeFrameTC(frame1, 10);
+    serv_channel.storeFrameTC(frame2, 10);
 
 	// All frames reception
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
@@ -161,9 +161,9 @@ TEST_CASE("Service Channel") {
 	//    err = serv_channel.all_frames_generation_request();
 	//    CHECK(err == ServiceChannelNotif::NO_SERVICE_EVENT);
 	//
-	//    //TransferFrameTC packet = *serv_channel.get_tx_processed_packet();
+	//    //TransferFrameTC transferFrameData = *serv_channel.get_tx_processed_packet();
 	//
-	//    CHECK(serv_channel.tx_out_processed_packet().second == packet_a);
+	//    CHECK(serv_channel.tx_out_processed_packet().second == frame_a);
 
 	// TM store function
 
@@ -172,42 +172,42 @@ TEST_CASE("Service Channel") {
 
 	serv_channel.storeTM(pckt_TM, 9, 0, 0);
 
-	const TransferFrameTM *packet_TM = serv_channel.txOutPacketTM().second;
-	CHECK(packet_TM->getPacketLength() == 9);
-	CHECK(packet_a->getTransferFrameVersionNumber() == 0);
+	const TransferFrameTM *packet_TM = serv_channel.txOutFrameTM().second;
+	CHECK(packet_TM->getFrameLength() == 9);
+	CHECK(frame_a->getTransferFrameVersionNumber() == 0);
 	CHECK(packet_TM->getMasterChannelFrameCount() == 0);
 	CHECK(packet_TM->getVirtualChannelFrameCount() == 2);
 	CHECK(packet_TM->getTransferFrameDataFieldStatus() ==
 	      (static_cast<uint16_t>(0x04) << 8U | (static_cast<uint16_t>(0xA2))));
 
 	// All Frames Generation Service TM
-	CHECK(serv_channel.txOutProcessedPacketTM().second == nullptr);
+	CHECK(serv_channel.txOutProcessedFrameTM().second == nullptr);
 	*/
 
-	uint8_t valid_pckt_TM[128] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t vaild_frame_TM[128] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
 	uint8_t len = 14;
 	for (uint16_t i = 0; i < TmTransferFrameSize-len-2; i++) {
-		valid_pckt_TM[i+14]= idle_data[i];
+		vaild_frame_TM[i+14]= idle_data[i];
 	}
 	uint16_t crc = 36061;
-	valid_pckt_TM[TmTransferFrameSize-2] = (crc >> 8) & 0xFF;
-	valid_pckt_TM[TmTransferFrameSize - 1] = crc & 0xFF;
+	vaild_frame_TM[TmTransferFrameSize-2] = (crc >> 8) & 0xFF;
+	vaild_frame_TM[TmTransferFrameSize - 1] = crc & 0xFF;
 
 	uint8_t invalid_vcid_TM[TmTransferFrameSize] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
 	uint8_t invalid_crc_TM[TmTransferFrameSize] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
 	// Packets that carry a CLCW
-	uint8_t valid_no_crc_TM[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x0};
-	uint8_t valid_no_crc_TM2[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x0};
-	uint8_t valid_no_crc_TM3[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x0};
-	uint8_t valid_no_crc_TM4[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x01};
-	uint8_t valid_no_crc_TM5[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x01};
-	uint8_t valid_no_crc_TM6[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x01};
-	uint8_t valid_no_crc_TM7[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x01};
-	uint8_t valid_no_crc_TM8[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x04};
-	uint8_t valid_no_crc_TM9[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x05};
-	uint8_t valid_no_crc_TM10[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x05};
-	uint8_t valid_no_crc_TM11[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x05};
+	uint8_t valid_no_crc_frame_TM[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x0};
+	uint8_t valid_no_crc_frame_TM2[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x0};
+	uint8_t valid_no_crc_frame_TM3[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x0};
+	uint8_t valid_no_crc_frame_TM4[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x01};
+	uint8_t valid_no_crc_frame_TM5[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x01};
+	uint8_t valid_no_crc_frame_TM6[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x01};
+	uint8_t valid_no_crc_frame_TM7[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x01};
+	uint8_t valid_no_crc_frame_TM8[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x04};
+	uint8_t valid_no_crc_frame_TM9[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x05};
+	uint8_t valid_no_crc_frame_TM10[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x05};
+	uint8_t valid_no_crc_frame_TM11[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x05};
 
 	// TM Reception
 
@@ -217,7 +217,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer);
 	CHECK(serv_channel.availableSpaceBufferTxTM() == MaxTxInMasterChannel - 0);
 
-	err = serv_channel.allFramesReceptionTMRequest(valid_pckt_TM, TmTransferFrameSize);
+	err = serv_channel.allFramesReceptionTMRequest(vaild_frame_TM, TmTransferFrameSize);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 1);
 
@@ -234,36 +234,36 @@ TEST_CASE("Service Channel") {
 	uint8_t resulting_tm_packet[14] = {0};
 
 	err = serv_channel.packetExtractionTM(0, resulting_tm_packet);
-	// Valid packet passes to lower procedures
+	// Valid transferFrameData passes to lower procedures
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
 
 	// E1 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
 	// E3 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM2, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM2, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
 	// E4 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM3, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM3, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
 	// E5 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM4, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM4, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
 	// E7 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM5, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM5, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
 	// E11 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM6, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM6, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM7, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM7, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 
 	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
@@ -273,27 +273,27 @@ TEST_CASE("Service Channel") {
 	//    CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 	serv_channel.initiateAdNoClcw(2);
-	// Process first type-A packet
+	// Process first type-A transferFrameData
 	err = serv_channel.vcGenerationRequestTC(2);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.pushSentQueue(2);
-	CHECK(packet_a->transferFrameSequenceNumber() == 0);
+	CHECK(frame_a->transferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(2, 0);
 	// E13 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 	// E2 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM8, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM8, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 	// E6 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM9, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM9, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 	// E8 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM10, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM10, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 	// E9 change of state
-	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_TM11, 12);
+	err = serv_channel.allFramesReceptionTMRequest(valid_no_crc_frame_TM11, 12);
 	CHECK(serv_channel.fopState(2) == INITIAL);
 }
 
@@ -333,18 +333,18 @@ TEST_CASE("VC Generation Service") {
 		CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize - 1);
 		CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize - 4);
 
-		const TransferFrameTM* transferFrame = serv_channel.packetMasterChannel();
+		const TransferFrameTM* transferFrame = serv_channel.masterChannelFrameTM();
 
 		CHECK(transferFrame->segmentLengthId() == 3);
 		for (uint8_t i = TmPrimaryHeaderSize; i < maxTransferFrameData + TmPrimaryHeaderSize; i++) {
 			if (i < TmPrimaryHeaderSize + sizeof(packet1)) {
-				CHECK(transferFrame->packetData()[i] == packet1[i - TmPrimaryHeaderSize]);
+				CHECK(transferFrame->frameData()[i] == packet1[i - TmPrimaryHeaderSize]);
 			} else if (i >= TmPrimaryHeaderSize + sizeof(packet1) &&
 			           i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
-				CHECK(transferFrame->packetData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
+				CHECK(transferFrame->frameData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
 			} else {
-				CHECK(transferFrame->packetData()[i] ==
-				      packet3[i - TmPrimaryHeaderSize - sizeof(packet1) - sizeof(packet2)]);
+				CHECK(transferFrame->frameData()[i] ==
+                      packet3[i - TmPrimaryHeaderSize - sizeof(packet1) - sizeof(packet2)]);
 			}
 		}
 	}
@@ -358,28 +358,28 @@ TEST_CASE("VC Generation Service") {
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize);
 		CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize);
-		const TransferFrameTM* transferFrame = serv_channel.packetMasterChannel();
-		CHECK(transferFrame->packetData()[6] == 47);
-		CHECK(transferFrame->packetData()[7] == 31);
-		CHECK(transferFrame->packetData()[8] == 65);
-		CHECK(transferFrame->packetData()[9] == 81);
-		CHECK(transferFrame->packetData()[10] == 25);
+		const TransferFrameTM* transferFrame = serv_channel.masterChannelFrameTM();
+		CHECK(transferFrame->frameData()[6] == 47);
+		CHECK(transferFrame->frameData()[7] == 31);
+		CHECK(transferFrame->frameData()[8] == 65);
+		CHECK(transferFrame->frameData()[9] == 81);
+		CHECK(transferFrame->frameData()[10] == 25);
 		CHECK(transferFrame->segmentLengthId() == 1);
 
 		serv_channel.mcGenerationTMRequest();
-		transferFrame = serv_channel.packetMasterChannel();
+		transferFrame = serv_channel.masterChannelFrameTM();
 
-		CHECK(transferFrame->packetData()[6] == 44);
-		CHECK(transferFrame->packetData()[7] == 76);
-		CHECK(transferFrame->packetData()[8] == 99);
-		CHECK(transferFrame->packetData()[9] == 13);
-		CHECK(transferFrame->packetData()[10] == 43);
+		CHECK(transferFrame->frameData()[6] == 44);
+		CHECK(transferFrame->frameData()[7] == 76);
+		CHECK(transferFrame->frameData()[8] == 99);
+		CHECK(transferFrame->frameData()[9] == 13);
+		CHECK(transferFrame->frameData()[10] == 43);
 		CHECK(transferFrame->segmentLengthId() == 0);
 
 		serv_channel.mcGenerationTMRequest();
-		transferFrame = serv_channel.packetMasterChannel();
+		transferFrame = serv_channel.masterChannelFrameTM();
 
-		CHECK(transferFrame->packetData()[6] == 78);
+		CHECK(transferFrame->frameData()[6] == 78);
 		CHECK(transferFrame->segmentLengthId() == 2);
 	}
 }
@@ -404,9 +404,9 @@ TEST_CASE("CLCW construction at VC Reception") {
 	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
 	uint8_t packet2[] = {0x10, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
 	uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	serv_channel.storeTC(packet1, 10);
-	serv_channel.storeTC(packet2, 10);
-	serv_channel.storeTC(packet3, 10);
+    serv_channel.storeFrameTC(packet1, 10);
+    serv_channel.storeFrameTC(packet2, 10);
+    serv_channel.storeFrameTC(packet3, 10);
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.allFramesReceptionTCRequest();
 	serv_channel.allFramesReceptionTCRequest();
@@ -522,7 +522,7 @@ TEST_CASE("Frame Acknowledgement") {
 
 	TransferFrameTC transferFrame = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	err = serv_channel.storeTC(transferFrame.packetData(), transferFrame.getFrameLength());
+	err = serv_channel.storeFrameTC(transferFrame.frameData(), transferFrame.getFrameLength());
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesReceptionTCRequest();
@@ -549,7 +549,7 @@ TEST_CASE("Frame Acknowledgement") {
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
 
-	err = serv_channel.storeTC(transferFrame2.packetData(), transferFrame.getFrameLength());
+	err = serv_channel.storeFrameTC(transferFrame2.frameData(), transferFrame.getFrameLength());
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesReceptionTCRequest();
@@ -581,7 +581,7 @@ TEST_CASE("Frame Acknowledgement") {
 
 	TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	err = serv_channel.storeTC(transferFrame3.packetData(), transferFrame.getFrameLength());
+	err = serv_channel.storeFrameTC(transferFrame3.frameData(), transferFrame.getFrameLength());
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesReceptionTCRequest();
