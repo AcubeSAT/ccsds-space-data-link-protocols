@@ -195,7 +195,7 @@ public:
 	}
 
 	/**
-	 * Determines whether the transferFrameData is marked for retransmission while in the sent queue
+	 * Determines whether the transfer frame is marked for retransmission while in the sent queue
 	 */
 	bool isToBeRetransmitted() const {
 		return toBeRetransmitted;

@@ -16,7 +16,7 @@ VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* transferFrameTc) {
 }
 // Master Channel
 
-// Technically not a transferFrameData, but it has identical information
+// Technically not a transfer frame, but it has identical information
 // @todo consider another data structure
 
 MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* transferFrameTc) {

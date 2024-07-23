@@ -14,15 +14,15 @@ ServiceChannelNotification ServiceChannel::storeFrameTC(uint8_t* frameData, uint
 		return ServiceChannelNotification::RX_IN_BUFFER_FULL;
 	}
 
-	TransferFrameTC transferFrameTC = TransferFrameTC(frameData, frameLength);
+	TransferFrameTC transferFrameTc = TransferFrameTC(frameData, frameLength);
 
-	if (transferFrameTC.getFrameLength() != frameLength) {
+	if (transferFrameTc.getFrameLength() != frameLength) {
 		ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
 		return ServiceChannelNotification::RX_INVALID_LENGTH;
 	}
 
-	uint8_t vid = transferFrameTC.virtualChannelId();
-	uint8_t mapid = transferFrameTC.mapId();
+	uint8_t vid = transferFrameTc.virtualChannelId();
+	uint8_t mapid = transferFrameTc.mapId();
 
 	// Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
 	if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
@@ -40,10 +40,10 @@ ServiceChannelNotification ServiceChannel::storeFrameTC(uint8_t* frameData, uint
 		return ServiceChannelNotification::INVALID_MAP_ID;
 	}
 
-	masterChannel.rxMasterCopyTC.push_back(transferFrameTC);
-	TransferFrameTC* masterTransferFrameTC = &(masterChannel.rxMasterCopyTC.back());
+	masterChannel.rxMasterCopyTC.push_back(transferFrameTc);
+	TransferFrameTC* masterTransferFrameTc = &(masterChannel.rxMasterCopyTC.back());
 
-	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(masterTransferFrameTC);
+	masterChannel.rxInFramesBeforeAllFramesReceptionListTC.push_back(masterTransferFrameTc);
 	return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
@@ -417,7 +417,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTCRequest() {
 		uint16_t packet_crc = (static_cast<uint16_t>(frame->frameData()[len]) << 8) | frame->frameData()[len + 1];
 		if (crc != packet_crc) {
 			ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
-			// Invalid transferFrameData is discarded and service aborted
+			// Invalid transfer frame is discarded and service aborted
 			masterChannel.removeMasterRx(frame);
 			masterChannel.rxInFramesBeforeAllFramesReceptionListTC.pop_front();
 			return ServiceChannelNotification::RX_INVALID_CRC;
@@ -438,7 +438,7 @@ std::optional<TransferFrameTC> ServiceChannel::getTxProcessedFrame() {
 
 	TransferFrameTC packet = *masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
 
-	// TODO: Here the transferFrameData should probably be deleted from the master buffer
+	// TODO: Here the transfer frame should probably be deleted from the master buffer
 	return packet;
 }
 
@@ -453,17 +453,17 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationTCRequest() {
         return ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
     }
 
-    TransferFrameTC* packet = masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
+    TransferFrameTC* frame = masterChannel.txOutFramesBeforeAllFramesGenerationListTC.front();
     masterChannel.txOutFramesBeforeAllFramesGenerationListTC.pop_front();
 
-    uint8_t vid = packet->virtualChannelId();
+    uint8_t vid = frame->virtualChannelId();
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
     if (vchan.frameErrorControlFieldPresent) {
-        packet->appendCRC();
+        frame->appendCRC();
     }
 
-    masterChannel.storeTransmittedOut(packet);
+    masterChannel.storeTransmittedOut(frame);
     ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
@@ -540,7 +540,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionTMRequest(uint8_t* 
                 ((static_cast<uint16_t>(frame.frameData()[len]) << 8) & 0xFF00) | frame.frameData()[len + 1];
 		if (crc != packet_crc) {
 			ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_CRC);
-			// Invalid transferFrameData is discarded and service aborted
+			// Invalid transfer frame is discarded and service aborted
 			return ServiceChannelNotification::RX_INVALID_CRC;
 		}
 	}
@@ -833,7 +833,7 @@ ServiceChannelNotification ServiceChannel::blockingTC(uint16_t transferFrameData
         currentTransferFrameDataFieldLength += packetLength;
         packetLengthBufferTcTx->pop();
         packetLength = packetLengthBufferTcTx->front();
-        // If blocking is disabled, stop the operation on the first transferFrameData
+        // If blocking is disabled, stop the operation on the first transfer frame
         if (!vchan.blocking) {
             break;
         }
@@ -870,7 +870,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(uint16_t transferFrameData
         currentTransferFrameDataFieldLength += packetLength;
 		vchan.packetLengthBufferTmTx.pop();
 		packetLength = vchan.packetLengthBufferTmTx.front();
-		// If blocking is disabled, stop the operation on the first transferFrameData
+		// If blocking is disabled, stop the operation on the first transfer frame
 		if (!vchan.blocking) {
 			break;
 		}

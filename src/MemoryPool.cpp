@@ -8,7 +8,7 @@ uint8_t* MemoryPool::allocatePacket(uint8_t* packet, uint16_t packetLength) {
 	std::pair<uint16_t, MasterChannelAlert> index = findFit(packetLength);
 	uint16_t start = index.first;
 	if (index.second == NO_SPACE) {
-		LOG_ERROR << "There is no space in memory pool for the transfer frame data.";
+		LOG_ERROR << "There is no space in memory pool for the packet.";
 		return nullptr;
 	}
 	std::memcpy(memory + start, packet, packetLength * sizeof(uint8_t));
@@ -40,7 +40,7 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 	const etl::imap<uint16_t, uint16_t>::iterator iteratorBegin = usedMemory.begin();
 	const etl::imap<uint16_t, uint16_t>::iterator iteratorEnd = --usedMemory.end();
 
-	// Check whether list is empty or the transferFrameData can fit in the beginning
+	// Check whether list is empty or the packet can fit in the beginning
 	if (usedMemory.empty() || (iteratorBegin->first >= packetLength)) {
 		usedMemory[0] = packetLength;
 		fit.first = 0;
@@ -62,7 +62,7 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 
 	gapSize = memorySize - (iteratorEnd->first + iteratorEnd->second);
 
-	// Check whether list is empty or the transferFrameData can fit in the end
+	// Check whether list is empty or the packet can fit in the end
 	if (gapSize >= packetLength) {
 		usedMemory[iteratorEnd->first + iteratorEnd->second] = packetLength;
 		fit.first = iteratorEnd->first + iteratorEnd->second;

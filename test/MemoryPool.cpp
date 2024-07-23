@@ -21,7 +21,7 @@ TEST_CASE("Packet Insertions") {
 			CHECK(pool.getMemory()[i] == data[i]);
 		}
 	}
-	SECTION("Bigger transferFrameData than empty space") {
+	SECTION("Bigger packet than empty space") {
 		// Initialize memory pool
 		MemoryPool pool = MemoryPool();
 

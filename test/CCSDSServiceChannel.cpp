@@ -73,7 +73,7 @@ TEST_CASE("Service Channel") {
     // VC Generation Service
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2U);
 
-	// Process first type-A transferFrameData
+	// Process first type-A transfer frame
 	err = serv_channel.vcGenerationRequestTC(0);
     CHECK(serv_channel.txOutFrameTC(0).second == frame_c);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
@@ -94,10 +94,10 @@ TEST_CASE("Service Channel") {
 
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	// Process first type-B transferFrameData
+	// Process first type-B transfer frame
 	err = serv_channel.vcGenerationRequestTC(0);
 
-	// Try to process extra type-A transferFrameData
+	// Try to process extra type-A transfer frame
 	err = serv_channel.vcGenerationRequestTC(0);
 	CHECK(serv_channel.txAvailableTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
@@ -234,7 +234,7 @@ TEST_CASE("Service Channel") {
 	uint8_t resulting_tm_packet[14] = {0};
 
 	err = serv_channel.packetExtractionTM(0, resulting_tm_packet);
-	// Valid transferFrameData passes to lower procedures
+	// Valid transfer frame passes to lower procedures
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.rxInAvailableTM(0) == MaxReceivedRxTmInVirtBuffer - 0);
 	CHECK(serv_channel.availableSpaceBufferRxTM() == MaxTxInMasterChannel - 0);
@@ -273,7 +273,7 @@ TEST_CASE("Service Channel") {
 	//    CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 	serv_channel.initiateAdNoClcw(2);
-	// Process first type-A transferFrameData
+	// Process first type-A transfer frame
 	err = serv_channel.vcGenerationRequestTC(2);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.txAvailableTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
@@ -327,8 +327,8 @@ TEST_CASE("VC Generation Service") {
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize - 3);
 		CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize - 19);
-		uint16_t maxTransferFrameData = 15;
-		err = serv_channel.vcGenerationServiceTM(maxTransferFrameData, 0);
+		uint16_t maxTransferFrameFieldLength = 15;
+		err = serv_channel.vcGenerationServiceTM(maxTransferFrameFieldLength, 0);
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availableInPacketLengthBufferTmTx(0) == PacketBufferTmSize - 1);
 		CHECK(serv_channel.availableInPacketBufferTmTx(0) == PacketBufferTmSize - 4);
@@ -336,7 +336,7 @@ TEST_CASE("VC Generation Service") {
 		const TransferFrameTM* transferFrame = serv_channel.masterChannelFrameTM();
 
 		CHECK(transferFrame->segmentLengthId() == 3);
-		for (uint8_t i = TmPrimaryHeaderSize; i < maxTransferFrameData + TmPrimaryHeaderSize; i++) {
+		for (uint8_t i = TmPrimaryHeaderSize; i < maxTransferFrameFieldLength + TmPrimaryHeaderSize; i++) {
 			if (i < TmPrimaryHeaderSize + sizeof(packet1)) {
 				CHECK(transferFrame->frameData()[i] == packet1[i - TmPrimaryHeaderSize]);
 			} else if (i >= TmPrimaryHeaderSize + sizeof(packet1) &&

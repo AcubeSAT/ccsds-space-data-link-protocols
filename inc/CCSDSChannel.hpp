@@ -153,7 +153,7 @@ protected:
 	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeA;
 
 	/**
-	 * @brief Queue that stores the transferFrameData data that will eventually be concatenated to transfer frame data.
+	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-A Frames
 	 */
 	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTcTxTypeA;
@@ -164,7 +164,7 @@ protected:
 	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeB;
 
 	/**
-	 * @brief Queue that stores the transferFrameData data that will eventually be concatenated to transfer frame data.
+	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-A Frames
 	 */
 	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeB;
@@ -434,14 +434,14 @@ struct MasterChannel {
 	/**
 	 *
 	 * @param transferFrameTm TM
-	 *  stores TM transfer frame data in order to be processed by the All Frames Generation Service
+	 *  stores TM transfer frames in order to be processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeOut(TransferFrameTM* transferFrameTm);
 
 	/**
 	 *
 	 * @param transferFrameTm TM
-	 *  stores TM transferFrameData after it has been processed by the All Frames Generation Service
+	 *  stores TM transfer frames after they have been processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTM* transferFrameTm);
 
@@ -455,14 +455,14 @@ struct MasterChannel {
 	/**
 	 *
 	 * @param transferFrameTc TC
-	 *  stores TC transferFrameData in order to be processed by the All Frames Generation Service
+	 *  stores TC transfer frames in order to be processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeOut(TransferFrameTC* transferFrameTc);
 
 	/**
 	 *
 	 * @param transferFrameTc TC
-	 *  stores TC transferFrameData after it has been processed by the All Frames Generation Service
+	 *  stores TC transfer frames after they have been processed by the All Frames Generation Service
 	 */
 	MasterChannelAlert storeTransmittedOut(TransferFrameTC* transferFrameTc);
 
@@ -524,7 +524,7 @@ private:
 	// TM transfer frames that are ready to be transmitted to higher procedures following all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTC;
 
-	// Buffer to store TM transfer frames that are processed by the transferFrameData and VC Generation services
+	// Buffer to store TM transfer frames that are processed by VC Generation services
 	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedFrameListBufferTM;
 
 	/**

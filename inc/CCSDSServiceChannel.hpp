@@ -42,7 +42,8 @@ private:
 
     /**
      * Auxiliary function for blocking of packets stored in the stored packet buffer
-     * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame
+     * @param transferFrameFieldLength       The length of the data field of the TM Transfer frame (where packets are
+     *                                       stored)
      * @param packetLength                   The length of the next packet in the stored TM packet buffer
      * @param vcid                           Virtual Channel ID
      * @return                               A Service Channel Notification
@@ -51,7 +52,8 @@ private:
 
     /**
      * Auxiliary function for blocking of packets stored in the stored packet buffer
-     * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame
+     * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame (where packets are
+     *                                       stored)
      * @param packetLength                   The length of the packet in the stored TM packet buffer
      * @param vcid                           Virtual Channel ID
      * @param mapid                          MAP Channel ID
@@ -72,7 +74,7 @@ public:
 	}
 
 	/**
-	 * Service that generates a transfer frame by combining the packets to transfer frame field data and initializes the
+	 * Service that generates a transfer frame by combining the packets and initializing the
 	 * transfer frame primary header
 	 * @param transferFrameDataFieldLength the maximum transfer frame data field length
 	 * @param gvcid the global virtual channel id
