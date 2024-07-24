@@ -108,14 +108,14 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frameSeqNumber) {
 }
 
 void FrameOperationProcedure::removeAcknowledgedFrames() {
-	etl::ilist<TransferFrameTC>::iterator cur_packet = vchan->master_channel().txMasterCopyTC.begin();
+	etl::ilist<TransferFrameTC>::iterator cur_frame = vchan->master_channel().txMasterCopyTC.begin();
 
-	while (cur_packet != vchan->master_channel().txMasterCopyTC.end()) {
-		if ((*cur_packet).acknowledged()) {
-            vchan->master_channel().masterChannelPoolTC.deletePacket(cur_packet->packetData(), cur_packet->packetLength());
-			vchan->master_channel().txMasterCopyTC.erase(cur_packet++);
+	while (cur_frame != vchan->master_channel().txMasterCopyTC.end()) {
+		if ((*cur_frame).acknowledged()) {
+            vchan->master_channel().masterChannelPoolTC.deletePacket(cur_frame->frameData(), cur_frame->frameLength());
+			vchan->master_channel().txMasterCopyTC.erase(cur_frame++);
 		} else {
-			++cur_packet;
+			++cur_frame;
 		}
 	}
 
@@ -161,7 +161,7 @@ COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
 COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	// If Ad Out Flag isn't set to ready, the process shall be aborted
 	if (adOut == FlagState::READY) {
-		// Check if some transmitted packet is set to be retransmitted
+		// Check if some transmitted transfer frame is set to be retransmitted
 		for(TransferFrameTC* frame : *sentQueueFOP){
 			if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
 				if (frame->isToBeRetransmitted()) {
@@ -657,7 +657,7 @@ void FrameOperationProcedure::bdReject() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
-	TransferFrameTC* frame = vchan->txUnprocessedPacketListBufferTC.front();
+	TransferFrameTC* frame = vchan->txUnprocessedFrameListBufferTC.front();
 
 	if (frame->transferFrameHeader().bypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_AD) {
