@@ -51,11 +51,11 @@ public:
 	COPDirectiveResponse bufferRelease();
 
 	/**
-	 * Buffer for storing packets, BEFORE being processed by FARM.
+	 * Buffer for storing TC transfer frames, BEFORE being processed by FARM.
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue>* waitQueue;
 	/**
-	 * Buffer for storing packets, AFTER being processed by FARM.
+	 * Buffer for storing TC transfer frames, AFTER being processed by FARM.
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInFOPSentQueue>* sentQueue;
 

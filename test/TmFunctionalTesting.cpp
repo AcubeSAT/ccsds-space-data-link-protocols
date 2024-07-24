@@ -70,7 +70,7 @@ ServiceChannelNotification randomServiceCallRx(bool* flag, uint8_t* sentPacket, 
 				sentPacket[t] = framesSent->front();
 				framesSent->pop();
 			}
-			serviceChannel->allFramesReceptionTMRequest(sentPacket, TmTransferFrameSize);
+			ser = serviceChannel->allFramesReceptionTMRequest(sentPacket, TmTransferFrameSize);
 		}
 
 	} else if (randomServicePicker == 1) {
@@ -95,6 +95,7 @@ ServiceChannelNotification randomServiceCallRx(bool* flag, uint8_t* sentPacket, 
 			printf("\n");
 		}
 	}
+    return ser;
 }
 
 TEST_CASE("TM Tx and Rx Testing") {

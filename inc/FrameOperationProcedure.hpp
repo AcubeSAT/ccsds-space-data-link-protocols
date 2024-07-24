@@ -39,23 +39,23 @@ class FrameOperationProcedure {
 
 public:
 	/**
-	 * TC Packets stored in list, before being processed by the FOP service
+	 * TC transfer frames stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFOP;
 	/**
-	 * TC Packets stored in list, after being processed by the FOP service
+	 * TC transfer frames stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFOP;
 
 	/**
-	 * TC Packets stored in list, before being processed by the FOP service
+	 * TC transfer frames stored in list, before being processed by the FOP service
 	 * @see p. 5.1.4 from COP-1 CCSDS
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue>* waitQueueFARM;
 	/**
-	 * TC Packets stored in list, after being processed by the FOP service
+	 * TC transfer frames stored in list, after being processed by the FOP service
 	 * @see p. 5.1.7 from COP-1 CCSDS
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue>* sentQueueFARM;
@@ -181,7 +181,7 @@ private:
 	void lookForDirective();
 
 	/**
-	 * stores TC Packets, that have being processed by the FOP service, to the
+	 * stores TC transfer frames, that have being processed by the FOP service, to the
 	 * txOutFramesBeforeAllFramesGenerationListTC list, in order to be processed by All Frames Generation Service
 	 */
 	COPDirectiveResponse pushSentQueue();
@@ -219,7 +219,7 @@ private:
 	void invalidClcwArrival();
 
 	/**
-	 * acknowledges TC Packets with frame_seq_num, that have being processed by the FOP service and that have
+	 * acknowledges TC transfer frames with frame_seq_num, that have being processed by the FOP service and that have
 	 * @param frame_seq_num
 	 */
 	void acknowledgeFrame(uint8_t frame_seq_num);
