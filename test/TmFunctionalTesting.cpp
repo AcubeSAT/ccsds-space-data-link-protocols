@@ -20,7 +20,7 @@ ServiceChannelNotification randomServiceCallTx(uint16_t frameLength, uint8_t* fr
 		}
 		printf("\n");
 
-		serviceChannel->storePacketTM(frame, frameLength, gcvid);
+        serviceChannel->storePacketTxTM(frame, frameLength, gcvid);
 		packetsVCLength->push(frameLength);
 		for (int j = 0; j < frameLength; j++) {
 			packetsVC->push(frame[j]);
@@ -34,14 +34,14 @@ ServiceChannelNotification randomServiceCallTx(uint16_t frameLength, uint8_t* fr
 		printf("\n");
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	} else if (randomServicePicker == 1) {
-		serviceChannel->vcGenerationServiceTM(10, gcvid);
+        serviceChannel->vcGenerationServiceTxTM(10, gcvid);
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 	} else if (randomServicePicker == 2) {
-		serviceChannel->mcGenerationTMRequest();
+        serviceChannel->mcGenerationRequestTxTM();
 		return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
 		;
 	} else if (randomServicePicker == 3) {
-		ser2 = serviceChannel->allFramesGenerationTMRequest(sentFrame, TmTransferFrameSize);
+		ser2 = serviceChannel->allFramesGenerationRequestTxTM(sentFrame, TmTransferFrameSize);
 
 		if (ser2 == ServiceChannelNotification::NO_SERVICE_EVENT) {
 			framesSentLength->push(TmTransferFrameSize);
@@ -70,11 +70,11 @@ ServiceChannelNotification randomServiceCallRx(bool* flag, uint8_t* sentPacket, 
 				sentPacket[t] = framesSent->front();
 				framesSent->pop();
 			}
-			ser = serviceChannel->allFramesReceptionTMRequest(sentPacket, TmTransferFrameSize);
+			ser = serviceChannel->allFramesReceptionRequestRxTM(sentPacket, TmTransferFrameSize);
 		}
 
 	} else if (randomServicePicker == 1) {
-		ser = serviceChannel->packetExtractionTM(vid, receivedPacket);
+		ser = serviceChannel->packetExtractionRxTM(vid, receivedPacket);
 		if (ser == ServiceChannelNotification::NO_SERVICE_EVENT) {
 			if (!packetsVCLength->empty()) {
 				*flag = true;

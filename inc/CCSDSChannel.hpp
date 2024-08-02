@@ -140,35 +140,35 @@ protected:
 	etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel> unprocessedFrameListBufferTC;
 	/**
 	 * Store unprocessed received TMs
-	 * @TODO i don't think that this should exist,since MAP channels exist for TC Frames only
+	 * TODO i don't think that this should exist,since MAP channels exist for TC Frames only
 	 */
 	etl::list<TransferFrameTM*, MaxReceivedTmInMapChannel> unprocessedFrameListBufferTM;
 	/**
 	 * Store frames before being extracted
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> rxInFramesAfterVCReception;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> inFramesAfterVCReceptionRxTC;
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-A Frames
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeA;
+	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTcTypeA;
 
 	/**
 	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-A Frames
 	 */
-	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTcTxTypeA;
+	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeA;
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-B Frames
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTcTxTypeB;
+	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTcTypeB;
 
 	/**
 	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-A Frames
 	 */
-	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTcTxTypeB;
+	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTxTcTypeB;
 };
 
 /**
@@ -181,7 +181,7 @@ class VirtualChannel {
 
 	friend class FrameOperationProcedure;
 
-	//@TODO: Those variables shouldn't be public
+	// TODO: Those variables shouldn't be public
 public:
 	/**
 	 * Virtual Channel Identifier
@@ -232,14 +232,14 @@ public:
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t availableBufferTC() const {
-		return txUnprocessedFrameListBufferTC.available();
+		return unprocessedFrameListBufferVcCopyTxTC.available();
 	}
 
 	/**
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
-	uint16_t rxInAvailableTM() const {
-		return rxInFramesAfterMCReception.available();
+	uint16_t availableFramesVcCopyRxTM() const {
+		return framesAfterMcReceptionVcCopyRxTM.available();
 	}
 
 	/**
@@ -274,12 +274,12 @@ public:
 	 */
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChannels;
 
-	uint16_t availableInPacketLengthBufferTmTx() {
-		return packetLengthBufferTmTx.available();
+	uint16_t availablePacketLengthBufferTxTM() {
+		return packetLengthBufferTxTM.available();
 	}
 
-	uint16_t availableInPacketBufferTmTx() {
-		return packetBufferTmTx.available();
+	uint16_t availablePacketBufferTxTM() {
+		return packetBufferTxTM.available();
 	}
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
@@ -309,7 +309,7 @@ public:
           maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
           repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM),
           waitQueueTxTC(v.waitQueueTxTC), sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC),
-          sentQueueRxTC(v.waitQueueRxTC), txUnprocessedFrameListBufferTC(v.txUnprocessedFrameListBufferTC),
+          sentQueueRxTC(v.waitQueueRxTC), unprocessedFrameListBufferVcCopyTxTC(v.unprocessedFrameListBufferVcCopyTxTC),
           fop(v.fop), farm(v.farm), masterChannel(v.masterChannel), blocking(v.blocking),
           synchronization(v.synchronization), secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
           secondaryHeaderTMLength(v.secondaryHeaderTMLength),
@@ -340,7 +340,7 @@ private:
 	/**
 	 * TM transfer frames after being processed by the MasterChannelReception Service
 	 */
-	etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> rxInFramesAfterMCReception;
+	etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> framesAfterMcReceptionVcCopyRxTM;
 
 	/**
 	 * Buffer to store incoming transfer frames BEFORE being processed by COP
@@ -365,12 +365,12 @@ private:
 	/**
 	 * Buffer to store incoming transfer frames AFTER being processed by FARM
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer> rxInFramesAfterVCReception;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer> inFramesAfterVCReceptionRxTC;
 
 	/**
 	 * Buffer to storeOut unprocessed transfer frames that are directly processed in the virtual instead of MAP channel
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> txUnprocessedFrameListBufferTC;
+	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> unprocessedFrameListBufferVcCopyTxTC;
 
 	/**
 	 * Holds the FOP state of the virtual channel
@@ -395,12 +395,12 @@ private:
 	/**
 	 *  Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTmTx;
+	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTM;
 
 	/**
 	 *  Queue that stores the packet data that will eventually be concatenated to transfer frame data
 	 */
-	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTmTx;
+	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTxTM;
 };
 
 struct MasterChannel {
@@ -418,15 +418,15 @@ struct MasterChannel {
 	uint8_t frameCount{};
 
 	MasterChannel()
-	    : virtualChannels(), txToBeTransmittedFramesAfterAllFramesGenerationListTC(),
-	      txOutFramesBeforeAllFramesGenerationListTC(), currFrameCountTM(0) {}
+	    : virtualChannels(), toBeTransmittedFramesAfterAllFramesGenerationListTxTC(),
+          outFramesBeforeAllFramesGenerationListTxTC(), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtualChannels(m.virtualChannels), frameCount(m.frameCount),
-	      txOutFramesBeforeAllFramesGenerationListTC(m.txOutFramesBeforeAllFramesGenerationListTC),
-	      txToBeTransmittedFramesAfterAllFramesGenerationListTC(
-	          m.txToBeTransmittedFramesAfterAllFramesGenerationListTC),
-	      rxMasterCopyTC(m.rxMasterCopyTC), rxMasterCopyTM(m.rxMasterCopyTM), currFrameCountTM(m.currFrameCountTM) {
+          outFramesBeforeAllFramesGenerationListTxTC(m.outFramesBeforeAllFramesGenerationListTxTC),
+          toBeTransmittedFramesAfterAllFramesGenerationListTxTC(
+	          m.toBeTransmittedFramesAfterAllFramesGenerationListTxTC),
+          masterCopyRxTC(m.masterCopyRxTC), framesAfterMcReceptionMcCopyRxTM(m.framesAfterMcReceptionMcCopyRxTM), currFrameCountTM(m.currFrameCountTM) {
 		for (auto& vc : virtualChannels) {
 			vc.second.masterChannel = *this;
 		}
@@ -473,7 +473,7 @@ struct MasterChannel {
 	TransferFrameTC getLastTxMasterCopyTcFrame();
 
 	/**
-	 * Returns the first stored Transfer Frame in txMasterCopyTC
+	 * Returns the first stored Transfer Frame in unprocessedFraneListBufferMcCopyTxTC
 	 */
 	TransferFrameTC geFirstTxMasterCopyTcFrame();
 
@@ -501,37 +501,42 @@ struct MasterChannel {
 
 private:
 	// TC transfer frames stored in frames list, before being processed by the all frames generation service
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTC;
+	etl::list<TransferFrameTC*, MaxReceivedTxTcInMasterBuffer> outFramesBeforeAllFramesGenerationListTxTC;
 	// TC transfer frames ready to be transmitted having passed through the all frames generation service
-	etl::list<TransferFrameTC*, MaxReceivedTxTcOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationListTC;
+	etl::list<TransferFrameTC*, MaxReceivedTxTcOutInMasterBuffer> toBeTransmittedFramesAfterAllFramesGenerationListTxTC;
 
 	// TM transfer frames stored in frames list, before being processed by the vc generation service
 	etl::list<TransferFrameTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCGenerationListTM;
 	// TM transfer frames ready to be transmitted having passed through the vc generation service
-	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInVCBuffer> txToBeTransmittedFramesAfterMCGenerationListTM;
+	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInVCBuffer> toBeTransmittedFramesAfterMCGenerationListTxTM;
 
 	// TM transfer frames stored in frames list, before being processed by the vc reception service
 	etl::list<TransferFrameTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCReceptionListTM;
 	// TM transfer frames ready to be transmitted having passed through the vc reception service
+    // TODO seems unused
 	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInVCBuffer> txToBeTransmittedFramesAfterMCReceptionListTM;
 
 	// TM transfer frames stored in frames list, before being processed by the all frames generation service
+    // TODO seems redundant
 	etl::list<TransferFrameTM*, MaxReceivedTxTmInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTM;
 	// TM transfer frames ready to be transmitted having passed through the all frames generation service
-	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInMasterBuffer> txToBeTransmittedFramesAfterAllFramesGenerationListTM;
+    // TODO Just like the other chains, TM TX ends by assigning the frame to a pointer
+    // TODO (look allFramesGenerationRequestTxTM).Therefore this buffer is not needed.
+	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInMasterBuffer> toBeTransmittedFramesAfterAllFramesGenerationListTxTM;
 
 	// TC transfer frames that are received, before being received by the all frames reception service
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> rxInFramesBeforeAllFramesReceptionListTC;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInMasterBuffer> inFramesBeforeAllFramesReceptionListRxTC;
 	// TM transfer frames that are ready to be transmitted to higher procedures following all frames generation service
-	etl::list<TransferFrameTC*, MaxReceivedRxTcOutInMasterBuffer> rxToBeTransmittedFramesAfterAllFramesReceptionListTC;
+    // @TODO seems redundant. No service is using it, there is already the wait Queue and a master copy buffer exists
+	etl::list<TransferFrameTC*, MaxReceivedRxTcOutInMasterBuffer> toBeTransmittedFramesAfterAllFramesReceptionListRxTC;
 
 	// Buffer to store TM transfer frames that are processed by VC Generation services
-	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> txProcessedFrameListBufferTM;
+	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> framesAfterVcGenerationServiceTxTM;
 
 	/**
 	 * Buffer holding the master copy of TC TX transfer frames that are currently being processed
 	 */
-	etl::list<TransferFrameTC, MaxTxInMasterChannel> txMasterCopyTC;
+	etl::list<TransferFrameTC, MaxTxInMasterChannel> unprocessedFraneListBufferMcCopyTxTC;
 
 	/**
 	 * Removes TC transfer frames from the Tx master buffer
@@ -541,7 +546,8 @@ private:
 	/**
 	 * Buffer holding the master copy of TM TX transfer frames that are currently being processed
 	 */
-	etl::list<TransferFrameTM, MaxTxInMasterChannel> txMasterCopyTM;
+    // TODO I think this is redundant, since there is already a master buffer with the same purpose
+	etl::list<TransferFrameTM, MaxTxInMasterChannel> framesAfterVcGenerationServiceMcCopyTxTM;
 
 	/**
 	 * Removes TM transfer frames from the Tx master buffer
@@ -549,19 +555,20 @@ private:
 	void removeMasterTx(TransferFrameTM* frame_ptr);
 
 	/**
-	 * Buffer holding the master copy of TC RX transfer frames that are currently being processed
+	 * Buffer holding the master copy of TC RX transfer frames that are currently being processed (held up until
+	 * packet extraction, or discarded upon all frames generation in case they are invalid)
 	 */
-	etl::list<TransferFrameTC, MaxRxInMasterChannel> rxMasterCopyTC;
+	etl::list<TransferFrameTC, MaxRxInMasterChannel> masterCopyRxTC;
 
 	/**
-	 * Removes TM transfer frames from the Rx master buffer
+	 * Removes TC transfer frames from the Rx master buffer
 	 */
 	void removeMasterRx(TransferFrameTC* frame_ptr);
 
 	/**
 	 * Buffer holding the master copy of TM RX transfer frames that are currently being processed
 	 */
-	etl::list<TransferFrameTM, MaxRxInMasterChannel> rxMasterCopyTM;
+	etl::list<TransferFrameTM, MaxRxInMasterChannel> framesAfterMcReceptionMcCopyRxTM;
 
 	/**
 	 * Removes TM frames from the RX master buffer

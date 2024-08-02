@@ -17,8 +17,8 @@ TEST_CASE("Initiate FOP Directives") {
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 
-    serv_channel_fop.storePacketTC(data, 11, 3, 2, ServiceType::TYPE_AD);
-	serv_channel_fop.mappRequest(3, 2, 11, ServiceType::TYPE_AD);
+    serv_channel_fop.storePacketTxTC(data, 11, 3, 2, ServiceType::TYPE_AD);
+    serv_channel_fop.mappRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
 
 	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
 
@@ -69,16 +69,16 @@ TEST_CASE("Retransmission"){
 
 	//Send 3 frames
 	serv_channel.initiateAdClcw(0);
-    serv_channel.storePacketTC(packet1, 9, 0, 0, ServiceType::TYPE_AD);
-    serv_channel.storePacketTC(packet2, 9, 0, 0, ServiceType::TYPE_AD);
-    serv_channel.storePacketTC(packet3, 9, 0, 0, ServiceType::TYPE_AD);
+    serv_channel.storePacketTxTC(packet1, 9, 0, 0, ServiceType::TYPE_AD);
+    serv_channel.storePacketTxTC(packet2, 9, 0, 0, ServiceType::TYPE_AD);
+    serv_channel.storePacketTxTC(packet3, 9, 0, 0, ServiceType::TYPE_AD);
 	for (uint8_t i = 0; i < 3; i++){
-		serv_channel.mappRequest(0, 0, 9, ServiceType::TYPE_AD);
+        serv_channel.mappRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
 		serv_channel.vcGenerationRequestTC(0);
-		serv_channel.allFramesGenerationTCRequest();
+        serv_channel.allFramesGenerationRequestTxTC();
 	}
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 2);
-	CHECK(serv_channel.getFirstMasterCopyTcFrame().transferFrameSequenceNumber() == 0);
+	CHECK(serv_channel.frontUnprocessedFrameMcCopyTxTC().transferFrameSequenceNumber() == 0);
 
 	//Create a CLCW  that indicates that retransmission is needed aka a negative acknowledgement
 	CLCW clcw = CLCW(0,0,0,1,0,0,1,0,0,0,1,0,0,0);
@@ -93,7 +93,7 @@ TEST_CASE("Retransmission"){
 	                    false, false, NoSegmentation,
 	                    FORWARD_ORDERED, clcw.clcw, TM);
 	//Receive the CLCW frame
-	serv_channel.allFramesReceptionTMRequest(clcwData, TmTransferFrameSize);
+    serv_channel.allFramesReceptionRequestRxTM(clcwData, TmTransferFrameSize);
 	//E10 enters
 	CHECK(serv_channel.fopState(0) ==  RETRANSMIT_WITHOUT_WAIT);
 }

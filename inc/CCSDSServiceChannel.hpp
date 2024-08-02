@@ -24,7 +24,7 @@ private:
 	/**
 	 * PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame
 	 * length
-	 * @TODO: Replace defines for maxFrameLength
+	 * TODO: Replace defines for maxFrameLength
 	 */
 	PhysicalChannel physicalChannel;
 
@@ -48,26 +48,27 @@ public:
     //     - Utility and Debugging
 
     /**
-     * Returns the first frame in the masterCopyTcTx buffer
+     * Returns the first frame in the unprocessedFrameListBufferMcCopyTxTC buffer
      */
-    TransferFrameTC getFirstMasterCopyTcFrame();
+    TransferFrameTC frontUnprocessedFrameMcCopyTxTC();
 
     /**
-     * Returns the last frame in the masterCopyTcTx buffer
+     * Returns the last frame in the unprocessedFrameListBufferMcCopyTxTC buffer
      */
+    // TODO This is probably not needed, we already have backUnprocessedFrameMcCopyTxTC
     TransferFrameTC getLastMasterCopyTcFrame();
 
     /**
      * Available space in master channel buffer
      */
-    uint16_t txOutAvailable() const {
-        return masterChannel.txToBeTransmittedFramesAfterAllFramesGenerationListTC.available();
+    uint16_t availableFramesAfterAllFramesGenerationTxTC() const {
+        return masterChannel.toBeTransmittedFramesAfterAllFramesGenerationListTxTC.available();
     }
 
     /**
      * Available space in TC virtual channel buffer
      */
-    uint16_t txAvailableTC(const uint8_t vid) const {
+    uint16_t availableUnprocessedFramesVcCopyTxTC(const uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
@@ -76,21 +77,21 @@ public:
     }
 
     /**
-     * Read first TC transfer frame of the virtual channel buffer (txUnprocessedFrameListBufferTC)
+     * Read first TC transfer frame of the virtual channel buffer (unprocessedFrameListBufferVcCopyTxTC)
      */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutFrameTC(uint8_t vid) const;
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> frontUnprocessedFrameVcCopyTxTC(uint8_t vid) const;
 
     /**
-     * Return the last stored transfer frame from txMasterCopyTC
+     * Return the last stored transfer frame from unprocessedFraneListBufferMcCopyTxTC
      */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutFrameTC() const;
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> backUnprocessedFrameMcCopyTxTC() const;
 
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutProcessedFrameTC() const;
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> frontFrameAfterAllFramesGenerationTxTC() const;
 
     /**
-     * @return The front TC TransferFrame from txOutFramesBeforeAllFramesGenerationListTC
+     * @return The front TC TransferFrame from outFramesBeforeAllFramesGenerationListTxTC
      */
-    std::optional<TransferFrameTC> getTxProcessedFrame();
+    std::optional<TransferFrameTC> frontFrameBeforeAllFramesGenerationTxTC();
 
     //     - MAP Packet Processing
     /**
@@ -127,8 +128,8 @@ public:
        * @param mapid         MAP channel id
        * @param service_type  Service Type
        */
-    ServiceChannelNotification storePacketTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
-                                             ServiceType service_type);
+    ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
+                                               ServiceType service_type);
 
     /**
      * Requests to process the last packet stored in the buffer of the specific MAPP channel
@@ -140,8 +141,8 @@ public:
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
      *                                  be grouped together
      */
-    ServiceChannelNotification mappRequest(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength,
-                                           ServiceType serviceType);
+    ServiceChannelNotification mappRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength,
+                                               ServiceType serviceType);
 
 
     //     - Virtual Channel Packet Processing
@@ -159,7 +160,7 @@ public:
 
     //         -- FOP Directives
 
-    ServiceChannelNotification frameTransmission(uint8_t* tframe);
+    ServiceChannelNotification frameTransmission(uint8_t* frameTarget);
 
     ServiceChannelNotification transmitAdFrame(uint8_t vid);
 
@@ -243,7 +244,7 @@ public:
      * rate to the Channel Coding Sublayer.
      * @see p. 4.3.8 from TC Space Data Link Protocol
      */
-    ServiceChannelNotification allFramesGenerationTCRequest();
+    ServiceChannelNotification allFramesGenerationRequestTxTC();
 
     // TC TransferFrame - Receiving End (TC Rx)
 
@@ -256,8 +257,10 @@ public:
     /**
 	 * Available number of outcoming TC RX transfer frames in master channel buffer
 	 */
-    uint16_t rxOutAvailableTC() const {
-        return masterChannel.rxToBeTransmittedFramesAfterAllFramesReceptionListTC.available();
+    uint16_t availableFramesBeforeAllFramesReceptionRxTC() const {
+        // The commented out buffer is probably redundant
+        // return masterChannel.toBeTransmittedFramesAfterAllFramesReceptionListRxTC.available();
+        return masterChannel.inFramesBeforeAllFramesReceptionListRxTC.available();
     }
 
     /**
@@ -274,18 +277,18 @@ public:
     /**
      * Available space for TC transfer frames waiting to be processed from the VC Generation Service
      */
-    uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid) const {
+    uint16_t getAvailableInFramesAfterVCReceptionRxTC(uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
-        return masterChannel.virtualChannels.at(vid).rxInFramesAfterVCReception.available();
+        return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionRxTC.available();
     }
 
     /**
-     * Available space for TC transfer frames at rxInFramesAfterVCReception buffer
+     * Available space for TC transfer frames at inFramesAfterVCReceptionRxTC buffer
      */
-    uint16_t getAvailableRxInFramesAfterVCReception(uint8_t vid, uint8_t mapid) const {
+    uint16_t getAvailableInFramesAfterVCReceptionRxTC(uint8_t vid, uint8_t mapid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
@@ -299,7 +302,7 @@ public:
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
-        return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).rxInFramesAfterVCReception.available();
+        return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).inFramesAfterVCReceptionRxTC.available();
     }
 
     /**
@@ -329,7 +332,7 @@ public:
      * @param frameData Raw transfer frame data
      * @param frameLength The length of the transfer frame
      */
-    ServiceChannelNotification storeFrameTC(uint8_t* frameData, uint16_t frameLength);
+    ServiceChannelNotification storeFrameRxTC(uint8_t* frameData, uint16_t frameLength);
 
     /**
      * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
@@ -337,7 +340,7 @@ public:
      * rate to the Channel Coding Sublayer.
      * @see p. 4.2.7 from TC Space Data Link Protocol
      */
-    ServiceChannelNotification allFramesReceptionTCRequest();
+    ServiceChannelNotification allFramesReceptionRequestRxTC();
 
 
     //     - Master Channel Demultiplexing
@@ -349,7 +352,7 @@ public:
      *  Procedure (COP)
      @see  p. 4.4.5 from TC Space Data Link Protocol
      */
-    ServiceChannelNotification vcReceptionTC(uint8_t vid);
+    ServiceChannelNotification vcReceptionRxTC(uint8_t vid);
 
     //         -- Farm Directives
     /**
@@ -365,11 +368,11 @@ public:
      * isn't used
      * @see 4.4.1 from TC Data Link Protocol
      * @param vid Virtual channel ID
-     * @param packet Provided packet data destination
+     * @param packetTarget Provided packetTarget data destination
      *
      * @warning This function assumes that the transfer frame data size is checked and correct
      */
-    ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t* packet);
+    ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t* packetTarget);
 
     //     - MAP Packet Extraction
 /**
@@ -386,34 +389,34 @@ public:
     // TM TransferFrame - Sending End (TM Tx)
 
     //     - Utility and Debugging
-    uint16_t availableSpaceBufferTxTM() const {
-        return masterChannel.txMasterCopyTM.available();
+    uint16_t availableFramesAfterVcGenerationTxTM() const {
+        return masterChannel.framesAfterVcGenerationServiceMcCopyTxTM.available();
     }
     /**
-     * Returns the available space in the packetLengthBufferTmTx buffer
+     * Returns the available space in the packetLengthBufferTxTM buffer
      */
-    uint16_t availableInPacketLengthBufferTmTx(uint8_t gvcid);
+    uint16_t availablePacketLengthBufferTxTM(uint8_t gvcid);
 
     /**
-     * Returns the available space in the packetBufferTmTx buffer
+     * Returns the available space in the packetBufferTxTM buffer
      */
-    uint16_t availableInPacketBufferTmTx(uint8_t gvcid);
+    uint16_t availablePacketBufferTxTM(uint8_t gvcid);
 
     /**
-     * Return the last stored TM transfer frame from txMasterCopyTM
+     * Return the last stored TM transfer frame from framesAfterVcGenerationServiceMcCopyTxTM
      */
-    std::pair<ServiceChannelNotification, const TransferFrameTM*> txOutFrameTM() const;
+    std::pair<ServiceChannelNotification, const TransferFrameTM*> backFrameAfterVcGenerationTxTM() const;
 
     /**
-	 * Return the last processed transfer frame
+	 * Return the last processed transfer frame from all frames generation
 	 */
-    std::pair<ServiceChannelNotification, const TransferFrameTM*> txOutProcessedFrameTM() const;
+    std::pair<ServiceChannelNotification, const TransferFrameTM*> frontFrameAfterAllFramesGenerationTxTM() const;
 
     /**
      * Fetch packet in the top of the MC buffer
      */
-    const TransferFrameTM* masterChannelFrameTM() const {
-        return masterChannel.txProcessedFrameListBufferTM.front();
+    const TransferFrameTM* frontFrameAfterVcGenerationTxTM() const {
+        return masterChannel.framesAfterVcGenerationServiceTxTM.front();
     }
 
     //     - Packet Processing
@@ -426,17 +429,17 @@ public:
        * @param packetLength length of the packet
        * @param vid the virtual channel id
        */
-    ServiceChannelNotification storePacketTM(uint8_t* packet, uint16_t packetLength, uint8_t vid);
+    ServiceChannelNotification storePacketTxTM(uint8_t* packet, uint16_t packetLength, uint8_t vid);
 
     //     - Virtual Channel Generation
     /**
-      * Function used by the vcGenerationServiceTM function to implement the segmentation of packets stored in
-      * packetBufferTmTx
+      * Function used by the vcGenerationServiceTxTM function to implement the segmentation of packets stored in
+      * packetBufferTxTM
       * @param numberOfTransferFrames The number of transfer frames that the transfer frame data will segmented into
       * @param transferFrameDataFieldLength The length of the data field of the TM Transfer frame, taken by the
-      * vcGenerationServiceTM parameter
-      * @param packetLength The length of the next transfer frame data in the packetBufferTmTx
-      * @return A Service Channel Notification as it is the case with vcGenerationServiceTM
+      * vcGenerationServiceTxTM parameter
+      * @param packetLength The length of the next transfer frame data in the packetBufferTxTM
+      * @return A Service Channel Notification as it is the case with vcGenerationServiceTxTM
       */
     ServiceChannelNotification segmentationTM(uint8_t numberOfTransferFrames, uint16_t packetLength,
                                               uint16_t transferFrameDataFieldLength, uint8_t gvcid);
@@ -460,7 +463,7 @@ public:
      * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
      * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
      */
-    ServiceChannelNotification vcGenerationServiceTM(uint16_t transferFrameDataFieldLength, uint8_t vid);
+    ServiceChannelNotification vcGenerationServiceTxTM(uint16_t transferFrameDataFieldLength, uint8_t vid);
 
     //     - Virtual Channel Multiplexing
 
@@ -471,7 +474,7 @@ public:
      * of a Master Channel.
      @see p. 4.2.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
      */
-    ServiceChannelNotification mcGenerationTMRequest();
+    ServiceChannelNotification mcGenerationRequestTxTM();
 
     //     - Master Channel Multiplexing
 
@@ -482,8 +485,8 @@ public:
      * rate to the Channel Coding Sublayer.
      * @see p. 4.2.7 from TC Space Data Link Protocol
      */
-    ServiceChannelNotification allFramesGenerationTMRequest(uint8_t* packet_data,
-                                                            uint16_t packet_length = TmTransferFrameSize);
+    ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget,
+                                                              uint16_t frameLength = TmTransferFrameSize);
 
 
     // TM TransferFrame - Receiving End (TM Rx)
@@ -493,16 +496,16 @@ public:
      * Available number of incoming TM transfer frames in virtual channel buffer
      */
 
-    uint16_t rxInAvailableTM(uint8_t vid) const {
+    uint16_t availableFramesVcCopyRxTM(uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
-        return masterChannel.virtualChannels.at(vid).rxInAvailableTM();
+        return masterChannel.virtualChannels.at(vid).availableFramesVcCopyRxTM();
     }
 
-    uint16_t availableSpaceBufferRxTM() const {
-        return masterChannel.rxMasterCopyTM.available();
+    uint16_t availableFramesMcCopyRxTM() const {
+        return masterChannel.framesAfterMcReceptionMcCopyRxTM.available();
     }
 
     uint8_t getFrameCountTM(uint8_t vid);
@@ -516,13 +519,7 @@ public:
      * rate to the Channel Coding Sublayer. Also writes the received transfer frame data to the provided pointer.
      * @see p. 4.3.7 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
      */
-    ServiceChannelNotification allFramesReceptionTMRequest(uint8_t* packet, uint16_t packetLength);
-
-    //     - Master Channel Demultiplexing
-
-    //     - Master Channel Reception
-
-    //     - Virtual Channel Demultiplexing
+    ServiceChannelNotification allFramesReceptionRequestRxTM(uint8_t* frameData, uint16_t frameLength);
 
     //     - Virtual Channel Reception
 
@@ -530,9 +527,9 @@ public:
     /**
      * This service is used for extracting RX TM packets. It signals the end of the TM Rx chain
      * @param vid           Virtual Channel ID that determines from which vid buffer the frame is processed
-     * @param packet_target A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
+     * @param packetTarget A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
      */
-    ServiceChannelNotification packetExtractionTM(uint8_t vid, uint8_t* packet_target);
+    ServiceChannelNotification packetExtractionRxTM(uint8_t vid, uint8_t* packetTarget);
 
     // Not sure about the purpose of that one
 	/**

@@ -41,10 +41,10 @@ TEST_CASE("MAPP blocking") {
 	uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
 	// TODO: Rework with Memory Pool
-	// serv_channel.mappRequest(3, 2);
+	// serv_channel.mappRequestTxTC(3, 2);
 
-	// CHECK(serv_channel.txAvailableTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 6);
-	// CHECK(serv_channel.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel - 0);
+	// CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 6);
+	// CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(3, 2) == MaxReceivedTcInMapChannel - 0);
 }
 
 TEST_CASE("Virtual Channel Generation") {}
