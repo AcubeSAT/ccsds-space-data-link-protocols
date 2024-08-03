@@ -327,7 +327,7 @@ private:
 	COPDirectiveResponse transferFdu();
 
 	/**
-	 * Function that acknowledges all the unacknowledged frames in the unprocessedFraneListBufferMcCopyTxTC buffer before the received report
+	 * Function that acknowledges all the unacknowledged frames in the masterCopyTxTC buffer before the received report
 	 * value from the CLCW
 	 */
 	void acknowledgePreviousFrames(uint8_t frameSequenceNumber);

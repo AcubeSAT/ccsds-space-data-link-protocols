@@ -82,7 +82,7 @@ public:
     std::pair<ServiceChannelNotification, const TransferFrameTC*> frontUnprocessedFrameVcCopyTxTC(uint8_t vid) const;
 
     /**
-     * Return the last stored transfer frame from unprocessedFraneListBufferMcCopyTxTC
+     * Return the last stored transfer frame from masterCopyTxTC
      */
     std::pair<ServiceChannelNotification, const TransferFrameTC*> backUnprocessedFrameMcCopyTxTC() const;
 
@@ -155,7 +155,7 @@ public:
      * 		b) the Frame Generation Procedure in this order.
      * @see p. 4.3.5 from TC Space Data Link Protocol
      */
-    ServiceChannelNotification vcGenerationRequestTC(uint8_t vid);
+    ServiceChannelNotification vcGenerationRequestTxTC(uint8_t vid);
 
 
     //         -- FOP Directives
@@ -390,7 +390,7 @@ public:
 
     //     - Utility and Debugging
     uint16_t availableFramesAfterVcGenerationTxTM() const {
-        return masterChannel.framesAfterVcGenerationServiceMcCopyTxTM.available();
+        return masterChannel.masterCopyTxTM.available();
     }
     /**
      * Returns the available space in the packetLengthBufferTxTM buffer
@@ -403,7 +403,7 @@ public:
     uint16_t availablePacketBufferTxTM(uint8_t gvcid);
 
     /**
-     * Return the last stored TM transfer frame from framesAfterVcGenerationServiceMcCopyTxTM
+     * Return the last stored TM transfer frame from masterCopyTxTM
      */
     std::pair<ServiceChannelNotification, const TransferFrameTM*> backFrameAfterVcGenerationTxTM() const;
 
@@ -505,7 +505,7 @@ public:
     }
 
     uint16_t availableFramesMcCopyRxTM() const {
-        return masterChannel.framesAfterMcReceptionMcCopyRxTM.available();
+        return masterChannel.masterCopyRxTM.available();
     }
 
     uint8_t getFrameCountTM(uint8_t vid);

@@ -74,7 +74,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2U);
 
 	// Process first type-A transfer frame
-	err = serv_channel.vcGenerationRequestTC(0);
+	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(serv_channel.frontUnprocessedFrameVcCopyTxTC(0).second == frame_c);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
@@ -95,10 +95,10 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	// Process first type-B transfer frame
-	err = serv_channel.vcGenerationRequestTC(0);
+	err = serv_channel.vcGenerationRequestTxTC(0);
 
 	// Try to process extra type-A transfer frame
-	err = serv_channel.vcGenerationRequestTC(0);
+	err = serv_channel.vcGenerationRequestTxTC(0);
 	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
 
@@ -274,7 +274,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 	serv_channel.initiateAdNoClcw(2);
 	// Process first type-A transfer frame
-	err = serv_channel.vcGenerationRequestTC(2);
+	err = serv_channel.vcGenerationRequestTxTC(2);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.pushSentQueue(2);
@@ -513,7 +513,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.mappRequestTxTC(0, 0, 10, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	err = serv_channel.vcGenerationRequestTC(0);
+	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesGenerationRequestTxTC();
@@ -544,7 +544,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.mappRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	err = serv_channel.vcGenerationRequestTC(0);
+	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 1);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
@@ -573,7 +573,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.mappRequestTxTC(1, 0, 9, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	err = serv_channel.vcGenerationRequestTC(1);
+	err = serv_channel.vcGenerationRequestTxTC(1);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesGenerationRequestTxTC();

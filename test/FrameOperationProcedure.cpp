@@ -74,7 +74,7 @@ TEST_CASE("Retransmission"){
     serv_channel.storePacketTxTC(packet3, 9, 0, 0, ServiceType::TYPE_AD);
 	for (uint8_t i = 0; i < 3; i++){
         serv_channel.mappRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
-		serv_channel.vcGenerationRequestTC(0);
+        serv_channel.vcGenerationRequestTxTC(0);
         serv_channel.allFramesGenerationRequestTxTC();
 	}
 	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 2);

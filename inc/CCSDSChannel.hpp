@@ -239,7 +239,7 @@ public:
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t availableFramesVcCopyRxTM() const {
-		return framesAfterMcReceptionVcCopyRxTM.available();
+		return framesAfterMcReceptionRxTM.available();
 	}
 
 	/**
@@ -340,7 +340,7 @@ private:
 	/**
 	 * TM transfer frames after being processed by the MasterChannelReception Service
 	 */
-	etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> framesAfterMcReceptionVcCopyRxTM;
+	etl::list<TransferFrameTM*, MaxReceivedRxTmInVirtBuffer> framesAfterMcReceptionRxTM;
 
 	/**
 	 * Buffer to store incoming transfer frames BEFORE being processed by COP
@@ -426,7 +426,7 @@ struct MasterChannel {
           outFramesBeforeAllFramesGenerationListTxTC(m.outFramesBeforeAllFramesGenerationListTxTC),
           toBeTransmittedFramesAfterAllFramesGenerationListTxTC(
 	          m.toBeTransmittedFramesAfterAllFramesGenerationListTxTC),
-          masterCopyRxTC(m.masterCopyRxTC), framesAfterMcReceptionMcCopyRxTM(m.framesAfterMcReceptionMcCopyRxTM), currFrameCountTM(m.currFrameCountTM) {
+          masterCopyRxTC(m.masterCopyRxTC), masterCopyRxTM(m.masterCopyRxTM), currFrameCountTM(m.currFrameCountTM) {
 		for (auto& vc : virtualChannels) {
 			vc.second.masterChannel = *this;
 		}
@@ -473,7 +473,7 @@ struct MasterChannel {
 	TransferFrameTC getLastTxMasterCopyTcFrame();
 
 	/**
-	 * Returns the first stored Transfer Frame in unprocessedFraneListBufferMcCopyTxTC
+	 * Returns the first stored Transfer Frame in masterCopyTxTC
 	 */
 	TransferFrameTC geFirstTxMasterCopyTcFrame();
 
@@ -521,7 +521,8 @@ private:
 	etl::list<TransferFrameTM*, MaxReceivedTxTmInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTM;
 	// TM transfer frames ready to be transmitted having passed through the all frames generation service
     // TODO Just like the other chains, TM TX ends by assigning the frame to a pointer
-    // TODO (look allFramesGenerationRequestTxTM).Therefore this buffer is not needed.
+    // TODO and the frame is deleted from the master Copy buffer (look allFramesGenerationRequestTxTM).
+    // TODO Therefore, this buffer is not needed.
 	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInMasterBuffer> toBeTransmittedFramesAfterAllFramesGenerationListTxTM;
 
 	// TC transfer frames that are received, before being received by the all frames reception service
@@ -536,7 +537,7 @@ private:
 	/**
 	 * Buffer holding the master copy of TC TX transfer frames that are currently being processed
 	 */
-	etl::list<TransferFrameTC, MaxTxInMasterChannel> unprocessedFraneListBufferMcCopyTxTC;
+	etl::list<TransferFrameTC, MaxTxInMasterChannel> masterCopyTxTC;
 
 	/**
 	 * Removes TC transfer frames from the Tx master buffer
@@ -546,8 +547,7 @@ private:
 	/**
 	 * Buffer holding the master copy of TM TX transfer frames that are currently being processed
 	 */
-    // TODO I think this is redundant, since there is already a master buffer with the same purpose
-	etl::list<TransferFrameTM, MaxTxInMasterChannel> framesAfterVcGenerationServiceMcCopyTxTM;
+	etl::list<TransferFrameTM, MaxTxInMasterChannel> masterCopyTxTM;
 
 	/**
 	 * Removes TM transfer frames from the Tx master buffer
@@ -568,7 +568,7 @@ private:
 	/**
 	 * Buffer holding the master copy of TM RX transfer frames that are currently being processed
 	 */
-	etl::list<TransferFrameTM, MaxRxInMasterChannel> framesAfterMcReceptionMcCopyRxTM;
+	etl::list<TransferFrameTM, MaxRxInMasterChannel> masterCopyRxTM;
 
 	/**
 	 * Removes TM frames from the RX master buffer

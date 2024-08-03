@@ -107,9 +107,9 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 
 void MasterChannel::removeMasterTx(TransferFrameTC* frame_ptr) {
 	etl::list<TransferFrameTC, MaxTxInMasterChannel>::iterator it;
-	for (it = unprocessedFraneListBufferMcCopyTxTC.begin(); it != unprocessedFraneListBufferMcCopyTxTC.end(); ++it) {
+	for (it = masterCopyTxTC.begin(); it != masterCopyTxTC.end(); ++it) {
 		if (&it == frame_ptr) {
-			unprocessedFraneListBufferMcCopyTxTC.erase(it);
+			masterCopyTxTC.erase(it);
 			return;
 		}
 	}
@@ -117,9 +117,9 @@ void MasterChannel::removeMasterTx(TransferFrameTC* frame_ptr) {
 
 void MasterChannel::removeMasterTx(TransferFrameTM* frame_ptr) {
 	etl::list<TransferFrameTM, MaxTxInMasterChannel>::iterator it;
-	for (it = framesAfterVcGenerationServiceMcCopyTxTM.begin(); it != framesAfterVcGenerationServiceMcCopyTxTM.end(); ++it) {
+	for (it = masterCopyTxTM.begin(); it != masterCopyTxTM.end(); ++it) {
 		if (&it == frame_ptr) {
-			framesAfterVcGenerationServiceMcCopyTxTM.erase(it);
+			masterCopyTxTM.erase(it);
 			return;
 		}
 	}
@@ -137,15 +137,15 @@ void MasterChannel::removeMasterRx(TransferFrameTC* frame_ptr) {
 
 void MasterChannel::removeMasterRx(TransferFrameTM* frame_ptr) {
 	etl::list<TransferFrameTM, MaxRxInMasterChannel>::iterator it;
-	for (it = framesAfterMcReceptionMcCopyRxTM.begin(); it != framesAfterMcReceptionMcCopyRxTM.end(); ++it) {
+	for (it = masterCopyRxTM.begin(); it != masterCopyRxTM.end(); ++it) {
 		if (&it == frame_ptr) {
-			framesAfterMcReceptionMcCopyRxTM.erase(it);
+			masterCopyRxTM.erase(it);
 			return;
 		}
 	}
 }
 void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
-	for (TransferFrameTC& transferFrame : unprocessedFraneListBufferMcCopyTxTC) {
+	for (TransferFrameTC& transferFrame : masterCopyTxTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setAcknowledgement(true);
 			return;
@@ -154,7 +154,7 @@ void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 }
 
 void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
-	for (TransferFrameTC transferFrame : unprocessedFraneListBufferMcCopyTxTC) {
+	for (TransferFrameTC transferFrame : masterCopyTxTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setToBeRetransmitted(true);
 			return;
@@ -163,9 +163,9 @@ void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
 }
 
 TransferFrameTC MasterChannel::getLastTxMasterCopyTcFrame() {
-	return unprocessedFraneListBufferMcCopyTxTC.back();
+	return masterCopyTxTC.back();
 }
 
 TransferFrameTC MasterChannel::geFirstTxMasterCopyTcFrame() {
-	return unprocessedFraneListBufferMcCopyTxTC.front();
+	return masterCopyTxTC.front();
 }
