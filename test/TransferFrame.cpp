@@ -36,18 +36,18 @@ TEST_CASE("TM Header Generation") {
 	CHECK(transfer_frame_header_tm.transferFrameSecondaryHeaderFlag() == 0x0);
 	CHECK(transfer_frame_header_tm.synchronizationFlag() == 0x0);
 	CHECK(transfer_frame_header_tm.packetOrderFlag() == 0x01);
-	CHECK(transfer_frame_header_tm.firstHeaderPointer() == 0xBE);
+	CHECK(transfer_frame_header_tm.getFirstHeaderPointer() == 0xBE);
 }
 
 TEST_CASE("PacketTΜ Generation") {
 	uint8_t data[] = {200, 185, 99, 23, 40, 6, 0, 11, 128, 33, 4, 5, 9, 10};
-	TransferFrameTM frame = TransferFrameTM(data, 14, true);
-	CHECK(frame.frameData()[0] == 200);
-	CHECK(frame.frameData()[1] == 185);
-	CHECK(frame.frameData()[2] == 99);
-	CHECK(frame.frameData()[3] == 23);
-	CHECK(frame.frameData()[4] == 40);
-	CHECK(frame.frameData()[5] == 6);
+	TransferFrameTM frame = TransferFrameTM(data, 14, true, TmTransferFrameSize - TmPrimaryHeaderSize - TmTrailerSize);
+	CHECK(frame.getframeData()[0] == 200);
+	CHECK(frame.getframeData()[1] == 185);
+	CHECK(frame.getframeData()[2] == 99);
+	CHECK(frame.getframeData()[3] == 23);
+	CHECK(frame.getframeData()[4] == 40);
+	CHECK(frame.getframeData()[5] == 6);
 	CHECK(frame.getOperationalControlField() == 0x80210405);
 	// CHECK(frame.global_virtual_channel_id() == 32);
 }

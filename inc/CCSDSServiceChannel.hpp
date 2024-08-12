@@ -7,7 +7,7 @@
 #include <utility>
 #include <CCSDSLoggerImpl.h>
 
-enum SegmentLengthID { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentaionEnd = 0x2, NoSegmentation = 0x3 };
+enum SegmentLengthID { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentationEnd = 0x2, NoSegmentation = 0x3 };
 
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
@@ -435,24 +435,27 @@ public:
     /**
       * Function used by the vcGenerationServiceTxTM function to implement the segmentation of packets stored in
       * packetBufferTxTM
-      * @param numberOfTransferFrames The number of transfer frames that the transfer frame data will segmented into
+      * @param prevFrame              Half full frame waiting in the master channel (nullptr if it does
+       *                              not exist or is full)
       * @param transferFrameDataFieldLength The length of the data field of the TM Transfer frame, taken by the
       * vcGenerationServiceTxTM parameter
       * @param packetLength The length of the next transfer frame data in the packetBufferTxTM
       * @return A Service Channel Notification as it is the case with vcGenerationServiceTxTM
       */
-    ServiceChannelNotification segmentationTM(uint8_t numberOfTransferFrames, uint16_t packetLength,
+    ServiceChannelNotification segmentationTM(TransferFrameTM* prevFrame, uint16_t packetLength,
                                               uint16_t transferFrameDataFieldLength, uint8_t gvcid);
 
     /**
        * Auxiliary function for blocking of packets stored in the stored packet buffer
+       * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
+       *                                       not exist or is full)
        * @param transferFrameFieldLength       The length of the data field of the TM Transfer frame (where packets are
        *                                       stored)
        * @param packetLength                   The length of the next packet in the stored TM packet buffer
        * @param vcid                           Virtual Channel ID
        * @return                               A Service Channel Notification
        */
-    ServiceChannelNotification blockingTM(uint16_t transferFrameDataFieldLength, uint16_t packetLength, uint8_t vid);
+    ServiceChannelNotification blockingTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength, uint8_t vid);
 
     /**
      * Service that generates a transfer frame by combining the packets and initializing the

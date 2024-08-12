@@ -91,7 +91,7 @@ TEST_CASE("Retransmission"){
 	TransferFrameTM clcwTransferFrame =
 	    TransferFrameTM(clcwData, TmTransferFrameSize, 0, 0,
 	                    false, false, NoSegmentation,
-	                    FORWARD_ORDERED, clcw.clcw, TM);
+	                    FORWARD_ORDERED, 2046, 0, clcw.clcw, TM);
 	//Receive the CLCW frame
     serv_channel.allFramesReceptionRequestRxTM(clcwData, TmTransferFrameSize);
 	//E10 enters

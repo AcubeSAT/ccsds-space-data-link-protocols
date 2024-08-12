@@ -87,7 +87,7 @@ public:
 	 * @details Bits 37–47 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
 	 */
-	uint16_t firstHeaderPointer() const {
+	uint16_t getFirstHeaderPointer() const {
 		return (static_cast<uint16_t>((transferFrameHeader[4]) & 0x07)) << 8U | (static_cast<uint16_t>((transferFrameHeader[5])));
 	}
 
@@ -134,6 +134,14 @@ struct TransferFrameTM : public TransferFrame {
 	uint8_t getVirtualChannelFrameCount() const {
 		return transferFrameData[3];
 	}
+    
+    uint16_t getFirstDataFieldEmptyOctet() const {
+        return firstDataFieldEmptyOctet;
+    }
+
+    void setFirstDataFieldEmptyOctet(uint16_t firstEmptyOctet) {
+        firstDataFieldEmptyOctet = firstEmptyOctet;
+    }
 
 	/**
 	 *
@@ -153,9 +161,15 @@ struct TransferFrameTM : public TransferFrame {
 		return transferFrameLength;
 	}
 
-	uint8_t* frameData() const {
+	uint8_t* getframeData() const {
 		return transferFrameData;
 	}
+
+    void setFrameData(uint8_t* data, uint16_t dataLength) {
+        for (uint16_t i = 0; i < dataLength - 1; i++){
+            transferFrameData[i] = data[i];
+        }
+    }
 
 	bool operationalControlFieldExists() const {
 		return transferFrameData[1] & 0x1;
@@ -186,9 +200,9 @@ struct TransferFrameTM : public TransferFrame {
 
 	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
                     bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
-                    SynchronizationFlag syncFlag, FrameType type = TM)
+                    SynchronizationFlag syncFlag, uint16_t  firstHeaderPointer, uint16_t  firstEmptyOctet, FrameType type = TM)
 	    : TransferFrame(type, frameLength, frameData), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists),
-          firstHeaderPointer(firstHeaderPointer) {
+          firstDataFieldEmptyOctet(firstEmptyOctet) {
 		// Transfer Frame Version Number + Spacecraft Id
 		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
@@ -207,9 +221,9 @@ struct TransferFrameTM : public TransferFrame {
 	 */
 	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
                     bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
-                    SynchronizationFlag syncFlag, uint32_t operationalControlField, FrameType type = TM)
+                    SynchronizationFlag syncFlag, uint16_t firstHeaderPointer,uint16_t  firstEmptyOctet, uint32_t operationalControlField, FrameType type = TM)
 	    : TransferFrame(type, frameLength, frameData), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists),
-          firstHeaderPointer(firstHeaderPointer) {
+          firstDataFieldEmptyOctet(firstEmptyOctet) {
 		// Transfer Frame Version Number + Spacecraft Id
 		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
@@ -228,9 +242,9 @@ struct TransferFrameTM : public TransferFrame {
 		ocfPointer[3] = operationalControlField & 0xFF;
 	}
 
-	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, bool eccFieldExists)
+	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, bool eccFieldExists, uint16_t firstEmptyOctet)
 	    : TransferFrame(FrameType::TM, frameLength, frameData), hdr(frameData),
-          eccFieldExists(eccFieldExists) {}
+          eccFieldExists(eccFieldExists), firstDataFieldEmptyOctet(firstEmptyOctet) {}
 	/**
 	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
@@ -256,5 +270,9 @@ private:
 	TransferFrameHeaderTM hdr;
 	uint8_t scid;
 	bool eccFieldExists;
-	uint16_t firstHeaderPointer;
+    /**
+     *  Auxiliary variable that shows the position of the first empty octet in the transfer frame data field.
+     *  The first octet of the data field is defined as position 0. A value equal of the data field size indicates a filled frame.
+     */
+    uint16_t firstDataFieldEmptyOctet;
 };

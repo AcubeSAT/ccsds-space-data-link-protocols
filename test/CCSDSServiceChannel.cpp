@@ -330,20 +330,19 @@ TEST_CASE("VC Generation Service") {
 		uint16_t maxTransferFrameFieldLength = 15;
 		err = serv_channel.vcGenerationServiceTxTM(maxTransferFrameFieldLength, 0);
 		CHECK(err == NO_SERVICE_EVENT);
-		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize - 1);
-		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize - 4);
+		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
+		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize);
 
 		const TransferFrameTM* transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
 		CHECK(transferFrame->segmentLengthId() == 3);
 		for (uint8_t i = TmPrimaryHeaderSize; i < maxTransferFrameFieldLength + TmPrimaryHeaderSize; i++) {
 			if (i < TmPrimaryHeaderSize + sizeof(packet1)) {
-				CHECK(transferFrame->frameData()[i] == packet1[i - TmPrimaryHeaderSize]);
-			} else if (i >= TmPrimaryHeaderSize + sizeof(packet1) &&
-			           i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
-				CHECK(transferFrame->frameData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
+				CHECK(transferFrame->getframeData()[i] == packet1[i - TmPrimaryHeaderSize]);
+			} else if (i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
+				CHECK(transferFrame->getframeData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
 			} else {
-				CHECK(transferFrame->frameData()[i] ==
+				CHECK(transferFrame->getframeData()[i] ==
                       packet3[i - TmPrimaryHeaderSize - sizeof(packet1) - sizeof(packet2)]);
 			}
 		}
@@ -359,27 +358,27 @@ TEST_CASE("VC Generation Service") {
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
 		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize);
 		const TransferFrameTM* transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
-		CHECK(transferFrame->frameData()[6] == 47);
-		CHECK(transferFrame->frameData()[7] == 31);
-		CHECK(transferFrame->frameData()[8] == 65);
-		CHECK(transferFrame->frameData()[9] == 81);
-		CHECK(transferFrame->frameData()[10] == 25);
+		CHECK(transferFrame->getframeData()[6] == 47);
+		CHECK(transferFrame->getframeData()[7] == 31);
+		CHECK(transferFrame->getframeData()[8] == 65);
+		CHECK(transferFrame->getframeData()[9] == 81);
+		CHECK(transferFrame->getframeData()[10] == 25);
 		CHECK(transferFrame->segmentLengthId() == 1);
 
         serv_channel.mcGenerationRequestTxTM();
 		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
-		CHECK(transferFrame->frameData()[6] == 44);
-		CHECK(transferFrame->frameData()[7] == 76);
-		CHECK(transferFrame->frameData()[8] == 99);
-		CHECK(transferFrame->frameData()[9] == 13);
-		CHECK(transferFrame->frameData()[10] == 43);
+		CHECK(transferFrame->getframeData()[6] == 44);
+		CHECK(transferFrame->getframeData()[7] == 76);
+		CHECK(transferFrame->getframeData()[8] == 99);
+		CHECK(transferFrame->getframeData()[9] == 13);
+		CHECK(transferFrame->getframeData()[10] == 43);
 		CHECK(transferFrame->segmentLengthId() == 0);
 
         serv_channel.mcGenerationRequestTxTM();
 		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
-		CHECK(transferFrame->frameData()[6] == 78);
+		CHECK(transferFrame->getframeData()[6] == 78);
 		CHECK(transferFrame->segmentLengthId() == 2);
 	}
 }
