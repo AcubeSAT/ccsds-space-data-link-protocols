@@ -174,9 +174,17 @@ struct TransferFrameTM : public TransferFrame {
 	bool operationalControlFieldExists() const {
 		return transferFrameData[1] & 0x1;
 	}
-	uint8_t segmentLengthId() const {
+	uint8_t getSegmentLengthId() const {
 		return (transferFrameData[4] >> 3) & 0x3;
 	}
+
+    void setSegmentLengthId(uint8_t segmentLengthId) {
+        transferFrameData[4] = (transferFrameData[4] & 0xE7) | (segmentLengthId << 3);
+    }
+
+    uint16_t getFirstHeaderPointer() const {
+        return hdr.getFirstHeaderPointer();
+    }
 
 	/**
 	 * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
@@ -212,7 +220,7 @@ struct TransferFrameTM : public TransferFrame {
         frameData[3] = virtualChannelFrameCount;
 		// Data field status. TransferFrame Order Flag and Segment Length ID are unused
 		frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6)) |
-                       (segmentationLengthId << 3) | (firstHeaderPointer & 0x700 >> 8);
+                       (segmentationLengthId << 3) | ((firstHeaderPointer & 0x700) >> 8);
         frameData[5] = firstHeaderPointer & 0xFF;
 	}
 
@@ -233,7 +241,7 @@ struct TransferFrameTM : public TransferFrame {
         frameData[3] = virtualChannelFrameCount;
 		// Data field status. TransferFrame Order Flag and Segment Length ID are unused
 		frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | (static_cast<uint8_t>(syncFlag << 6)) |
-                       (segmentationLengthId << 3) | (firstHeaderPointer & 0x700 >> 8);
+                       (segmentationLengthId << 3) | ((firstHeaderPointer & 0x700) >> 8);
         frameData[5] = firstHeaderPointer & 0xFF;
 		uint8_t* ocfPointer = frameData + transferFrameLength - 4 - 2 * eccFieldExists;
 		ocfPointer[0] = operationalControlField >> 24;

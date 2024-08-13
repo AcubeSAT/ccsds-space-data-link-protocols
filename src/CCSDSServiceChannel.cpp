@@ -783,7 +783,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
     }
     else {
         numberOfNewTransferFrames = (packetLength - prevFrameCapacity) / transferFrameDataFieldLength +
-                                    ((packetLength - prevFrameCapacity) % transferFrameDataFieldLength);
+                                    ((packetLength - prevFrameCapacity) % transferFrameDataFieldLength ? 1 : 0);
     }
 
     // ensure there is enough space for the new frames
@@ -796,15 +796,16 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
 
     // fill previous frame
     if (prevFrame != nullptr){
-        for (uint16_t i = 0; i< TmPrimaryHeaderSize; i++){
+        for (uint16_t i = 0; i < TmPrimaryHeaderSize + transferFrameDataFieldLength - prevFrameCapacity; i++){
             tmpData[i] = prevFrame->getframeData()[i];
         }
 
         for (uint16_t i = 0; i < prevFrameCapacity; i++){
-            tmpData[i + TmPrimaryHeaderSize] = vchan.packetBufferTxTM.front();
+            tmpData[i + TmPrimaryHeaderSize + transferFrameDataFieldLength - prevFrameCapacity] = vchan.packetBufferTxTM.front();
             vchan.packetBufferTxTM.pop();
         }
         prevFrame->setFrameData(tmpData, TmTransferFrameSize);
+        prevFrame->setSegmentLengthId(SegmentationStart);
         packetLength -= prevFrameCapacity;
     }
 
@@ -813,34 +814,48 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
     for (uint16_t i = 0; i < numberOfNewTransferFrames; i++) {
         currentTransferFrameDataFieldLength =
                 packetLength > transferFrameDataFieldLength ? transferFrameDataFieldLength : packetLength;
-        SegmentLengthID segmentLengthId = SegmentationMiddle;
-        uint16_t firstHeaderPointer = 2047;
+
         for (uint16_t j = 0; j < currentTransferFrameDataFieldLength; j++) {
             tmpData[j + TmPrimaryHeaderSize] = vchan.packetBufferTxTM.front();
             vchan.packetBufferTxTM.pop();
         }
-        if (i == 0) {
-            segmentLengthId = SegmentationStart;
-            firstHeaderPointer = 0;
-        } else if (i == numberOfNewTransferFrames - 1) {
+
+        SegmentLengthID segmentLengthId = SegmentationMiddle;
+        uint16_t firstHeaderPointer = 2047;
+
+        if (prevFrame != nullptr && i == numberOfNewTransferFrames - 1){
             segmentLengthId = SegmentationEnd;
-            firstHeaderPointer = packetLength - 1;
+            firstHeaderPointer = packetLength;
         }
-        for (uint8_t j = 0; j < TmTrailerSize; j++) {
-            if (currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
-                tmpData[currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + i] = 0;
+        else if (prevFrame == nullptr) {
+            if (i == 0) {
+                segmentLengthId = SegmentationStart;
+                firstHeaderPointer = 0;
+            } else if (i == numberOfNewTransferFrames - 1) {
+                segmentLengthId = SegmentationEnd;
+                firstHeaderPointer = packetLength;
             }
         }
-        uint8_t* frameData = masterChannel.masterChannelPoolTM.allocatePacket(
-                tmpData, currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + TmTrailerSize);
-        if (frameData == nullptr) {
+
+        for (uint8_t j = 0; j < TmPrimaryHeaderSize; j++){
+            tmpData[j] = 0;
+        }
+        for (uint8_t j = 0; j < TmTransferFrameSize; j++) {
+            if (currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + j < TmTransferFrameSize) {
+                tmpData[currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + j] = 0;
+            }
+        }
+        uint8_t* transferFrameData = masterChannel.masterChannelPoolTM.allocatePacket(
+                tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + TmTrailerSize);
+
+        if (transferFrameData == nullptr) {
             return MEMORY_POOL_FULL;
         }
         vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
         TransferFrameTM transferFrameTm =
-                TransferFrameTM(frameData, currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + TmTrailerSize,
+                TransferFrameTM(transferFrameData, currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + TmTrailerSize,
                                 vchan.frameCountTM, vid, vchan.frameErrorControlFieldPresent, vchan.secondaryHeaderTMPresent,
-                                segmentLengthId, vchan.synchronization, firstHeaderPointer,firstHeaderPointer,TM);
+                                segmentLengthId, vchan.synchronization, firstHeaderPointer, firstHeaderPointer, TM);
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
         masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         packetLength -= transferFrameDataFieldLength;
@@ -883,13 +898,13 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
     }
 
     if (prevFrame == nullptr) {
-        for (uint8_t i = 0; i < TmTrailerSize; i++) {
+        for (uint8_t i = 0; i < TmTransferFrameSize; i++) {
             if (currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
                 tmpData[currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + i] = 0;
             }
         }
         uint8_t *transferFrameData = masterChannel.masterChannelPoolTM.allocatePacket(
-                tmpData, currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + TmTrailerSize);
+                tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + TmTrailerSize);
         if (transferFrameData == nullptr) {
             return MEMORY_POOL_FULL;
         }
@@ -906,7 +921,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
         masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
     }
     else {
-        for (uint16_t i = 0; i< TmPrimaryHeaderSize; i++){
+        for (uint16_t i = 0; i< TmPrimaryHeaderSize + prevFrame->getFirstDataFieldEmptyOctet(); i++){
             tmpData[i] = prevFrame->getframeData()[i];
         }
         prevFrame->setFrameData(tmpData, TmTransferFrameSize);

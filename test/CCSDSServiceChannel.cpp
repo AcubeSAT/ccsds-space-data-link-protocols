@@ -335,7 +335,7 @@ TEST_CASE("VC Generation Service") {
 
 		const TransferFrameTM* transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
-		CHECK(transferFrame->segmentLengthId() == 3);
+		CHECK(transferFrame->getSegmentLengthId() == 3);
 		for (uint8_t i = TmPrimaryHeaderSize; i < maxTransferFrameFieldLength + TmPrimaryHeaderSize; i++) {
 			if (i < TmPrimaryHeaderSize + sizeof(packet1)) {
 				CHECK(transferFrame->getframeData()[i] == packet1[i - TmPrimaryHeaderSize]);
@@ -363,7 +363,7 @@ TEST_CASE("VC Generation Service") {
 		CHECK(transferFrame->getframeData()[8] == 65);
 		CHECK(transferFrame->getframeData()[9] == 81);
 		CHECK(transferFrame->getframeData()[10] == 25);
-		CHECK(transferFrame->segmentLengthId() == 1);
+		CHECK(transferFrame->getSegmentLengthId() == 1);
 
         serv_channel.mcGenerationRequestTxTM();
 		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
@@ -373,14 +373,77 @@ TEST_CASE("VC Generation Service") {
 		CHECK(transferFrame->getframeData()[8] == 99);
 		CHECK(transferFrame->getframeData()[9] == 13);
 		CHECK(transferFrame->getframeData()[10] == 43);
-		CHECK(transferFrame->segmentLengthId() == 0);
+		CHECK(transferFrame->getSegmentLengthId() == 0);
 
         serv_channel.mcGenerationRequestTxTM();
 		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
 		CHECK(transferFrame->getframeData()[6] == 78);
-		CHECK(transferFrame->segmentLengthId() == 2);
+		CHECK(transferFrame->getSegmentLengthId() == 2);
 	}
+    SECTION("Concurrent segmentation and blocking") {
+        uint8_t packet6[5] = {87, 0, 39, 90, 43};
+        uint8_t packet7[7] = {12, 49, 20, 38, 30, 49, 70};
+        uint8_t packet8[20] = {69, 75, 76, 78, 89, 28, 29, 39, 42, 45, 8,
+                               30, 41, 56, 98, 79, 82, 90, 92, 99};
+        uint8_t packet9[4] = {8, 36, 39, 47};
+        uint8_t packet10[4] = {5, 17, 38, 46};
+        uint8_t concat_packet[40] = {87, 0, 39, 90, 43, 12, 49, 20, 38, 30,
+                                     49, 70, 69, 75, 76, 78, 89, 28, 29, 39,
+                                     42, 45, 8,30, 41, 56, 98, 79, 82, 90,
+                                     92, 99, 8, 36, 39, 47, 5, 17, 38, 46};
+        uint16_t transferFrameDataFieldLength = 10;
+
+        err = serv_channel.storePacketTxTM(packet6, sizeof(packet6), 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTM(packet7, sizeof(packet7), 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTM(packet8, sizeof(packet8), 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTM(packet9, sizeof(packet9), 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTM(packet10, sizeof(packet10), 0);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 0);
+
+        CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize);
+        CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
+
+//        CHECK(master_channel.virtualChannels.at(0).frameCountTM == 4);
+
+        const TransferFrameTM* frame1 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        const TransferFrameTM* frame2 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        const TransferFrameTM* frame3 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        const TransferFrameTM* frame4 = serv_channel.frontFrameAfterVcGenerationTxTM();
+
+        CHECK(frame1->getSegmentLengthId() == 1);
+        CHECK(frame1->getFirstHeaderPointer() == 0);
+        CHECK(frame2->getSegmentLengthId() == 1);
+        CHECK(frame2->getFirstHeaderPointer() == 2);
+        CHECK(frame3->getSegmentLengthId() == 0);
+        CHECK(frame3->getFirstHeaderPointer() == 2047);
+        CHECK(frame4->getSegmentLengthId() == 2);
+        CHECK(frame4->getFirstHeaderPointer() == 2);
+
+        for (uint8_t i = 0; i < 40; i++) {
+            if (i <= 9) {
+                CHECK(concat_packet[i] == frame1->getframeData()[i + TmPrimaryHeaderSize]);
+            }
+            else if (i <= 19 ) {
+                CHECK(concat_packet[i] == frame2->getframeData()[i%10 + TmPrimaryHeaderSize]);
+            }
+            else if (i <= 29) {
+                CHECK(concat_packet[i] == frame3->getframeData()[i%10 + TmPrimaryHeaderSize]);
+            }
+            else {
+                CHECK(concat_packet[i] == frame4->getframeData()[i%10 + TmPrimaryHeaderSize]);
+            }
+        }
+    }
 }
 
 TEST_CASE("CLCW construction at VC Reception") {
