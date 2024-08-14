@@ -134,14 +134,6 @@ struct TransferFrameTM : public TransferFrame {
 	uint8_t getVirtualChannelFrameCount() const {
 		return transferFrameData[3];
 	}
-    
-    uint16_t getFirstDataFieldEmptyOctet() const {
-        return firstDataFieldEmptyOctet;
-    }
-
-    void setFirstDataFieldEmptyOctet(uint16_t firstEmptyOctet) {
-        firstDataFieldEmptyOctet = firstEmptyOctet;
-    }
 
 	/**
 	 *
@@ -208,9 +200,8 @@ struct TransferFrameTM : public TransferFrame {
 
 	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
                     bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
-                    SynchronizationFlag syncFlag, uint16_t  firstHeaderPointer, uint16_t  firstEmptyOctet, FrameType type = TM)
-	    : TransferFrame(type, frameLength, frameData), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists),
-          firstDataFieldEmptyOctet(firstEmptyOctet) {
+                    SynchronizationFlag syncFlag, uint16_t  firstHeaderPointer, uint16_t  firstEmptyOctet = 0, FrameType type = TM)
+	    : TransferFrame(type, frameLength, frameData, firstEmptyOctet), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists) {
 		// Transfer Frame Version Number + Spacecraft Id
 		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
@@ -229,9 +220,8 @@ struct TransferFrameTM : public TransferFrame {
 	 */
 	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
                     bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId,
-                    SynchronizationFlag syncFlag, uint16_t firstHeaderPointer,uint16_t  firstEmptyOctet, uint32_t operationalControlField, FrameType type = TM)
-	    : TransferFrame(type, frameLength, frameData), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists),
-          firstDataFieldEmptyOctet(firstEmptyOctet) {
+                    SynchronizationFlag syncFlag, uint16_t firstHeaderPointer, uint32_t operationalControlField,uint16_t  firstEmptyOctet = 0, FrameType type = TM)
+	    : TransferFrame(type, frameLength, frameData, firstEmptyOctet), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists) {
 		// Transfer Frame Version Number + Spacecraft Id
 		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
@@ -250,9 +240,9 @@ struct TransferFrameTM : public TransferFrame {
 		ocfPointer[3] = operationalControlField & 0xFF;
 	}
 
-	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, bool eccFieldExists, uint16_t firstEmptyOctet)
-	    : TransferFrame(FrameType::TM, frameLength, frameData), hdr(frameData),
-          eccFieldExists(eccFieldExists), firstDataFieldEmptyOctet(firstEmptyOctet) {}
+	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, bool eccFieldExists, uint16_t firstEmptyOctet = 0)
+	    : TransferFrame(FrameType::TM, frameLength, frameData, firstEmptyOctet), hdr(frameData),
+          eccFieldExists(eccFieldExists) {}
 	/**
 	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
@@ -278,9 +268,4 @@ private:
 	TransferFrameHeaderTM hdr;
 	uint8_t scid;
 	bool eccFieldExists;
-    /**
-     *  Auxiliary variable that shows the position of the first empty octet in the transfer frame data field.
-     *  The first octet of the data field is defined as position 0. A value equal of the data field size indicates a filled frame.
-     */
-    uint16_t firstDataFieldEmptyOctet;
 };

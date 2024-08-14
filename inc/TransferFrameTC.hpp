@@ -357,9 +357,9 @@ public:
 		return processedByFOP;
 	}
 
-	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent,
+	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent, uint16_t firstEmptyOctet = 0,
                     FrameType t = TC)
-	    : TransferFrame(t, frameLength, frameData), hdr(frameData), serviceType(serviceType), ack(false),
+	    : TransferFrame(t, frameLength, frameData, firstEmptyOctet), hdr(frameData), serviceType(serviceType), ack(false),
           toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
@@ -369,8 +369,8 @@ public:
         frameData[3] = frameLength & 0xFF;
 	}
 
-	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, FrameType t = TC)
-	    : TransferFrame(FrameType::TC, frameLength, frameData), hdr(frameData), transmit(false){};
+	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0, FrameType t = TC)
+	    : TransferFrame(FrameType::TC, frameLength, frameData, firstEmptyOctet), hdr(frameData), transmit(false){};
 	/**
 	 * Calculates the CRC code
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL

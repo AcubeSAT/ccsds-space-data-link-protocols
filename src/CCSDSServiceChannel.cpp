@@ -633,7 +633,7 @@ ServiceChannelNotification ServiceChannel::vcReceptionRxTC(uint8_t vid) {
     TransferFrameTM clcwTransferFrame =
             TransferFrameTM(clcwTransferFrameDataBuffer, TmTransferFrameSize, virtChannel.frameCountTM, vid,
                             virtChannel.frameErrorControlFieldPresent, virtChannel.secondaryHeaderTMPresent, NoSegmentation,
-                            virtChannel.synchronization, 2046, 0, clcw.clcw, TM);
+                            virtChannel.synchronization, 2046, clcw.clcw, 0, TM);
     if (!clcwTransferFrameBuffer.empty()) {
         clcwTransferFrameBuffer.pop_front();
     }

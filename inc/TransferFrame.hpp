@@ -46,10 +46,18 @@ private:
 	FrameType type;
 
 public:
-	TransferFrame(FrameType t, uint16_t transferFrameLength, uint8_t* frameData)
-	    : type(t), transferFrameLength(transferFrameLength), transferFrameData(frameData){};
+	TransferFrame(FrameType t, uint16_t transferFrameLength, uint8_t* frameData, uint16_t firstEmptyOctet = 0)
+	    : type(t), transferFrameLength(transferFrameLength), transferFrameData(frameData), firstDataFieldEmptyOctet(firstEmptyOctet){};
 
 	virtual ~TransferFrame() {}
+
+    uint16_t getFirstDataFieldEmptyOctet() const {
+        return firstDataFieldEmptyOctet;
+    }
+
+    void setFirstDataFieldEmptyOctet(uint16_t firstEmptyOctet) {
+        firstDataFieldEmptyOctet = firstEmptyOctet;
+    }
 
 	virtual uint16_t calculateCRC(const uint8_t* data, uint16_t len) = 0;
 
@@ -72,4 +80,9 @@ public:
 protected:
 	uint16_t transferFrameLength;
 	uint8_t* transferFrameData;
+    /**
+     *  Auxiliary variable that shows the position of the first empty octet in the transfer frame data field.
+     *  The first octet of the data field is defined as position 0. A value equal of the data field size indicates a filled frame.
+     */
+    uint16_t firstDataFieldEmptyOctet;
 };
