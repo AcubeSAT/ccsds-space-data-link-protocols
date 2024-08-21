@@ -294,19 +294,8 @@ public:
 		return reps;
 	}
 
-	uint8_t* frameData() const {
-		return transferFrameData;
-	}
-
 	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
-	void setSegmentationHeader(uint8_t segmentation_hdr) {
-        transferFrameData[5] = segmentation_hdr;
-	}
-
-	void setFrameData(uint8_t* frame_data) {
-        transferFrameData = frame_data;
-	}
 
 	void setFrameLength() {
         transferFrameData[2] = ((virtualChannelId() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
@@ -328,6 +317,13 @@ public:
 	void setTransferFrameSequenceNumber(uint8_t frame_seq_number) {
         transferFrameData[4] = frame_seq_number;
 	}
+
+    /**
+     *  Sets the sequence flag, assuming that the segment header exists
+     */
+    void setSequenceFlag(uint8_t sequenceFlag){
+        transferFrameData[5] = (sequenceFlag << 6) | transferFrameData[5];
+    }
 
 	/**
 	 * Indicates that the frame has been passed to the physical layer and supposedly transmitted
@@ -357,16 +353,20 @@ public:
 		return processedByFOP;
 	}
 
-	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint8_t gvcid, ServiceType serviceType, bool segHdrPresent, uint16_t firstEmptyOctet = 0,
-                    FrameType t = TC)
+	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint8_t vid, ServiceType serviceType, bool segHdrPresent,
+                    uint16_t firstEmptyOctet = 0, uint8_t mapId = 0, uint8_t sequenceFlag = 0x3, FrameType t = TC)
 	    : TransferFrame(t, frameLength, frameData, firstEmptyOctet), hdr(frameData), serviceType(serviceType), ack(false),
           toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
         frameData[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
         frameData[1] = SpacecraftIdentifier & 0xFF;
-        frameData[2] = ((gvcid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
+        frameData[2] = ((vid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
         frameData[3] = frameLength & 0xFF;
+
+        if (segHdrPresent){
+            frameData[5] = (sequenceFlag << 6) | (mapId);
+        }
 	}
 
 	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0, FrameType t = TC)

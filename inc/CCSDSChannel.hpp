@@ -194,7 +194,7 @@ public:
 	const uint16_t GVCID; // 16 bits (assumes TFVN is set to 0)
 
 	/**
-	 * Determines whether the Segment Header is present (enables MAP services)
+	 * Determines whether the Segment Header is present (enables MAP services). It applies only for Type-AD frames.
 	 */
 	const bool segmentHeaderPresent;
 
@@ -283,23 +283,23 @@ public:
 	}
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
-	               const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTC,
-	               const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
-	               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-	               const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
-	               const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-	               const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
-	               etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
+                   const bool segmentHeaderPresent, const uint16_t maxFrameLengthTC, const bool blockingTC,
+                   const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
+                   const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
+                   const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
+                   const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+                   const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
+                   etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
-	      secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-	      segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLength), blocking(blockingTC),
-	      repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions),
-	      repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
-	      sentQueueRxTC(), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
-	      operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-	      currentlyProcessedCLCW(0), frameCountTM(0),
-	      fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
-	      farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
+          secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
+          segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLengthTC), blocking(blockingTC),
+          repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions),
+          repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
+          sentQueueRxTC(), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
+          operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
+          currentlyProcessedCLCW(0), frameCountTM(0),
+          fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
+          farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)) {
 		mapChannels = mapChan;
 	}

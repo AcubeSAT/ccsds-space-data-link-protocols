@@ -59,6 +59,16 @@ public:
         firstDataFieldEmptyOctet = firstEmptyOctet;
     }
 
+    uint8_t* getFrameData() const {
+        return transferFrameData;
+    }
+
+    void setFrameData(uint8_t* data, uint16_t dataLength) {
+        for (uint16_t i = 0; i < dataLength - 1; i++){
+            transferFrameData[i] = data[i];
+        }
+    }
+
 	virtual uint16_t calculateCRC(const uint8_t* data, uint16_t len) = 0;
 
 	/**

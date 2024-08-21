@@ -153,16 +153,6 @@ struct TransferFrameTM : public TransferFrame {
 		return transferFrameLength;
 	}
 
-	uint8_t* getframeData() const {
-		return transferFrameData;
-	}
-
-    void setFrameData(uint8_t* data, uint16_t dataLength) {
-        for (uint16_t i = 0; i < dataLength - 1; i++){
-            transferFrameData[i] = data[i];
-        }
-    }
-
 	bool operationalControlFieldExists() const {
 		return transferFrameData[1] & 0x1;
 	}

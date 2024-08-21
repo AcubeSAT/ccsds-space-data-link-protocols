@@ -95,28 +95,35 @@ public:
 
     //     - MAP Packet Processing
     /**
-     * Auxiliary function used to implement the segmentation of packets
-     * @param numberOfTransferFrames The number of transfer frames that the packet will be segmented into
-     * @param transferFrameDataFieldLength The length of the data field
-     * @param packetLength The length of the next packet in the buffer
-     * @return Service Channel Notification
-     */
-    ServiceChannelNotification segmentationTC(uint8_t numberOfTransferFrames, uint16_t packetLength,
-                                              uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid,
-                                              ServiceType service_type);
+      * Auxiliary function to implement the segmentation of packets stored in
+      * the packet buffer
+      * @param prevFrame              Half full frame waiting in the master channel (nullptr if it does
+       *                              not exist or is full)
+      * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame, taken by the
+      * vcGenerationServiceTxTM parameter
+      * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
+      * @param vid                            Virtual Channel ID
+      * @param mapid                          MAP Channel ID
+      * @param serviceType                    Type AD or BC frames
+      * @return A Service Channel Notification
+      */
+    ServiceChannelNotification segmentationTC(TransferFrameTC* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
+    uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
     /**
-     * Auxiliary function for blocking of packets stored in the stored packet buffer
-     * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame (where packets are
-     *                                       stored)
-     * @param packetLength                   The length of the packet in the stored TM packet buffer
-     * @param vcid                           Virtual Channel ID
-     * @param mapid                          MAP Channel ID
-     * @param serviceType                    Service Type for differentiation of Type-A and Type-B frames
-     * @return                               A Service Channel Notification
-     */
-    ServiceChannelNotification blockingTC(uint16_t transferFrameDataFieldLength, uint16_t packetLength,
-                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
+        * Auxiliary function for blocking of packets stored in the stored packet buffer
+        * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
+        *                                       not exist or is full)
+        * @param transferFrameFieldLength       The length of the data field of the TC Transfer frame (where packets are
+        *                                       stored)
+        * @param packetLength                   The length of the next packet in the stored TC packet buffer
+        * @param vcid                           Virtual Channel ID
+        * @param mapid                          MAP Channel ID
+        * @param serviceType                    Type AD or BC frames
+        * @return                               A Service Channel Notification
+        */
+    ServiceChannelNotification blockingTC(TransferFrameTC* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
+                                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
 
     /**

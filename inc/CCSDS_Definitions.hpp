@@ -12,10 +12,13 @@ inline constexpr uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identif
 
 inline constexpr uint16_t TmTransferFrameSize = 128;
 inline constexpr uint8_t TmPrimaryHeaderSize = 6;
-inline constexpr uint8_t TmTrailerSize = 6;
+inline constexpr uint8_t TmOperationalControlFieldSize = 4;
 
 inline constexpr uint16_t MaxTcTransferFrameSize = 128;
 inline const uint8_t TcPrimaryHeaderSize = 5;
+inline const uint8_t TcSegmentHeaderSize = 1;
+
+inline const uint8_t errorControlFieldSize = 2;
 
 inline constexpr uint16_t MCID = SpacecraftIdentifier;
 
