@@ -338,11 +338,11 @@ TEST_CASE("VC Generation Service") {
 		CHECK(transferFrame->getSegmentLengthId() == 3);
 		for (uint8_t i = TmPrimaryHeaderSize; i < maxTransferFrameFieldLength + TmPrimaryHeaderSize; i++) {
 			if (i < TmPrimaryHeaderSize + sizeof(packet1)) {
-				CHECK(transferFrame->getframeData()[i] == packet1[i - TmPrimaryHeaderSize]);
+				CHECK(transferFrame->getFrameData()[i] == packet1[i - TmPrimaryHeaderSize]);
 			} else if (i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
-				CHECK(transferFrame->getframeData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
+				CHECK(transferFrame->getFrameData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
 			} else {
-				CHECK(transferFrame->getframeData()[i] ==
+				CHECK(transferFrame->getFrameData()[i] ==
                       packet3[i - TmPrimaryHeaderSize - sizeof(packet1) - sizeof(packet2)]);
 			}
 		}
@@ -358,27 +358,27 @@ TEST_CASE("VC Generation Service") {
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
 		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize);
 		const TransferFrameTM* transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
-		CHECK(transferFrame->getframeData()[6] == 47);
-		CHECK(transferFrame->getframeData()[7] == 31);
-		CHECK(transferFrame->getframeData()[8] == 65);
-		CHECK(transferFrame->getframeData()[9] == 81);
-		CHECK(transferFrame->getframeData()[10] == 25);
+		CHECK(transferFrame->getFrameData()[6] == 47);
+		CHECK(transferFrame->getFrameData()[7] == 31);
+		CHECK(transferFrame->getFrameData()[8] == 65);
+		CHECK(transferFrame->getFrameData()[9] == 81);
+		CHECK(transferFrame->getFrameData()[10] == 25);
 		CHECK(transferFrame->getSegmentLengthId() == 1);
 
         serv_channel.mcGenerationRequestTxTM();
 		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
-		CHECK(transferFrame->getframeData()[6] == 44);
-		CHECK(transferFrame->getframeData()[7] == 76);
-		CHECK(transferFrame->getframeData()[8] == 99);
-		CHECK(transferFrame->getframeData()[9] == 13);
-		CHECK(transferFrame->getframeData()[10] == 43);
+		CHECK(transferFrame->getFrameData()[6] == 44);
+		CHECK(transferFrame->getFrameData()[7] == 76);
+		CHECK(transferFrame->getFrameData()[8] == 99);
+		CHECK(transferFrame->getFrameData()[9] == 13);
+		CHECK(transferFrame->getFrameData()[10] == 43);
 		CHECK(transferFrame->getSegmentLengthId() == 0);
 
         serv_channel.mcGenerationRequestTxTM();
 		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
-		CHECK(transferFrame->getframeData()[6] == 78);
+		CHECK(transferFrame->getFrameData()[6] == 78);
 		CHECK(transferFrame->getSegmentLengthId() == 2);
 	}
     SECTION("Concurrent segmentation and blocking") {
@@ -431,16 +431,16 @@ TEST_CASE("VC Generation Service") {
 
         for (uint8_t i = 0; i < 40; i++) {
             if (i <= 9) {
-                CHECK(concat_packet[i] == frame1->getframeData()[i + TmPrimaryHeaderSize]);
+                CHECK(concat_packet[i] == frame1->getFrameData()[i + TmPrimaryHeaderSize]);
             }
             else if (i <= 19 ) {
-                CHECK(concat_packet[i] == frame2->getframeData()[i%10 + TmPrimaryHeaderSize]);
+                CHECK(concat_packet[i] == frame2->getFrameData()[i%10 + TmPrimaryHeaderSize]);
             }
             else if (i <= 29) {
-                CHECK(concat_packet[i] == frame3->getframeData()[i%10 + TmPrimaryHeaderSize]);
+                CHECK(concat_packet[i] == frame3->getFrameData()[i%10 + TmPrimaryHeaderSize]);
             }
             else {
-                CHECK(concat_packet[i] == frame4->getframeData()[i%10 + TmPrimaryHeaderSize]);
+                CHECK(concat_packet[i] == frame4->getFrameData()[i%10 + TmPrimaryHeaderSize]);
             }
         }
     }
@@ -584,7 +584,7 @@ TEST_CASE("Frame Acknowledgement") {
 
 	TransferFrameTC transferFrame = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	err = serv_channel.storeFrameRxTC(transferFrame.frameData(), transferFrame.getFrameLength());
+	err = serv_channel.storeFrameRxTC(transferFrame.getFrameData(), transferFrame.getFrameLength());
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesReceptionRequestRxTC();
@@ -612,7 +612,7 @@ TEST_CASE("Frame Acknowledgement") {
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
 
-	err = serv_channel.storeFrameRxTC(transferFrame2.frameData(), transferFrame.getFrameLength());
+	err = serv_channel.storeFrameRxTC(transferFrame2.getFrameData(), transferFrame.getFrameLength());
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesReceptionRequestRxTC();
@@ -645,7 +645,7 @@ TEST_CASE("Frame Acknowledgement") {
 
 	TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame
-	err = serv_channel.storeFrameRxTC(transferFrame3.frameData(), transferFrame.getFrameLength());
+	err = serv_channel.storeFrameRxTC(transferFrame3.getFrameData(), transferFrame.getFrameLength());
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.allFramesReceptionRequestRxTC();

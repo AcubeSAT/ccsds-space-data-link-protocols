@@ -112,7 +112,7 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 
 	while (cur_frame != vchan->master_channel().masterCopyTxTC.end()) {
 		if ((*cur_frame).acknowledged()) {
-            vchan->master_channel().masterChannelPoolTC.deletePacket(cur_frame->frameData(), cur_frame->frameLength());
+            vchan->master_channel().masterChannelPoolTC.deletePacket(cur_frame->getFrameData(), cur_frame->frameLength());
 			vchan->master_channel().masterCopyTxTC.erase(cur_frame++);
 		} else {
 			++cur_frame;

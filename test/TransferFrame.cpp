@@ -8,11 +8,11 @@ TEST_CASE("TransferFrameTC Generation") {
 	TransferFrameTC frame = TransferFrameTC(data, 5);
 
 	CHECK(frame.segmentationHeader() == 5);
-	CHECK(frame.frameData()[0] == 0);
-	CHECK(frame.frameData()[1] == 11);
-	CHECK(frame.frameData()[2] == 128);
-	CHECK(frame.frameData()[3] == 33);
-	CHECK(frame.frameData()[4] == 4);
+	CHECK(frame.getFrameData()[0] == 0);
+	CHECK(frame.getFrameData()[1] == 11);
+	CHECK(frame.getFrameData()[2] == 128);
+	CHECK(frame.getFrameData()[3] == 33);
+	CHECK(frame.getFrameData()[4] == 4);
 }
 
 TEST_CASE("TC Header Generation") {
@@ -41,13 +41,13 @@ TEST_CASE("TM Header Generation") {
 
 TEST_CASE("PacketTΜ Generation") {
 	uint8_t data[] = {200, 185, 99, 23, 40, 6, 0, 11, 128, 33, 4, 5, 9, 10};
-	TransferFrameTM frame = TransferFrameTM(data, 14, true, TmTransferFrameSize - TmPrimaryHeaderSize - TmTrailerSize);
-	CHECK(frame.getframeData()[0] == 200);
-	CHECK(frame.getframeData()[1] == 185);
-	CHECK(frame.getframeData()[2] == 99);
-	CHECK(frame.getframeData()[3] == 23);
-	CHECK(frame.getframeData()[4] == 40);
-	CHECK(frame.getframeData()[5] == 6);
+	TransferFrameTM frame = TransferFrameTM(data, 14, true, TmTransferFrameSize - TmPrimaryHeaderSize - 6);
+	CHECK(frame.getFrameData()[0] == 200);
+	CHECK(frame.getFrameData()[1] == 185);
+	CHECK(frame.getFrameData()[2] == 99);
+	CHECK(frame.getFrameData()[3] == 23);
+	CHECK(frame.getFrameData()[4] == 40);
+	CHECK(frame.getFrameData()[5] == 6);
 	CHECK(frame.getOperationalControlField() == 0x80210405);
 	// CHECK(frame.global_virtual_channel_id() == 32);
 }

@@ -77,7 +77,7 @@ public:
 			return false;
 		}
 		for (uint16_t i = 0; i < frame1.transferFrameLength; i++) {
-			if (frame1.frameData()[i] != frame2.frameData()[i]) {
+			if (frame1.getFrameData()[i] != frame2.getFrameData()[i]) {
 				return false;
 			}
 		}
