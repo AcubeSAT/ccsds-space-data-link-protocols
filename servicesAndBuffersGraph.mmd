@@ -1,0 +1,244 @@
+flowchart TB
+    subgraph A["TC Tx Services"]
+        subgraph A1 ["Map Packet Processing"]
+            A1s1[["storePacketTxTc(packet, packetLength, vid, mapid)"]]
+            A1s2[["mappRequestTxTC(vid, mapid, transferFrameDataLength, serviceType)<br>calls internally:<br>-segmentationTC<br>-blockingTC"]]
+            A1s3[["frontUnprocessedFrameMcCopyTxTC()"]]
+            A1s4[["getLastMasterCopyTcFrame()"]]
+            A1s5[["frontUnprocessedFrameVcCopyTxTC(vid)"]]
+            A1s6[["backUnprocessedFrameMcCopyTxTC()"]]
+            A1s7[["availableUnprocessedFramesVcCopyTxTC(vid)"]]
+
+            A1s1 --> A1s2
+            A1s1 -.-> A1r1{"Type of Packet?"}
+            A1r1 -.-> A1r2["Type A"] & A1r3["Type B"]
+            A1r2 -.-> map4 & map5
+            A1r3 -.-> map6 & map7
+            A1s2 -..-x|"(from segmentation,blocking)"| A1r4{"Type of Packet?"}
+            A1r4 -.-x A1r5["Type A"] & A1r6["Type B"]
+            A1r5 -.-x map4 & map5
+            A1r6 -.-x map6 & map7
+            A1s2 -.->|"(from segmentation,blocking)"| master16
+            A1s2 -.->|"(from segmentation,blocking)"| vc7
+            A1s2 -.->|"(from segmentation,blocking)"| master12
+            A1s2 -.check if full.-vc2
+                        A1s3 -.front reference.-master12
+            A1s4 -.back reference.-master12
+            A1s5 -.front reference.-vc7
+            A1s6 -.back reference.-master12
+            A1s7 -.remaining space.-vc7
+        end
+
+        subgraph A2 ["Virtual Channel Generation"]
+            A2s1[["vcGenerationRequestTxTC<br>Calls internally:<br>-transferFdu (fop service)"]]
+            A2s2[["frontFrameBeforeAllFramesGenerationTxTC()"]]
+
+            A1s2 --> A2s1
+            A2s1 -.->|"Push and deletion from fop"| vc2
+            A2s1 -.->|"Push and deletion from fop"| vc4
+            A2s1 -.-x|"From fop"| master12
+            A2s1 -.-x|"From fop"| master16
+            A2s1 -.-x|"After fop finishes"| vc7
+            A2s1 -.->|"from vcGenerationRequestTC() AND transferFdu()?"| master1
+            A2s2 -.-|"front reference"| master1
+        end
+
+        subgraph A3 ["All Frames Generation"]
+            A3s1[["allFramesGenerationRequestTxTC()"]]
+            A3s2[["frameTransmission(frameTarget)<br>NOTE:is a fop service"]]
+            A3s3[["frontFrameAfterAllFramesGenerationTxTC()"]]
+            A3s4[["availableFramesAfterAllFramesGenerationTxTC()"]]
+
+            A2s1 --> A3s1 --> A3s2
+            A3s1 -.-x master1
+            A3s1 -.-> master2
+            A3s2 -.-x master2
+            A3s3 -.-|"front reference"| master2
+            A3s4 -.-|"remaining space"| master2
+        end
+    end
+
+    subgraph B ["TC Rx Services"]
+        subgraph B1["All Frames Reception"]
+            B1s1[["storeFrameRxTC(frameData, frameLength)"]]
+            B1s2[["allFramesReceptionRequestRxTC()"]]
+            B1s4[["txAvailableTc(const uint8_t vid, const uint8_t mapid)"]]
+            B1s5[["txOutFrameTC(uint8_t vid,uint8_t mapid)"]]
+            B1s6[["availableFramesBeforeAllFramesReceptionRxTC()"]]
+            B1s7[["getAvailableWaitQueueRxTC(vid)"]]
+
+            B1s1 -->B1s2
+            B1s1 -.->master14 & master9
+            B1s2 -..-x|"discard TC frame if invalid"| master14
+            B1s2 -.-xmaster9
+            B1s2 -.->vc3
+            B1s4 -.remaining space.-map1
+            B1s5 -.front reference.-map1
+            B1s6 -.remaining space.-master9
+            B1s2 -.checks if full.-master10
+            B1s7 -..-|"remaining space"| vc3
+        end
+
+        subgraph B2["Virtual Channel Reception"]
+            B2s1[["vcReceptionRxTC(vid)<br>calls internally:<br>frameArrives<br>(FARM)"]]
+            B2s2[["getAvailableinFramesAfterVCReceptionRxTC(vid)"]]
+            B2s3[["getAvailableinFramesAfterVCReceptionRxTC(vid, mapid)"]]
+
+            B1s2 --> B2s1
+            B2s1 --->|"frameArrives insertion"| vc5
+            B2s1 --->|"push report TM frame (clcw frame)"| service1
+            B2s1 --> B3r1{"MAP exists in this VC?"}
+            B3r1 --> B3r2["yes"] & B3r3["no"]
+            B3r2 -.-> map3
+            B3r3 -.-> vc6
+            B2s1 -..-x|"frameArrives deletion"| vc3
+            B2s2 -.-|"remaining space"| map3
+            B2s3 -.-|"remaining space"| vc6
+        end
+
+        subgraph B3["Virtual Channel Extraction"]
+            B3s1[["packetExtractionTC(vid, packetTarget)"]]
+
+            B3r3 --> B3s1
+            B3s1 -.-x map3
+        end
+
+        subgraph B4["MAP Packet Extraction"]
+            B4s1[["packetExtractionTC(vid, mapid, packetTarget)"]]
+
+            B3r2 --> B4s1
+            B4s1 -.-x vc6
+            B4s1 -.-x master14
+        end
+    end
+
+    subgraph C ["TM Tx Services"]
+        subgraph C1["Packet Processing"]
+            C1s1[["storePacketTxTM(packet, packetLength, vid)"]]
+            C1s2[["availablePacketLengthBufferTxTM(gvcid)"]]
+            C1s3[["availablePacketBufferTxTM(gvcid)"]]
+
+            C1s1 -.-> vc8 & vc9
+            C1s2 -.-|"available space"| vc8
+            C1s3 -.-|"available space"| vc9
+        end
+
+        subgraph C2["Virtual Channel Generation"]
+            C2s1[["vcGenerationServiceTxTM(transferFrameDataFieldLength, vid) <br> calls internally:<br>-segmentationTM<br>-blockingTM"]]
+            C2s2[["availableFramesAfterVcGenerationTxTM()"]]
+            C2s3[["backFrameAfterVcGenerationTxTM()"]]
+            C2s4[["frontFrameAfterVcGenerationTxTM()"]]
+            C1s1 --> C2s1
+            C2s1 -.-x|"(from segmentation,blocking)"| vc8 & vc9
+            C2s1 -.->|"(from segmentation,blocking)"| master13 & master11 & master17
+            C2s2 -.-|"remaining space"| master13
+            C2s3 -.-|"back reference"| master13
+            C2s4 -.-|"front reference"| master11
+        end
+
+        subgraph C3["Master Channel Generation"]
+            C3s1[["mcGenerationRequestTxTM()"]]
+
+            C2s1 --> C3s1
+            C3s1 -.-> master4
+            C3s1 -.-x master11
+        end
+
+        subgraph C4["All Frames Generation"]
+            C4s1[["allFramesGenerationRequestTxTM(frameDataTarget, frameLength)"]]
+            C4s2[["frontFrameAfterAllFramesGenerationTxTM()"]]
+
+            C3s1 --> C4s1
+            C4s1 -.-x master4 & master17 & master13
+            C4s2 -.-|"front reference"| master8
+        end
+    end
+
+    subgraph D["TM Rx Services"]
+        subgraph D1["All Frames Reception"]
+            D1s1[["allFramesReceptionRequestRxTM(frameData, frameLength)"]]
+            D1s2[["availableFramesVcCopyRxTM(vid)"]]
+            D1s3[["availableFramesMcCopyRxTM()"]]
+
+            D1s1 -.-> master15 & vc1
+            D1s2 -.-|remaining space| vc1
+            D1s3 -.-|remaining space| master15
+        end
+
+        subgraph D2["Packet Extraction"]
+            D2s1[["packetExtractionRxTM(vid, packetTarget)"]]
+            D1s1 --> D2s1
+            D2s1 -.-x master15 & vc1
+        end
+    end
+
+    subgraph E["Legend"]
+        E1[[Necessary Service]]
+        E2[[Service for Debugging/Utility]]
+        E3[(MAP Channel Buffer)]
+        E4[(Virtual Channel Buffer)]
+        E5[(Master Channel Buffer)]
+
+        E6[ ] -->|"logical calling order of main services"| E7[ ]
+        E8[ ] -.->|"push object to buffer"| E9[ ]
+        E10[ ] -.-x|"pop object from buffer"| E11[ ]
+        E12[ ] -.-|"other action related to this buffer"| E13[ ]
+
+        style E1 height:0px;
+        style E2 height:0px;
+        style E3 height:0px;
+        style E4 height:0px;
+        style E5 height:0px;
+    end
+
+    E~~~A~~~B~~~C~~~D
+
+    map1[("unprocessedFrameListBufferTC (frameTC*)<br> This belongs in TC TX chain,although seems unused")]
+    map2[("unprocessedFrameListBufferTM<br>NOTE:this should probably not exist")]
+    map3[("inFramesAfterVCReceptionRxTC (frameTC*)")]
+    map4[("packetLengthBufferTxTcTypeA (uint16_t)")]
+    map5[("packetBufferTxTcTypeA (uint8_t)")]
+    map6[("packetLengthBufferTxTcTypeB (uint16_t)")]
+    map7[("packetBufferTxTcTypeB (uint8_t)")]
+
+    vc1[("framesAfterMCReceptionRxTM (frameTM*)")]
+    vc2[("waitQueueTxTC (frameTC*)")]
+    vc3[("waitQueueRxTC (frameTC*)")]
+    vc4[("sentQueueTxTC (frameTC*)")]
+    vc5[("sentQueueRxTC (frameTC*)")]
+    vc6[("inFramesAfterVCReceptionRxTC (frameTC*)")]
+    vc7[("unprocessedFrameListBufferTxTC (frameTC*)")]
+    vc8[("packetLengthBufferTxTM (uint16_t)")]
+    vc9[("packetBufferTxTM (uint8_t)")]
+
+    master1[("outFramesBeforeAllFramesGenerationListTxTC (frameTC*)")]
+    master2[("toBeTransmittedFramesAfterAllFramesGenerationListTxTC (frameTC*)")]
+    master3[("txOutFramesBeforeMCGenerationListTM<br>Note: Seems unused")]
+    master4[("toBeTransmittedFramesAfterMCGenerationListTxTM (frameTM*)")]
+    master5[("txOutFramesBeforeMCReceptionListTM<br>Note:seems unused")]
+    master6[("txToBeTransmittedFramesAfterMCReceptionListTM<br>Note:seems unused")]
+    master7[("txOutFramesBeforeAllFramesGenerationListTM<br>Note:seems redundant")]
+    master8[("toBeTransmittedFramesAfterAllFramesGenerationListTxTM (frameTM*)")]
+    master9[("inFramesBeforeAllFramesReceptionListRxTC (frameTC*)")]
+    master10[("toBeTransmittedFramesAfterAllFramesReceptionListRxTC (frameTC*)")]
+    master11[("framesAfterVcGenerationServiceTxTM (frameTM*)")]
+    master12[("masterCopyTxTC (frame TC)")]
+    master13[("masterCopyTxTM (frameTM)")]
+    master14[("masterCopyRxTC (frame TC)")]
+    master15[("masterCopyRxTM (frameTM)")]
+    master16[("masterChannelPoolTC (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTC frames")]
+    master17[("masterChannelPoolTM (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTM frames")]
+
+    service1[("clcwTransferFrameBuffer (frameTM) <br> Single capacity")]
+
+    classDef map_channel_buffer fill:#3d8215;
+    classDef virtual_channel_buffer fill:#a6161f;
+    classDef master_channel_buffer fill:#244fb5;
+    classDef main_services fill:#B06F2A;
+    classDef utility_services fill:#648D98;
+
+    class map1,map2,map3,map4,map5,map6,map7,E3 map_channel_buffer;
+    class vc1,vc2,vc3,vc4,vc5,vc6,vc7,vc8,vc9,E4 virtual_channel_buffer;
+    class master1,master2,master3,master4,master5,master6,master7,master8,master9,master10,master11,master12,master13,master14,master15,master16,master17,E5 master_channel_buffer
+    class A1s1,A1s2,A2s1,A3s1,A3s2,B1s1,B1s2,B2s1,B3s1,B4s1,C1s1,C2s1,C3s1,C4s1,D1s1,D2s1,E1 main_services;
+    class A1s3,A1s4,A1s5,A1s6,A1s7,A2s2,A3s3,A3s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;
