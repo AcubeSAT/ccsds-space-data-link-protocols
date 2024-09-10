@@ -108,12 +108,12 @@ void FrameOperationProcedure::acknowledgeFrame(uint8_t frameSeqNumber) {
 }
 
 void FrameOperationProcedure::removeAcknowledgedFrames() {
-	etl::ilist<TransferFrameTC>::iterator cur_frame = vchan->master_channel().txMasterCopyTC.begin();
+	etl::ilist<TransferFrameTC>::iterator cur_frame = vchan->master_channel().masterCopyTxTC.begin();
 
-	while (cur_frame != vchan->master_channel().txMasterCopyTC.end()) {
+	while (cur_frame != vchan->master_channel().masterCopyTxTC.end()) {
 		if ((*cur_frame).acknowledged()) {
             vchan->master_channel().masterChannelPoolTC.deletePacket(cur_frame->frameData(), cur_frame->frameLength());
-			vchan->master_channel().txMasterCopyTC.erase(cur_frame++);
+			vchan->master_channel().masterCopyTxTC.erase(cur_frame++);
 		} else {
 			++cur_frame;
 		}
@@ -657,7 +657,7 @@ void FrameOperationProcedure::bdReject() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
-	TransferFrameTC* frame = vchan->txUnprocessedFrameListBufferTC.front();
+	TransferFrameTC* frame = vchan->unprocessedFrameListBufferVcCopyTxTC.front();
 
 	if (frame->transferFrameHeader().bypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_AD) {

@@ -6,11 +6,11 @@
 
 VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* transferFrameTc) {
 	// Limit the amount of transfer frames that can be stored at any given time
-	if (txUnprocessedFrameListBufferTC.full()) {
+	if (unprocessedFrameListBufferVcCopyTxTC.full()) {
 		ccsdsLogNotice(Tx, TypeVirtualChannelAlert, TX_WAIT_QUEUE_FULL);
 		return VirtualChannelAlert::TX_WAIT_QUEUE_FULL;
 	}
-	txUnprocessedFrameListBufferTC.push_back(transferFrameTc);
+	unprocessedFrameListBufferVcCopyTxTC.push_back(transferFrameTc);
 	ccsdsLogNotice(Tx, TypeVirtualChannelAlert, NO_VC_ALERT);
 	return VirtualChannelAlert::NO_VC_ALERT;
 }
@@ -20,12 +20,12 @@ VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* transferFrameTc) {
 // @todo consider another data structure
 
 MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* transferFrameTc) {
-	if (txOutFramesBeforeAllFramesGenerationListTC.full()) {
+	if (outFramesBeforeAllFramesGenerationListTxTC.full()) {
 		// Log that buffer is full
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, OUT_FRAMES_LIST_FULL);
 		return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
 	}
-	txOutFramesBeforeAllFramesGenerationListTC.push_back(transferFrameTc);
+	outFramesBeforeAllFramesGenerationListTxTC.push_back(transferFrameTc);
 	uint8_t vid = transferFrameTc->virtualChannelId();
 	// virtChannels.at(0).fop.
 	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
@@ -44,21 +44,21 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTM* transferFrameTm) {
 }
 
 MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTC* transferFrameTc) {
-	if (txToBeTransmittedFramesAfterAllFramesGenerationListTC.full()) {
+	if (toBeTransmittedFramesAfterAllFramesGenerationListTxTC.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
 	}
-    txToBeTransmittedFramesAfterAllFramesGenerationListTC.push_back(transferFrameTc);
+    toBeTransmittedFramesAfterAllFramesGenerationListTxTC.push_back(transferFrameTc);
 	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
 MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* transferFrameTm) {
-	if (txToBeTransmittedFramesAfterAllFramesGenerationListTM.full()) {
+	if (toBeTransmittedFramesAfterAllFramesGenerationListTxTM.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
 	}
-	txToBeTransmittedFramesAfterAllFramesGenerationListTM.push_back(transferFrameTm);
+	toBeTransmittedFramesAfterAllFramesGenerationListTxTM.push_back(transferFrameTm);
 	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
 	return MasterChannelAlert::NO_MC_ALERT;
 }
@@ -107,9 +107,9 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 
 void MasterChannel::removeMasterTx(TransferFrameTC* frame_ptr) {
 	etl::list<TransferFrameTC, MaxTxInMasterChannel>::iterator it;
-	for (it = txMasterCopyTC.begin(); it != txMasterCopyTC.end(); ++it) {
+	for (it = masterCopyTxTC.begin(); it != masterCopyTxTC.end(); ++it) {
 		if (&it == frame_ptr) {
-			txMasterCopyTC.erase(it);
+			masterCopyTxTC.erase(it);
 			return;
 		}
 	}
@@ -117,9 +117,9 @@ void MasterChannel::removeMasterTx(TransferFrameTC* frame_ptr) {
 
 void MasterChannel::removeMasterTx(TransferFrameTM* frame_ptr) {
 	etl::list<TransferFrameTM, MaxTxInMasterChannel>::iterator it;
-	for (it = txMasterCopyTM.begin(); it != txMasterCopyTM.end(); ++it) {
+	for (it = masterCopyTxTM.begin(); it != masterCopyTxTM.end(); ++it) {
 		if (&it == frame_ptr) {
-			txMasterCopyTM.erase(it);
+			masterCopyTxTM.erase(it);
 			return;
 		}
 	}
@@ -127,9 +127,9 @@ void MasterChannel::removeMasterTx(TransferFrameTM* frame_ptr) {
 
 void MasterChannel::removeMasterRx(TransferFrameTC* frame_ptr) {
 	etl::list<TransferFrameTC, MaxRxInMasterChannel>::iterator it;
-	for (it = rxMasterCopyTC.begin(); it != rxMasterCopyTC.end(); ++it) {
+	for (it = masterCopyRxTC.begin(); it != masterCopyRxTC.end(); ++it) {
 		if (&it == frame_ptr) {
-			rxMasterCopyTC.erase(it);
+			masterCopyRxTC.erase(it);
 			return;
 		}
 	}
@@ -137,15 +137,15 @@ void MasterChannel::removeMasterRx(TransferFrameTC* frame_ptr) {
 
 void MasterChannel::removeMasterRx(TransferFrameTM* frame_ptr) {
 	etl::list<TransferFrameTM, MaxRxInMasterChannel>::iterator it;
-	for (it = rxMasterCopyTM.begin(); it != rxMasterCopyTM.end(); ++it) {
+	for (it = masterCopyRxTM.begin(); it != masterCopyRxTM.end(); ++it) {
 		if (&it == frame_ptr) {
-			rxMasterCopyTM.erase(it);
+			masterCopyRxTM.erase(it);
 			return;
 		}
 	}
 }
 void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
-	for (TransferFrameTC& transferFrame : txMasterCopyTC) {
+	for (TransferFrameTC& transferFrame : masterCopyTxTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setAcknowledgement(true);
 			return;
@@ -154,7 +154,7 @@ void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 }
 
 void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
-	for (TransferFrameTC transferFrame : txMasterCopyTC) {
+	for (TransferFrameTC transferFrame : masterCopyTxTC) {
 		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setToBeRetransmitted(true);
 			return;
@@ -163,9 +163,9 @@ void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
 }
 
 TransferFrameTC MasterChannel::getLastTxMasterCopyTcFrame() {
-	return txMasterCopyTC.back();
+	return masterCopyTxTC.back();
 }
 
 TransferFrameTC MasterChannel::geFirstTxMasterCopyTcFrame() {
-	return txMasterCopyTC.front();
+	return masterCopyTxTC.front();
 }

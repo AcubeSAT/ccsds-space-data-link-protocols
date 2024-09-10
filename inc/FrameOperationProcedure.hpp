@@ -182,7 +182,7 @@ private:
 
 	/**
 	 * stores TC transfer frames, that have being processed by the FOP service, to the
-	 * txOutFramesBeforeAllFramesGenerationListTC list, in order to be processed by All Frames Generation Service
+	 * outFramesBeforeAllFramesGenerationListTxTC list, in order to be processed by All Frames Generation Service
 	 */
 	COPDirectiveResponse pushSentQueue();
 	/**
@@ -327,7 +327,7 @@ private:
 	COPDirectiveResponse transferFdu();
 
 	/**
-	 * Function that acknowledges all the unacknowledged frames in the txMasterCopyTC buffer before the received report
+	 * Function that acknowledges all the unacknowledged frames in the masterCopyTxTC buffer before the received report
 	 * value from the CLCW
 	 */
 	void acknowledgePreviousFrames(uint8_t frameSequenceNumber);
