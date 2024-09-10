@@ -12,7 +12,7 @@ TEST_CASE("Initiate FOP Directives") {
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
 	MasterChannel master_channel_fop = MasterChannel();
-	master_channel_fop.addVC(3, 1024, true, 32, 32, true, true, true, 32, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
+	master_channel_fop.addVC(3, false, 1024, true, true, true, true, 32, 32, true, true, true, 32, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
 	                         10, 3, map_channels_fop);
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
@@ -20,7 +20,8 @@ TEST_CASE("Initiate FOP Directives") {
     serv_channel_fop.storePacketTxTC(data, 11, 3, 2, ServiceType::TYPE_AD);
     serv_channel_fop.mappRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
 
-	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
+//	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
+    CHECK(serv_channel_fop.availableUnprocessedFramesVcCopyTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 
 	CHECK(serv_channel_fop.fopState(3) == FOPState::INITIAL);
 	serv_channel_fop.initiateAdNoClcw(3);
@@ -54,9 +55,9 @@ TEST_CASE("Retransmission"){
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
-	master_channel.addVC(1, 128, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -91,7 +92,7 @@ TEST_CASE("Retransmission"){
 	TransferFrameTM clcwTransferFrame =
 	    TransferFrameTM(clcwData, TmTransferFrameSize, 0, 0,
 	                    false, false, NoSegmentation,
-	                    FORWARD_ORDERED, 2046, 0, clcw.clcw, TM);
+	                    FORWARD_ORDERED, 2046, clcw.clcw, 0, TM);
 	//Receive the CLCW frame
     serv_channel.allFramesReceptionRequestRxTM(clcwData, TmTransferFrameSize);
 	//E10 enters

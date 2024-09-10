@@ -131,8 +131,17 @@ public:
 	};
 
 protected:
-	bool blockingTC;
-	bool segmentationTC;
+    /**
+     * Determines whether smaller data units can be combined into a single TC transfer frame
+     * (applies for Type AD, BD packets)
+     */
+    const bool blockingTC;
+
+    /**
+     * Determines whether large packets can be segmented to multiple TC transfer frames
+     * (applies for Type AD, BD)
+     */
+     const bool segmentationTC;
 
 	/**
 	 * Store unprocessed received TCs
@@ -149,26 +158,26 @@ protected:
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> inFramesAfterVCReceptionRxTC;
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
-	 * Applicable to Type-A Frames
+	 * Applicable to Type-AD Frames
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTcTypeA;
+	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeA;
 
 	/**
 	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
-	 * Applicable to Type-A Frames
+	 * Applicable to Type-AD Frames
 	 */
 	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeA;
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
-	 * Applicable to Type-B Frames
+	 * Applicable to Type-BD Frames
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTcTypeB;
+	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeB;
 
 	/**
 	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
-	 * Applicable to Type-A Frames
+	 * Applicable to Type-BD Frames
 	 */
-	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTxTcTypeB;
+	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeB;
 };
 
 /**
@@ -194,7 +203,7 @@ public:
 	const uint16_t GVCID; // 16 bits (assumes TFVN is set to 0)
 
 	/**
-	 * Determines whether the Segment Header is present (enables MAP services). It applies only for Type-AD frames.
+	 * Determines whether the Segment Header is present (enables MAP services for type AD, BD packets)
 	 */
 	const bool segmentHeaderPresent;
 
@@ -203,10 +212,27 @@ public:
 	 */
 	const uint16_t maxFrameLengthTC;
 
-	/**
-	 * Determines whether smaller data units can be combined into a single transfer frame
-	 */
-	const bool blocking;
+    /**
+     * Determines whether smaller data units can be combined into a single TM transfer frame
+     */
+     const bool blockingTM;
+
+    /**
+    * Determines whether large packets can be segmented to multiple TM transfer frames
+    */
+    const bool segmentationTM;
+
+    /**
+     * Determines whether smaller data units can be combined into a single TC transfer frame
+     * (applies for Type BC packets, and for Type AD, BD packets if a segmentHeader is not present)
+     */
+    const bool blockingTC;
+
+    /**
+     * Determines whether large packets can be segmented to multiple TC transfer frames
+     * (applies for Type BC packets, and for Type AD, BD packets if a segmentHeader is not present)
+     */
+    const bool segmentationTC;
 
 	/**
 	 * Determines the maximum number of times Type A frames will be re-transmitted
@@ -283,7 +309,8 @@ public:
 	}
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
-                   const bool segmentHeaderPresent, const uint16_t maxFrameLengthTC, const bool blockingTC,
+                   const bool segmentHeaderPresent, const uint16_t maxFrameLengthTC, const bool blockingTM,
+                   const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
                    const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
                    const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
@@ -292,7 +319,8 @@ public:
                    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
           secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-          segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLengthTC), blocking(blockingTC),
+          segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLengthTC), blockingTM(blockingTM),
+          segmentationTM(segmentationTM), blockingTC(blockingTC), segmentationTC(segmentationTC),
           repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions),
           repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
           sentQueueRxTC(), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
@@ -310,7 +338,8 @@ public:
           repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM),
           waitQueueTxTC(v.waitQueueTxTC), sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC),
           sentQueueRxTC(v.waitQueueRxTC), unprocessedFrameListBufferVcCopyTxTC(v.unprocessedFrameListBufferVcCopyTxTC),
-          fop(v.fop), farm(v.farm), masterChannel(v.masterChannel), blocking(v.blocking),
+          fop(v.fop), farm(v.farm), masterChannel(v.masterChannel), blockingTM(v.blockingTM), segmentationTM(v.segmentationTM),
+          blockingTC(v.blockingTC), segmentationTC(v.segmentationTC),
           synchronization(v.synchronization), secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
           secondaryHeaderTMLength(v.secondaryHeaderTMLength),
           frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
@@ -393,14 +422,37 @@ private:
 	std::reference_wrapper<MasterChannel> masterChannel;
 
 	/**
-	 *  Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
+	 *  Queue that stores the pointers of the packets that will eventually be concatenated to TM transfer frame data.
 	 */
 	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTM;
 
 	/**
-	 *  Queue that stores the packet data that will eventually be concatenated to transfer frame data
+	 *  Queue that stores the packet data that will eventually be concatenated to TM transfer frame data
 	 */
 	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTxTM;
+
+    /**
+     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.
+     * Applicable to Type-AD Frames
+     */
+    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeA;
+
+    /**
+     * @brief Queue that stores the packets that will eventually be concatenated to TC transfer frame data.
+     * Applicable to Type-AD Frames
+     */
+    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeA;
+    /**
+     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.
+     * Applicable to Type-BD and Type-BC Frames
+     */
+    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeB;
+
+    /**
+     * @brief Queue that stores the packets that will eventually be concatenated to TC transfer frame data.
+     * Applicable to Type-BD and Type-BC Frames
+     */
+    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeB;
 };
 
 struct MasterChannel {
@@ -480,7 +532,8 @@ struct MasterChannel {
 	/**
 	 * Add virtual channel to master channel
 	 */
-	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
+                             const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
@@ -491,7 +544,8 @@ struct MasterChannel {
 	/**
 	 * Add virtual channel to master channel
 	 */
-	MasterChannelAlert addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
+                             const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,

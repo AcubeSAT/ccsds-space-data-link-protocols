@@ -103,7 +103,8 @@ public:
       * vcGenerationServiceTxTM parameter
       * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
       * @param vid                            Virtual Channel ID
-      * @param mapid                          MAP Channel ID
+      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
+       *                                      (segmentHeaderPresent = false) or if the service type is BC
       * @param serviceType                    Type AD or BC frames
       * @return A Service Channel Notification
       */
@@ -118,7 +119,8 @@ public:
         *                                       stored)
         * @param packetLength                   The length of the next packet in the stored TC packet buffer
         * @param vcid                           Virtual Channel ID
-        * @param mapid                          MAP Channel ID
+        * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
+       *                                        (segmentHeaderPresent = false) or if the service type is BC
         * @param serviceType                    Type AD or BC frames
         * @return                               A Service Channel Notification
         */
@@ -132,18 +134,20 @@ public:
        * @param packet        Pointer to the packet
        * @param packetLength  Length of the packet
        * @param vid           Virtual channel id
-       * @param mapid         MAP channel id
-       * @param service_type  Service Type
+       * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
+       *                      (segmentHeaderPresent = false) or if the service type is BC
+       * @param serviceType  Service Type
        */
     ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
-                                               ServiceType service_type);
+                                               ServiceType serviceType);
 
     /**
-     * Requests to process the last packet stored in the buffer of the specific MAPP channel
+     * Requests to process the last packet stored in the buffer of the specific MAP/VC channel
      * (possible more if blocking is enabled). The packets are segmented or blocked together
      * from data of the memory pool and then transferred to the buffer of the virtual channel
-     * @param vid                       Virtual Channel ID
-     * @param mapid                     MAP Id
+     * @param vid           Virtual Channel ID
+     * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
+     *                      (segmentHeaderPresent = false) or if the service type is BC
      * @param transferFrameDataLength   Data length of the transfer frame
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
      *                                  be grouped together

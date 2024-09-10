@@ -63,7 +63,8 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* transferF
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
+                                        const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
@@ -76,7 +77,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, true, maxFrameLength, blocking, repetitionTypeAFrame,
+	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blockingTM, segmentationTM,
+                                                 blockingTC, segmentationTC, repetitionTypeAFrame,
 	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -84,7 +86,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFrameLength, const bool blocking,
+MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
+                                        const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
@@ -97,7 +100,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const uint16_t maxFr
 	}
 
 	virtualChannels.emplace(vcid,
-	                        VirtualChannel(*this, vcid, false, maxFrameLength, blocking, repetitionTypeAFrame,
+	                        VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blockingTM,
+                                           segmentationTM, blockingTC, segmentationTC, repetitionTypeAFrame,
 	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
 	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
