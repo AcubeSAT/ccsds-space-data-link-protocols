@@ -497,7 +497,7 @@ public:
      * Service that generates a transfer frame by combining the packets via blocking and segmentation and initializing
      * the transfer frame primary header @see p. 4.2.2 and 4.2.3 of TM Space Data Link protocol
      *
-     * @param transferFrameDataFieldLength the maximum transfer frame data field length
+     * @param transferFrameDataFieldLength the transfer frame data field length
      * @param gvcid the global virtual channel id
      * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
      * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
