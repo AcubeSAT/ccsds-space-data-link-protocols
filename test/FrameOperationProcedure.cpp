@@ -18,7 +18,7 @@ TEST_CASE("Initiate FOP Directives") {
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 
     serv_channel_fop.storePacketTxTC(data, 11, 3, 2, ServiceType::TYPE_AD);
-    serv_channel_fop.mappRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
+    serv_channel_fop.packetProcessingTxTC(3, 2, 11, ServiceType::TYPE_AD);
 
 //	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
     CHECK(serv_channel_fop.availableUnprocessedFramesTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
@@ -74,7 +74,7 @@ TEST_CASE("Retransmission"){
     serv_channel.storePacketTxTC(packet2, 9, 0, 0, ServiceType::TYPE_AD);
     serv_channel.storePacketTxTC(packet3, 9, 0, 0, ServiceType::TYPE_AD);
 	for (uint8_t i = 0; i < 3; i++){
-        serv_channel.mappRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
+        serv_channel.packetProcessingTxTC(0, 0, 9, ServiceType::TYPE_AD);
         serv_channel.vcGenerationRequestTxTC(0);
         serv_channel.allFramesGenerationRequestTxTC();
 	}

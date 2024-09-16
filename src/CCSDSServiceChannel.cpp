@@ -390,7 +390,7 @@ ServiceChannelNotification ServiceChannel::storePacketTxTC(uint8_t *packet, uint
     return VC_MC_FRAME_BUFFER_FULL;
 }
 
-ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength, ServiceType serviceType) {
+ServiceChannelNotification ServiceChannel::packetProcessingTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength, ServiceType serviceType) {
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
@@ -408,6 +408,11 @@ ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t 
         }
         mapChannel = &(vchan->mapChannels.at(mapid));
         segmentationAllowed = mapChannel->segmentationTC;
+    }
+
+    if (maxTransferFrameDataFieldLength >
+    MaxTcTransferFrameSize - TcPrimaryHeaderSize - vchan->frameErrorControlFieldPresent * errorControlFieldSize) {
+        return ServiceChannelNotification::INVALID_INPUT;
     }
 
     etl::queue<uint16_t, PacketBufferTcSize> *packetLengthBufferTcTx;

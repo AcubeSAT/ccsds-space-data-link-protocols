@@ -58,14 +58,14 @@ TEST_CASE("Service Channel") {
 
     // Create 2 frames for Type-A packets
 	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
-	err = serv_channel.mappRequestTxTC(0, 0, 10, ServiceType::TYPE_AD);
+	err = serv_channel.packetProcessingTxTC(0, 0, 10, ServiceType::TYPE_AD);
     const TransferFrameTC* frame_a = serv_channel.frontUnprocessedFrameTxTC(0).second;
 
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2);
 
     // Create frame for Type-B packet
-	err = serv_channel.mappRequestTxTC(0, 0, 11, ServiceType::TYPE_BD);
+	err = serv_channel.packetProcessingTxTC(0, 0, 11, ServiceType::TYPE_BD);
     const TransferFrameTC* frame_c = serv_channel.backUnprocessedFrameMcCopyTxTC().second;
     CHECK(frame_c->getFrameLength() == 18);
     CHECK(frame_c->getServiceType() == ServiceType::TYPE_BD);
@@ -274,7 +274,7 @@ TEST_CASE("Service Channel") {
 //	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
 
     serv_channel.storePacketTxTC(pckt_type_a, 9, 2, 0, ServiceType::TYPE_AD);
-	err = serv_channel.mappRequestTxTC(2, 0, 9, ServiceType::TYPE_AD);
+	err = serv_channel.packetProcessingTxTC(2, 0, 9, ServiceType::TYPE_AD);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	//    CHECK(serv_channel.availableUnprocessedFramesTxTC(2, 0) == MaxReceivedTcInMapChannel);
 	CHECK(serv_channel.availableUnprocessedFramesTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
@@ -509,11 +509,11 @@ TEST_CASE("MAP Request Service") {
 //        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).packetLengthBufferTxTcTypeBC.available() == PacketBufferTcSize - 2);
 //
 //        uint16_t maxTransferFrameFieldLength = 15;
-//        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
+//        err = serv_channel.packetProcessingTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
 //        CHECK(err == NO_SERVICE_EVENT);
-//        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
+//        err = serv_channel.packetProcessingTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
 //        CHECK(err == NO_SERVICE_EVENT);
-//        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BC);
+//        err = serv_channel.packetProcessingTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BC);
 //        CHECK(err == NO_SERVICE_EVENT);
 //
 //        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetBufferTxTcTypeAD.available() == PacketBufferTcSize);
@@ -557,11 +557,11 @@ TEST_CASE("MAP Request Service") {
 //        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetLengthBufferTxTcTypeBC.available() == PacketBufferTcSize - 2);
 //
 //        uint16_t maxTransferFrameFieldLength = 15;
-//        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
+//        err = serv_channel.packetProcessingTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
 //        CHECK(err == NO_SERVICE_EVENT);
-//        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
+//        err = serv_channel.packetProcessingTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
 //        CHECK(err == NO_SERVICE_EVENT);
-//        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BC);
+//        err = serv_channel.packetProcessingTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BC);
 //        CHECK(err == NO_SERVICE_EVENT);
 //
 //        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetBufferTxTcTypeAD.available() == PacketBufferTcSize);
@@ -587,7 +587,7 @@ TEST_CASE("MAP Request Service") {
         CHECK(err == NO_SERVICE_EVENT);
 
         uint16_t maxTransferFrameFieldLength = 20;
-        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
+        err = serv_channel.packetProcessingTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
         CHECK(err == NO_SERVICE_EVENT);
 
         const TransferFrameTC* transferFrame = serv_channel.frontUnprocessedFrameTxTC(1).second;
@@ -613,7 +613,7 @@ TEST_CASE("MAP Request Service") {
         CHECK(err == NO_SERVICE_EVENT);
 
         uint16_t maxTransferFrameFieldLength = 5;
-        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
+        err = serv_channel.packetProcessingTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
         CHECK(err == NO_SERVICE_EVENT);
 
         const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& buffer = serv_channel.getUnprocessedFramesListBuffer(0);
@@ -671,7 +671,7 @@ TEST_CASE("MAP Request Service") {
         CHECK(err == NO_SERVICE_EVENT);
 
         uint16_t maxTransferFrameDataFieldLength = 10;
-        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
+        err = serv_channel.packetProcessingTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
         CHECK(err == NO_SERVICE_EVENT);
 
         // second packet stream
@@ -684,9 +684,9 @@ TEST_CASE("MAP Request Service") {
         err = serv_channel.storePacketTxTC(packet10, sizeof(packet10), 0, 0, ServiceType::TYPE_AD);
         CHECK(err == NO_SERVICE_EVENT);
 
-        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_BC);
+        err = serv_channel.packetProcessingTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_BC);
         CHECK(err == NO_SERVICE_EVENT);
-        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
+        err = serv_channel.packetProcessingTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
         CHECK(err == NO_SERVICE_EVENT);
 
         const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& buffer = serv_channel.getUnprocessedFramesListBuffer(0);
@@ -868,7 +868,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.storePacketTxTC(packet1, 10, 0, 0, ServiceType::TYPE_AD);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	err = serv_channel.mappRequestTxTC(0, 0, 10, ServiceType::TYPE_AD);
+	err = serv_channel.packetProcessingTxTC(0, 0, 10, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.vcGenerationRequestTxTC(0);
@@ -899,7 +899,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.storePacketTxTC(packet2, 9, 0, 0, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	err = serv_channel.mappRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
+	err = serv_channel.packetProcessingTxTC(0, 0, 9, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.vcGenerationRequestTxTC(0);
@@ -928,7 +928,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.storePacketTxTC(packet1, 9, 1, 0, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	err = serv_channel.mappRequestTxTC(1, 0, 9, ServiceType::TYPE_AD);
+	err = serv_channel.packetProcessingTxTC(1, 0, 9, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
 	err = serv_channel.vcGenerationRequestTxTC(1);
