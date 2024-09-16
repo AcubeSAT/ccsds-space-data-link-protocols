@@ -41,6 +41,13 @@ private:
 	etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
 public:
+    /**
+     * Get a reference to the master channel
+     */
+     MasterChannel& getMasterChannel(){
+         return masterChannel;
+     }
+
 	// Public methods that are called by the scheduler
 
     // TC TransferFrame - Sending End (TC Tx)
@@ -68,7 +75,7 @@ public:
     /**
      * Available space in TC virtual channel buffer
      */
-    uint16_t availableUnprocessedFramesVcCopyTxTC(const uint8_t vid) const {
+    uint16_t availableUnprocessedFramesTxTC(const uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
@@ -77,9 +84,9 @@ public:
     }
 
     /**
-     * Read first TC transfer frame of the virtual channel buffer (unprocessedFrameListBufferVcCopyTxTC)
+     * Read first TC transfer frame of the virtual channel buffer (unprocessedFrameListBufferTxTC)
      */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> frontUnprocessedFrameVcCopyTxTC(uint8_t vid) const;
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> frontUnprocessedFrameTxTC(uint8_t vid) const;
 
     /**
      * Return the last stored transfer frame from masterCopyTxTC
@@ -93,14 +100,19 @@ public:
      */
     std::optional<TransferFrameTC> frontFrameBeforeAllFramesGenerationTxTC();
 
+    /**
+     * @return The buffer unprocessedFrameLIstBufferTxTc
+     */
+    const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& getUnprocessedFramesListBuffer(uint16_t vid);
+
     //     - MAP Packet Processing
     /**
       * Auxiliary function to implement the segmentation of packets stored in
       * the packet buffer
       * @param prevFrame              Half full frame waiting in the master channel (nullptr if it does
        *                              not exist or is full)
-      * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame, taken by the
-      * vcGenerationServiceTxTM parameter
+      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
+      *                                          (segment header included)
       * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
       * @param vid                            Virtual Channel ID
       * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
@@ -108,15 +120,15 @@ public:
       * @param serviceType                    Type AD or BC frames
       * @return A Service Channel Notification
       */
-    ServiceChannelNotification segmentationTC(TransferFrameTC* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
-    uint8_t vid, uint8_t mapid, ServiceType serviceType);
+    ServiceChannelNotification segmentationTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+                                              uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
     /**
         * Auxiliary function for blocking of packets stored in the stored packet buffer
         * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
         *                                       not exist or is full)
-        * @param transferFrameFieldLength       The length of the data field of the TC Transfer frame (where packets are
-        *                                       stored)
+        * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
+        *                                          (segment header included)
         * @param packetLength                   The length of the next packet in the stored TC packet buffer
         * @param vcid                           Virtual Channel ID
         * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
@@ -124,8 +136,8 @@ public:
         * @param serviceType                    Type AD or BC frames
         * @return                               A Service Channel Notification
         */
-    ServiceChannelNotification blockingTC(TransferFrameTC* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
-                                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
+    ServiceChannelNotification blockingTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+                                          uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
 
     /**
@@ -148,11 +160,12 @@ public:
      * @param vid           Virtual Channel ID
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
      *                      (segmentHeaderPresent = false) or if the service type is BC
-     * @param transferFrameDataLength   Data length of the transfer frame
+     * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
+     *                                          (segment header included)
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
      *                                  be grouped together
      */
-    ServiceChannelNotification mappRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataLength,
+    ServiceChannelNotification mappRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
                                                ServiceType serviceType);
 
 
@@ -453,8 +466,8 @@ public:
       * @param packetLength The length of the next transfer frame data in the packetBufferTxTM
       * @return A Service Channel Notification as it is the case with vcGenerationServiceTxTM
       */
-    ServiceChannelNotification segmentationTM(TransferFrameTM* prevFrame, uint16_t packetLength,
-                                              uint16_t transferFrameDataFieldLength, uint8_t gvcid);
+    ServiceChannelNotification segmentationTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength,
+                                              uint16_t packetLength,uint8_t gvcid);
 
     /**
        * Auxiliary function for blocking of packets stored in the stored packet buffer
@@ -553,7 +566,7 @@ public:
 
 
 	// This is honestly a bit confusing
-	ServiceChannel(MasterChannel masterChannel, PhysicalChannel physicalChannel)
+	ServiceChannel(const MasterChannel& masterChannel, const PhysicalChannel& physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 	//Default constructor
 	ServiceChannel() : masterChannel(), physicalChannel(){};

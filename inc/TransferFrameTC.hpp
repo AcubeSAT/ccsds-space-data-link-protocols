@@ -214,14 +214,6 @@ public:
 	}
 
 	/**
-	 * @return Bits 22–31 of the Transfer Frame Primary Header (the Frame Length)
-	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint16_t getFrameLength() const {
-		return transferFrameLength;
-	}
-
-	/**
 	 * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	// TODO: Use std::optional
@@ -269,8 +261,8 @@ public:
 	 * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	ServiceType getServiceType() const {
-		bool bypass = (transferFrameData[0] >> 6) & 0x1;
-		bool ctrl = (transferFrameData[0] >> 5) & 0x1;
+		bool bypass = (transferFrameData[0] >> 5) & 0x1;
+		bool ctrl = (transferFrameData[0] >> 4) & 0x1;
 
 		if (bypass && ctrl) {
 			return ServiceType::TYPE_BC;
@@ -296,18 +288,15 @@ public:
 
 	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
 	// generation services when segmenting or blocking transfer frames.
-
-	void setFrameLength() {
+	void setFrameLength(uint16_t frameLength) {
+        transferFrameLength = frameLength;
         transferFrameData[2] = ((virtualChannelId() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
         transferFrameData[3] = transferFrameLength & 0xFF;
 	}
 
-	uint16_t frameLength() {
-		return (static_cast<uint16_t>(transferFrameData[2] & 0x3) << 8) | transferFrameData[3];
-	}
-
 	void setServiceType(ServiceType service_type) {
 		serviceType = service_type;
+        transferFrameData[0] = (static_cast<uint8_t>(service_type) >> 2) | (transferFrameData[0] & 0xCF);
 	}
 
 	void setAcknowledgement(bool acknowledgement) {
@@ -322,7 +311,7 @@ public:
      *  Sets the sequence flag, assuming that the segment header exists
      */
     void setSequenceFlag(uint8_t sequenceFlag){
-        transferFrameData[5] = (sequenceFlag << 6) | transferFrameData[5];
+        transferFrameData[5] = (sequenceFlag << 6) | (transferFrameData[5] & 0x3F);
     }
 
 	/**
@@ -359,7 +348,7 @@ public:
           toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
-        frameData[0] = (bypassFlag << 6) | (ctrlCmdFlag << 5) | ((SpacecraftIdentifier & 0x300) >> 8);
+        frameData[0] = (bypassFlag << 5) | (ctrlCmdFlag << 4) | ((SpacecraftIdentifier & 0x300) >> 8);
         frameData[1] = SpacecraftIdentifier & 0xFF;
         frameData[2] = ((vid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
         frameData[3] = frameLength & 0xFF;

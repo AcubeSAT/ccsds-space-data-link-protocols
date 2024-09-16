@@ -19,7 +19,7 @@ TEST_CASE("Service Channel") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, true, 128, true, true, true, true,  2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, true, 128, true, true, true, true,  2, 2, true, true, 8, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
 
 	master_channel.addVC(1, false, 128, false, false, false, false, 2, 2, true, true, true, true, SynchronizationFlag::FORWARD_ORDERED, 20, 3, 3, 3);
@@ -57,12 +57,12 @@ TEST_CASE("Service Channel") {
     serv_channel.storePacketTxTC(pckt_type_a2, 3, 0, 0, ServiceType::TYPE_AD);
 
     // Create 2 frames for Type-A packets
-	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.mappRequestTxTC(0, 0, 10, ServiceType::TYPE_AD);
-    const TransferFrameTC* frame_a = serv_channel.frontUnprocessedFrameVcCopyTxTC(0).second;
+    const TransferFrameTC* frame_a = serv_channel.frontUnprocessedFrameTxTC(0).second;
 
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2);
+	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2);
 
     // Create frame for Type-B packet
 	err = serv_channel.mappRequestTxTC(0, 0, 11, ServiceType::TYPE_BD);
@@ -70,18 +70,18 @@ TEST_CASE("Service Channel") {
     CHECK(frame_c->getFrameLength() == 18);
     CHECK(frame_c->getServiceType() == ServiceType::TYPE_BD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.frontUnprocessedFrameVcCopyTxTC(0).second == frame_a);
+    CHECK(serv_channel.frontUnprocessedFrameTxTC(0).second == frame_a);
 
     // VC Generation Service
-	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 3);
+	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 3);
 
 	// Process Type-A transfer frames
 	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
     err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.frontUnprocessedFrameVcCopyTxTC(0).second == frame_c);
-	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
+    CHECK(serv_channel.frontUnprocessedFrameTxTC(0).second == frame_c);
+	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
 	err = serv_channel.pushSentQueue(0);
 
 	// All Frames Generation Service
@@ -103,7 +103,7 @@ TEST_CASE("Service Channel") {
 
 	// Try to process extra type-A transfer frame
 	err = serv_channel.vcGenerationRequestTxTC(0);
-	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
 
 	// Rx side
@@ -272,16 +272,17 @@ TEST_CASE("Service Channel") {
 
 //  This buffer is not used anywhere
 //	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
+
     serv_channel.storePacketTxTC(pckt_type_a, 9, 2, 0, ServiceType::TYPE_AD);
 	err = serv_channel.mappRequestTxTC(2, 0, 9, ServiceType::TYPE_AD);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	//    CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(2, 0) == MaxReceivedTcInMapChannel);
-	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+	//    CHECK(serv_channel.availableUnprocessedFramesTxTC(2, 0) == MaxReceivedTcInMapChannel);
+	CHECK(serv_channel.availableUnprocessedFramesTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 	serv_channel.initiateAdNoClcw(2);
 	// Process first type-A transfer frame
 	err = serv_channel.vcGenerationRequestTxTC(2);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.availableUnprocessedFramesVcCopyTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	CHECK(serv_channel.availableUnprocessedFramesTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.pushSentQueue(2);
 	CHECK(frame_a->transferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(2, 0);
@@ -312,7 +313,7 @@ TEST_CASE("VC Generation Service") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -332,8 +333,8 @@ TEST_CASE("VC Generation Service") {
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize - 3);
 		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize - 19);
-		uint16_t maxTransferFrameFieldLength = 15;
-		err = serv_channel.vcGenerationServiceTxTM(maxTransferFrameFieldLength, 0);
+		uint16_t transferFrameDataFieldLength = 15;
+		err = serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 0);
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
 		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize);
@@ -341,7 +342,7 @@ TEST_CASE("VC Generation Service") {
 		const TransferFrameTM* transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
 
 		CHECK(transferFrame->getSegmentLengthId() == 3);
-		for (uint8_t i = TmPrimaryHeaderSize; i < maxTransferFrameFieldLength + TmPrimaryHeaderSize; i++) {
+		for (uint8_t i = TmPrimaryHeaderSize; i < transferFrameDataFieldLength + TmPrimaryHeaderSize; i++) {
 			if (i < TmPrimaryHeaderSize + sizeof(packet1)) {
 				CHECK(transferFrame->getFrameData()[i] == packet1[i - TmPrimaryHeaderSize]);
 			} else if (i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
@@ -393,11 +394,10 @@ TEST_CASE("VC Generation Service") {
                                30, 41, 56, 98, 79, 82, 90, 92, 99};
         uint8_t packet9[4] = {8, 36, 39, 47};
         uint8_t packet10[4] = {5, 17, 38, 46};
-        uint8_t concat_packet[40] = {87, 0, 39, 90, 43, 12, 49, 20, 38, 30,
+        uint8_t concatPacket[40] = {87, 0, 39, 90, 43, 12, 49, 20, 38, 30,
                                      49, 70, 69, 75, 76, 78, 89, 28, 29, 39,
                                      42, 45, 8,30, 41, 56, 98, 79, 82, 90,
                                      92, 99, 8, 36, 39, 47, 5, 17, 38, 46};
-        uint16_t transferFrameDataFieldLength = 10;
 
         err = serv_channel.storePacketTxTM(packet6, sizeof(packet6), 0);
         CHECK(err == NO_SERVICE_EVENT);
@@ -410,12 +410,13 @@ TEST_CASE("VC Generation Service") {
         err = serv_channel.storePacketTxTM(packet10, sizeof(packet10), 0);
         CHECK(err == NO_SERVICE_EVENT);
 
+        uint16_t transferFrameDataFieldLength = 10;
         serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 0);
 
         CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize);
         CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
 
-//        CHECK(master_channel.virtualChannels.at(0).frameCountTM == 4);
+        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).frameCountTM == 4);
 
         const TransferFrameTM* frame1 = serv_channel.frontFrameAfterVcGenerationTxTM();
         serv_channel.mcGenerationRequestTxTM();
@@ -434,19 +435,309 @@ TEST_CASE("VC Generation Service") {
         CHECK(frame4->getSegmentLengthId() == 2);
         CHECK(frame4->getFirstHeaderPointer() == 2);
 
-        for (uint8_t i = 0; i < 40; i++) {
-            if (i <= 9) {
-                CHECK(concat_packet[i] == frame1->getFrameData()[i + TmPrimaryHeaderSize]);
+        uint16_t count = 0;
+        for(uint16_t i = 0; i < transferFrameDataFieldLength; i++){
+            CHECK(frame1->getFrameData()[i + TmPrimaryHeaderSize] == concatPacket[count]);
+            count++;
+        }
+        for(uint16_t i = 0; i < transferFrameDataFieldLength; i++){
+            CHECK(frame2->getFrameData()[i + TmPrimaryHeaderSize] == concatPacket[count]);
+            count++;
+        }
+        for(uint16_t i = 0; i < transferFrameDataFieldLength; i++){
+            CHECK(frame3->getFrameData()[i + TmPrimaryHeaderSize] == concatPacket[count]);
+            count++;
+        }
+        for(uint16_t i = 0; i < transferFrameDataFieldLength; i++){
+            CHECK(frame4->getFrameData()[i + TmPrimaryHeaderSize] == concatPacket[count]);
+            count++;
+        }
+    }
+}
+
+TEST_CASE("MAP Request Service") {
+    PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
+
+    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+            {0, MAPChannel(0, true, true)},
+            {1, MAPChannel(1, false, true)},
+            {2, MAPChannel(2, true, true)},
+    };
+
+    MasterChannel master_channel = MasterChannel();
+    // MAP channels supported (segmentHeaderPresent == true)
+    master_channel.addVC(0, true, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
+
+    // without MAP channels support (segmentHeaderPresent == false)
+    master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3);
+
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+    ServiceChannelNotification err;
+
+    // Simple tests to determine if packets of a specific service type are pushed-to/popped-from their corresponding packet
+    // buffers.
+//    SECTION("Packet routing (MAP Channels enabled)"){
+//        // random packets (AD and BD packets are expected to go to the MAP buffers, while BC should go to the VC buffer)
+//        uint8_t packetAD_1[] = {54, 16, 37, 14, 25, 38,	33};
+//        uint8_t packetAD_2[] = {95, 96, 62, 65, 22, 39, 32, 42, 61, 63};
+//        uint8_t packetBD_1[] = {9, 2, 23, 66, 86, 83, 22, 66, 1, 70};
+//        uint8_t packetBD_2[] = {38, 49, 55, 48,	21, 34, 65, 19, 48, 49};
+//        uint8_t packetBC_1[] = {41, 91, 68, 10};
+//        uint8_t packetBC_2[] = {15,	30,	20,	28,	25, 67,	57,	42,	78,	93, 21,	85,	95,	95};
+//
+//        err = serv_channel.storePacketTxTC(packetAD_1, 7, 0, 0, ServiceType::TYPE_AD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBD_1, 10, 0, 0, ServiceType::TYPE_BD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetAD_2, 10, 0, 0, ServiceType::TYPE_AD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBC_1, 4, 0, 0, ServiceType::TYPE_BC);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBD_2, 10, 0, 0, ServiceType::TYPE_BD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBC_2, 14, 0, 0, ServiceType::TYPE_BC);
+//        CHECK(err == NO_SERVICE_EVENT);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetBufferTxTcTypeAD.available() == PacketBufferTcSize - sizeof(packetAD_1) - sizeof(packetAD_2));
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetLengthBufferTxTcTypeAD.available() == PacketBufferTcSize - 2);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetBufferTxTcTypeBD.available() == PacketBufferTcSize - sizeof(packetBD_1) - sizeof(packetBD_2));
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetLengthBufferTxTcTypeBD.available() == PacketBufferTcSize - 2);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).packetBufferTxTcTypeBC.available() == PacketBufferTcSize - sizeof(packetBC_1) - sizeof(packetBC_2));
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).packetLengthBufferTxTcTypeBC.available() == PacketBufferTcSize - 2);
+//
+//        uint16_t maxTransferFrameFieldLength = 15;
+//        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BC);
+//        CHECK(err == NO_SERVICE_EVENT);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetBufferTxTcTypeAD.available() == PacketBufferTcSize);
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetLengthBufferTxTcTypeAD.available() == PacketBufferTcSize);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetBufferTxTcTypeBD.available() == PacketBufferTcSize);
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).mapChannels.at(0).packetLengthBufferTxTcTypeBD.available() == PacketBufferTcSize);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).packetBufferTxTcTypeBC.available() == PacketBufferTcSize);
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(0).packetLengthBufferTxTcTypeBC.available() == PacketBufferTcSize);
+//    }
+//    SECTION("Packet routing (MAP Channels disabled)"){
+//        // random packets
+//        uint8_t packetAD_1[] = {54, 16, 37, 14, 25, 38,	33};
+//        uint8_t packetAD_2[] = {95, 96, 62, 65, 22, 39, 32, 42, 61, 63};
+//        uint8_t packetBD_1[] = {9, 2, 23, 66, 86, 83, 22, 66, 1, 70};
+//        uint8_t packetBD_2[] = {38, 49, 55, 48,	21, 34, 65, 19, 48, 49};
+//        uint8_t packetBC_1[] = {41, 91, 68, 10};
+//        uint8_t packetBC_2[] = {15,	30,	20,	28,	25, 67,	57,	42,	78,	93, 21,	85,	95,	95};
+//
+//        err = serv_channel.storePacketTxTC(packetAD_1, 7, 1, 0, ServiceType::TYPE_AD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBD_1, 10, 1, 0, ServiceType::TYPE_BD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetAD_2, 10, 1, 0, ServiceType::TYPE_AD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBC_1, 4, 1, 0, ServiceType::TYPE_BC);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBD_2, 10, 1, 0, ServiceType::TYPE_BD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.storePacketTxTC(packetBC_2, 14, 1, 0, ServiceType::TYPE_BC);
+//        CHECK(err == NO_SERVICE_EVENT);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetBufferTxTcTypeAD.available() == PacketBufferTcSize - sizeof(packetAD_1) - sizeof(packetAD_2));
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetLengthBufferTxTcTypeAD.available() == PacketBufferTcSize - 2);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetBufferTxTcTypeBD.available() == PacketBufferTcSize - sizeof(packetBD_1) - sizeof(packetBD_2));
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetLengthBufferTxTcTypeBD.available() == PacketBufferTcSize - 2);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetBufferTxTcTypeBC.available() == PacketBufferTcSize - sizeof(packetBC_1) - sizeof(packetBC_2));
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetLengthBufferTxTcTypeBC.available() == PacketBufferTcSize - 2);
+//
+//        uint16_t maxTransferFrameFieldLength = 15;
+//        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
+//        CHECK(err == NO_SERVICE_EVENT);
+//        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BC);
+//        CHECK(err == NO_SERVICE_EVENT);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetBufferTxTcTypeAD.available() == PacketBufferTcSize);
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetLengthBufferTxTcTypeAD.available() == PacketBufferTcSize);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetBufferTxTcTypeBD.available() == PacketBufferTcSize);
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetLengthBufferTxTcTypeBD.available() == PacketBufferTcSize);
+//
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetBufferTxTcTypeBC.available() == PacketBufferTcSize);
+//        CHECK(serv_channel.getMasterChannel().virtualChannels.at(1).packetLengthBufferTxTcTypeBC.available() == PacketBufferTcSize);
+//    }
+    SECTION("Blocking") {
+        uint8_t packet1[] = {1, 54, 32, 49, 12, 23};
+        uint8_t packet2[] = {47, 31, 65, 81, 25, 44, 76, 99, 13};
+        uint8_t packet3[] = {41, 91, 68, 10};
+
+        // using virtual channel with no MAP Channel support
+        err = serv_channel.storePacketTxTC(packet1, sizeof(packet1), 1, 0, ServiceType::TYPE_BD);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTC(packet2, sizeof(packet2), 1, 0, ServiceType::TYPE_BD);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTC(packet3, sizeof(packet3), 1, 0, ServiceType::TYPE_BD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        uint16_t maxTransferFrameFieldLength = 20;
+        err = serv_channel.mappRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        const TransferFrameTC* transferFrame = serv_channel.frontUnprocessedFrameTxTC(1).second;
+
+        CHECK(transferFrame->getServiceType() == ServiceType::TYPE_BD);
+        CHECK(transferFrame->getFrameLength() == TcPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + errorControlFieldSize);
+        for (uint8_t i = TcPrimaryHeaderSize; i < sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + TcPrimaryHeaderSize; i++) {
+            if (i < TcPrimaryHeaderSize + sizeof(packet1)) {
+                CHECK(transferFrame->getFrameData()[i] == packet1[i - TcPrimaryHeaderSize]);
+            } else if (i < TcPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
+                CHECK(transferFrame->getFrameData()[i] == packet2[i - TcPrimaryHeaderSize - sizeof(packet1)]);
+            } else {
+                CHECK(transferFrame->getFrameData()[i] ==
+                      packet3[i - TcPrimaryHeaderSize - sizeof(packet1) - sizeof(packet2)]);
             }
-            else if (i <= 19 ) {
-                CHECK(concat_packet[i] == frame2->getFrameData()[i%10 + TmPrimaryHeaderSize]);
-            }
-            else if (i <= 29) {
-                CHECK(concat_packet[i] == frame3->getFrameData()[i%10 + TmPrimaryHeaderSize]);
-            }
-            else {
-                CHECK(concat_packet[i] == frame4->getFrameData()[i%10 + TmPrimaryHeaderSize]);
-            }
+        }
+    }
+    SECTION("Segmentation") {
+        uint8_t packet4[] = {47, 31, 65, 81, 25, 44, 76, 99, 13, 43};
+
+        // using virtual channel with MAP Channel support
+        err = serv_channel.storePacketTxTC(packet4, sizeof(packet4), 0, 0, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        uint16_t maxTransferFrameFieldLength = 5;
+        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& buffer = serv_channel.getUnprocessedFramesListBuffer(0);
+        auto it = buffer.begin();
+        const TransferFrameTC* frame1 = *it;
+        const TransferFrameTC* frame2 = *(++it);
+        const TransferFrameTC* frame3 = *(++it);
+
+        uint16_t  offset = TcPrimaryHeaderSize + TcSegmentHeaderSize;
+
+        CHECK(frame1->getFrameLength() == offset + 4 + errorControlFieldSize);
+        CHECK(((frame1->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationStart);
+        CHECK(frame1->getFrameData()[offset + 0] == 47);
+        CHECK(frame1->getFrameData()[offset + 1] == 31);
+        CHECK(frame1->getFrameData()[offset + 2] == 65);
+        CHECK(frame1->getFrameData()[offset + 3] == 81);
+
+        CHECK(frame2->getFrameLength() == offset + 4 + errorControlFieldSize);
+        CHECK(((frame2->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationMiddle);
+        CHECK(frame2->getFrameData()[offset + 0] == 25);
+        CHECK(frame2->getFrameData()[offset + 1] == 44);
+        CHECK(frame2->getFrameData()[offset + 2] == 76);
+        CHECK(frame2->getFrameData()[offset + 3] == 99);
+
+        CHECK(frame3->getFrameLength() == offset + 2 + errorControlFieldSize);
+        CHECK(((frame3->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationEnd);
+        CHECK(frame3->getFrameData()[offset + 0] == 13);
+        CHECK(frame3->getFrameData()[offset + 1] == 43);
+    }
+    SECTION("Concurrent segmentation and blocking") {
+        uint8_t packet5[5] = {87, 0, 39, 90, 43};
+        uint8_t packet6[7] = {12, 49, 20, 38, 30, 49, 70};
+        uint8_t packet7[20] = {69, 75, 76, 78, 89, 28, 29, 39, 42, 45, 8,
+                               30, 41, 56, 98, 79, 82, 90, 92, 99};
+        uint8_t packet8[4] = {8, 36, 39, 47};
+        uint8_t packet9[4] = {5, 17, 38, 46};
+        uint8_t packet10[3] = {0, 87, 3};
+        uint8_t concatPacket[43] = {87, 0, 39, 90, 43, 12, 49, 20, 38, 30,
+                                     49, 70, 69, 75, 76, 78, 89, 28, 29, 39,
+                                     42, 45, 8,30, 41, 56, 98, 79, 82, 90,
+                                     92, 99, 8, 36, 39, 47, 5, 17, 38, 46,
+                                     0, 87, 3};
+
+        // For testing if mappRequestTxTc can find the previous frame of the same service type
+        uint8_t differentServicePacket[2] = {1, 2};
+
+        // using virtual channel with MAP Channel support
+        // first packet stream
+        err = serv_channel.storePacketTxTC(packet5, sizeof(packet5), 0, 0, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTC(packet6, sizeof(packet6), 0, 0, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        err = serv_channel.storePacketTxTC(packet7, sizeof(packet7), 0, 0, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        uint16_t maxTransferFrameDataFieldLength = 10;
+        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        // second packet stream
+        err = serv_channel.storePacketTxTC(packet8, sizeof(packet8), 0, 0, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTC(differentServicePacket, sizeof(differentServicePacket), 0, 0, ServiceType::TYPE_BC);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTC(packet9, sizeof(packet9), 0, 0, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.storePacketTxTC(packet10, sizeof(packet10), 0, 0, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_BC);
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.mappRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& buffer = serv_channel.getUnprocessedFramesListBuffer(0);
+        auto it = buffer.begin();
+        const TransferFrameTC* frame1 = *it;
+        const TransferFrameTC* frame2 = *(++it);
+        const TransferFrameTC* frame3 = *(++it);
+        const TransferFrameTC* frame4 = *(++it);
+        const TransferFrameTC* frame5 = *(++it); // This should be the type BC frame
+        const TransferFrameTC* frame6 = *(++it);
+
+        CHECK(frame1->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
+        CHECK(frame2->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
+        CHECK(frame3->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
+        CHECK(frame4->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
+        CHECK(frame5->getFrameLength() == TcPrimaryHeaderSize + sizeof(differentServicePacket) + errorControlFieldSize);
+        CHECK(frame6->getFrameLength() == TcPrimaryHeaderSize + TcSegmentHeaderSize + sizeof(packet9) + sizeof(packet10) + errorControlFieldSize);
+
+        CHECK(frame1->getServiceType() == ServiceType::TYPE_AD);
+        CHECK(frame2->getServiceType() == ServiceType::TYPE_AD);
+        CHECK(frame3->getServiceType() == ServiceType::TYPE_AD);
+        CHECK(frame4->getServiceType() == ServiceType::TYPE_AD);
+        CHECK(frame5->getServiceType() == ServiceType::TYPE_BC);
+        CHECK(frame6->getServiceType() == ServiceType::TYPE_AD);
+
+        CHECK(((frame1->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationStart);
+        CHECK(((frame2->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationStart);
+        CHECK(((frame3->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationMiddle);
+        CHECK(((frame4->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationEnd);
+        CHECK(((frame6->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::NoSegmentation);
+
+        uint16_t count = 0;
+        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
+            CHECK(frame1->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
+            count++;
+        }
+        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
+            CHECK(frame2->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
+            count++;
+        }
+        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
+            CHECK(frame3->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
+            count++;
+        }
+        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
+            CHECK(frame4->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
+            count++;
+        }
+        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize - 2; i++){
+            CHECK(frame6->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
+            count++;
         }
     }
 }
@@ -468,9 +759,9 @@ TEST_CASE("CLCW construction at VC Reception") {
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
 
 	ServiceChannelNotification err;
-	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	uint8_t packet2[] = {0x10, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	uint8_t packet3[] = {0x10, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+	uint8_t packet1[] = {0x0, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+	uint8_t packet2[] = {0x0, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+	uint8_t packet3[] = {0x0, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
     serv_channel.storeFrameRxTC(packet1, 10);
     serv_channel.storeFrameRxTC(packet2, 10);
     serv_channel.storeFrameRxTC(packet3, 10);
@@ -558,9 +849,9 @@ TEST_CASE("Frame Acknowledgement") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
-	master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, false, false, 0, true, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
 	                     map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);

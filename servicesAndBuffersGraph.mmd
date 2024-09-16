@@ -5,47 +5,55 @@ flowchart TB
             A1s2[["mappRequestTxTC(vid, mapid, transferFrameDataLength, serviceType)<br>calls internally:<br>-segmentationTC<br>-blockingTC"]]
             A1s3[["frontUnprocessedFrameMcCopyTxTC()"]]
             A1s4[["getLastMasterCopyTcFrame()"]]
-            A1s5[["frontUnprocessedFrameVcCopyTxTC(vid)"]]
+            A1s5[["frontUnprocessedFrameTxTC(vid)"]]
             A1s6[["backUnprocessedFrameMcCopyTxTC()"]]
-            A1s7[["availableUnprocessedFramesVcCopyTxTC(vid)"]]
+            A1s7[["availableUnprocessedFramesTxTC(vid)"]]
 
-            subgraph MAP_A ["MAP Type A Buffers"]
+            subgraph MAP_AD ["MAP Type AD Buffers"]
                 map4
                 map5
             end
 
-            subgraph MAP_B ["MAP Type B Buffers"]
+            subgraph MAP_BD ["MAP Type BD Buffers"]
                 map6
                 map7
             end
 
-            subgraph VC_A ["VC Type A Buffers"]
+            subgraph VC_AD ["VC Type AD Buffers"]
                 vc10
                 vc11
             end
 
-            subgraph VC_B ["VC Type B Buffers"]
+            subgraph VC_BD ["VC Type BD Buffers"]
                 vc12
                 vc13
             end
 
-            MAP_A ~~~ MAP_B ~~~ VC_A ~~~ VC_B
+            subgraph VC_BC ["VC Type BC Buffers"]
+                vc14
+                vc15
+            end
 
-            A1s1 -.->|"Type AD AND segHeader exists"| MAP_A
-            A1s1 -.->|"Type BD AND segHeader exists"| MAP_B
-            A1s1 -.->|"Type AD AND segHeader not exist"| VC_A
-            A1s1 -.->|"(Type BD AND segHeader not exist) OR Type BC"| VC_B
+            MAP_AD ~~~ MAP_BD ~~~ VC_AD ~~~ VC_BD ~~~ VC_BC
 
-            A1s2 -.-x|"Type AD AND segHeader exists"| MAP_A
-            A1s2 -.-x|"Type BD AND segHeader exists"| MAP_B
-            A1s2 -.-x|"Type AD AND segHeader not exist"| VC_A
-            A1s2 -.-x|"(Type BD AND segHeader not exist) OR Type BC"| VC_B
+            A1s1 -.->|"Type AD AND segHeader exists"| MAP_AD
+            A1s1 -.->|"Type BD AND segHeader exists"| MAP_BD
+            A1s1 -.->|"Type AD AND segHeader not exist"| VC_AD
+            A1s1 -.->|"Type BD AND segHeader not exist"| VC_BD
+            A1s1 -.->|"Type BC"| VC_BC
 
+            A1s2 -.-x|"Type AD AND segHeader exists"| MAP_AD
+            A1s2 -.-x|"Type BD AND segHeader exists"| MAP_BD
+            A1s2 -.-x|"Type AD AND segHeader not exist"| VC_AD
+            A1s2 -.-x|"Type BD AND segHeader not exist"| VC_BD
+            A1s2 -.-x|"Type BC"| VC_BC
+
+            A1s1 --> A1s2
             A1s2 -.->|"(from segmentation,blocking)"| master16
             A1s2 -.->|"(from segmentation,blocking)"| vc7
             A1s2 -.->|"(from segmentation,blocking)"| master12
             A1s2 -.check if full.-vc2
-                                    A1s3 -.front reference.-master12
+            A1s3 -.front reference.-master12
             A1s4 -.back reference.-master12
             A1s5 -.front reference.-vc7
             A1s6 -.back reference.-master12
@@ -124,9 +132,9 @@ flowchart TB
 
             B3r3 --> B3s1
             B3s1 -.-x map3
-            end
+        end
 
-            subgraph B4["MAP Packet Extraction"]
+        subgraph B4["MAP Packet Extraction"]
             B4s1[["packetExtractionTC(vid, mapid, packetTarget)"]]
 
             B3r2 --> B4s1
@@ -178,7 +186,7 @@ flowchart TB
     end
 
     subgraph D["TM Rx Services"]
-        subgraph D1["All Frames Reception"]
+    subgraph D1["All Frames Reception"]
             D1s1[["allFramesReceptionRequestRxTM(frameData, frameLength)"]]
             D1s2[["availableFramesVcCopyRxTM(vid)"]]
             D1s3[["availableFramesMcCopyRxTM()"]]
@@ -217,10 +225,10 @@ flowchart TB
     map1[("unprocessedFrameListBufferTC (frameTC*)<br> This belongs in TC TX chain,although seems unused")]
     map2[("unprocessedFrameListBufferTM<br>NOTE:this should probably not exist")]
     map3[("inFramesAfterVCReceptionRxTC (frameTC*)")]
-    map4[("packetLengthBufferTxTcTypeA (uint16_t)")]
-    map5[("packetBufferTxTcTypeA (uint8_t)")]
-    map6[("packetLengthBufferTxTcTypeB (uint16_t)")]
-    map7[("packetBufferTxTcTypeB (uint8_t)")]
+    map4[("packetLengthBufferTxTcTypeAD (uint16_t)")]
+    map5[("packetBufferTxTcTypeAD (uint8_t)")]
+    map6[("packetLengthBufferTxTcTypeBD (uint16_t)")]
+    map7[("packetBufferTxTcTypeBD (uint8_t)")]
 
     vc1[("framesAfterMCReceptionRxTM (frameTM*)")]
     vc2[("waitQueueTxTC (frameTC*)")]
@@ -231,10 +239,12 @@ flowchart TB
     vc7[("unprocessedFrameListBufferTxTC (frameTC*)")]
     vc8[("packetLengthBufferTxTM (uint16_t)")]
     vc9[("packetBufferTxTM (uint8_t)")]
-    vc10[("packetLengthBufferTxTcTypeA (uint16_t)")]
-    vc11[("packetBufferTxTcTypeA (uint8_t)")]
-    vc12[("packetLengthBufferTxTcTypeB (uint16_t)")]
-    vc13[("packetBufferTxTcTypeB (uint8_t)")]
+    vc10[("packetLengthBufferTxTcTypeAD (uint16_t)")]
+    vc11[("packetBufferTxTcTypeAD (uint8_t)")]
+    vc12[("packetLengthBufferTxTcTypeBD (uint16_t)")]
+    vc13[("packetBufferTxTcTypeBD (uint8_t)")]
+    vc14[("packetLengthBufferTxTcTypeBC (uint16_t)")]
+    vc15[("packetBufferTxTcTypeBC (uint8_t)")]
 
     master1[("outFramesBeforeAllFramesGenerationListTxTC (frameTC*)")]
     master2[("toBeTransmittedFramesAfterAllFramesGenerationListTxTC (frameTC*)")]
@@ -263,7 +273,7 @@ flowchart TB
     classDef utility_services fill:#648D98;
 
     class map1,map2,map3,map4,map5,map6,map7,E3 map_channel_buffer;
-    class vc1,vc2,vc3,vc4,vc5,vc6,vc7,vc8,vc9,vc10,vc11,vc12,vc13,E4 virtual_channel_buffer;
+    class vc1,vc2,vc3,vc4,vc5,vc6,vc7,vc8,vc9,vc10,vc11,vc12,vc13,vc14,vc15,E4 virtual_channel_buffer;
     class master1,master2,master3,master4,master5,master6,master7,master8,master9,master10,master11,master12,master13,master14,master15,master16,master17,E5 master_channel_buffer
     class A1s1,A1s2,A2s1,A3s1,A3s2,B1s1,B1s2,B2s1,B3s1,B4s1,C1s1,C2s1,C3s1,C4s1,D1s1,D2s1,E1 main_services;
     class A1s3,A1s4,A1s5,A1s6,A1s7,A2s2,A3s3,A3s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;

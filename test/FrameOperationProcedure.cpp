@@ -21,7 +21,7 @@ TEST_CASE("Initiate FOP Directives") {
     serv_channel_fop.mappRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
 
 //	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
-    CHECK(serv_channel_fop.availableUnprocessedFramesVcCopyTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+    CHECK(serv_channel_fop.availableUnprocessedFramesTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 
 	CHECK(serv_channel_fop.fopState(3) == FOPState::INITIAL);
 	serv_channel_fop.initiateAdNoClcw(3);

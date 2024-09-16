@@ -51,6 +51,10 @@ public:
 
 	virtual ~TransferFrame() {}
 
+    uint16_t getFrameLength() const {
+        return transferFrameLength;
+    }
+
     uint16_t getFirstDataFieldEmptyOctet() const {
         return firstDataFieldEmptyOctet;
     }
@@ -63,10 +67,8 @@ public:
         return transferFrameData;
     }
 
-    void setFrameData(uint8_t* data, uint16_t dataLength) {
-        for (uint16_t i = 0; i < dataLength - 1; i++){
-            transferFrameData[i] = data[i];
-        }
+    void setFrameData(uint8_t* dataSource, uint16_t dataLength) {
+        std::memcpy(transferFrameData, dataSource, dataLength * sizeof(uint8_t));
     }
 
 	virtual uint16_t calculateCRC(const uint8_t* data, uint16_t len) = 0;

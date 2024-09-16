@@ -6,11 +6,11 @@
 
 VirtualChannelAlert VirtualChannel::storeVC(TransferFrameTC* transferFrameTc) {
 	// Limit the amount of transfer frames that can be stored at any given time
-	if (unprocessedFrameListBufferVcCopyTxTC.full()) {
+	if (unprocessedFrameListBufferTxTC.full()) {
 		ccsdsLogNotice(Tx, TypeVirtualChannelAlert, TX_WAIT_QUEUE_FULL);
 		return VirtualChannelAlert::TX_WAIT_QUEUE_FULL;
 	}
-	unprocessedFrameListBufferVcCopyTxTC.push_back(transferFrameTc);
+	unprocessedFrameListBufferTxTC.push_back(transferFrameTc);
 	ccsdsLogNotice(Tx, TypeVirtualChannelAlert, NO_VC_ALERT);
 	return VirtualChannelAlert::NO_VC_ALERT;
 }
@@ -71,7 +71,8 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
                                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
-                                        etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan) {
+                                        const etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan) {
+
 	if (virtualChannels.full()) {
 		ccsdsLogNotice(Tx, TypeMasterChannelAlert, MAX_AMOUNT_OF_VIRT_CHANNELS);
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;

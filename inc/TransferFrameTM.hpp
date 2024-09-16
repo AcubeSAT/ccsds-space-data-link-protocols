@@ -149,10 +149,6 @@ struct TransferFrameTM : public TransferFrame {
 		return static_cast<uint16_t>((transferFrameData[4]) << 8) | transferFrameData[5];
 	}
 
-	uint16_t getFrameLength() const {
-		return transferFrameLength;
-	}
-
 	bool operationalControlFieldExists() const {
 		return transferFrameData[1] & 0x1;
 	}

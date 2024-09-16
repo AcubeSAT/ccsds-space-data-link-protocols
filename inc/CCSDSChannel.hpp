@@ -145,6 +145,7 @@ protected:
 
 	/**
 	 * Store unprocessed received TCs
+	 * TODO seems unused
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel> unprocessedFrameListBufferTC;
 	/**
@@ -160,24 +161,24 @@ protected:
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-AD Frames
 	 */
-	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeA;
+	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeAD;
 
 	/**
 	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-AD Frames
 	 */
-	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeA;
+	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeAD;
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-BD Frames
 	 */
-	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeB;
+	etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBD;
 
 	/**
 	 * @brief Queue that stores the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-BD Frames
 	 */
-	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeB;
+	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
 };
 
 /**
@@ -258,7 +259,7 @@ public:
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t availableBufferTC() const {
-		return unprocessedFrameListBufferVcCopyTxTC.available();
+		return unprocessedFrameListBufferTxTC.available();
 	}
 
 	/**
@@ -316,7 +317,7 @@ public:
                    const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
                    const SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
                    const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth, const uint8_t vcRepetitions,
-                   etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
+                   const etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
           secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
           segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLengthTC), blockingTM(blockingTM),
@@ -328,8 +329,7 @@ public:
           currentlyProcessedCLCW(0), frameCountTM(0),
           fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
           farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
-	                                    farmNegativeWinWidth)) {
-		mapChannels = mapChan;
+	                                    farmNegativeWinWidth)), mapChannels(mapChan) {
 	}
 
 	VirtualChannel(const VirtualChannel& v)
@@ -337,7 +337,7 @@ public:
           maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
           repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM),
           waitQueueTxTC(v.waitQueueTxTC), sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC),
-          sentQueueRxTC(v.waitQueueRxTC), unprocessedFrameListBufferVcCopyTxTC(v.unprocessedFrameListBufferVcCopyTxTC),
+          sentQueueRxTC(v.waitQueueRxTC), unprocessedFrameListBufferTxTC(v.unprocessedFrameListBufferTxTC),
           fop(v.fop), farm(v.farm), masterChannel(v.masterChannel), blockingTM(v.blockingTM), segmentationTM(v.segmentationTM),
           blockingTC(v.blockingTC), segmentationTC(v.segmentationTC),
           synchronization(v.synchronization), secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
@@ -397,9 +397,9 @@ private:
 	etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer> inFramesAfterVCReceptionRxTC;
 
 	/**
-	 * Buffer to storeOut unprocessed transfer frames that are directly processed in the virtual instead of MAP channel
+	 * Buffer to store created frames during and after blocking and segmentation
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> unprocessedFrameListBufferVcCopyTxTC;
+	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> unprocessedFrameListBufferTxTC;
 
 	/**
 	 * Holds the FOP state of the virtual channel
@@ -435,24 +435,36 @@ private:
      * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.
      * Applicable to Type-AD Frames
      */
-    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeA;
+    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeAD;
 
     /**
      * @brief Queue that stores the packets that will eventually be concatenated to TC transfer frame data.
      * Applicable to Type-AD Frames
      */
-    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeA;
+    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeAD;
     /**
      * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.
-     * Applicable to Type-BD and Type-BC Frames
+     * Applicable to Type-BD Frames
      */
-    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeB;
+    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBD;
 
     /**
      * @brief Queue that stores the packets that will eventually be concatenated to TC transfer frame data.
-     * Applicable to Type-BD and Type-BC Frames
+     * Applicable to Type-BD Frames
      */
-    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeB;
+    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
+
+    /**
+    * @brief Queue that stores the packets that will eventually be concatenated to TC transfer frame data.
+    * Applicable to Type-BC Frames
+    */
+    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBC;
+    /**
+     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.
+     * Applicable to Type-BC Frames
+     */
+    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBC;
+
 };
 
 struct MasterChannel {
@@ -539,7 +551,7 @@ struct MasterChannel {
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
 	                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
 	                         const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-	                         const uint8_t vcRepetitions, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
+	                         const uint8_t vcRepetitions,const etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
 	/**
 	 * Add virtual channel to master channel

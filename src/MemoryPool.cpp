@@ -42,7 +42,6 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 
 	// Check whether list is empty or the packet can fit in the beginning
 	if (usedMemory.empty() || (iteratorBegin->first >= packetLength)) {
-		usedMemory[0] = packetLength;
 		fit.first = 0;
 		return fit;
 	}
@@ -54,7 +53,6 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 	for (mapIterator; mapIterator != iteratorEnd; mapIterator++) {
 		gapSize = etl::next(mapIterator)->first - (mapIterator->first + mapIterator->second);
 		if (gapSize >= packetLength) {
-			usedMemory[mapIterator->first + mapIterator->second] = packetLength;
 			fit.first = mapIterator->first + mapIterator->second;
 			return fit;
 		}
@@ -64,7 +62,6 @@ std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLengt
 
 	// Check whether list is empty or the packet can fit in the end
 	if (gapSize >= packetLength) {
-		usedMemory[iteratorEnd->first + iteratorEnd->second] = packetLength;
 		fit.first = iteratorEnd->first + iteratorEnd->second;
 		return fit;
 	}

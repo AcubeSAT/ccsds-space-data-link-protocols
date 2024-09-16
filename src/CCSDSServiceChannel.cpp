@@ -14,9 +14,9 @@ TransferFrameTC ServiceChannel::getLastMasterCopyTcFrame() {
     return masterChannel.getLastTxMasterCopyTcFrame();
 }
 
-std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::frontUnprocessedFrameVcCopyTxTC(uint8_t vid) const {
+std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::frontUnprocessedFrameTxTC(uint8_t vid) const {
     const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>* vc =
-            &(masterChannel.virtualChannels.at(vid).unprocessedFrameListBufferVcCopyTxTC);
+            &(masterChannel.virtualChannels.at(vid).unprocessedFrameListBufferTxTC);
     if (vc->empty()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
         return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
@@ -53,8 +53,13 @@ std::optional<TransferFrameTC> ServiceChannel::frontFrameBeforeAllFramesGenerati
     return frame;
 }
 
+const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& ServiceChannel::getUnprocessedFramesListBuffer(uint16_t vid){
+    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
+    return vchan->unprocessedFrameListBufferTxTC;
+}
+
 //     - MAP Packet Processing
-ServiceChannelNotification ServiceChannel::segmentationTC(TransferFrameTC* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
+ServiceChannelNotification ServiceChannel::segmentationTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                                           uint8_t vid, uint8_t mapid, ServiceType serviceType) {
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
@@ -77,79 +82,89 @@ ServiceChannelNotification ServiceChannel::segmentationTC(TransferFrameTC* prevF
     etl::queue<uint8_t, PacketBufferTcSize> *packetBufferTcTx;
 
     if (serviceType == ServiceType::TYPE_BC){
-        packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-        packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+        packetBufferTcTx = &vchan->packetBufferTxTcTypeBC;
+        packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeBC;
     }
     else if (vchan->segmentHeaderPresent){
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeAD;
+            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeAD;
         }
         else { // TYPE_BD
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeBD;
+            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeBD;
         }
     }
     else {
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &vchan->packetBufferTxTcTypeAD;
+            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeAD;
         }
         else { // TYPE_BD
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &vchan->packetBufferTxTcTypeBD;
+            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeBD;
         }
     }
 
     static uint8_t tmpData[MaxTcTransferFrameSize] = {0};
-    for (uint16_t i = 0; i< MaxTcTransferFrameSize; i++){  // clear up array between consecutive calls
-        tmpData[i] = 0;
-    }
-    uint16_t  numberOfNewTransferFrames = 0;
+    uint16_t numberOfNewTransferFrames = 0;
     uint16_t prevFrameCapacity = prevFrame ==
-                                 nullptr ? 0 : transferFrameDataFieldLength - prevFrame->getFirstDataFieldEmptyOctet();
+                                 nullptr ? 0 : maxTransferFrameDataFieldLength - prevFrame->getFirstDataFieldEmptyOctet();
     uint8_t trailerSize = vchan->frameErrorControlFieldPresent * errorControlFieldSize;
     uint8_t segmentHeaderOffset = (vchan->segmentHeaderPresent && (serviceType == ServiceType::TYPE_AD || serviceType == ServiceType::TYPE_BD))
             ? TcSegmentHeaderSize : 0;
 
     // Calculate amount of new transfer frames needed
     if (prevFrame == nullptr){
-        numberOfNewTransferFrames = packetLength / (transferFrameDataFieldLength - segmentHeaderOffset)
-                + (packetLength % (transferFrameDataFieldLength - segmentHeaderOffset));
+        numberOfNewTransferFrames = packetLength / (maxTransferFrameDataFieldLength - segmentHeaderOffset)
+                + ((packetLength % (maxTransferFrameDataFieldLength - segmentHeaderOffset)) ? 1 :0);
     }
     else {
-        numberOfNewTransferFrames = (packetLength - prevFrameCapacity) / (transferFrameDataFieldLength - segmentHeaderOffset) +
-                                    ((packetLength - prevFrameCapacity) % (transferFrameDataFieldLength - segmentHeaderOffset) ? 1 : 0);
+        numberOfNewTransferFrames = (packetLength - prevFrameCapacity) / (maxTransferFrameDataFieldLength - segmentHeaderOffset) +
+                                    ((packetLength - prevFrameCapacity) % (maxTransferFrameDataFieldLength - segmentHeaderOffset) ? 1 : 0);
     }
 
     // ensure there is enough space for the new frames
     if (masterChannel.masterCopyTxTC.available() < numberOfNewTransferFrames) {
         return MASTER_CHANNEL_FRAME_BUFFER_FULL;
     }
-    if (vchan->unprocessedFrameListBufferVcCopyTxTC.available() < numberOfNewTransferFrames) {
+    if (vchan->unprocessedFrameListBufferTxTC.available() < numberOfNewTransferFrames) {
         return VC_MC_FRAME_BUFFER_FULL;
+    }
+    if (masterChannel.masterChannelPoolTC.findFit(numberOfNewTransferFrames * (TcPrimaryHeaderSize + trailerSize + segmentHeaderOffset) + packetLength).second != NO_MC_ALERT) {
+        return MEMORY_POOL_FULL;
     }
 
     // fill previous frame
     if (prevFrame != nullptr){
-        for (uint16_t i = 0; i < TcPrimaryHeaderSize + transferFrameDataFieldLength - prevFrameCapacity; i++){
+        for (uint16_t i = 0; i < MaxTcTransferFrameSize; i++){  // clear up array between consecutive calls
+            tmpData[i] = 0;
+        }
+
+        for (uint16_t i = 0; i < TcPrimaryHeaderSize + maxTransferFrameDataFieldLength - prevFrameCapacity; i++){
             tmpData[i] = prevFrame->getFrameData()[i];
         }
 
         for (uint16_t i = 0; i < prevFrameCapacity; i++){
-            tmpData[i + TcPrimaryHeaderSize + transferFrameDataFieldLength - prevFrameCapacity] = packetBufferTcTx->front();
+            tmpData[i + TcPrimaryHeaderSize + maxTransferFrameDataFieldLength - prevFrameCapacity] = packetBufferTcTx->front();
             packetBufferTcTx->pop();
         }
-        prevFrame->setFrameData(tmpData, TmTransferFrameSize);
+        prevFrame->setFrameData(tmpData, TcPrimaryHeaderSize + maxTransferFrameDataFieldLength);
         prevFrame->setSequenceFlag(SegmentationStart);
+        prevFrame->setFrameLength(TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + trailerSize);
+        prevFrame->setFirstDataFieldEmptyOctet(maxTransferFrameDataFieldLength);
         packetLength -= prevFrameCapacity;
     }
 
     // new frames creation
     uint16_t currentTransferFrameDataFieldLength = segmentHeaderOffset;
     for (uint16_t i = 0; i < numberOfNewTransferFrames; i++) {
+        for (uint16_t j = 0; j < MaxTcTransferFrameSize; j++){  // clear up array between consecutive calls
+            tmpData[j] = 0;
+        }
+
         currentTransferFrameDataFieldLength =
-                packetLength > (transferFrameDataFieldLength - segmentHeaderOffset) ? transferFrameDataFieldLength : packetLength + segmentHeaderOffset;
+                packetLength > (maxTransferFrameDataFieldLength - segmentHeaderOffset) ? maxTransferFrameDataFieldLength : packetLength + segmentHeaderOffset;
 
         for (uint16_t j = 0; j < currentTransferFrameDataFieldLength - segmentHeaderOffset; j++) {
             tmpData[j + TcPrimaryHeaderSize + segmentHeaderOffset] = packetBufferTcTx->front();
@@ -158,7 +173,7 @@ ServiceChannelNotification ServiceChannel::segmentationTC(TransferFrameTC* prevF
 
         SegmentLengthID segmentLengthId = SegmentationMiddle;
 
-        if (prevFrame != nullptr && i == numberOfNewTransferFrames - 1){
+        if ((prevFrame != nullptr) && (i == numberOfNewTransferFrames - 1)){
             segmentLengthId = SegmentationEnd;
         }
         else if (prevFrame == nullptr) {
@@ -169,8 +184,9 @@ ServiceChannelNotification ServiceChannel::segmentationTC(TransferFrameTC* prevF
             }
         }
 
+        // allocate the maximum possible transfer frame size (in case the  length is extended with additional packets)
         uint8_t* transferFrameData = masterChannel.masterChannelPoolTC.allocatePacket(
-                tmpData, TcPrimaryHeaderSize + currentTransferFrameDataFieldLength + trailerSize);
+                tmpData, TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + trailerSize);
 
         if (transferFrameData == nullptr) {
             return MEMORY_POOL_FULL;
@@ -187,14 +203,14 @@ ServiceChannelNotification ServiceChannel::segmentationTC(TransferFrameTC* prevF
                                 segmentLengthId,
                                 TC);
         masterChannel.masterCopyTxTC.push_back(transferFrameTc);
-        vchan->unprocessedFrameListBufferVcCopyTxTC.push_back(&(masterChannel.masterCopyTxTC.back()));
-        packetLength -= transferFrameDataFieldLength;
+        vchan->unprocessedFrameListBufferTxTC.push_back(&(masterChannel.masterCopyTxTC.back()));
+        packetLength -= maxTransferFrameDataFieldLength - segmentHeaderOffset;
     }
     packetLengthBufferTcTx->pop();
     return NO_SERVICE_EVENT;
 }
 
-ServiceChannelNotification ServiceChannel::blockingTC(TransferFrameTC* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
+ServiceChannelNotification ServiceChannel::blockingTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                                       uint8_t vid, uint8_t mapid, ServiceType serviceType){
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
@@ -217,54 +233,57 @@ ServiceChannelNotification ServiceChannel::blockingTC(TransferFrameTC* prevFrame
     etl::queue<uint8_t, PacketBufferTcSize> *packetBufferTcTx;
 
     if (serviceType == ServiceType::TYPE_BC){
-        packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-        packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+        packetBufferTcTx = &vchan->packetBufferTxTcTypeBC;
+        packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeBC;
     }
     else if (vchan->segmentHeaderPresent){
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeAD;
+            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeAD;
         }
         else { // TYPE_BD
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeBD;
+            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeBD;
         }
     }
     else {
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &vchan->packetBufferTxTcTypeAD;
+            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeAD;
         }
         else { // TYPE_BD
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &vchan->packetBufferTxTcTypeBD;
+            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeBD;
         }
     }
 
+    uint8_t trailerSize = vchan->frameErrorControlFieldPresent * errorControlFieldSize;
+    uint8_t segmentHeaderOffset = (vchan->segmentHeaderPresent && (serviceType == ServiceType::TYPE_AD || serviceType == ServiceType::TYPE_BD))
+                                  ? TcSegmentHeaderSize : 0;
     if (prevFrame == nullptr){
         // ensure there is enough space for a new frame
         if (masterChannel.masterCopyTxTC.available() == 0) {
             return MASTER_CHANNEL_FRAME_BUFFER_FULL;
         }
-        if (vchan->unprocessedFrameListBufferVcCopyTxTC.available() == 0) {
+        if (vchan->unprocessedFrameListBufferTxTC.available() == 0) {
             return VC_MC_FRAME_BUFFER_FULL;
+        }
+        if (masterChannel.masterChannelPoolTC.findFit(TcPrimaryHeaderSize + segmentHeaderOffset + packetLength + trailerSize).second != NO_MC_ALERT) {
+            return MEMORY_POOL_FULL;
         }
     }
 
-    uint8_t segmentHeaderOffset = (vchan->segmentHeaderPresent && (serviceType == ServiceType::TYPE_AD || serviceType == ServiceType::TYPE_BD))
-            ? TcSegmentHeaderSize : 0;
     uint16_t currentTransferFrameDataFieldLength = (prevFrame == nullptr) ? segmentHeaderOffset : prevFrame->getFirstDataFieldEmptyOctet();
     // @TODO change MaxTCtransfersize to vchan.maxFrameLengthTC
     static uint8_t tmpData[MaxTcTransferFrameSize] = {0};
     for (uint16_t i = 0; i< MaxTcTransferFrameSize; i++){  // clear up array between consecutive calls
         tmpData[i] = 0;
     }
-    uint8_t trailerSize = vchan->frameErrorControlFieldPresent * errorControlFieldSize;
 
-    while (currentTransferFrameDataFieldLength + packetLength <= transferFrameDataFieldLength &&
+    while (currentTransferFrameDataFieldLength + packetLength <= maxTransferFrameDataFieldLength &&
            !packetLengthBufferTcTx->empty()) {
-        for (uint16_t i = currentTransferFrameDataFieldLength; i < currentTransferFrameDataFieldLength + packetLength; i++) {
-            tmpData[i + TcPrimaryHeaderSize] = packetBufferTcTx->front();
+        for (uint16_t i = 0; i < packetLength; i++) {
+            tmpData[i + TcPrimaryHeaderSize + currentTransferFrameDataFieldLength] = packetBufferTcTx->front();
             packetBufferTcTx->pop();
         }
         currentTransferFrameDataFieldLength += packetLength;
@@ -277,8 +296,10 @@ ServiceChannelNotification ServiceChannel::blockingTC(TransferFrameTC* prevFrame
     }
 
     if (prevFrame == nullptr) {
-        uint8_t *transferFrameData = masterChannel.masterChannelPoolTC.allocatePacket(
-                tmpData, TcPrimaryHeaderSize + transferFrameDataFieldLength + trailerSize);
+        // allocate the maximum possible transfer frame size (in case the length is extended with additional packets)
+        uint8_t* transferFrameData = masterChannel.masterChannelPoolTC.allocatePacket(
+                tmpData, TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + trailerSize);
+
         if (transferFrameData == nullptr) {
             return MEMORY_POOL_FULL;
         }
@@ -298,7 +319,7 @@ ServiceChannelNotification ServiceChannel::blockingTC(TransferFrameTC* prevFrame
                                 TC);
 
         masterChannel.masterCopyTxTC.push_back(transferFrameTc);
-        vchan->unprocessedFrameListBufferVcCopyTxTC.push_back(&(masterChannel.masterCopyTxTC.back()));
+        vchan->unprocessedFrameListBufferTxTC.push_back(&(masterChannel.masterCopyTxTC.back()));
     }
     else {
         for (uint16_t i = 0; i< TcPrimaryHeaderSize + prevFrame->getFirstDataFieldEmptyOctet(); i++){
@@ -306,6 +327,7 @@ ServiceChannelNotification ServiceChannel::blockingTC(TransferFrameTC* prevFrame
         }
         prevFrame->setFrameData(tmpData, TcPrimaryHeaderSize + currentTransferFrameDataFieldLength + trailerSize);
         prevFrame->setFirstDataFieldEmptyOctet(currentTransferFrameDataFieldLength);
+        prevFrame->setFrameLength(currentTransferFrameDataFieldLength + TcPrimaryHeaderSize + trailerSize);
     }
     return NO_SERVICE_EVENT;
 }
@@ -333,27 +355,27 @@ ServiceChannelNotification ServiceChannel::storePacketTxTC(uint8_t *packet, uint
     etl::queue<uint8_t, PacketBufferTcSize> *packetBufferTcTx;
 
     if (serviceType == ServiceType::TYPE_BC){
-        packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-        packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+        packetBufferTcTx = &(vchan->packetBufferTxTcTypeBC);
+        packetLengthBufferTcTx = &(vchan->packetLengthBufferTxTcTypeBC);
     }
     else if (vchan->segmentHeaderPresent){
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &(mapChannel->packetBufferTxTcTypeAD);
+            packetLengthBufferTcTx = &(mapChannel->packetLengthBufferTxTcTypeAD);
         }
         else { // TYPE_BD
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &(mapChannel->packetBufferTxTcTypeBD);
+            packetLengthBufferTcTx = &(mapChannel->packetLengthBufferTxTcTypeBD);
         }
     }
     else {
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &(vchan->packetBufferTxTcTypeAD);
+            packetLengthBufferTcTx = &(vchan->packetLengthBufferTxTcTypeAD);
         }
         else { // TYPE_BD
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &(vchan->packetBufferTxTcTypeBD);
+            packetLengthBufferTcTx = &(vchan->packetLengthBufferTxTcTypeBD);
         }
     }
 
@@ -364,10 +386,11 @@ ServiceChannelNotification ServiceChannel::storePacketTxTC(uint8_t *packet, uint
         }
         return NO_SERVICE_EVENT;
     }
+
     return VC_MC_FRAME_BUFFER_FULL;
 }
 
-ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t transferFrameDataFieldLength, ServiceType serviceType) {
+ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength, ServiceType serviceType) {
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
@@ -391,27 +414,27 @@ ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t 
     etl::queue<uint8_t, PacketBufferTcSize> *packetBufferTcTx;
 
     if (serviceType == ServiceType::TYPE_BC){
-        packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-        packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+        packetBufferTcTx = &vchan->packetBufferTxTcTypeBC;
+        packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeBC;
     }
     else if (vchan->segmentHeaderPresent){
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeAD;
+            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeAD;
         }
         else { // TYPE_BD
-            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &mapChannel->packetBufferTxTcTypeBD;
+            packetLengthBufferTcTx = &mapChannel->packetLengthBufferTxTcTypeBD;
         }
     }
     else {
         if (serviceType == ServiceType::TYPE_AD){
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeA;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeA;
+            packetBufferTcTx = &vchan->packetBufferTxTcTypeAD;
+            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeAD;
         }
         else { // TYPE_BD
-            packetBufferTcTx = &vchan->packetBufferTxTcTypeB;
-            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeB;
+            packetBufferTcTx = &vchan->packetBufferTxTcTypeBD;
+            packetLengthBufferTcTx = &vchan->packetLengthBufferTxTcTypeBD;
         }
     }
 
@@ -424,7 +447,7 @@ ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t 
     while (!packetLengthBufferTcTx->empty()){
         uint16_t packetLength = packetLengthBufferTcTx->front();
         TransferFrameTC* prevFrame = nullptr;
-        etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> *vcBuffer = &(vchan->unprocessedFrameListBufferVcCopyTxTC);
+        etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> *vcBuffer = &(vchan->unprocessedFrameListBufferTxTC);
 
         if (!vcBuffer->empty()) {
             for (auto rit = vcBuffer->crbegin(); rit != vcBuffer->crend(); ++rit) {
@@ -435,15 +458,15 @@ ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t 
             }
         }
 
-        if (prevFrame == nullptr || (prevFrame->getFirstDataFieldEmptyOctet() == transferFrameDataFieldLength) || !segmentationAllowed){
-            if (packetLength <= transferFrameDataFieldLength - 1*vchan->segmentHeaderPresent){
-                notif = blockingTC(nullptr, transferFrameDataFieldLength, packetLength, vid, mapid, serviceType);
+        if (prevFrame == nullptr || (prevFrame->getFirstDataFieldEmptyOctet() == maxTransferFrameDataFieldLength) || !segmentationAllowed){
+            if (packetLength <= maxTransferFrameDataFieldLength - 1 * vchan->segmentHeaderPresent){
+                notif = blockingTC(nullptr, maxTransferFrameDataFieldLength, packetLength, vid, mapid, serviceType);
             }
             else if (segmentationAllowed){
-                notif = segmentationTC(nullptr, transferFrameDataFieldLength, packetLength, vid, mapid, serviceType);
+                notif = segmentationTC(nullptr, maxTransferFrameDataFieldLength, packetLength, vid, mapid, serviceType);
             }
             else{
-                // packet too large to fit in a frame and segmentation is not allowed -> discard
+                // packet too large to fit in a frame and segmentation is not allowed -> discard and notify
                 for (uint16_t i = 0; i < packetLength; i++){
                     packetBufferTcTx->pop();
                 }
@@ -452,11 +475,11 @@ ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t 
             }
         }
         else{
-            if (packetLength <= transferFrameDataFieldLength - prevFrame->getFirstDataFieldEmptyOctet()){
-                notif = blockingTC(prevFrame, transferFrameDataFieldLength, packetLength, vid, mapid, serviceType);
+            if (packetLength <= maxTransferFrameDataFieldLength - prevFrame->getFirstDataFieldEmptyOctet()){
+                notif = blockingTC(prevFrame, maxTransferFrameDataFieldLength, packetLength, vid, mapid, serviceType);
             }
             else{
-                notif = segmentationTC(prevFrame, packetLength, transferFrameDataFieldLength, vid, mapid, serviceType);
+                notif = segmentationTC(prevFrame, maxTransferFrameDataFieldLength, packetLength, vid, mapid, serviceType);
             }
         }
 
@@ -470,7 +493,7 @@ ServiceChannelNotification ServiceChannel::mappRequestTxTC(uint8_t vid, uint8_t 
 //     - Virtual Channel Generation
 ServiceChannelNotification ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) {
     VirtualChannel& virt_channel = masterChannel.virtualChannels.at(vid);
-    if (virt_channel.unprocessedFrameListBufferVcCopyTxTC.empty()) {
+    if (virt_channel.unprocessedFrameListBufferTxTC.empty()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
         return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
     }
@@ -480,7 +503,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) 
         return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
     }
 
-    TransferFrameTC& frame = *virt_channel.unprocessedFrameListBufferVcCopyTxTC.front();
+    TransferFrameTC& frame = *virt_channel.unprocessedFrameListBufferTxTC.front();
     COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
 
     err = virt_channel.fop.transferFdu();
@@ -495,7 +518,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) 
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
         return ServiceChannelNotification::FOP_REQUEST_REJECTED;
     }
-    virt_channel.unprocessedFrameListBufferVcCopyTxTC.pop_front();
+    virt_channel.unprocessedFrameListBufferTxTC.pop_front();
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
@@ -785,7 +808,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC() {
     bool eccFieldExists = virtualChannel.frameErrorControlFieldPresent;
 
     if (eccFieldExists) {
-        uint16_t len = frame->frameLength() - 2;
+        uint16_t len = frame->getFrameLength() - 2;
         uint16_t crc = frame->calculateCRC(frame->getFrameData(), len);
 
         uint16_t packet_crc = (static_cast<uint16_t>(frame->getFrameData()[len]) << 8) | frame->getFrameData()[len + 1];
@@ -874,7 +897,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
     // TODO If not, then why no service pops frames from it?
     TransferFrameTC* frame = virtualChannel->inFramesAfterVCReceptionRxTC.front();
 
-    uint16_t frameSize = frame->frameLength();
+    uint16_t frameSize = frame->getFrameLength();
     uint8_t headerSize = TcPrimaryHeaderSize; // Segment header is not present
     uint8_t trailerSize = 2 * virtualChannel->frameErrorControlFieldPresent;
 
@@ -904,7 +927,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionTC(uint8_t vid, uint8
 
     TransferFrameTC* frame = mapChannel.inFramesAfterVCReceptionRxTC.front();
 
-    uint16_t frameSize = frame->frameLength();
+    uint16_t frameSize = frame->getFrameLength();
     uint8_t headerSize = TcPrimaryHeaderSize + 1; // Segment header is present
 
     uint8_t trailerSize = 2 * virtualChannel.frameErrorControlFieldPresent;
@@ -973,8 +996,8 @@ ServiceChannelNotification ServiceChannel::storePacketTxTM(uint8_t* packet, uint
 }
 
 //     - Virtual Channel Generation
-ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevFrame, uint16_t packetLength,
-                                                          uint16_t transferFrameDataFieldLength, uint8_t vid) {
+ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength,
+                                                          uint16_t packetLength, uint8_t vid) {
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
@@ -983,16 +1006,13 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
     static uint8_t tmpData[TmTransferFrameSize] = {0};
-    for (uint16_t i = 0; i< TmTransferFrameSize; i++){  // clear up array between consecutive calls
-        tmpData[i] = 0;
-    }
     uint16_t  numberOfNewTransferFrames = 0;
     uint16_t prevFrameCapacity = prevFrame ==
             nullptr ? 0 : transferFrameDataFieldLength - prevFrame->getFirstDataFieldEmptyOctet();
 
     // Calculate amount of new transfer frames needed
     if (prevFrame == nullptr){
-        numberOfNewTransferFrames = packetLength / transferFrameDataFieldLength + (packetLength % transferFrameDataFieldLength);
+        numberOfNewTransferFrames = packetLength / transferFrameDataFieldLength + ((packetLength % transferFrameDataFieldLength) ? 1:0);
     }
     else {
         numberOfNewTransferFrames = (packetLength - prevFrameCapacity) / transferFrameDataFieldLength +
@@ -1006,10 +1026,17 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
     if (masterChannel.framesAfterVcGenerationServiceTxTM.available() < numberOfNewTransferFrames) {
         return TX_MC_FRAME_BUFFER_FULL;
     }
+    if (masterChannel.masterChannelPoolTM.findFit(numberOfNewTransferFrames * TmTransferFrameSize).second != NO_MC_ALERT) {
+        return MEMORY_POOL_FULL;
+    }
 
     uint8_t trailerSize = vchan.frameErrorControlFieldPresent * errorControlFieldSize;
     // fill previous frame
     if (prevFrame != nullptr){
+        for (uint16_t i = 0; i< TmTransferFrameSize; i++){  // clear up array between consecutive calls
+            tmpData[i] = 0;
+        }
+
         for (uint16_t i = 0; i < TmPrimaryHeaderSize + transferFrameDataFieldLength - prevFrameCapacity; i++){
             tmpData[i] = prevFrame->getFrameData()[i];
         }
@@ -1018,14 +1045,19 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
             tmpData[i + TmPrimaryHeaderSize + transferFrameDataFieldLength - prevFrameCapacity] = vchan.packetBufferTxTM.front();
             vchan.packetBufferTxTM.pop();
         }
-        prevFrame->setFrameData(tmpData, TmTransferFrameSize);
+        prevFrame->setFrameData(tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength);
         prevFrame->setSegmentLengthId(SegmentationStart);
+        prevFrame->setFirstDataFieldEmptyOctet(transferFrameDataFieldLength);
         packetLength -= prevFrameCapacity;
     }
 
     // new frames creation
     uint16_t currentTransferFrameDataFieldLength = 0;
     for (uint16_t i = 0; i < numberOfNewTransferFrames; i++) {
+        for (uint16_t j = 0; j < TmTransferFrameSize; j++){  // clear up array between consecutive calls
+            tmpData[j] = 0;
+        }
+
         currentTransferFrameDataFieldLength =
                 packetLength > transferFrameDataFieldLength ? transferFrameDataFieldLength : packetLength;
 
@@ -1095,6 +1127,9 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
         if (masterChannel.framesAfterVcGenerationServiceTxTM.available() == 0) {
             return TX_MC_FRAME_BUFFER_FULL;
         }
+        if (masterChannel.masterChannelPoolTM.findFit(TmTransferFrameSize).second != NO_MC_ALERT) {
+            return MEMORY_POOL_FULL;
+        }
     }
 
     uint16_t currentTransferFrameDataFieldLength = (prevFrame == nullptr) ? 0 : prevFrame->getFirstDataFieldEmptyOctet();
@@ -1105,8 +1140,8 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
 
     while (currentTransferFrameDataFieldLength + packetLength <= transferFrameDataFieldLength &&
            !vchan.packetLengthBufferTxTM.empty()) {
-        for (uint16_t i = currentTransferFrameDataFieldLength; i < currentTransferFrameDataFieldLength + packetLength; i++) {
-            tmpData[i + TmPrimaryHeaderSize] = vchan.packetBufferTxTM.front();
+        for (uint16_t i = 0; i < packetLength; i++) {
+            tmpData[i + TmPrimaryHeaderSize + currentTransferFrameDataFieldLength] = vchan.packetBufferTxTM.front();
             vchan.packetBufferTxTM.pop();
         }
         currentTransferFrameDataFieldLength += packetLength;
@@ -1121,11 +1156,6 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
     uint8_t trailerSize = vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize +
                             vchan.frameErrorControlFieldPresent * errorControlFieldSize;
     if (prevFrame == nullptr) {
-        for (uint8_t i = 0; i < TmTransferFrameSize; i++) {
-            if (currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + i < TmTransferFrameSize) {
-                tmpData[currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + i] = 0;
-            }
-        }
         uint8_t *transferFrameData = masterChannel.masterChannelPoolTM.allocatePacket(
                 tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + trailerSize * vchan.frameErrorControlFieldPresent);
         if (transferFrameData == nullptr) {
@@ -1182,7 +1212,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                 notif = blockingTM(nullptr, transferFrameDataFieldLength, packetLength, vid);
             }
             else if (vchan.segmentationTM){
-                notif = segmentationTM(nullptr, packetLength, transferFrameDataFieldLength, vid);
+                notif = segmentationTM(nullptr, transferFrameDataFieldLength, packetLength, vid);
             }
             else {
                 // packet too large to fit in a frame and segmentation is not allowed -> discard
@@ -1198,7 +1228,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                 notif = blockingTM(prevFrame, transferFrameDataFieldLength, packetLength, vid);
             }
             else {
-                notif = segmentationTM(prevFrame, packetLength, transferFrameDataFieldLength, vid);
+                notif = segmentationTM(prevFrame, transferFrameDataFieldLength, packetLength, vid);
             }
         }
 

@@ -112,7 +112,7 @@ void FrameOperationProcedure::removeAcknowledgedFrames() {
 
 	while (cur_frame != vchan->master_channel().masterCopyTxTC.end()) {
 		if ((*cur_frame).acknowledged()) {
-            vchan->master_channel().masterChannelPoolTC.deletePacket(cur_frame->getFrameData(), cur_frame->frameLength());
+            vchan->master_channel().masterChannelPoolTC.deletePacket(cur_frame->getFrameData(), cur_frame->getFrameLength());
 			vchan->master_channel().masterCopyTxTC.erase(cur_frame++);
 		} else {
 			++cur_frame;
@@ -657,7 +657,7 @@ void FrameOperationProcedure::bdReject() {
 }
 
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
-	TransferFrameTC* frame = vchan->unprocessedFrameListBufferVcCopyTxTC.front();
+	TransferFrameTC* frame = vchan->unprocessedFrameListBufferTxTC.front();
 
 	if (frame->transferFrameHeader().bypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_AD) {
