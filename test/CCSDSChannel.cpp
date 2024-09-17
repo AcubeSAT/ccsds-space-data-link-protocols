@@ -38,6 +38,7 @@ TEST_CASE("MAPP blocking") {
 	CHECK(master_channel.virtualChannels.at(3).VCID == 3);
 	ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
 
+
 	uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
 	// TODO: Rework with Memory Pool
