@@ -1427,7 +1427,8 @@ void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrame TransferFrame)
 {
 	LOG_DEBUG<<"TransferFrameHelperFunctionTM";
 
-	uint8_t TransferFrameVersionNumber = ((transferFrameData[0] & 0xC0) >> 6);
+	/*
+	*	uint8_t TransferFrameVersionNumber = ((transferFrameData[0] & 0xC0) >> 6);
 	uint16_t SpacecraftId = ((static_cast<uint16_t>(transferFrameData[0] & 0x3F)) << 4 ) | ((transferFrameData[1] & 0xF0) >> 4);
 	uint8_t VirtualChannelId = ((transferFrameData[1] &	0x0E) >> 1);
 	uint8_t OCFFlag = transferFrameData[1] & 0x01;
@@ -1439,6 +1440,8 @@ void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrame TransferFrame)
 	uint8_t PacketOrderFlag = ((transferFrameData[4] & 0x20) >> 5);
 	uint8_t SegmentLengthID = ((transferFrameData[4] & 0x18) >> 3);
 	uint16_t FirstHeaderPointer = ((static_cast<uint16_t>(transferFrameData[4] & 0x07)) | ((transferFrameData[5] & 0xFF) >> 4);
+	*/
+
 
 	for(int i = 0; i < TransferFrame.getFrameLength(); i++)
 	{
