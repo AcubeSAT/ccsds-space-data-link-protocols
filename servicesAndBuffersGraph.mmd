@@ -2,7 +2,7 @@ flowchart TB
     subgraph A["TC Tx Services"]
         subgraph A1 ["Map Packet Processing"]
             A1s1[["storePacketTxTc(packet, packetLength, vid, mapid)"]]
-            A1s2[["packetProcessingTxTC(vid, mapid, transferFrameDataLength, serviceType)<br>calls internally:<br>-segmentationTC<br>-blockingTC"]]
+            A1s2[["packetProcessingRequestTxTC(vid, mapid, transferFrameDataLength, serviceType)<br>calls internally:<br>-segmentationTC<br>-blockingTC"]]
             A1s3[["frontUnprocessedFrameMcCopyTxTC()"]]
             A1s4[["getLastMasterCopyTcFrame()"]]
             A1s5[["frontUnprocessedFrameTxTC(vid)"]]

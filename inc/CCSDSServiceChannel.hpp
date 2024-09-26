@@ -173,8 +173,8 @@ public:
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
      *                                  be grouped together
      */
-    ServiceChannelNotification packetProcessingTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
-                                                    ServiceType serviceType);
+    ServiceChannelNotification packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
+                                                           ServiceType serviceType);
 
     //     - Virtual Channel Generation
     /**

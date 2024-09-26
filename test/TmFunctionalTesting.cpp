@@ -108,19 +108,19 @@ TEST_CASE("TM Tx and Rx Testing") {
 
 	masterChannel.addVC(0, true, 128, true, true, true, true, 3, 2,
 	                    true, false, 0,
-	                    true, SynchronizationFlag::FORWARD_ORDERED,
+	                    true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
 	                    255, 20, 20,
 	                    10);
 
 	masterChannel.addVC(1, true, 128, false, true, false, true, 3, 2,
 	                    true, false, 0,
-	                    true, SynchronizationFlag::FORWARD_ORDERED,
+	                    true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
 	                    255, 20, 20,
 	                    10);
 
 	masterChannel.addVC(2,true, 128, false, true, false, true, 3, 2,
 	                    true, false, 0,
-	                    true, SynchronizationFlag::FORWARD_ORDERED,
+	                    true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
 	                    255, 3, 3, 10);
 
 	ServiceChannel serviceChannel = ServiceChannel(masterChannel, physicalChannel);

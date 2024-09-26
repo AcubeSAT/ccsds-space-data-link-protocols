@@ -390,7 +390,7 @@ ServiceChannelNotification ServiceChannel::storePacketTxTC(uint8_t *packet, uint
     return VC_MC_FRAME_BUFFER_FULL;
 }
 
-ServiceChannelNotification ServiceChannel::packetProcessingTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength, ServiceType serviceType) {
+ServiceChannelNotification ServiceChannel::packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength, ServiceType serviceType) {
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
@@ -1072,7 +1072,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
         }
 
         SegmentLengthID segmentLengthId = SegmentationMiddle;
-        uint16_t firstHeaderPointer = 2047;
+        uint16_t firstHeaderPointer = NoPacketStartFirstHeaderPointer;
 
         if (prevFrame != nullptr && i == numberOfNewTransferFrames - 1){
             segmentLengthId = SegmentationEnd;
@@ -1162,7 +1162,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                             vchan.frameErrorControlFieldPresent * errorControlFieldSize;
     if (prevFrame == nullptr) {
         uint8_t *transferFrameData = masterChannel.masterChannelPoolTM.allocatePacket(
-                tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + trailerSize * vchan.frameErrorControlFieldPresent);
+                tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + trailerSize);
         if (transferFrameData == nullptr) {
             return MEMORY_POOL_FULL;
         }
@@ -1204,13 +1204,55 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
     ServiceChannelNotification notif = NO_SERVICE_EVENT;
 
     if (vchan.packetLengthBufferTxTM.empty()) {
+        if (masterChannel.masterChannelPoolTM.findFit(TmTransferFrameSize).second != NO_MC_ALERT) {
+            return MEMORY_POOL_FULL;
+        }
+
+        static uint8_t tmpData[TmTransferFrameSize] = {0};
+
+        for (uint16_t i = 0; i < TmTransferFrameSize; i++){
+            tmpData[i] = 0;
+        }
+        memcpy(tmpData + TmPrimaryHeaderSize, idle_data, transferFrameDataFieldLength);
+
+        uint8_t *transferFrameData = masterChannel.masterChannelPoolTM.allocatePacket(
+                tmpData,
+                TmPrimaryHeaderSize + transferFrameDataFieldLength +
+                TmOperationalControlFieldSize * vchan.operationalControlFieldTMPresent +
+                errorControlFieldSize * vchan.frameErrorControlFieldPresent);
+        vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
+        TransferFrameTM frameOID =
+                TransferFrameTM(transferFrameData,
+                                TmPrimaryHeaderSize + transferFrameDataFieldLength +
+                                TmOperationalControlFieldSize * vchan.operationalControlFieldTMPresent +
+                                errorControlFieldSize * vchan.frameErrorControlFieldPresent,
+                                vchan.frameCountTM,
+                                vid,
+                                vchan.frameErrorControlFieldPresent,
+                                vchan.secondaryHeaderTMPresent,
+                                SegmentLengthID::NoSegmentation,
+                                vchan.synchronization,
+                                TmOIDFrameFirstHeaderPointer,
+                                transferFrameDataFieldLength,
+                                TM);
+        masterChannel.masterCopyTxTM.push_back(frameOID);
+        masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         return PACKET_BUFFER_EMPTY;
     }
 
     while (!vchan.packetLengthBufferTxTM.empty()){
         uint16_t packetLength = vchan.packetLengthBufferTxTM.front();
-        TransferFrameTM* prevFrame =
-                masterChannel.framesAfterVcGenerationServiceTxTM.empty() ? nullptr :  masterChannel.framesAfterVcGenerationServiceTxTM.back();
+        TransferFrameTM* prevFrame = nullptr;
+        etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> *TmBuffer = &(masterChannel.framesAfterVcGenerationServiceTxTM);
+
+        if (!TmBuffer->empty()) {
+            for (auto rit = TmBuffer->crbegin(); rit != TmBuffer->crend(); ++rit) {
+                if ((*rit)-> getFirstHeaderPointer() != TmOIDFrameFirstHeaderPointer) {
+                    prevFrame = *rit;
+                    break;
+                }
+            }
+        }
 
         if (prevFrame == nullptr || (prevFrame->getFirstDataFieldEmptyOctet() == transferFrameDataFieldLength) || !vchan.segmentationTM){
             if (packetLength <= transferFrameDataFieldLength){

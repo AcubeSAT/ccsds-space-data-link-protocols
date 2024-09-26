@@ -12,13 +12,13 @@ TEST_CASE("Initiate FOP Directives") {
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
 	MasterChannel master_channel_fop = MasterChannel();
-	master_channel_fop.addVC(3, false, 1024, true, true, true, true, 32, 32, true, true, true, 32, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
-	                         10, 3, map_channels_fop);
+	master_channel_fop.addVC(3, false, 1024, true, true, true, true, 32, 32, true, true, true, 32, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10,
+                             10, 3, map_channels_fop);
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 
     serv_channel_fop.storePacketTxTC(data, 11, 3, 2, ServiceType::TYPE_AD);
-    serv_channel_fop.packetProcessingTxTC(3, 2, 11, ServiceType::TYPE_AD);
+    serv_channel_fop.packetProcessingRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
 
 //	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
     CHECK(serv_channel_fop.availableUnprocessedFramesTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
@@ -55,10 +55,10 @@ TEST_CASE("Retransmission"){
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
-	                     map_channels);
-	master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
-	                     map_channels);
+	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
+	master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
@@ -74,7 +74,7 @@ TEST_CASE("Retransmission"){
     serv_channel.storePacketTxTC(packet2, 9, 0, 0, ServiceType::TYPE_AD);
     serv_channel.storePacketTxTC(packet3, 9, 0, 0, ServiceType::TYPE_AD);
 	for (uint8_t i = 0; i < 3; i++){
-        serv_channel.packetProcessingTxTC(0, 0, 9, ServiceType::TYPE_AD);
+        serv_channel.packetProcessingRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
         serv_channel.vcGenerationRequestTxTC(0);
         serv_channel.allFramesGenerationRequestTxTC();
 	}
@@ -91,8 +91,8 @@ TEST_CASE("Retransmission"){
 	//Create a transfer frame that carries the above CLCW
 	TransferFrameTM clcwTransferFrame =
 	    TransferFrameTM(clcwData, TmTransferFrameSize, 0, 0,
-	                    false, false, NoSegmentation,
-	                    FORWARD_ORDERED, 2046, clcw.clcw, 0, TM);
+                        false, false, NoSegmentation,
+                        VCA_SDU, 2046, clcw.clcw, 0, TM);
 	//Receive the CLCW frame
     serv_channel.allFramesReceptionRequestRxTM(clcwData, TmTransferFrameSize);
 	//E10 enters
