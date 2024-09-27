@@ -333,7 +333,7 @@ TEST_CASE("VC Generation Service") {
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize - 3);
 		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize - 19);
-		uint16_t transferFrameDataFieldLength = 15;
+		uint16_t transferFrameDataFieldLength = 20;
 		err = serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 0);
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
