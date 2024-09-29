@@ -876,18 +876,9 @@ TEST_CASE("CLCW construction at VC Reception") {
 	CHECK(serv_channel.getClcwInBuffer().getWait() == false);
 	CHECK(serv_channel.getClcwInBuffer().getRetransmit() == false);
 	CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
-	CLCW clcw =
-	    CLCW(serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent]
-	             << 24 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 1]
-	             << 16 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 2]
-	             << 8 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 3]);
+
+    CLCW clcw = serv_channel.getClcwInBuffer();
+
 	CHECK(clcw.getWait() == false);
 	CHECK(clcw.getRetransmit() == false);
 	CHECK(clcw.getLockout() == false);
@@ -898,18 +889,9 @@ TEST_CASE("CLCW construction at VC Reception") {
 	CHECK(serv_channel.getClcwInBuffer().getWait() == false);
 	CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
 	CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
-	CLCW clcw2 =
-	    CLCW(serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent]
-	             << 24 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 1]
-	             << 16 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 2]
-	             << 8 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 3]);
+
+    CLCW clcw2 = serv_channel.getClcwInBuffer();
+
 	CHECK(clcw2.getWait() == false);
 	CHECK(clcw2.getRetransmit() == true);
 	CHECK(clcw2.getLockout() == false);
@@ -921,18 +903,9 @@ TEST_CASE("CLCW construction at VC Reception") {
 	CHECK(serv_channel.getClcwInBuffer().getWait() == false);
 	CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
 	CHECK(serv_channel.getClcwInBuffer().getLockout() == true);
-	CLCW clcw3 =
-	    CLCW(serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent]
-	             << 24 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 1]
-	             << 16 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 2]
-	             << 8 |
-	         serv_channel.getClcwTransferFrameDataBuffer()[TmTransferFrameSize - 4 -
-	                                                       2 * virtualChannel.frameErrorControlFieldPresent + 3]);
+
+    CLCW clcw3 = serv_channel.getClcwInBuffer();
+
 	CHECK(clcw3.getWait() == false);
 	CHECK(clcw3.getRetransmit() == true);
 	CHECK(clcw3.getLockout() == true);
@@ -992,12 +965,6 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.vcReceptionRxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
-	// Check the clcw that was created in vcReceptionRxTC
-	err = serv_channel.allFramesReceptionRequestRxTM(serv_channel.getClcwTransferFrameDataBuffer(),
-                                                     MaxTcTransferFrameSize);
-    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
-
 	// Repeat the process with the next frame
 	err = serv_channel.storePacketTxTC(packet2, 9, 0, 0, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
@@ -1019,11 +986,6 @@ TEST_CASE("Frame Acknowledgement") {
 
 	err = serv_channel.vcReceptionRxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-
-	err = serv_channel.allFramesReceptionRequestRxTM(serv_channel.getClcwTransferFrameDataBuffer(),
-                                                     MaxTcTransferFrameSize);
-    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == true);
 
 	serv_channel.setVs(1, 10);
 	serv_channel.initiateAdClcw(1);
@@ -1052,8 +1014,4 @@ TEST_CASE("Frame Acknowledgement") {
 
 	err = serv_channel.vcReceptionRxTC(1);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-
-	err = serv_channel.allFramesReceptionRequestRxTM(serv_channel.getClcwTransferFrameDataBuffer(), TmTransferFrameSize);
-    CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getLastMasterCopyTcFrame().acknowledged() == false);
 }

@@ -36,9 +36,7 @@ private:
 	/**
 	 * Buffer to store the data of the clcw transfer frame
 	 */
-	uint8_t clcwTransferFrameDataBuffer[TmTransferFrameSize] = {0};
-
-	etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
+    etl::list<CLCW, 1> clcwBuffer;
 
 public:
     /**
@@ -226,8 +224,6 @@ public:
     void invalidDirective(uint8_t vid);
 
     CLCW getClcwInBuffer();
-
-    uint8_t* getClcwTransferFrameDataBuffer();
 
     /**
 	 * Get FOP State of the virtual channel

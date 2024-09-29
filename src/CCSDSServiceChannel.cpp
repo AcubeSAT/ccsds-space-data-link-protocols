@@ -651,12 +651,7 @@ void ServiceChannel::invalidDirective(uint8_t vid) {
     virtualChannel->fop.invalidDirective();
 }
 CLCW ServiceChannel::getClcwInBuffer() {
-    CLCW clcw = CLCW(clcwTransferFrameBuffer.front().getOperationalControlField().value());
-    return clcw;
-}
-
-uint8_t* ServiceChannel::getClcwTransferFrameDataBuffer() {
-    return clcwTransferFrameDataBuffer;
+    return clcwBuffer.front();
 }
 
 FOPState ServiceChannel::fopState(uint8_t vid) const {
@@ -856,20 +851,10 @@ ServiceChannelNotification ServiceChannel::vcReceptionRxTC(uint8_t vid) {
             CLCW(0, 0, 0, 1, vid, 0, 0, 1, virtChannel.farm.lockout, virtChannel.farm.wait, virtChannel.farm.retransmit,
                  virtChannel.farm.farmBCount, 0, virtChannel.farm.receiverFrameSeqNumber);
 
-    // add idle data
-    for (uint8_t i = TmPrimaryHeaderSize; i < TmTransferFrameSize - 2 * virtChannel.frameErrorControlFieldPresent;
-         i++) {
-        // add idle data
-        clcwTransferFrameDataBuffer[i] = idle_data[i];
+    if (!clcwBuffer.empty()) {
+        clcwBuffer.pop_front();
     }
-    TransferFrameTM clcwTransferFrame =
-            TransferFrameTM(clcwTransferFrameDataBuffer, TmTransferFrameSize, virtChannel.frameCountTM, vid,
-                            virtChannel.frameErrorControlFieldPresent, virtChannel.secondaryHeaderTMPresent, NoSegmentation,
-                            virtChannel.synchronization, 2046, clcw.clcw, 0, TM);
-    if (!clcwTransferFrameBuffer.empty()) {
-        clcwTransferFrameBuffer.pop_front();
-    }
-    clcwTransferFrameBuffer.push_back(clcwTransferFrame);
+    clcwBuffer.push_back(clcw);
     clcwWaitingToBeTransmitted = true;
 
     // If MAP channels are implemented in this specific VC, write to the MAP buffer
@@ -1394,14 +1379,18 @@ ServiceChannelNotification ServiceChannel::mcGenerationRequestTxTM() {
     }
     TransferFrameTM* frame = masterChannel.framesAfterVcGenerationServiceTxTM.front();
 
-    // Check if need to add secondary header and act accordingly
-    // TODO: Process secondary headers
+    // TODO: Process secondary headers here (if implemented)
 
     // set master channel frame counter
+    masterChannel.currFrameCountTM = (masterChannel.currFrameCountTM + 1) % 256;
     frame->setMasterChannelFrameCount(masterChannel.currFrameCountTM);
 
-    // increment master channel frame counter
-    masterChannel.currFrameCountTM = masterChannel.currFrameCountTM <= 254 ? masterChannel.currFrameCountTM : 0;
+    // add clcw to the operational control field
+    if (!clcwBuffer.empty()){
+        frame->setOperationalControlField(clcwBuffer.front().clcw);
+        clcwBuffer.pop_front();
+    }
+
     masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.push_back(frame);
     masterChannel.framesAfterVcGenerationServiceTxTM.pop_front();
 
@@ -1421,6 +1410,9 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_
     uint8_t vid = frame->virtualChannelId();
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
+
+    // TODO: CRC must be calculated at the end (after idle data addition). Also make the CRC functions simpler and common between
+    // TODO: tc and tm frames
     if (vchan.frameErrorControlFieldPresent) {
         frame->appendCRC();
     }
@@ -1433,6 +1425,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_
     uint16_t idleDataSize = TmTransferFrameSize - frameSize;
     uint8_t trailerSize = 4 * frame->operationalControlFieldExists() + 2 * vchan.frameErrorControlFieldPresent;
 
+    // TODO: simplify this to just a single memcopy
     // Copy frame without the trailer
     memcpy(frameDataTarget, frame->getFrameData(), frameSize - trailerSize);
 
@@ -1511,6 +1504,8 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTM(uint8_t
         // Log error that frames have been lost, but don't abort processing
         ccsdsLogNotice<uint8_t>(Rx, TypeServiceChannelNotif, MC_RX_INVALID_COUNT, mc_counter_diff);
     }
+
+    // TODO: There should be a TC Tx service that takes as input the clcw and acknowledges frames
     // CLCW extraction
     std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
     if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
@@ -1521,6 +1516,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTM(uint8_t
     }
     // TODO: Will we use secondary headers? If so they need to be processed here and forward to the respective service
     masterChannel.masterCopyRxTM.push_back(frame);
+
     TransferFrameTM* masterFrame = &(masterChannel.masterCopyRxTM.back());
     virtualChannel->framesAfterMcReceptionRxTM.push_back(masterFrame);
 
