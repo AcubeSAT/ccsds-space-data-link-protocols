@@ -501,11 +501,11 @@ public:
      * fill the transfer frame data field, or blocking and segmentation permissions do not allow for their placement.
      * @see Space Packet Protocol for details on the idle space packet
      *
-     * @param vid             Virtual channel ID
-     * @param nextPacketIdle  An indicator on whether an Idle Packet was
-     * @return                A service channel notification and an indication on whether an idle packet was generated or not
+     * @param vid                   Virtual channel ID
+     * @param lastPacketPlacedIdle  An indicator on whether the last packet placed in a frame was idle.
+     * @return                      A service channel notification and an indication on whether an idle packet was generated or not
      */
-     std::pair<ServiceChannelNotification, bool> generateIdleSpacePacket(uint8_t vid, TransferFrameTM* lastProcessedFrame, uint16_t transferFrameDataFieldLength);
+     std::pair<ServiceChannelNotification, bool> generateIdleSpacePacket(uint8_t vid, TransferFrameTM* lastProcessedFrame, uint16_t transferFrameDataFieldLength, bool lastPacketPlacedIdle);
 
     /**
      * Service that generates a transfer frame by combining the packets via blocking and segmentation and initializing

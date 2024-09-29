@@ -315,6 +315,11 @@ TEST_CASE("VC Generation Service") {
 	MasterChannel master_channel = MasterChannel();
 	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
+    master_channel.addVC(1, false, 128, false, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
+    master_channel.addVC(2, false, 128, true, false, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
+
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 	ServiceChannelNotification err;
@@ -333,7 +338,7 @@ TEST_CASE("VC Generation Service") {
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize - 3);
 		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize - 19);
-		uint16_t transferFrameDataFieldLength = 20;
+		uint16_t transferFrameDataFieldLength = 30;
 		err = serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 0);
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
@@ -347,11 +352,16 @@ TEST_CASE("VC Generation Service") {
 				CHECK(transferFrame->getFrameData()[i] == packet1[i - TmPrimaryHeaderSize]);
 			} else if (i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2)) {
 				CHECK(transferFrame->getFrameData()[i] == packet2[i - TmPrimaryHeaderSize - sizeof(packet1)]);
-			} else {
+			} else if (i < TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3)){
 				CHECK(transferFrame->getFrameData()[i] ==
                       packet3[i - TmPrimaryHeaderSize - sizeof(packet1) - sizeof(packet2)]);
-			}
+            }
 		}
+
+        // check idle packet data field length
+        uint16_t upperHalf = static_cast<uint16_t >(transferFrame->getFrameData()[TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + packetPrimaryHeaderLength - 2]);
+        uint16_t lowerHalf = static_cast<uint16_t >(transferFrame->getFrameData()[TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + packetPrimaryHeaderLength - 1]);
+        CHECK(((upperHalf << 8) | lowerHalf) == 11 - packetPrimaryHeaderLength - 1);
 	}
 	SECTION("Segmentation") {
 		uint8_t packet5[] = {47, 31, 65, 81, 25, 44, 76, 99, 13, 43, 78};
@@ -363,29 +373,48 @@ TEST_CASE("VC Generation Service") {
 		CHECK(err == NO_SERVICE_EVENT);
 		CHECK(serv_channel.availablePacketLengthBufferTxTM(0) == PacketBufferTmSize);
 		CHECK(serv_channel.availablePacketBufferTxTM(0) == PacketBufferTmSize);
-		const TransferFrameTM* transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
-		CHECK(transferFrame->getFrameData()[6] == 47);
-		CHECK(transferFrame->getFrameData()[7] == 31);
-		CHECK(transferFrame->getFrameData()[8] == 65);
-		CHECK(transferFrame->getFrameData()[9] == 81);
-		CHECK(transferFrame->getFrameData()[10] == 25);
-		CHECK(transferFrame->getSegmentLengthId() == 1);
 
+        const TransferFrameTM* frame1 = serv_channel.frontFrameAfterVcGenerationTxTM();
         serv_channel.mcGenerationRequestTxTM();
-		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
-
-		CHECK(transferFrame->getFrameData()[6] == 44);
-		CHECK(transferFrame->getFrameData()[7] == 76);
-		CHECK(transferFrame->getFrameData()[8] == 99);
-		CHECK(transferFrame->getFrameData()[9] == 13);
-		CHECK(transferFrame->getFrameData()[10] == 43);
-		CHECK(transferFrame->getSegmentLengthId() == 0);
-
+        const TransferFrameTM* frame2 = serv_channel.frontFrameAfterVcGenerationTxTM();
         serv_channel.mcGenerationRequestTxTM();
-		transferFrame = serv_channel.frontFrameAfterVcGenerationTxTM();
+        const TransferFrameTM* frame3 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        const TransferFrameTM* frame4 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
 
-		CHECK(transferFrame->getFrameData()[6] == 78);
-		CHECK(transferFrame->getSegmentLengthId() == 2);
+		CHECK(frame1->getFrameData()[6] == 47);
+		CHECK(frame1->getFrameData()[7] == 31);
+		CHECK(frame1->getFrameData()[8] == 65);
+		CHECK(frame1->getFrameData()[9] == 81);
+		CHECK(frame1->getFrameData()[10] == 25);
+		CHECK(frame1->getSegmentLengthId() == 1);
+        CHECK(frame1->getFirstHeaderPointer() == 0);
+
+        CHECK(frame2->getFrameData()[6] == 44);
+		CHECK(frame2->getFrameData()[7] == 76);
+		CHECK(frame2->getFrameData()[8] == 99);
+		CHECK(frame2->getFrameData()[9] == 13);
+		CHECK(frame2->getFrameData()[10] == 43);
+		CHECK(frame2->getSegmentLengthId() == 0);
+        CHECK(frame2->getFirstHeaderPointer() == TmNoPacketStartFirstHeaderPointer);
+
+        CHECK(frame3->getFrameData()[6] == 78);
+        CHECK(frame3->getFrameData()[7] == packetPrimaryHeader[0]);
+        CHECK(frame3->getFrameData()[8] == packetPrimaryHeader[1]);
+        CHECK(frame3->getFrameData()[9] == packetPrimaryHeader[2]);
+        CHECK(frame3->getFrameData()[10] == packetPrimaryHeader[3]);
+        CHECK(frame3->getSegmentLengthId() == 1);
+        CHECK(frame3->getFirstHeaderPointer() == 1);
+
+        CHECK(frame4->getFrameData()[6] == 0);
+        CHECK(frame4->getFrameData()[7] == 2);
+        CHECK(frame4->getFrameData()[8] == idle_data[0]);
+        CHECK(frame4->getFrameData()[9] == idle_data[1]);
+        CHECK(frame4->getFrameData()[10] == idle_data[2]);
+        CHECK(frame4->getSegmentLengthId() == 2);
+        CHECK(frame4->getFirstHeaderPointer() == TmNoPacketStartFirstHeaderPointer);
+
 	}
     SECTION("Concurrent segmentation and blocking") {
         uint8_t packet6[5] = {87, 0, 39, 90, 43};
@@ -431,7 +460,7 @@ TEST_CASE("VC Generation Service") {
         CHECK(frame2->getSegmentLengthId() == 1);
         CHECK(frame2->getFirstHeaderPointer() == 2);
         CHECK(frame3->getSegmentLengthId() == 0);
-        CHECK(frame3->getFirstHeaderPointer() == NoPacketStartFirstHeaderPointer);
+        CHECK(frame3->getFirstHeaderPointer() == TmNoPacketStartFirstHeaderPointer);
         CHECK(frame4->getSegmentLengthId() == 2);
         CHECK(frame4->getFirstHeaderPointer() == 2);
 
@@ -452,6 +481,80 @@ TEST_CASE("VC Generation Service") {
             CHECK(frame4->getFrameData()[i + TmPrimaryHeaderSize] == concatPacket[count]);
             count++;
         }
+    }
+    SECTION("OID Frames and Only Blocking / Only Segmentation Allowed"){
+        // Try to generate frame with no packets in buffer -> OID Frame Generation
+        uint16_t transferFrameDataFieldLength = 10;
+        err = serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 0);
+        CHECK(err == PACKET_BUFFER_EMPTY);
+        const TransferFrameTM* frame1 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+
+        CHECK(frame1->getFirstHeaderPointer() == TmOIDFrameFirstHeaderPointer);
+        for (uint8_t  i = 0; i < transferFrameDataFieldLength; i++){
+            CHECK(frame1->getFrameData()[TmPrimaryHeaderSize + i] == idle_data[i]);
+        }
+
+        // Blocking not allowed -> Next non-idle packet must start in the next frame
+        uint8_t packet11[4] = {78, 3, 91, 9};
+        uint8_t packet12[6] = {21, 65, 1, 73, 60, 81};
+        serv_channel.storePacketTxTM(packet11, sizeof(packet11), 1);
+        serv_channel.storePacketTxTM(packet12, sizeof(packet12), 1);
+
+        err = serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 1);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        const TransferFrameTM* frame2 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        const TransferFrameTM* frame3 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+
+        CHECK(frame2->getFrameData()[TmPrimaryHeaderSize] == packet11[0]);
+        CHECK(frame2->getFrameData()[TmPrimaryHeaderSize + 1] == packet11[1]);
+        CHECK(frame2->getFrameData()[TmPrimaryHeaderSize + 2] == packet11[2]);
+        CHECK(frame2->getFrameData()[TmPrimaryHeaderSize + 3] == packet11[3]);
+        CHECK(frame2->getFirstHeaderPointer() == 0);
+
+        uint8_t idlePacketOffset = 1;
+        CHECK(frame3->getFrameData()[TmPrimaryHeaderSize + idlePacketOffset] == packet12[0]);
+        CHECK(frame3->getFrameData()[TmPrimaryHeaderSize + 1 + idlePacketOffset] == packet12[1]);
+        CHECK(frame3->getFrameData()[TmPrimaryHeaderSize + 2 + idlePacketOffset] == packet12[2]);
+        CHECK(frame3->getFrameData()[TmPrimaryHeaderSize + 3 + idlePacketOffset] == packet12[3]);
+        CHECK(frame3->getFrameData()[TmPrimaryHeaderSize + 4 + idlePacketOffset] == packet12[4]);
+        CHECK(frame3->getFrameData()[TmPrimaryHeaderSize + 5 + idlePacketOffset] == packet12[5]);
+        CHECK(frame3->getFirstHeaderPointer() == 1);
+
+        // Segmentation not allowed -> Next non-idle packet must start in the next frame
+        uint8_t packet13[4] = {78, 3, 91, 9};
+        uint8_t packet14[10] = {21, 65, 1, 73, 60, 81};
+        serv_channel.storePacketTxTM(packet13, sizeof(packet13), 2);
+        serv_channel.storePacketTxTM(packet14, sizeof(packet14), 2);
+
+        err = serv_channel.vcGenerationServiceTxTM(transferFrameDataFieldLength, 2);
+        CHECK(err == NO_SERVICE_EVENT);
+
+        const TransferFrameTM* frame4 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        const TransferFrameTM* frame5 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+        const TransferFrameTM* frame6 = serv_channel.frontFrameAfterVcGenerationTxTM();
+        serv_channel.mcGenerationRequestTxTM();
+
+        CHECK(frame4->getFrameData()[TmPrimaryHeaderSize] == packet13[0]);
+        CHECK(frame4->getFrameData()[TmPrimaryHeaderSize + 1] == packet13[1]);
+        CHECK(frame4->getFrameData()[TmPrimaryHeaderSize + 2] == packet13[2]);
+        CHECK(frame4->getFrameData()[TmPrimaryHeaderSize + 3] == packet13[3]);
+        CHECK(frame4->getFirstHeaderPointer() == 0);
+
+        CHECK(frame5->getFirstHeaderPointer() == 1);
+        CHECK(frame5->getFrameData()[TmPrimaryHeaderSize + 1] == packetPrimaryHeader[0]);
+
+        for (uint8_t i = 0; i < sizeof(packet14); i++){
+            CHECK(frame6->getFrameData()[TmPrimaryHeaderSize + i] == packet14[i]);
+        }
+        CHECK(frame6->getFirstHeaderPointer() == 0);
+
     }
 }
 

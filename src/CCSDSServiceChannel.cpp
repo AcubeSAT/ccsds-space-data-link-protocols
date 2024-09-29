@@ -1072,11 +1072,11 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
         }
 
         SegmentLengthID segmentLengthId = SegmentationMiddle;
-        uint16_t firstHeaderPointer = NoPacketStartFirstHeaderPointer;
+        uint16_t firstHeaderPointer = TmNoPacketStartFirstHeaderPointer;
 
         if (prevFrame != nullptr && i == numberOfNewTransferFrames - 1){
             segmentLengthId = SegmentationEnd;
-            firstHeaderPointer = packetLength;
+            firstHeaderPointer = (packetLength == transferFrameDataFieldLength) ? TmNoPacketStartFirstHeaderPointer : packetLength;
         }
         else if (prevFrame == nullptr) {
             if (i == 0) {
@@ -1084,7 +1084,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                 firstHeaderPointer = 0;
             } else if (i == numberOfNewTransferFrames - 1) {
                 segmentLengthId = SegmentationEnd;
-                firstHeaderPointer = packetLength;
+                firstHeaderPointer = (packetLength == transferFrameDataFieldLength) ? TmNoPacketStartFirstHeaderPointer : packetLength;
             }
         }
 
@@ -1104,7 +1104,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                                 vchan.secondaryHeaderTMPresent,
                                 segmentLengthId,
                                 vchan.synchronization, firstHeaderPointer,
-                                firstHeaderPointer,
+                                currentTransferFrameDataFieldLength,
                                 TM);
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
         masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
@@ -1188,13 +1188,13 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
         for (uint16_t i = 0; i< TmPrimaryHeaderSize + prevFrame->getFirstDataFieldEmptyOctet(); i++){
             tmpData[i] = prevFrame->getFrameData()[i];
         }
-        prevFrame->setFrameData(tmpData, TmTransferFrameSize);
         prevFrame->setFirstDataFieldEmptyOctet(currentTransferFrameDataFieldLength);
+        prevFrame->setFrameData(tmpData, TmPrimaryHeaderSize + prevFrame->getFirstDataFieldEmptyOctet());
     }
     return NO_SERVICE_EVENT;
 }
 
-std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePacket(uint8_t vid, TransferFrameTM* lastProcessedFrame, uint16_t transferFrameDataFieldLength) {
+std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePacket(uint8_t vid, TransferFrameTM* lastProcessedFrame, uint16_t transferFrameDataFieldLength, bool lastPacketPlacedIdle) {
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
@@ -1203,68 +1203,75 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
 
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
-    uint16_t firstHeaderPointer = lastProcessedFrame->getFirstHeaderPointer();
-    if (firstHeaderPointer == transferFrameDataFieldLength){
+    if (lastProcessedFrame == nullptr) {
+        return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, false);
+    }
+
+    uint16_t firstDataFieldEmptyOctet = lastProcessedFrame->getFirstDataFieldEmptyOctet();
+    if (firstDataFieldEmptyOctet == transferFrameDataFieldLength){
         return std::make_pair(NO_SERVICE_EVENT, false);
     }
 
-    uint16_t remainingSpace;
-    // The packet data length field, reduced by 1 (see p. 4.1.3.5 of space packet protocol)
-    uint16_t packetDataLength;
+    // The idle packet data length field, reduced by 1 (see p. 4.1.3.5 of space packet protocol)
+    uint16_t idlePacketDataLength;
+    uint16_t remainingSpace = transferFrameDataFieldLength - firstDataFieldEmptyOctet;
     if (vchan.packetLengthBufferTxTM.empty()) {
-        remainingSpace = transferFrameDataFieldLength - firstHeaderPointer - 1;
-
         if (remainingSpace > packetPrimaryHeaderLength + 1){
             // The idle packet can fit in the transfer frame (packetPrimaryHeaderLength + 1 is the minimum size).
-            packetDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
+            idlePacketDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
         }
         else {
             // The idle packet cannot fit (will be segmented).
             // It must be large enough to fully cover the second frame (since packet buffer is empty).
-            packetDataLength = (remainingSpace - packetPrimaryHeaderLength) + transferFrameDataFieldLength - 1;
+            idlePacketDataLength = (remainingSpace + transferFrameDataFieldLength) - packetPrimaryHeaderLength - 1;
         }
 
-        for (uint8_t i = 0; i < packetPrimaryHeaderLength - 1; i++){
+        for (uint8_t i = 0; i < packetPrimaryHeaderLength - 2; i++){
             vchan.packetBufferTxTM.push_back(packetPrimaryHeader[i]);
         }
 
-        vchan.packetBufferTxTM.push_back((static_cast<uint8_t>(packetDataLength) >> 8));
-        vchan.packetBufferTxTM.push_back((static_cast<uint8_t>(packetDataLength)));
+        vchan.packetBufferTxTM.push_back(static_cast<uint8_t>(idlePacketDataLength >> 8));
+        vchan.packetBufferTxTM.push_back(static_cast<uint8_t>(idlePacketDataLength));
 
-        for (uint16_t i = 0; i < packetDataLength + 1; i++) {
+        for (uint16_t i = 0; i < idlePacketDataLength + 1; i++) {
             vchan.packetBufferTxTM.push_back(idle_data[i]);
         }
 
-        vchan.packetLengthBufferTxTM.push_back(packetPrimaryHeaderLength + packetDataLength + 1);
+        vchan.packetLengthBufferTxTM.push_back(packetPrimaryHeaderLength + idlePacketDataLength + 1);
     }
-    else if (!vchan.packetLengthBufferTxTM.empty() && (!vchan.blockingTM || !vchan.segmentationTM)) {
-        // Packets do exist, but due to segmentation rules they cannot be placed, so an idle packet must be pushed
-        // to the front of the queue, in order to be processed first.
-        remainingSpace = transferFrameDataFieldLength - firstHeaderPointer - 1;
+    else {
+        // Packets do exist, but due to blocking/segmentation permissions they may not be able to be placed.In this case, an idle packet
+        // needs to be pushed to the front of the queue, in order to be processed first.
+
+        bool nonIdleCanFit = vchan.packetLengthBufferTxTM.front() <= remainingSpace;
+        if ((nonIdleCanFit && lastPacketPlacedIdle) || (nonIdleCanFit && !lastPacketPlacedIdle && vchan.blockingTM) || (!nonIdleCanFit && vchan.segmentationTM)){
+            return std::make_pair(NO_SERVICE_EVENT, false);
+        }
 
         if (remainingSpace > packetPrimaryHeaderLength + 1){
             // The idle packet can fit in the transfer frame (packetPrimaryHeaderLength + 1 is the minimum size).
-            packetDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
+            idlePacketDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
         }
         else {
             // The idle packet cannot fit (will be segmented).
             // It must have the smallest possible length, in order to not waste data field space from the second frame.
-            packetDataLength = packetPrimaryHeaderLength;
+            idlePacketDataLength = 0;
         }
 
 
-        for (uint16_t i = 0; i < packetDataLength + 1; i++) {
+        for (uint16_t i = 0; i < idlePacketDataLength + 1; i++) {
             vchan.packetBufferTxTM.push_front(idle_data[i]);
         }
 
-        vchan.packetBufferTxTM.push_front((static_cast<uint8_t>(packetDataLength) >> 8));
-        vchan.packetBufferTxTM.push_front((static_cast<uint8_t>(packetDataLength)));
+        vchan.packetBufferTxTM.push_front((static_cast<uint8_t>(idlePacketDataLength)));
+        vchan.packetBufferTxTM.push_front((static_cast<uint8_t>(idlePacketDataLength) >> 8));
 
-        for (uint8_t i = 0; i < packetPrimaryHeaderLength - 1; i++){
+
+        for (int8_t i = packetPrimaryHeaderLength - 3; i >= 0; i--){
             vchan.packetBufferTxTM.push_front(packetPrimaryHeader[i]);
         }
 
-        vchan.packetLengthBufferTxTM.push_front(packetPrimaryHeaderLength + packetDataLength + 1);
+        vchan.packetLengthBufferTxTM.push_front(packetPrimaryHeaderLength + idlePacketDataLength + 1);
     }
 
     return std::make_pair(NO_SERVICE_EVENT, true);
@@ -1317,7 +1324,8 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
         return PACKET_BUFFER_EMPTY;
     }
 
-    bool idlePacketFlag = false; // Flag indicating if the first packet in the queue is an idle space packet
+    bool idlePacketQueued = false; // Flag indicating if the first packet in the queue is an idle space packet
+    bool lastPacketPlacedIdle = false; // Flag indicating if the last placed packet in a frame is an idle space packet
     while (!vchan.packetLengthBufferTxTM.empty()){
         uint16_t packetLength = vchan.packetLengthBufferTxTM.front();
         TransferFrameTM* prevFrame = nullptr;
@@ -1331,16 +1339,16 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                 }
             }
         }
-        // @TODO !vchan.segmentationTM exists for the case that prevFrame is not null and the next packet does not fit
-        // @TODO and segmentation is also not allowed, hence having to create a new frame. But it must be removed if idle packet capability is added.
+
         if (prevFrame == nullptr || (prevFrame->getFirstDataFieldEmptyOctet() == transferFrameDataFieldLength)){
             if (packetLength <= transferFrameDataFieldLength){
-                idlePacketFlag = false;
+                uint8_t available = vchan.packetLengthBufferTxTM.available();
                 notif = blockingTM(nullptr, transferFrameDataFieldLength, packetLength, vid);
+                lastPacketPlacedIdle = idlePacketQueued && (available - vchan.packetLengthBufferTxTM.available() == 1);
             }
-            else if (vchan.segmentationTM || idlePacketFlag){
-                idlePacketFlag = false;
+            else if (vchan.segmentationTM || idlePacketQueued){
                 notif = segmentationTM(nullptr, transferFrameDataFieldLength, packetLength, vid);
+                lastPacketPlacedIdle = idlePacketQueued;
             }
             else {
                 // packet too large to fit in a frame and segmentation is not allowed -> discard
@@ -1353,17 +1361,18 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
         }
         else{
             if (packetLength <= transferFrameDataFieldLength - prevFrame->getFirstDataFieldEmptyOctet()){
-                idlePacketFlag = false;
+                uint8_t available = vchan.packetLengthBufferTxTM.available();
                 notif = blockingTM(prevFrame, transferFrameDataFieldLength, packetLength, vid);
+                lastPacketPlacedIdle = idlePacketQueued && (available - vchan.packetLengthBufferTxTM.available() == 1);
             }
             else {
-                idlePacketFlag = false;
                 notif = segmentationTM(prevFrame, transferFrameDataFieldLength, packetLength, vid);
+                lastPacketPlacedIdle = idlePacketQueued;
             }
         }
 
         // generate idle frames if needed
-        idlePacketFlag = generateIdleSpacePacket(vid, masterChannel.framesAfterVcGenerationServiceTxTM.back(), transferFrameDataFieldLength).second;
+        idlePacketQueued = generateIdleSpacePacket(vid, masterChannel.framesAfterVcGenerationServiceTxTM.back(), transferFrameDataFieldLength, lastPacketPlacedIdle).second;
 
         if (notif != NO_SERVICE_EVENT){
             break;

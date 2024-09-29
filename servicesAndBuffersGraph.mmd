@@ -155,7 +155,7 @@ flowchart TB
         end
 
         subgraph C2["Virtual Channel Generation"]
-            C2s1[["vcGenerationServiceTxTM(transferFrameDataFieldLength, vid) <br> calls internally:<br>-segmentationTM<br>-blockingTM"]]
+            C2s1[["vcGenerationServiceTxTM(transferFrameDataFieldLength, vid) <br> calls internally:<br>-segmentationTM<br>-blockingTM<br>-generateacket"]]
             C2s2[["availableFramesAfterVcGenerationTxTM()"]]
             C2s3[["backFrameAfterVcGenerationTxTM()"]]
             C2s4[["frontFrameAfterVcGenerationTxTM()"]]
