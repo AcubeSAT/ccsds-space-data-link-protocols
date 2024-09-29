@@ -237,26 +237,6 @@ struct TransferFrameTM : public TransferFrame {
 	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, bool eccFieldExists, uint16_t firstEmptyOctet = 0)
 	    : TransferFrame(FrameType::TM, frameLength, frameData, firstEmptyOctet), hdr(frameData),
           eccFieldExists(eccFieldExists) {}
-	/**
-	 * Calculates the CRC code
-	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint16_t calculateCRC(const uint8_t* data, uint16_t len) override {
-
-		uint16_t crc = 0xFFFF;
-
-		// calculate remainder of binary polynomial division
-		for (uint16_t i = 0; i < len; i++) {
-			crc = crc_16_ccitt_table[(data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
-		}
-
-		for (uint16_t i = 0; i < TmTransferFrameSize - len - 4*operationalControlFieldExists() - 2; i++) {
-			crc = crc_16_ccitt_table[(idle_data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
-		}
-
-		return crc;
-	}
-
 
 private:
 	TransferFrameHeaderTM hdr;

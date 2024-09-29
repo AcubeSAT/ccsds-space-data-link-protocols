@@ -532,7 +532,7 @@ public:
      * @see p. 4.2.7 from TM Space Data Link Protocol
      */
     ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget,
-                                                              uint16_t frameLength = TmTransferFrameSize);
+                                                              uint16_t frameLength);
 
 
     // TM TransferFrame - Receiving End (TM Rx)

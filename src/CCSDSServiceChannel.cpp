@@ -1410,31 +1410,11 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_
     uint8_t vid = frame->virtualChannelId();
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
-
-    // TODO: CRC must be calculated at the end (after idle data addition). Also make the CRC functions simpler and common between
-    // TODO: tc and tm frames
     if (vchan.frameErrorControlFieldPresent) {
         frame->appendCRC();
     }
 
-    if (frame->getFrameLength() > frameLength) {
-        return ServiceChannelNotification::RX_INVALID_LENGTH;
-    }
-
-    uint16_t frameSize = frame->getFrameLength();
-    uint16_t idleDataSize = TmTransferFrameSize - frameSize;
-    uint8_t trailerSize = 4 * frame->operationalControlFieldExists() + 2 * vchan.frameErrorControlFieldPresent;
-
-    // TODO: simplify this to just a single memcopy
-    // Copy frame without the trailer
-    memcpy(frameDataTarget, frame->getFrameData(), frameSize - trailerSize);
-
-    // Append idle data
-    memcpy(frameDataTarget + frameSize - trailerSize, idle_data, idleDataSize);
-
-    // Append trailer
-    memcpy(frameDataTarget + TmTransferFrameSize - trailerSize, frame->getFrameData() + frameLength - trailerSize,
-           trailerSize);
+    memcpy(frameDataTarget, frame->getFrameData(), frame->getFrameLength());
 
     masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.pop_front();
     // Finally, remove master copy
