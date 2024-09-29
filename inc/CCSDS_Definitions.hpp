@@ -13,12 +13,30 @@ inline constexpr uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identif
 inline constexpr uint16_t TmTransferFrameSize = 128;
 inline constexpr uint8_t TmPrimaryHeaderSize = 6;
 inline constexpr uint8_t TmOperationalControlFieldSize = 4;
+inline constexpr uint16_t TmOIDFrameFirstHeaderPointer = 0x7FE;
+inline constexpr uint16_t TmNoPacketStartFirstHeaderPointer = 0x7FF;
 
 inline constexpr uint16_t MaxTcTransferFrameSize = 128;
-inline const uint8_t TcPrimaryHeaderSize = 5;
-inline const uint8_t TcSegmentHeaderSize = 1;
+inline constexpr uint8_t TcPrimaryHeaderSize = 5;
+inline constexpr uint8_t TcSegmentHeaderSize = 1;
 
-inline const uint8_t errorControlFieldSize = 2;
+inline constexpr uint8_t errorControlFieldSize = 2;
+
+
+// Idle space packet constants (for more details, see Space Packet Protocol)
+static constexpr uint8_t packetPrimaryHeaderLength = 6;
+static constexpr uint8_t packetVersionNumber = 0x0;  // Defines this packet as a space packet
+static constexpr bool packetType = false;            // Telemetry Packet
+static constexpr bool secondaryHeaderFlag = false;   // Must always be false for idle packets
+static constexpr uint16_t APID = 0x7FF;              // Reserved value for idle packets
+static constexpr uint8_t sequenceFlags = 0x3;        // Unsegmented data
+static constexpr uint16_t packetSequenceCount = 0x0; // @TODO This should NOT be constant. After the ECSS integration with the comms repo, ensure that it takes correct values
+static constexpr uint8_t packetPrimaryHeader[packetPrimaryHeaderLength] = {
+        (packetVersionNumber << 5) | (packetType << 4) | (secondaryHeaderFlag << 3) | (APID >> 8),
+        static_cast<uint8_t>(APID),
+        (sequenceFlags << 6) | (packetSequenceCount >> 8),
+        static_cast<uint8_t>(packetSequenceCount)
+};
 
 inline constexpr uint16_t MCID = SpacecraftIdentifier;
 

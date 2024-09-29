@@ -8,6 +8,7 @@
 #include <etl/flat_map.h>
 #include <etl/list.h>
 #include <etl/queue.h>
+#include <etl/deque.h>
 
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
@@ -214,17 +215,17 @@ public:
 	const uint16_t maxFrameLengthTC;
 
     /**
-     * Determines whether smaller data units can be combined into a single TM transfer frame
+     * Determines whether smaller data units can be combined into a single TM transfer frame.
      */
      const bool blockingTM;
 
     /**
-    * Determines whether large packets can be segmented to multiple TM transfer frames
+    * Determines whether large packets can be segmented to multiple TM transfer frames.
     */
     const bool segmentationTM;
 
     /**
-     * Determines whether smaller data units can be combined into a single TC transfer frame
+     * Determines whether smaller data units can be combined into a single TC transfer frame.
      * (applies for Type BC packets, and for Type AD, BD packets if a segmentHeader is not present)
      */
     const bool blockingTC;
@@ -424,12 +425,12 @@ private:
 	/**
 	 *  Queue that stores the pointers of the packets that will eventually be concatenated to TM transfer frame data.
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTM;
+	etl::deque<uint16_t, PacketBufferTmSize> packetLengthBufferTxTM;
 
 	/**
 	 *  Queue that stores the packet data that will eventually be concatenated to TM transfer frame data
 	 */
-	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTxTM;
+	etl::deque<uint8_t, PacketBufferTmSize> packetBufferTxTM;
 
     /**
      * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.

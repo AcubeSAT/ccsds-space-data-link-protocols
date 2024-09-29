@@ -15,8 +15,8 @@ TEST_CASE("CCSDS TC Channel Model") {
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(3, false, 1024, true, true, true, true, 32, 32, true, true, true, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
-	                     map_channels);
+	master_channel.addVC(3, false, 1024, true, true, true, true, 32, 32, true, true, true, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
 
 	CHECK(master_channel.virtualChannels.at(3).VCID == 0x03);
 	PhysicalChannel physical_channel =
@@ -32,16 +32,17 @@ TEST_CASE("MAPP blocking") {
 	etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {{2, MAPChannel(2, true, true)}};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(3, false, 8, true, true, true, true, 32, 32, true, true, true, 11, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
-	                     map_channels);
+	master_channel.addVC(3, false, 8, true, true, true, true, 32, 32, true, true, true, 11, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
 
 	CHECK(master_channel.virtualChannels.at(3).VCID == 3);
 	ServiceChannel serv_channel = ServiceChannel(std::move(master_channel), std::move(physical_channel));
 
+
 	uint8_t data[] = {0x00, 0x01, 0x02, 0x30, 0x40, 0x05, 0x06, 0x07, 0x80, 0x90, 0xA0};
 
 	// TODO: Rework with Memory Pool
-	// serv_channel.packetProcessingTxTC(3, 2);
+	// serv_channel.packetProcessingRequestTxTC(3, 2);
 
 	// CHECK(serv_channel.availableUnprocessedFramesTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 6);
 	// CHECK(serv_channel.availableUnprocessedFramesTxTC(3, 2) == MaxReceivedTcInMapChannel - 0);

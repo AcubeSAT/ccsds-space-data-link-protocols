@@ -35,7 +35,7 @@ enum ServiceChannelNotification : int {
     INVALID_INPUT = 0x20,
 };
 
-enum SynchronizationFlag : bool { OCTET = 0, FORWARD_ORDERED = 1 };
+enum SynchronizationFlag : bool { OCTET_SYNCHRONIZED_FORWARD_ORDERED = 0, VCA_SDU = 1 };
 
 enum FOPNotification : uint8_t {
 	NO_FOP_EVENT = 0x01,

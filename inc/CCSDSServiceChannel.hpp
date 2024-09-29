@@ -173,8 +173,8 @@ public:
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
      *                                  be grouped together
      */
-    ServiceChannelNotification packetProcessingTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
-                                                    ServiceType serviceType);
+    ServiceChannelNotification packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
+                                                           ServiceType serviceType);
 
     //     - Virtual Channel Generation
     /**
@@ -475,10 +475,11 @@ public:
      * @param transferFrameDataFieldLength The length of the data field of the TM Transfer frame, taken by the
      *                                     vcGenerationServiceTxTM parameter
      * @param packetLength                 The length of the next transfer frame data in the packetBufferTxTM
+     * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
      * @return                             A Service Channel Notification as it is the case with vcGenerationServiceTxTM
      */
     ServiceChannelNotification segmentationTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength,
-                                              uint16_t packetLength,uint8_t gvcid);
+                                              uint16_t packetLength, uint8_t vid);
 
     /**
      * Auxiliary function for blocking of packets stored in the stored packet buffer
@@ -489,9 +490,22 @@ public:
      *                                       stored)
      * @param packetLength                   The length of the next packet in the stored TM packet buffer
      * @param vcid                           Virtual Channel ID
+     * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
      * @return                               A Service Channel Notification
      */
-    ServiceChannelNotification blockingTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength, uint8_t vid);
+    ServiceChannelNotification blockingTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength,
+                                          uint16_t packetLength, uint8_t vid);
+
+    /**
+     * Auxiliary function for generating idle space packets in the scenario that there are not enough packets to
+     * fill the transfer frame data field, or blocking and segmentation permissions do not allow for their placement.
+     * @see Space Packet Protocol for details on the idle space packet
+     *
+     * @param vid                   Virtual channel ID
+     * @param lastPacketPlacedIdle  An indicator on whether the last packet placed in a frame was idle.
+     * @return                      A service channel notification and an indication on whether an idle packet was generated or not
+     */
+     std::pair<ServiceChannelNotification, bool> generateIdleSpacePacket(uint8_t vid, TransferFrameTM* lastProcessedFrame, uint16_t transferFrameDataFieldLength, bool lastPacketPlacedIdle);
 
     /**
      * Service that generates a transfer frame by combining the packets via blocking and segmentation and initializing
