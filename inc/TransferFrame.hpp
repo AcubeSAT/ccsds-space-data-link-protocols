@@ -91,7 +91,7 @@ public:
 
 protected:
 	uint16_t transferFrameLength;
-		uint8_t* transferFrameData;
+			uint8_t* transferFrameData;
     /**
      *  Auxiliary variable that shows the position of the first empty octet in the transfer frame data field.
      *  The first octet of the data field is defined as position 0. A value equal of the data field size indicates a filled frame.

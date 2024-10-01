@@ -1419,31 +1419,59 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTM(uint8_t vid, uin
 }
 
 
-/*
- *
+
 void ServiceChannel::TransferFrameHelperFunctionTC(TransferFrame TransferFrame)
 {
+	bool detailed;
 	LOG_DEBUG<<"TransferFrameHelperFunctionTC";
+
+
 }
 
 void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrame TransferFrame)
 {
+	bool detailed;
 	LOG_DEBUG<<"TransferFrameHelperFunctionTM";
 
+	//TRANSFER FRAME PRIMARY HEADER (6 octets)
 	uint8_t TransferFrameVersionNumber = ((transferFrameData[0] & 0xC0) >> 6);
 	uint16_t SpacecraftId = ((static_cast<uint16_t>(transferFrameData[0] & 0x3F)) << 4 ) | ((transferFrameData[1] & 0xF0) >> 4);
 	uint8_t VirtualChannelId = ((transferFrameData[1] &	0x0E) >> 1);
 	uint8_t OCFFlag = transferFrameData[1] & 0x01;
 	uint8_t MCFrameCount = transferFrameData[2] & 0xFF;
 	uint8_t VCFrameCount = transferFrameData[3] & 0xFF;
-	uint16_t TransferFrameDataFieldStatus = (transferFrameData[4] & 0xFF) | (transferFrameData[5] & 0xFF);
-	uint8_t TransferFrameSecondaryHeader = ((transferFrameData[4] & 0x80) >> 7);
+	uint16_t TransferFrameDataFieldStatus[2];
+	TransferFrameDataFieldStatus[0] = (transferFrameData[4] & 0xFF);
+	TransferFrameDataFieldStatus[1] = (transferFrameData[5] & 0xFF);
+
+	//TRANSFER FRAME DATA FIELD STATUS(last 2 octets of primary header)
+	uint8_t TransferFrameSecondaryHeaderFlag = ((transferFrameData[4] & 0x80) >> 7);
 	uint8_t SynchronizationFlag = ((transferFrameData[4] & 0x40) >> 6);
 	uint8_t PacketOrderFlag = ((transferFrameData[4] & 0x20) >> 5);
 	uint8_t SegmentLengthID = ((transferFrameData[4] & 0x18) >> 3);
 	uint16_t FirstHeaderPointer = ((static_cast<uint16_t>(transferFrameData[4] & 0x07)) | ((transferFrameData[5] & 0xFF) >> 4);
 
+	//TRANSFER FRAME SECONDARY HEADER (up to 64 octets)
+	uint8_t TransferFrameSecondaryHeaderVersionNumber = ((transferFrameData[6] & 0xC0) >> 6);
+	uint8_t TransferFrameSecondaryHeaderLength = (transferFrameData[6] & 0x3F);
+	//Transfer Frame Secondary Header Data Field (up to 63 octets)
 
+
+
+	//Transfer Frame Data Field
+	uintmax_t = TransferFrameDataField[10]; //Allocating a big part of memory for the Data Field of the Transfer Frame
+
+
+	//TRANSFER FRAME TRAILER
+	uint32_t OperationalControlField[4];
+	OperationalControlField[0] = (transferFrameData[69] & 0xFF) >> 24;
+	OperationalControlField[1] = (transferFrameData[70] & 0xFF) >> 16;
+	OperationalControlField[2] = (transferFrameData[71] & 0xFF) >> 8;
+	OperationalControlField[3] = (transferFrameData[72] & 0xFF);
+
+	uint16_t FrameErrorControlField[2];
+	FrameErrorControlField[0] = (transferFrameData[73] & 0xFF) >> 8;
+	FrameErrorControlField[1] = (transferFrameData[74] & 0xFF);
 
 	for(int i = 0; i < TransferFrame.getFrameLength(); i++)
 	{
@@ -1451,4 +1479,3 @@ void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrame TransferFrame)
 	}
 
 }
-*/
