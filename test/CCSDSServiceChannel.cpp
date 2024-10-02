@@ -19,12 +19,12 @@ TEST_CASE("Service Channel") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, true, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, true, 128, true, true, true,  2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
-	master_channel.addVC(1, false, 128, false, false, false, false, 2, 2, true, true, true, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 20, 3, 3, 3);
+	master_channel.addVC(1, false, 128, false, false, false,  2, 2, true, true, true, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 20, 3, 3, 3);
 
-	master_channel.addVC(2, false, 128, false, false, false, false, 2, 2, false, true, true, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 20, 3, 3, 3,
+	master_channel.addVC(2, false, 128, false, false, false, 2, 2, false, true, true, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 20, 3, 3, 3,
                          map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -313,11 +313,11 @@ TEST_CASE("VC Generation Service") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, false, 128, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
-    master_channel.addVC(1, false, 128, false, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+    master_channel.addVC(1, false, 128, false, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
-    master_channel.addVC(2, false, 128, true, false, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+    master_channel.addVC(2, false, 128, true, false, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
 
@@ -569,11 +569,11 @@ TEST_CASE("MAP Request Service") {
 
     MasterChannel master_channel = MasterChannel();
     // MAP channels supported (segmentHeaderPresent == true)
-    master_channel.addVC(0, true, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+    master_channel.addVC(0, true, 128, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
     // without MAP channels support (segmentHeaderPresent == false)
-    master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3);
+    master_channel.addVC(1, false, 128, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3);
 
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
     ServiceChannelNotification err;
@@ -746,103 +746,6 @@ TEST_CASE("MAP Request Service") {
         CHECK(frame3->getFrameData()[offset + 0] == 13);
         CHECK(frame3->getFrameData()[offset + 1] == 43);
     }
-    SECTION("Concurrent segmentation and blocking") {
-        uint8_t packet5[5] = {87, 0, 39, 90, 43};
-        uint8_t packet6[7] = {12, 49, 20, 38, 30, 49, 70};
-        uint8_t packet7[20] = {69, 75, 76, 78, 89, 28, 29, 39, 42, 45, 8,
-                               30, 41, 56, 98, 79, 82, 90, 92, 99};
-        uint8_t packet8[4] = {8, 36, 39, 47};
-        uint8_t packet9[4] = {5, 17, 38, 46};
-        uint8_t packet10[3] = {0, 87, 3};
-        uint8_t concatPacket[43] = {87, 0, 39, 90, 43, 12, 49, 20, 38, 30,
-                                     49, 70, 69, 75, 76, 78, 89, 28, 29, 39,
-                                     42, 45, 8,30, 41, 56, 98, 79, 82, 90,
-                                     92, 99, 8, 36, 39, 47, 5, 17, 38, 46,
-                                     0, 87, 3};
-
-        // For testing if mappRequestTxTc can find the previous frame of the same service type
-        uint8_t differentServicePacket[2] = {1, 2};
-
-        // using virtual channel with MAP Channel support
-        // first packet stream
-        err = serv_channel.storePacketTxTC(packet5, sizeof(packet5), 0, 0, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-        err = serv_channel.storePacketTxTC(packet6, sizeof(packet6), 0, 0, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-
-        err = serv_channel.storePacketTxTC(packet7, sizeof(packet7), 0, 0, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-
-        uint16_t maxTransferFrameDataFieldLength = 10;
-        err = serv_channel.packetProcessingRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-
-        // second packet stream
-        err = serv_channel.storePacketTxTC(packet8, sizeof(packet8), 0, 0, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-        err = serv_channel.storePacketTxTC(differentServicePacket, sizeof(differentServicePacket), 0, 0, ServiceType::TYPE_BC);
-        CHECK(err == NO_SERVICE_EVENT);
-        err = serv_channel.storePacketTxTC(packet9, sizeof(packet9), 0, 0, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-        err = serv_channel.storePacketTxTC(packet10, sizeof(packet10), 0, 0, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-
-        err = serv_channel.packetProcessingRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_BC);
-        CHECK(err == NO_SERVICE_EVENT);
-        err = serv_channel.packetProcessingRequestTxTC(0, 0, maxTransferFrameDataFieldLength, ServiceType::TYPE_AD);
-        CHECK(err == NO_SERVICE_EVENT);
-
-        const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& buffer = serv_channel.getUnprocessedFramesListBuffer(0);
-        auto it = buffer.begin();
-        const TransferFrameTC* frame1 = *it;
-        const TransferFrameTC* frame2 = *(++it);
-        const TransferFrameTC* frame3 = *(++it);
-        const TransferFrameTC* frame4 = *(++it);
-        const TransferFrameTC* frame5 = *(++it); // This should be the type BC frame
-        const TransferFrameTC* frame6 = *(++it);
-
-        CHECK(frame1->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
-        CHECK(frame2->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
-        CHECK(frame3->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
-        CHECK(frame4->getFrameLength() == TcPrimaryHeaderSize + maxTransferFrameDataFieldLength + errorControlFieldSize);
-        CHECK(frame5->getFrameLength() == TcPrimaryHeaderSize + sizeof(differentServicePacket) + errorControlFieldSize);
-        CHECK(frame6->getFrameLength() == TcPrimaryHeaderSize + TcSegmentHeaderSize + sizeof(packet9) + sizeof(packet10) + errorControlFieldSize);
-
-        CHECK(frame1->getServiceType() == ServiceType::TYPE_AD);
-        CHECK(frame2->getServiceType() == ServiceType::TYPE_AD);
-        CHECK(frame3->getServiceType() == ServiceType::TYPE_AD);
-        CHECK(frame4->getServiceType() == ServiceType::TYPE_AD);
-        CHECK(frame5->getServiceType() == ServiceType::TYPE_BC);
-        CHECK(frame6->getServiceType() == ServiceType::TYPE_AD);
-
-        CHECK(((frame1->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationStart);
-        CHECK(((frame2->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationStart);
-        CHECK(((frame3->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationMiddle);
-        CHECK(((frame4->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::SegmentationEnd);
-        CHECK(((frame6->segmentationHeader() & 0xC0) >> 6) == SegmentLengthID::NoSegmentation);
-
-        uint16_t count = 0;
-        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
-            CHECK(frame1->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
-            count++;
-        }
-        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
-            CHECK(frame2->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
-            count++;
-        }
-        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
-            CHECK(frame3->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
-            count++;
-        }
-        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize; i++){
-            CHECK(frame4->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
-            count++;
-        }
-        for(uint16_t i = 0; i < maxTransferFrameDataFieldLength - TcSegmentHeaderSize - 2; i++){
-            CHECK(frame6->getFrameData()[i + TcPrimaryHeaderSize + TcSegmentHeaderSize] == concatPacket[count]);
-            count++;
-        }
-    }
 }
 
 TEST_CASE("CLCW construction at VC Reception") {
@@ -855,7 +758,7 @@ TEST_CASE("CLCW construction at VC Reception") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, false, 128, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
@@ -925,9 +828,9 @@ TEST_CASE("Frame Acknowledgement") {
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(0, false, 128, true, true, true, 2, 2, false, false, 0, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
-	master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, false, false, 0, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+	master_channel.addVC(1, false, 128, true, true, true, 2, 2, false, false, 0, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);

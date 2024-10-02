@@ -107,19 +107,16 @@ public:
     /**
      * Auxiliary function to implement the segmentation of packets stored in
      * the packet buffer
-     *
-     * @param prevFrame              Half full frame waiting in the master channel (nullptr if it does
-     *                              not exist or is full)
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-     *                                          (segment header included)
+     *                                          (segment header is included, if it exists)
      * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
      * @param vid                            Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
      *                                      (segmentHeaderPresent = false) or if the service type is BC
-     * @param serviceType                    Type AD or BC frames
+     * @param serviceType                    Type AD, BC, BD frames
      * @return A Service Channel Notification
      */
-    ServiceChannelNotification segmentationTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+    ServiceChannelNotification segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                               uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
     /**
@@ -128,15 +125,15 @@ public:
      * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
      *                                       not exist or is full)
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-     *                                          (segment header included)
+     *                                          (segment header is included, if it exists)
      * @param packetLength                   The length of the next packet in the stored TC packet buffer
      * @param vcid                           Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
      *                                        (segmentHeaderPresent = false) or if the service type is BC
-     * @param serviceType                    Type AD or BC frames
+     * @param serviceType                    Type AD, BC, BD frames
      * @return                               A Service Channel Notification
      */
-    ServiceChannelNotification blockingTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+    ServiceChannelNotification blockingTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                           uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
 
@@ -149,7 +146,7 @@ public:
      * @param vid           Virtual channel id
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
      *                      (segmentHeaderPresent = false) or if the service type is BC
-     * @param serviceType  Service Type
+     * @param serviceType  Type AD, BC, BD frames
      */
     ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
                                                ServiceType serviceType);
