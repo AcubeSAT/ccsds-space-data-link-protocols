@@ -230,12 +230,6 @@ public:
      */
     const bool blockingTC;
 
-    /**
-     * Determines whether large packets can be segmented to multiple TC transfer frames
-     * (applies for Type BC packets, and for Type AD, BD packets if a segmentHeader is not present)
-     */
-    const bool segmentationTC;
-
 	/**
 	 * Determines the maximum number of times Type A frames will be re-transmitted
 	 */
@@ -312,7 +306,7 @@ public:
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
                    const bool segmentHeaderPresent, const uint16_t maxFrameLengthTC, const bool blockingTM,
-                   const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                   const bool segmentationTM, const bool blockingTC,
                    const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
                    const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
@@ -322,7 +316,7 @@ public:
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
           secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
           segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLengthTC), blockingTM(blockingTM),
-          segmentationTM(segmentationTM), blockingTC(blockingTC), segmentationTC(segmentationTC),
+          segmentationTM(segmentationTM), blockingTC(blockingTC),
           repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions),
           repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
           sentQueueRxTC(), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
@@ -340,7 +334,7 @@ public:
           waitQueueTxTC(v.waitQueueTxTC), sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC),
           sentQueueRxTC(v.waitQueueRxTC), unprocessedFrameListBufferTxTC(v.unprocessedFrameListBufferTxTC),
           fop(v.fop), farm(v.farm), masterChannel(v.masterChannel), blockingTM(v.blockingTM), segmentationTM(v.segmentationTM),
-          blockingTC(v.blockingTC), segmentationTC(v.segmentationTC),
+          blockingTC(v.blockingTC),
           synchronization(v.synchronization), secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
           secondaryHeaderTMLength(v.secondaryHeaderTMLength),
           frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
@@ -546,7 +540,7 @@ struct MasterChannel {
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-                             const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                             const bool segmentationTM, const bool blockingTC,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
@@ -558,7 +552,7 @@ struct MasterChannel {
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-                             const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                             const bool segmentationTM, const bool blockingTC,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
