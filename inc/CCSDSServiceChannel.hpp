@@ -589,7 +589,7 @@ public:
 	 */
 
 
-	void TransferFrameHelperFunctionTM(TransferFrame TransferFrame);
+	void TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed, uint8_t DataArray[], uint16_t DataLength);
 
-	void TransferFrameHelperFunctionTC(TransferFrame TransferFrame);
+	void TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed);
 };

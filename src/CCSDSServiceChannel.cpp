@@ -1420,70 +1420,72 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTM(uint8_t vid, uin
 
 
 
-void ServiceChannel::TransferFrameHelperFunctionTC(TransferFrame TransferFrame) {
-	bool detailed;
+void ServiceChannel::TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed, uint8_t vid, uint8_t mapid, uint8_t DataArray[], uint16_t DataLength)
+{
 	LOG_DEBUG<<"TransferFrameHelperFunctionTC";
 
 	//TRANSFER FRAME PRIMARY HEADER (5 octets)
-	uint8_t TransferFrameVersionNumber = ((TransferFrame.getFrameData()[0] & 0xC0) >> 6);
-	uint8_t ByPassFlag  = ((TransferFrame.getFrameData()[0] & 0x40) >> 5);
-	uint8_t ControlCommandFlag = ((TransferFrame.getFrameData()[0] & 0x20) >> 4);
-	uint8_t RSVDSpare = ((TransferFrame.getFrameData()[0] & 0x18) >> 3);
-	uint16_t SpacecraftID = ((static_cast<uint16_t>(TransferFrame.getFrameData()[0] & 0xC0)) | (TransferFrame.getFrameData()[1] & 0xFF));
-	uint8_t VirtualChannelID = ((TransferFrame.getFrameData()[2] & 0xFC) >> 2);
-	uint16_t FrameLength = ((static_cast<uint16_t>(TransferFrame.getFrameData()[2] & 0xC0)) | (TransferFrame.getFrameData()[3] & 0xFF));
-	uint8_t FrameSequenceNumber = (TransferFrame.getFrameData()[4] & 0xFF);
+	uint8_t TransferFrameVersionNumber = ((TransferFrameTC.getFrameData()[0] & 0xC0) >> 6);
+	uint8_t ByPassFlag  = ((TransferFrameTC.getFrameData()[0] & 0x40) >> 5);
+	uint8_t ControlCommandFlag = ((TransferFrameTC.getFrameData()[0] & 0x20) >> 4);
+	uint8_t RSVDSpare = ((TransferFrameTC.getFrameData()[0] & 0x18) >> 3);
+	uint16_t SpacecraftID = ((static_cast<uint16_t>(TransferFrameTC.getFrameData()[0] & 0xC0)) | (TransferFrameTC.getFrameData()[1] & 0xFF));
+	uint8_t VirtualChannelID = ((TransferFrameTC.getFrameData()[2] & 0xFC) >> 2);
+	uint16_t FrameLength = ((static_cast<uint16_t>(TransferFrameTC.getFrameData()[2] & 0xC0)) | (TransferFrameTC.getFrameData()[3] & 0xFF));
+	uint8_t FrameSequenceNumber = (TransferFrameTC.getFrameData()[4] & 0xFF);
 
+	//Transfer Frame Data Field
+	for(int i = 0; i < DataLength; i++)
+	{
+		DataArray[i] = TransferFrameTM.getFrameData()[i];
+	}
 }
 
-void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrame TransferFrame)
+void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed, uint8_t DataArray[], uint16_t DataLength)
 {
-	bool detailed;
 	LOG_DEBUG<<"TransferFrameHelperFunctionTM";
 
 	//TRANSFER FRAME PRIMARY HEADER (6 octets)
-	uint8_t TransferFrameVersionNumber = ((TransferFrame.getFrameData()[0] & 0xC0) >> 6);
-	uint16_t SpacecraftId = ((static_cast<uint16_t>(TransferFrame.getFrameData()[0] & 0x3F)) << 4 ) | ((TransferFrame.getFrameData()[1] & 0xF0) >> 4);
-	uint8_t VirtualChannelId = ((TransferFrame.getFrameData()[1] &	0x0E) >> 1);
-	uint8_t OCFFlag = TransferFrame.getFrameData()[1] & 0x01;
-	uint8_t MCFrameCount = TransferFrame.getFrameData()[2] & 0xFF;
-	uint8_t VCFrameCount = TransferFrame.getFrameData()[3] & 0xFF;
+	uint8_t TransferFrameVersionNumber = ((TransferFrameTM.getFrameData()[0] & 0xC0) >> 6);
+	uint16_t SpacecraftId = ((static_cast<uint16_t>(TransferFrameTM.getFrameData()[0] & 0x3F)) << 4 ) | ((TransferFrameTM.getFrameData()[1] & 0xF0) >> 4);
+	uint8_t VirtualChannelId = ((TransferFrameTM.getFrameData()[1] & 0x0E) >> 1);
+	uint8_t OCFFlag = TransferFrameTM.getFrameData()[1] & 0x01;
+	uint8_t MCFrameCount = TransferFrameTM.getFrameData()[2] & 0xFF;
+	uint8_t VCFrameCount = TransferFrameTM.getFrameData()[3] & 0xFF;
 	uint16_t TransferFrameDataFieldStatus[2];
-	TransferFrameDataFieldStatus[0] = (TransferFrame.getFrameData()[4] & 0xFF);
-	TransferFrameDataFieldStatus[1] = (TransferFrame.getFrameData()[5] & 0xFF);
+	TransferFrameDataFieldStatus[0] = (TransferFrameTM.getFrameData()[4] & 0xFF);
+	TransferFrameDataFieldStatus[1] = (TransferFrameTM.getFrameData()[5] & 0xFF);
 
 	//TRANSFER FRAME DATA FIELD STATUS(last 2 octets of primary header)
-	uint8_t TransferFrameSecondaryHeaderFlag = ((TransferFrame.getFrameData()[4] & 0x80) >> 7);
-	uint8_t SynchronizationFlag = ((TransferFrame.getFrameData()[4] & 0x40) >> 6);
-	uint8_t PacketOrderFlag = ((TransferFrame.getFrameData()[4] & 0x20) >> 5);
-	uint8_t SegmentLengthID = ((TransferFrame.getFrameData()[4] & 0x18) >> 3);
-	uint16_t FirstHeaderPointer = ((static_cast<uint16_t>(TransferFrame.getFrameData()[4] & 0x07)) | ((TransferFrame.getFrameData()[5] & 0xFF) >> 4));
+	uint8_t TransferFrameSecondaryHeaderFlag = ((TransferFrameTM.getFrameData()[4] & 0x80) >> 7);
+	uint8_t SynchronizationFlag = ((TransferFrameTM.getFrameData()[4] & 0x40) >> 6);
+	uint8_t PacketOrderFlag = ((TransferFrameTM.getFrameData()[4] & 0x20) >> 5);
+	uint8_t SegmentLengthID = ((TransferFrameTM.getFrameData()[4] & 0x18) >> 3);
+	uint16_t FirstHeaderPointer = ((static_cast<uint16_t>(TransferFrameTM.getFrameData()[4] & 0x07)) | ((TransferFrameTM.getFrameData()[5] & 0xFF) >> 4));
 
 	//TRANSFER FRAME SECONDARY HEADER (up to 64 octets)
-	uint8_t TransferFrameSecondaryHeaderVersionNumber = ((TransferFrame.getFrameData()[6] & 0xC0) >> 6);
-	uint8_t TransferFrameSecondaryHeaderLength = (TransferFrame.getFrameData()[6] & 0x3F);
+	uint8_t TransferFrameSecondaryHeaderVersionNumber = ((TransferFrameTM.getFrameData()[6] & 0xC0) >> 6);
+	uint8_t TransferFrameSecondaryHeaderLength = (TransferFrameTM.getFrameData()[6] & 0x3F);
 	//Transfer Frame Secondary Header Data Field (up to 63 octets)
 
 
 
 	//Transfer Frame Data Field
-	static uint8_t DataArray[100] = {0}; //Allocating a big part of memory for the Data Field of the Transfer Frame
-
-	for(int i = 0; i < 100; i++)
+	for(int i = 0; i < DataLength; i++)
 	{
-		DataArray[i] = TransferFrame.getFrameData()[i];
+		DataArray[i] = TransferFrameTM.getFrameData()[i];
 	}
 
 	//TRANSFER FRAME TRAILER
 	uint32_t OperationalControlField[4];
-	OperationalControlField[0] = (TransferFrame.getFrameData()[69] & 0xFF) >> 24;
-	OperationalControlField[1] = (TransferFrame.getFrameData()[70] & 0xFF) >> 16;
-	OperationalControlField[2] = (TransferFrame.getFrameData()[71] & 0xFF) >> 8;
-	OperationalControlField[3] = (TransferFrame.getFrameData()[72] & 0xFF);
+	OperationalControlField[0] = (TransferFrameTM.getFrameData()[69] & 0xFF) >> 24;
+	OperationalControlField[1] = (TransferFrameTM.getFrameData()[70] & 0xFF) >> 16;
+	OperationalControlField[2] = (TransferFrameTM.getFrameData()[71] & 0xFF) >> 8;
+	OperationalControlField[3] = (TransferFrameTM.getFrameData()[72] & 0xFF);
 
 	uint16_t FrameErrorControlField[2];
-	FrameErrorControlField[0] = (TransferFrame.getFrameData()[73] & 0xFF) >> 8;
-	FrameErrorControlField[1] = (TransferFrame.getFrameData()[74] & 0xFF);
+	FrameErrorControlField[0] = (TransferFrameTM.getFrameData()[73] & 0xFF) >> 8;
+	FrameErrorControlField[1] = (TransferFrameTM.getFrameData()[74] & 0xFF);
 
 
 
