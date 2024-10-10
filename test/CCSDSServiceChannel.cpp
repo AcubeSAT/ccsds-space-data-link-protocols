@@ -219,7 +219,7 @@ TEST_CASE("Service Channel") {
 	//  channels to simulate communication between GS and SC
 
 	CHECK(serv_channel.availableFramesVcCopyRxTM(0) == MaxReceivedRxTmInVirtBuffer);
-	CHECK(serv_channel.availableFramesAfterVcGenerationTxTM() == MaxTxInMasterChannel - 0);
+	CHECK(serv_channel.availableFramesAfterVcGenerationTxTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 0);
 
 	err = serv_channel.allFramesReceptionRequestRxTM(vaild_frame_TM, TmTransferFrameSize);
 	CHECK(serv_channel.availableFramesVcCopyRxTM(0) == MaxReceivedRxTmInVirtBuffer - 1);

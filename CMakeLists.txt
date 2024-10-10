@@ -31,14 +31,15 @@ add_library(common OBJECT
 
 # Specify the .cpp files for the executables
 add_executable(ccsds_tm_packets_default
-        src/main.cpp
         $<TARGET_OBJECTS:common>
+        src/main.cpp
         )
 
-file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
 add_executable(ccsds_tm_packets_yamcs_connection
         $<TARGET_OBJECTS:common>
-        ${x86_main_SRC}
+        src/Platform/x86/FrameMaker.cpp
+        src/Platform/x86/FrameSender.cpp
+        src/Platform/x86/main.cpp
         )
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")

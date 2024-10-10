@@ -34,7 +34,8 @@ FrameSender::FrameSender() {
     }
     else{
         printf("\nAccepted\n");
-        sleep(15);
+        sleep(5);
+        //sleep(15);
         //LOG_DEBUG <<"Accepted";
     }
 

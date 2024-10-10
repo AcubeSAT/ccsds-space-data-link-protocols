@@ -22,7 +22,4 @@ public:
     ~FrameSender();
 
     void sendFrameToYamcs(uint8_t* frame, uint16_t frameLength);
-
-
-
 };

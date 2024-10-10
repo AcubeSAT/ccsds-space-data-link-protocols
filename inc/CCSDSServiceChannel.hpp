@@ -222,6 +222,11 @@ public:
 
     CLCW getClcwInBuffer();
 
+    // for testing purposes
+    void pushClcwInBuffer(CLCW clcw) {
+        clcwBuffer.push_back(clcw);
+    }
+
     /**
 	 * Get FOP State of the virtual channel
 	 */
@@ -417,7 +422,7 @@ public:
 
     //     - Utility and Debugging
     uint16_t availableFramesAfterVcGenerationTxTM() const {
-        return masterChannel.masterCopyTxTM.available();
+        return masterChannel.framesAfterVcGenerationServiceTxTM.available();
     }
     /**
      * Returns the available space in the packetLengthBufferTxTM buffer
@@ -430,7 +435,7 @@ public:
     uint16_t availablePacketBufferTxTM(uint8_t gvcid);
 
     /**
-     * Return the last stored TM transfer frame from masterCopyTxTM
+     * Return the last stored TM transfer frame from framesAfterVcGenerationServiceTxTM buffer
      */
     std::pair<ServiceChannelNotification, const TransferFrameTM*> backFrameAfterVcGenerationTxTM() const;
 
@@ -528,8 +533,7 @@ public:
      * rate to the Channel Coding Sublayer.
      * @see p. 4.2.7 from TM Space Data Link Protocol
      */
-    ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget,
-                                                              uint16_t frameLength);
+    ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget, uint16_t& frameLength);
 
 
     // TM TransferFrame - Receiving End (TM Rx)

@@ -885,12 +885,12 @@ uint16_t ServiceChannel::availablePacketBufferTxTM(uint8_t gvcid) {
 }
 
 std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::backFrameAfterVcGenerationTxTM() const {
-    if (masterChannel.masterCopyTxTM.empty()) {
+    if (masterChannel.framesAfterVcGenerationServiceTxTM.empty()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
         return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
     ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, &(masterChannel.masterCopyTxTM.back()));
+    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, masterChannel.framesAfterVcGenerationServiceTxTM.back());
 }
 
 std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::frontFrameAfterAllFramesGenerationTxTM() const {
@@ -957,7 +957,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
         return MEMORY_POOL_FULL;
     }
 
-    uint8_t trailerSize = vchan.frameErrorControlFieldPresent * errorControlFieldSize;
+    uint8_t trailerSize = vchan.frameErrorControlFieldPresent * errorControlFieldSize + vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize;
     // fill previous frame
     if (prevFrame != nullptr){
         for (uint16_t i = 0; i< TmTransferFrameSize; i++){  // clear up array between consecutive calls
@@ -1019,7 +1019,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
         vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
         TransferFrameTM transferFrameTm =
                 TransferFrameTM(transferFrameData,
-                                currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + trailerSize,
+                                transferFrameDataFieldLength + TmPrimaryHeaderSize + trailerSize,
                                 vchan.frameCountTM,
                                 vid,
                                 vchan.frameErrorControlFieldPresent,
@@ -1093,7 +1093,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
         uint16_t firstEmptyOctet = currentTransferFrameDataFieldLength;
         TransferFrameTM transferFrameTm =
                 TransferFrameTM(transferFrameData,
-                                currentTransferFrameDataFieldLength + TmPrimaryHeaderSize + trailerSize,
+                                transferFrameDataFieldLength + TmPrimaryHeaderSize + trailerSize,
                                 vchan.frameCountTM,
                                 vid,
                                 vchan.frameErrorControlFieldPresent,
@@ -1337,7 +1337,7 @@ ServiceChannelNotification ServiceChannel::mcGenerationRequestTxTM() {
 
 
 //     - All Frames Generation
-ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_t* frameDataTarget, uint16_t frameLength) {
+ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_t* frameDataTarget, uint16_t& frameLength) {
     if (masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.empty()) {
         return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
     }
@@ -1352,6 +1352,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_
     }
 
     memcpy(frameDataTarget, frame->getFrameData(), frame->getFrameLength());
+    frameLength = frame->getFrameLength();
 
     masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.pop_front();
     // Finally, remove master copy

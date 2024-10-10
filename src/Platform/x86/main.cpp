@@ -2,9 +2,54 @@
 #include "CCSDSServiceChannel.hpp"
 #include "FrameMaker.hpp"
 
+void manual(FrameMaker frameMaker){
+    // Feed packets to certain virtual channels
+    uint8_t packet1[] = {1, 2, 3, 4, 5, 6, 7};
+    uint8_t packet2[] = {8, 9, 10, 11, 12};
+    frameMaker.packetFeeder(packet1,sizeof(packet1) ,0);
+    frameMaker.packetFeeder(packet2,sizeof(packet2) ,0);
+
+    // Feed CLCW
+    uint32_t clcw = 0xFFFFFFFF;
+    frameMaker.clcwFeeder(clcw);
+
+    // Transmit through certain virtual channels
+    ServiceChannelNotification err;
+    frameMaker.transmitChain(0);
+
+    printf("Frame Length: %d", frameMaker.getFrameLength());
+
+    // Pop frames from queue and send them to yamcs
+    // To simulate a client, open a terminal and write:
+    // nc -l -v localhost 10014 | od -A d -t u1
+    // If the full output is not shown, press enter
+    FrameSender frameSender = FrameSender();
+    uint8_t frame[TmTransferFrameSize] = {0};
+    uint8_t sendAttempts = 1;
+    for (uint16_t i = 0; i < frameMaker.getNumberOfFramesSent(); ++i) {
+        frameMaker.popWaitingFrame(frame);
+
+        printf("Sent Frame: ");
+        for (uint16_t j = 0; j < frameMaker.getFrameLength(); ++j) {
+            printf(" %d ", frame[j]);
+        }
+        printf("\n");
+
+        for (uint16_t j = 0; j < sendAttempts; ++j) {
+            frameSender.sendFrameToYamcs(frame, frameMaker.getFrameLength());
+            sleep(2);
+        }
+    }
+    //Print number of packet sent
+    printf("Number of non Idle Packets Sent %d\n", frameMaker.getNumberOfPacketsSent());
+}
+
+void automatic(FrameMaker frameMaker){
+}
+
 int main(){
 
-    //Create Virtual, Master and Service Channels
+    // Create Virtual, Master and Service Channels
     PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
     etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
@@ -14,38 +59,16 @@ int main(){
     };
 
     MasterChannel master_channel = MasterChannel();
-    master_channel.addVC(0, 128, true, 2, 2, false, false, 0, false, SynchronizationFlag::OCTET, 255, 10, 10, 3,
+    master_channel.addVC(0, true, 128, true, true, true,  2, 2, true, false, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
-    //Define the packets you want to send
-    uint8_t packet[] = {0, 0, 0, 0, 0xd, 0x92, 0xb7, 17, 2, 0x0, 0x0, 0xa, 0xd, 17, 0x2, 0x38,0x0};
-    uint8_t packet2[] = {1,2,3,4,5,6,7,8,9};
+    // Create Frame Maker class instance, set frame data field length
+    uint16_t  transferFrameDataFieldLength = 10;
+    FrameMaker frameMaker = FrameMaker(&serv_channel, transferFrameDataFieldLength);
 
-    std::pair<uint8_t *, ServiceChannelNotification> frame;
-
-    //Create Frame Maker class instance
-    FrameMaker frameMaker = FrameMaker(&serv_channel);
-    //Store the packets you want to make a frame out of
-    frameMaker.packetFeeder(packet,17,0);
-    frameMaker.packetFeeder(packet2,9,0);
-    frame = frameMaker.transmitChain(30,0);
-    if(frame.second != NO_SERVICE_EVENT){
-        printf("Error in Transmit Chain");
-    }
-
-    //Print the sent frame
-    printf("Sent Frame: ");
-    for(uint8_t i = 0 ; i < frameMaker.getFrameLength() ; i++){
-        printf(" %d ", (frame.first)[i]);
-    }
-    //Print number of packet sent
-    printf("\nNumber of Packet Sent %d", frameMaker.getNumberOfPackets());
-
-    FrameSender frameSender = FrameSender();
-    for(uint8_t i = 0 ; i < 8 ; i++) {
-        frameSender.sendFrameToYamcs(frame.first, frameMaker.getFrameLength());
-        sleep(2);
-    }
+    // Call manual or automatic frame sending here
+    manual(frameMaker);
 }
+

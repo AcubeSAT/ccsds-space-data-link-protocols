@@ -1,51 +1,41 @@
 #include "FrameMaker.hpp"
 #include "stdlib.h"
 
-FrameMaker::FrameMaker(ServiceChannel* servChannel){
-    serviceChannel = servChannel;
-}
-
-void FrameMaker::packetFeeder(uint8_t* packet, uint16_t packetLength,uint8_t gvid) {
-    serviceChannel->storePacketTm(packet,packetLength,gvid);
-    numberOfPackets++;
-    frameLength += packetLength;
-}
-
-
-std::pair<uint8_t*, ServiceChannelNotification> FrameMaker::transmitChain(uint16_t maximumDataLength, uint8_t gcvid) {
+ServiceChannelNotification FrameMaker::transmitChain(uint8_t vid) {
     ServiceChannelNotification ser;
-    std::pair<uint8_t*, ServiceChannelNotification> returnFrame;
-    ser = serviceChannel->vcGenerationService(maximumDataLength, gcvid);
+
+    // block and segment packets into frames. Add idle space packets if needed
+    uint8_t initialPacketsNum = PacketBufferTmSize - serviceChannel->availablePacketLengthBufferTxTM(vid);
+    ser = serviceChannel->vcGenerationServiceTxTM(transferFrameDataFieldLength, vid);
+    numberOfPacketsSent += initialPacketsNum - (PacketBufferTmSize - serviceChannel->availablePacketLengthBufferTxTM(vid));
     if(ser != NO_SERVICE_EVENT){
-        returnFrame.first = frame;
-        returnFrame.second = ser;
-        return returnFrame;
+        return ser;
     }
-    ser = serviceChannel->mcGenerationTMRequest();
-    if(ser != NO_SERVICE_EVENT){
-        returnFrame.first = frame;
-        returnFrame.second = ser;
-        return returnFrame;
+
+    // (secondary header) and CLCW insertion for all created frames
+    do {
+        ser = serviceChannel->mcGenerationRequestTxTM();
+    } while (ser == NO_SERVICE_EVENT);
+
+    // error control encoding for all frames
+    while (serviceChannel->allFramesGenerationRequestTxTM(frameTarget, frameLength) == NO_SERVICE_EVENT) {
+        numberOfFramesSent += 1;
+        std::array<uint8_t, TmTransferFrameSize> frameArray = {0};
+        for (uint16_t i = 0; i < frameLength; ++i) {
+            frameArray[i] = frameTarget[i];
+        }
+        frameQueue.push(frameArray);
     }
-    ser = serviceChannel->allFramesGenerationTMRequest(frame,TmTransferFrameSize);
-    if(ser != NO_SERVICE_EVENT){
-        returnFrame.first = frame;
-        returnFrame.second = ser;
-        return returnFrame;
-    }
-    sentFrameLegth = frameLength;
-    sentFrameNumberOfPackets = numberOfPackets;
-    frameLength = 6;
-    numberOfPackets = 0;
-    returnFrame.first = frame;
-    returnFrame.second = ser;
-    return returnFrame;
+
+
+    return ser;
 }
 
-uint16_t FrameMaker::getFrameLength() {
-    return sentFrameLegth;
-}
-
-uint8_t FrameMaker::getNumberOfPackets() {
-    return sentFrameNumberOfPackets;
+void FrameMaker::popWaitingFrame(uint8_t* frameDest) {
+    if (!frameQueue.empty()) {
+        for (uint16_t i = 0; i < TmTransferFrameSize; ++i) {
+            frameDest[i] = frameQueue.front()[i];
+        }
+        frameQueue.pop();
+    }
 }
