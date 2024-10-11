@@ -321,7 +321,7 @@ public:
           repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
           sentQueueRxTC(), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
           operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-          currentlyProcessedCLCW(0), frameCountTM(0),
+          frameCountTM(0),
           fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
           farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)), mapChannels(mapChan) {
@@ -338,8 +338,7 @@ public:
           synchronization(v.synchronization), secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
           secondaryHeaderTMLength(v.secondaryHeaderTMLength),
           frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
-          operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels),
-          currentlyProcessedCLCW(0) {
+          operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
 		fop.waitQueueFOP = &waitQueueTxTC;
@@ -402,9 +401,9 @@ private:
 	FrameOperationProcedure fop;
 
 	/**
-	 * Buffer holding the master copy of the CLCW that is currently being processed
+	 * Buffer holding the CLCW that is received
 	 */
-	CLCW currentlyProcessedCLCW;
+    etl::list<CLCW, 1> receivedClcwBuffer;
 
 	/**
 	 * Holds the FARM state of the virtual channel
@@ -459,6 +458,16 @@ private:
      * Applicable to Type-BC Frames
      */
     etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBC;
+
+    /**
+     * Flag to indicate that a clcw was generated
+     */
+     bool clcwWaitingToBeTransmitted = false;
+
+    /**
+     * Buffer to store the clcws waiting to be transmited
+     */
+    etl::list<CLCW, 1> generatedClcwBuffer;
 
 };
 

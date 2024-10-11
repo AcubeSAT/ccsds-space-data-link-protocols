@@ -776,11 +776,11 @@ TEST_CASE("CLCW construction at VC Reception") {
     serv_channel.allFramesReceptionRequestRxTC();
 	err = serv_channel.vcReceptionRxTC(0);
 	// Checks if frame sequence number is the same as expected
-	CHECK(serv_channel.getClcwInBuffer().getWait() == false);
-	CHECK(serv_channel.getClcwInBuffer().getRetransmit() == false);
-	CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
+	CHECK(serv_channel.getClcwInBuffer(0).getWait() == false);
+	CHECK(serv_channel.getClcwInBuffer(0).getRetransmit() == false);
+	CHECK(serv_channel.getClcwInBuffer(0).getLockout() == false);
 
-    CLCW clcw = serv_channel.getClcwInBuffer();
+    CLCW clcw = serv_channel.getClcwInBuffer(0);
 
 	CHECK(clcw.getWait() == false);
 	CHECK(clcw.getRetransmit() == false);
@@ -789,11 +789,11 @@ TEST_CASE("CLCW construction at VC Reception") {
 
 	err = serv_channel.vcReceptionRxTC(0);
 	// Checks if frame sequence number is bigger than expected but smaller that positive window
-	CHECK(serv_channel.getClcwInBuffer().getWait() == false);
-	CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
-	CHECK(serv_channel.getClcwInBuffer().getLockout() == false);
+	CHECK(serv_channel.getClcwInBuffer(0).getWait() == false);
+	CHECK(serv_channel.getClcwInBuffer(0).getRetransmit() == true);
+	CHECK(serv_channel.getClcwInBuffer(0).getLockout() == false);
 
-    CLCW clcw2 = serv_channel.getClcwInBuffer();
+    CLCW clcw2 = serv_channel.getClcwInBuffer(0);
 
 	CHECK(clcw2.getWait() == false);
 	CHECK(clcw2.getRetransmit() == true);
@@ -803,11 +803,11 @@ TEST_CASE("CLCW construction at VC Reception") {
 
 	err = serv_channel.vcReceptionRxTC(0);
 	// Checks if frame sequence number is bigger than expected and bigger that positive window
-	CHECK(serv_channel.getClcwInBuffer().getWait() == false);
-	CHECK(serv_channel.getClcwInBuffer().getRetransmit() == true);
-	CHECK(serv_channel.getClcwInBuffer().getLockout() == true);
+	CHECK(serv_channel.getClcwInBuffer(0).getWait() == false);
+	CHECK(serv_channel.getClcwInBuffer(0).getRetransmit() == true);
+	CHECK(serv_channel.getClcwInBuffer(0).getLockout() == true);
 
-    CLCW clcw3 = serv_channel.getClcwInBuffer();
+    CLCW clcw3 = serv_channel.getClcwInBuffer(0);
 
 	CHECK(clcw3.getWait() == false);
 	CHECK(clcw3.getRetransmit() == true);

@@ -208,7 +208,8 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	CLCW clcw = vchan->currentlyProcessedCLCW.getClcw();
+	CLCW clcw = vchan->receivedClcwBuffer.front();
+    vchan->receivedClcwBuffer.pop_front();
 
 	if (clcw.getLockout() == 0) {
 		if (clcw.getReportValue() == transmitterFrameSeqNumber) {

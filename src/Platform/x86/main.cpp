@@ -11,7 +11,7 @@ void manual(FrameMaker frameMaker){
 
     // Feed CLCW
     uint32_t clcw = 0xFFFFFFFF;
-    frameMaker.clcwFeeder(clcw);
+    frameMaker.clcwFeeder(clcw, 0);
 
     // Transmit through certain virtual channels
     ServiceChannelNotification err;

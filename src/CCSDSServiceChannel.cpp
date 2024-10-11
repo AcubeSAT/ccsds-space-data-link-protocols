@@ -587,8 +587,8 @@ void ServiceChannel::invalidDirective(uint8_t vid) {
     VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
     virtualChannel->fop.invalidDirective();
 }
-CLCW ServiceChannel::getClcwInBuffer() {
-    return clcwBuffer.front();
+CLCW ServiceChannel::getClcwInBuffer(uint8_t vid) {
+    return masterChannel.virtualChannels.at(0).generatedClcwBuffer.front();
 }
 
 FOPState ServiceChannel::fopState(uint8_t vid) const {
@@ -788,11 +788,11 @@ ServiceChannelNotification ServiceChannel::vcReceptionRxTC(uint8_t vid) {
             CLCW(0, 0, 0, 1, vid, 0, 0, 1, virtChannel.farm.lockout, virtChannel.farm.wait, virtChannel.farm.retransmit,
                  virtChannel.farm.farmBCount, 0, virtChannel.farm.receiverFrameSeqNumber);
 
-    if (!clcwBuffer.empty()) {
-        clcwBuffer.pop_front();
+    if (!virtChannel.generatedClcwBuffer.empty()) {
+        virtChannel.generatedClcwBuffer.pop_front();
     }
-    clcwBuffer.push_back(clcw);
-    clcwWaitingToBeTransmitted = true;
+    virtChannel.generatedClcwBuffer.push_back(clcw);
+    virtChannel.clcwWaitingToBeTransmitted = true;
 
     // If MAP channels are implemented in this specific VC, write to the MAP buffer
     if (virtChannel.segmentHeaderPresent) {
@@ -1028,6 +1028,13 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                                 vchan.synchronization, firstHeaderPointer,
                                 currentTransferFrameDataFieldLength,
                                 TM);
+
+        // add clcw to the operational control field
+        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+            transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
+            vchan.generatedClcwBuffer.pop_front();
+        }
+
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
         masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         packetLength -= transferFrameDataFieldLength;
@@ -1103,6 +1110,13 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 0,
                                 firstEmptyOctet,
                                 TM);
+
+        // add clcw to the operational control field
+        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+            transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
+            vchan.generatedClcwBuffer.pop_front();
+        }
+
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
         masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
     }
@@ -1241,6 +1255,13 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                                 TmOIDFrameFirstHeaderPointer,
                                 transferFrameDataFieldLength,
                                 TM);
+
+        // add clcw to the operational control field
+        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+            frameOID.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
+            vchan.generatedClcwBuffer.pop_front();
+        }
+
         masterChannel.masterCopyTxTM.push_back(frameOID);
         masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         return PACKET_BUFFER_EMPTY;
@@ -1321,12 +1342,6 @@ ServiceChannelNotification ServiceChannel::mcGenerationRequestTxTM() {
     // set master channel frame counter
     masterChannel.currFrameCountTM = (masterChannel.currFrameCountTM + 1) % 256;
     frame->setMasterChannelFrameCount(masterChannel.currFrameCountTM);
-
-    // add clcw to the operational control field
-    if (!clcwBuffer.empty()){
-        frame->setOperationalControlField(clcwBuffer.front().clcw);
-        clcwBuffer.pop_front();
-    }
 
     masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.push_back(frame);
     masterChannel.framesAfterVcGenerationServiceTxTM.pop_front();
@@ -1423,12 +1438,12 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTM(uint8_t
         ccsdsLogNotice<uint8_t>(Rx, TypeServiceChannelNotif, MC_RX_INVALID_COUNT, mc_counter_diff);
     }
 
-    // TODO: There should be a TC Tx service that takes as input the clcw and acknowledges frames
+    // TODO: There should be a TC Tx service that takes as input the clcw stream from yacms and places them in receivedClcwBuffer
     // CLCW extraction
     std::optional<uint32_t> operationalControlField = frame.getOperationalControlField();
     if (operationalControlField.has_value() && operationalControlField.value() >> 31 == 0) {
         CLCW clcw = CLCW(operationalControlField.value());
-        virtualChannel->currentlyProcessedCLCW = CLCW(clcw.getClcw());
+        virtualChannel->receivedClcwBuffer.push_back(CLCW(clcw.getClcw()));
         virtualChannel->fop.validClcwArrival();
         virtualChannel->fop.acknowledgePreviousFrames(clcw.getReportValue());
     }
