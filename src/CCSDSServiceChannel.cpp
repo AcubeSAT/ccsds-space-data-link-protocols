@@ -1024,7 +1024,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                                 vid,
                                 vchan.frameErrorControlFieldPresent,
                                 vchan.secondaryHeaderTMPresent,
-                                segmentLengthId,
+                                3,
                                 vchan.synchronization, firstHeaderPointer,
                                 currentTransferFrameDataFieldLength,
                                 TM);
@@ -1105,7 +1105,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 vid,
                                 vchan.frameErrorControlFieldPresent,
                                 vchan.secondaryHeaderTMPresent,
-                                segmentLengthId,
+                                3,
                                 vchan.synchronization,
                                 0,
                                 firstEmptyOctet,

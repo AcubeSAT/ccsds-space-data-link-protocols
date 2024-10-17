@@ -4,10 +4,11 @@
 
 void manual(FrameMaker frameMaker){
     // Feed packets to certain virtual channels
-    uint8_t packet1[] = {1, 2, 3, 4, 5, 6, 7};
-    uint8_t packet2[] = {8, 9, 10, 11, 12};
+    uint8_t packet1[] = {8, 1, 192, 0, 0, 10, 32, 17, 2, 0, 0, 0, 1, 15, 43, 209, 58};
+
+    //uint8_t packet2[] = {8, 9, 10, 11, 12};
     frameMaker.packetFeeder(packet1,sizeof(packet1) ,0);
-    frameMaker.packetFeeder(packet2,sizeof(packet2) ,0);
+    //frameMaker.packetFeeder(packet2,sizeof(packet2) ,0);
 
     // Feed CLCW
     uint32_t clcw = 0xFFFFFFFF;
@@ -59,13 +60,14 @@ int main(){
     };
 
     MasterChannel master_channel = MasterChannel();
-    master_channel.addVC(0, true, 128, true, true, true,  2, 2, true, false, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+    master_channel.addVC(0, true, 128, true, true, true,  2, 2, false, false, 8, false, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
+	//int arr[] = {00 0001100111 000 0 00000001 00000001 0001100000000000};
 
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
     // Create Frame Maker class instance, set frame data field length
-    uint16_t  transferFrameDataFieldLength = 10;
+    uint16_t  transferFrameDataFieldLength = 17;
     FrameMaker frameMaker = FrameMaker(&serv_channel, transferFrameDataFieldLength);
 
     // Call manual or automatic frame sending here

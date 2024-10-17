@@ -197,7 +197,7 @@ struct TransferFrameTM : public TransferFrame {
                     SynchronizationFlag syncFlag, uint16_t  firstHeaderPointer, uint16_t  firstEmptyOctet = 0, FrameType type = TM)
 	    : TransferFrame(type, frameLength, frameData, firstEmptyOctet), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists) {
 		// Transfer Frame Version Number + Spacecraft Id
-		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
+		frameData[0] = SpacecraftIdentifier & 0x3F0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
 		frameData[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1);
 		// Master Channel Frame Count is set by the MC Generation Service
@@ -217,7 +217,7 @@ struct TransferFrameTM : public TransferFrame {
                     SynchronizationFlag syncFlag, uint16_t firstHeaderPointer, uint32_t operationalControlField,uint16_t  firstEmptyOctet = 0, FrameType type = TM)
 	    : TransferFrame(type, frameLength, frameData, firstEmptyOctet), hdr(frameData), scid(scid), eccFieldExists(eccFieldExists) {
 		// Transfer Frame Version Number + Spacecraft Id
-		frameData[0] = SpacecraftIdentifier & 0xE0 >> 4;
+		frameData[0] = SpacecraftIdentifier & 0x3F0 >> 4;
 		// Spacecraft  Id + Virtual Channel ID + Operational Control Field
 		frameData[1] = ((SpacecraftIdentifier & 0x0F) << 4) | ((vcid & 0x7) << 1) | 1;
 		// Master Channel Frame Count is set by the MC Generation Service
