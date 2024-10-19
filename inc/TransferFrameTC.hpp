@@ -64,6 +64,10 @@ public:
 
 class TransferFrameTC : public TransferFrame {
 public:
+    TransferFrameHeaderTC& getTransferFrameHeader() {
+        return hdr;
+    }
+
 	void setConfSignal(FDURequestType reqSignal) {
 		confSignal = reqSignal;
 		// TODO Maybe signal the higher procedures here instead of having them manually take care of them
@@ -348,7 +352,7 @@ public:
           toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
-        frameData[0] = (bypassFlag << 5) | (ctrlCmdFlag << 4) | ((SpacecraftIdentifier & 0x300) >> 8);
+        frameData[0] = (TransferFrameVersionNumber << 6) | (bypassFlag << 5) | (ctrlCmdFlag << 4) | ((SpacecraftIdentifier & 0x300) >> 8);
         frameData[1] = SpacecraftIdentifier & 0xFF;
         frameData[2] = ((vid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
         frameData[3] = frameLength & 0xFF;

@@ -143,7 +143,7 @@ ServiceChannelNotification ServiceChannel::segmentationTC(uint16_t maxTransferFr
             packetBufferTcTx->pop();
         }
 
-        SegmentLengthID segmentLengthId = SegmentationMiddle;
+        SequenceFlags segmentLengthId = SegmentationMiddle;
 
         if (i == numberOfNewTransferFrames - 1){
             segmentLengthId = SegmentationEnd;
@@ -270,7 +270,7 @@ ServiceChannelNotification ServiceChannel::blockingTC(uint16_t maxTransferFrameD
         return MEMORY_POOL_FULL;
     }
 
-    SegmentLengthID segmentLengthId = NoSegmentation;
+    SequenceFlags segmentLengthId = NoSegmentation;
     uint16_t firstEmptyOctet = currentTransferFrameDataFieldLength;
 
     TransferFrameTC transferFrameTc =
@@ -993,19 +993,15 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
             vchan.packetBufferTxTM.pop_front();
         }
 
-        SegmentLengthID segmentLengthId = SegmentationMiddle;
         uint16_t firstHeaderPointer = TmNoPacketStartFirstHeaderPointer;
 
         if (prevFrame != nullptr && i == numberOfNewTransferFrames - 1){
-            segmentLengthId = SegmentationEnd;
             firstHeaderPointer = (packetLength == transferFrameDataFieldLength) ? TmNoPacketStartFirstHeaderPointer : packetLength;
         }
         else if (prevFrame == nullptr) {
             if (i == 0) {
-                segmentLengthId = SegmentationStart;
                 firstHeaderPointer = 0;
             } else if (i == numberOfNewTransferFrames - 1) {
-                segmentLengthId = SegmentationEnd;
                 firstHeaderPointer = (packetLength == transferFrameDataFieldLength) ? TmNoPacketStartFirstHeaderPointer : packetLength;
             }
         }
@@ -1023,8 +1019,10 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                                 vchan.frameCountTM,
                                 vid,
                                 vchan.frameErrorControlFieldPresent,
+                                vchan.operationalControlFieldTMPresent,
                                 vchan.secondaryHeaderTMPresent,
-                                3,
+                                PacketOrder,
+                                SegmentLengthIdentifier,
                                 vchan.synchronization, firstHeaderPointer,
                                 currentTransferFrameDataFieldLength,
                                 TM);
@@ -1096,7 +1094,6 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
             return MEMORY_POOL_FULL;
         }
         vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
-        SegmentLengthID segmentLengthId = NoSegmentation;
         uint16_t firstEmptyOctet = currentTransferFrameDataFieldLength;
         TransferFrameTM transferFrameTm =
                 TransferFrameTM(transferFrameData,
@@ -1104,8 +1101,10 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 vchan.frameCountTM,
                                 vid,
                                 vchan.frameErrorControlFieldPresent,
+                                vchan.operationalControlFieldTMPresent,
                                 vchan.secondaryHeaderTMPresent,
-                                3,
+                                SegmentLengthIdentifier,
+                                PacketOrder,
                                 vchan.synchronization,
                                 0,
                                 firstEmptyOctet,
@@ -1249,8 +1248,10 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                                 vchan.frameCountTM,
                                 vid,
                                 vchan.frameErrorControlFieldPresent,
+                                vchan.operationalControlFieldTMPresent,
                                 vchan.secondaryHeaderTMPresent,
-                                SegmentLengthID::NoSegmentation,
+                                SequenceFlags::NoSegmentation,
+                                PacketOrder,
                                 vchan.synchronization,
                                 TmOIDFrameFirstHeaderPointer,
                                 transferFrameDataFieldLength,
@@ -1359,7 +1360,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_
 
     TransferFrameTM* frame = masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.front();
 
-    uint8_t vid = frame->virtualChannelId();
+    uint8_t vid = frame->getVirtualChannelId();
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
     if (vchan.frameErrorControlFieldPresent) {
@@ -1475,7 +1476,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTM(uint8_t vid, uin
     uint16_t frameSize = transferFrameTm->getFrameLength();
     uint8_t headerSize = 5 + virtualChannel->secondaryHeaderTMLength;
     uint8_t trailerSize =
-            4 * transferFrameTm->operationalControlFieldExists() + 2 * virtualChannel->frameErrorControlFieldPresent;
+            4 * transferFrameTm->getOperationalControlFieldFlag() + 2 * virtualChannel->frameErrorControlFieldPresent;
     memcpy(packetTarget, transferFrameTm->getFrameData() + headerSize + 1, frameSize - headerSize - trailerSize);
 
     virtualChannel->framesAfterMcReceptionRxTM.pop_front();

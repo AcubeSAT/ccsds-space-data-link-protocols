@@ -10,17 +10,24 @@ struct TransferFrameHeader {
         transferFrameHeader = frameData;
 	}
 
+    /**
+     *  Frame version
+     */
+    uint8_t getTransferFrameVersionNumber() const {
+        return (transferFrameHeader[0] & 0xC0) >> 6;
+    }
+
 	/**
 	 * The ID of the spacecraft
 	 * 			TC: Bits  6–15  of  the  Transfer  Frame  Primary  Header
 	 * 			TM: Bits  2–11  of  the  Transfer  Frame  Primary  Header
 	 */
-	uint16_t spacecraftId(enum FrameType frameType) const {
+	uint16_t getSpacecraftId(enum FrameType frameType) const {
 		if (frameType == TC) {
 			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x03) << 8U) | (static_cast<uint16_t>(transferFrameHeader[1]));
 		} else {
-			return ((static_cast<uint16_t>(transferFrameHeader[0]) & 0x3F) << 2U) |
-                   ((static_cast<uint16_t>(transferFrameHeader[1])) & 0xC0) >> 6U;
+			return ((static_cast<uint16_t>(transferFrameHeader[0] & 0x3F)) << 4U) |
+                   ((static_cast<uint16_t>(transferFrameHeader[1] & 0xF0)) >> 4U);
 		}
 	}
 
@@ -29,7 +36,7 @@ struct TransferFrameHeader {
 	 * 			TC: Bits 16–21 of the Transfer Frame Primary Header
 	 * 			TM: Bits 12–14 of the Transfer Frame Primary Header
 	 */
-	uint8_t vcid(enum FrameType frameType) const {
+	uint8_t getVirtualChannelId(enum FrameType frameType) const {
 		if (frameType == TC) {
 			return (transferFrameHeader[2] >> 2U) & 0x3F;
 		} else {

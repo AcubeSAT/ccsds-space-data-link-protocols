@@ -91,7 +91,7 @@ TEST_CASE("Retransmission"){
 	//Create a transfer frame that carries the above CLCW
 	TransferFrameTM clcwTransferFrame =
 	    TransferFrameTM(clcwData, TmTransferFrameSize, 0, 0,
-                        false, false, NoSegmentation,
+                        false, false, NoSegmentation, PacketOrder,
                         VCA_SDU, 2046, clcw.clcw, 0, TM);
 	//Receive the CLCW frame
     serv_channel.allFramesReceptionRequestRxTM(clcwData, TmTransferFrameSize);

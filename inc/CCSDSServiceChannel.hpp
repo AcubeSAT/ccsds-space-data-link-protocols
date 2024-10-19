@@ -7,7 +7,7 @@
 #include <utility>
 #include <CCSDSLoggerImpl.h>
 
-enum SegmentLengthID { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentationEnd = 0x2, NoSegmentation = 0x3 };
+enum SequenceFlags { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentationEnd = 0x2, NoSegmentation = 0x3 };
 
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
