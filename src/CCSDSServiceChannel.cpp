@@ -630,7 +630,7 @@ ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTC() {
     TransferFrameTC* frame = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.front();
     masterChannel.outFramesBeforeAllFramesGenerationListTxTC.pop_front();
 
-    uint8_t vid = frame->virtualChannelId();
+    uint8_t vid = frame->getVirtualChannelId();
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
 
     if (vchan.frameErrorControlFieldPresent) {
@@ -676,8 +676,8 @@ ServiceChannelNotification ServiceChannel::storeFrameRxTC(uint8_t* frameData, ui
         return ServiceChannelNotification::RX_INVALID_LENGTH;
     }
 
-    uint8_t vid = transferFrameTc.virtualChannelId();
-    uint8_t mapid = transferFrameTc.mapId();
+    uint8_t vid = transferFrameTc.getVirtualChannelId();
+    uint8_t mapid = transferFrameTc.getMapId();
 
     // Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
@@ -714,7 +714,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC() {
     }
 
     TransferFrameTC* frame = masterChannel.inFramesBeforeAllFramesReceptionListRxTC.front();
-    VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(frame->virtualChannelId());
+    VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(frame->getVirtualChannelId());
 
     if (virtualChannel.waitQueueRxTC.full()) {
         ccsdsLogNotice(Rx, TypeServiceChannelNotif, VC_RX_WAIT_QUEUE_FULL);
@@ -734,7 +734,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC() {
     }
 
     // Check for valid SCID
-    if (frame->spacecraftId() != SpacecraftIdentifier) {
+    if (frame->getSpacecraftId() != SpacecraftIdentifier) {
         ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_SCID);
         return ServiceChannelNotification::RX_INVALID_SCID;
     }
@@ -796,7 +796,7 @@ ServiceChannelNotification ServiceChannel::vcReceptionRxTC(uint8_t vid) {
 
     // If MAP channels are implemented in this specific VC, write to the MAP buffer
     if (virtChannel.segmentHeaderPresent) {
-        uint8_t mapid = frame->mapId();
+        uint8_t mapid = frame->getMapId();
         MAPChannel& mapChannel = virtChannel.mapChannels.at(mapid);
         mapChannel.inFramesAfterVCReceptionRxTC.push_back(frame);
     } else {

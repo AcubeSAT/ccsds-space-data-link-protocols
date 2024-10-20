@@ -101,7 +101,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 
 void FrameOperationProcedure::acknowledgeFrame(uint8_t frameSeqNumber) {
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->transferFrameSequenceNumber() == frameSeqNumber) {
+		if (frame->getTransferFrameSequenceNumber() == frameSeqNumber) {
 			frame->setAcknowledgement(true);
 		}
 	}
@@ -180,7 +180,7 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	}
 	TransferFrameTC* frame = waitQueueFOP->front();
 	if ((frame->getServiceType() == ServiceType::TYPE_AD) &&
-	    (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
+	    (frame->getTransferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
 		transmitAdFrame();
 		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
@@ -660,7 +660,7 @@ void FrameOperationProcedure::bdReject() {
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 	TransferFrameTC* frame = vchan->unprocessedFrameListBufferTxTC.front();
 
-	if (frame->transferFrameHeader().bypassFlag() == 0) {
+	if (frame->getTransferFrameHeader().getBypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_AD) {
 			if (!waitQueueFOP->full()) {
 				// E19
@@ -706,9 +706,9 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 
 void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if ((frame->transferFrameSequenceNumber() < frameSequenceNumber ||
-		     frame->transferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
-			acknowledgeFrame(frame->transferFrameSequenceNumber());
+		if ((frame->getTransferFrameSequenceNumber() < frameSequenceNumber ||
+                frame->getTransferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
+			acknowledgeFrame(frame->getTransferFrameSequenceNumber());
 		}
 	}
 	expectedAcknowledgementSeqNumber = frameSequenceNumber;

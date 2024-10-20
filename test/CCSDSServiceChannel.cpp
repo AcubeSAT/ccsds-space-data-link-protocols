@@ -93,7 +93,7 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.frontFrameAfterAllFramesGenerationTxTC().second == frame_a);
 
 	CHECK(frame_a->acknowledged() == false);
-	CHECK(frame_a->transferFrameSequenceNumber() == 0);
+	CHECK(frame_a->getTransferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(0, 0);
 
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
@@ -108,8 +108,8 @@ TEST_CASE("Service Channel") {
 
 	// Rx side
 	// new transferFrameData
-	uint8_t frame1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	uint8_t frame2[] = {0x10, 0xB4, 0x04, 0x0A, 0x00, 0xAE, 0x3B, 0xC8, 0x58, 0x81};
+	uint8_t frame1[] = {0x12, 0x37, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0x56, 0xF6};
+	uint8_t frame2[] = {0x12, 0x37, 0x04, 0x0A, 0x00, 0xAE, 0x3B, 0xC8, 0xA4, 0x5C};
 	uint8_t out_buffer[10] = {0};
 
     serv_channel.storeFrameRxTC(frame1, 10);
@@ -284,7 +284,7 @@ TEST_CASE("Service Channel") {
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.availableUnprocessedFramesTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.pushSentQueue(2);
-	CHECK(frame_a->transferFrameSequenceNumber() == 0);
+	CHECK(frame_a->getTransferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(2, 0);
 	// E13 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM, 12);
@@ -759,12 +759,12 @@ TEST_CASE("CLCW construction at VC Reception") {
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
 
 	ServiceChannelNotification err;
-	uint8_t packet1[] = {0x0, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	uint8_t packet2[] = {0x0, 0xB1, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-	uint8_t packet3[] = {0x0, 0xB1, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
-    serv_channel.storeFrameRxTC(packet1, 10);
-    serv_channel.storeFrameRxTC(packet2, 10);
-    serv_channel.storeFrameRxTC(packet3, 10);
+	uint8_t frame1[] = {0x02, 0x37, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+	uint8_t frame2[] = {0x02, 0x37, 0x00, 0x0A, 0x03, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+	uint8_t frame3[] = {0x02, 0x37, 0x00, 0x0A, 0x12, 0x00, 0x00, 0x1C, 0xD3, 0x8C};
+    serv_channel.storeFrameRxTC(frame1, 10);
+    serv_channel.storeFrameRxTC(frame2, 10);
+    serv_channel.storeFrameRxTC(frame3, 10);
     serv_channel.allFramesReceptionRequestRxTC();
     serv_channel.allFramesReceptionRequestRxTC();
     serv_channel.allFramesReceptionRequestRxTC();
@@ -871,7 +871,7 @@ TEST_CASE("Frame Acknowledgement") {
 
 	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 1);
+	CHECK(serv_channel.getLastMasterCopyTcFrame().getTransferFrameSequenceNumber() == 1);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
 	TransferFrameTC transferFrame2 = serv_channel.getLastMasterCopyTcFrame();
 
@@ -899,7 +899,7 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.allFramesGenerationRequestTxTC();
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getProcessedByFOP() == true);
-	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 10);
+	CHECK(serv_channel.getLastMasterCopyTcFrame().getTransferFrameSequenceNumber() == 10);
 
 	TransferFrameTC transferFrame3 = serv_channel.getLastMasterCopyTcFrame();
 	// Receive the same frame

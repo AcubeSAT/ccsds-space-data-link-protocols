@@ -26,7 +26,7 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* transferFrameTc) {
 		return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
 	}
 	outFramesBeforeAllFramesGenerationListTxTC.push_back(transferFrameTc);
-	uint8_t vid = transferFrameTc->virtualChannelId();
+	uint8_t vid = transferFrameTc->getVirtualChannelId();
 	// virtChannels.at(0).fop.
 	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
 	return MasterChannelAlert::NO_MC_ALERT;
@@ -151,7 +151,7 @@ void MasterChannel::removeMasterRx(TransferFrameTM* frame_ptr) {
 }
 void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC& transferFrame : masterCopyTxTC) {
-		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
+		if (transferFrame.getTransferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setAcknowledgement(true);
 			return;
 		}
@@ -160,7 +160,7 @@ void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 
 void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC transferFrame : masterCopyTxTC) {
-		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
+		if (transferFrame.getTransferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setToBeRetransmitted(true);
 			return;
 		}

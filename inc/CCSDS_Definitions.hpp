@@ -23,6 +23,12 @@ inline constexpr uint8_t TcSegmentHeaderSize = 1;
 
 inline constexpr uint8_t errorControlFieldSize = 2;
 
+/**
+ * Report type  carried by the OCF field of TM frames. The value 0 indicates that 'Communications Link Control Words'
+ * (CLCWs) are carried, which are defined in p. 4.2 of the TC Space Data Link Protocol.
+ */
+inline constexpr uint8_t ControlWordType = 0;
+
 
 // Idle space packet constants (for more details, see Space Packet Protocol)
 static constexpr uint8_t packetPrimaryHeaderLength = 6;

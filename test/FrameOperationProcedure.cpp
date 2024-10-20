@@ -78,8 +78,8 @@ TEST_CASE("Retransmission"){
         serv_channel.vcGenerationRequestTxTC(0);
         serv_channel.allFramesGenerationRequestTxTC();
 	}
-	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 2);
-	CHECK(serv_channel.frontUnprocessedFrameMcCopyTxTC().transferFrameSequenceNumber() == 0);
+	CHECK(serv_channel.getLastMasterCopyTcFrame().getTransferFrameSequenceNumber() == 2);
+	CHECK(serv_channel.frontUnprocessedFrameMcCopyTxTC().getTransferFrameSequenceNumber() == 0);
 
 	//Create a CLCW  that indicates that retransmission is needed aka a negative acknowledgement
 	CLCW clcw = CLCW(0,0,0,1,0,0,1,0,0,0,1,0,0,0);

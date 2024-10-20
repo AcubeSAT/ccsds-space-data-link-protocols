@@ -26,6 +26,8 @@ enum FDURequestType : uint8_t {
 	REQUEST_NEGATIVE_CONFIRM = 2,
 };
 
+enum SequenceFlags { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentationEnd = 0x2, NoSegmentation = 0x3 };
+
 struct TransferFrameHeaderTC : public TransferFrameHeader {
 public:
 	/**
@@ -38,7 +40,7 @@ public:
 	 * @details Bit 2 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
 	 */
-	bool bypassFlag() const {
+	bool getBypassFlag() const {
 		return (transferFrameHeader[0] >> 5U) & 0x01;
 	}
 
@@ -48,7 +50,7 @@ public:
 	 * @details Bit 3 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.3.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-	bool ctrlAndCmdFlag() const {
+	bool getCtrlAndCmdFlag() const {
 		return (transferFrameHeader[0] >> 4U) & 0x01;
 	}
 
@@ -57,22 +59,23 @@ public:
 	 * @details Bits 22–31 of the Transfer Frame Primary Header
 	 * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
 	 */
-	uint16_t transferFrameLength() const {
+	uint16_t getTransferFrameLength() const {
 		return (static_cast<uint16_t>(transferFrameHeader[2] & 0x03) << 8U) | (static_cast<uint16_t>(transferFrameHeader[3]));
 	}
+
+    /**
+     * The sequence number of the frame
+     * @details Bits 32-39 of the Transfer Frame Primary Header
+     * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL
+     */
+
+    uint8_t  getTransferFrameSequenceNumber() const {
+        return transferFrameHeader[4];
+    }
 };
 
 class TransferFrameTC : public TransferFrame {
 public:
-    TransferFrameHeaderTC& getTransferFrameHeader() {
-        return hdr;
-    }
-
-	void setConfSignal(FDURequestType reqSignal) {
-		confSignal = reqSignal;
-		// TODO Maybe signal the higher procedures here instead of having them manually take care of them
-	}
-
 	/**
 	 * Compares two frames
 	 */
@@ -88,185 +91,41 @@ public:
 		return true;
 	}
 
-	// TODO: Handle CLCWs without any ambiguities
-
-    // seems redundant?
-	const uint8_t* packetPlData() const {
-		return transferFrameData;
-	}
-
-	// see p. 4.2.1.1.2 from TC SPACE DATA LINK PROTOCOL
-
-	/**
-	 * @return Bit 0 of the CLCW (the Control Word Type).
-	 * @details This one-bit field shall be set to ‘0’.
-	 * @see p. 4.2.1.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t controlWordType() const {
-		return (transferFrameData[0] & 0x80 >> 7U);
-	}
-
-	/**
-	 * @return Bits 3-5 of the CLCW (the Status Field).
-	 * @see p. 4.2.1.4 from TC SPACE DATA LINK PROTOCOL
-	 *
-	 */
-	uint8_t statusField() const {
-		return (transferFrameData[0] & 0x1C) >> 2U;
-	}
-
-	/**
-	 * Used to indicate the COP that is being used.
-	 * @return Bits 6-7 of the CLCW (the COP in Effect parameter)
-	 * @see p. 4.2.1.5 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t copInEffect() const {
-		return transferFrameData[0] & 0x03;
-	}
-
-	/**
-	 * @return Bits 8-13 of the CLCW (the Virtual Channel Identifier of the Virtual Channel
-	 * with which this COP report is associated).
-	 * @see p. 4.2.1.6 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t vcIdentification() const {
-		return (transferFrameData[1] & 0xFC) >> 2U;
-	}
-
-	/**
-	 * The No RF Available Flag shall provide a logical indication of the ‘ready’ status
-	 * of the radio frequency (RF) elements within the space link provided by the Physical Layer.
-	 * @return Bit 16 of the CLCW (the No RF Available Flag).
-	 * @see p. 4.2.1.8.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t noRfAvail() const {
-		return (transferFrameData[2] & 0x80) >> 7U;
-	}
-
-	/**
-	 * @return Bit 17 of the CLCW (the No Bit Lock Flag).
-	 * @see p. 4.2.1.8.3 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t noBitLock() const {
-		return (transferFrameData[2] & 0x20) >> 5U;
-	}
-
-	/**
-	 * @return Bit 18 of the CLCW (the Lockout Flag).
-	 * @see p. 4.2.1.8.4 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t lockout() const {
-		return (transferFrameData[2] & 0x20) >> 5U;
-	}
-
-	/**
-	 * @return Bit 19 of the CLCW (the Wait Flag)
-	 * @see p. 4.1.2.8.5 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t wait() const {
-		return (transferFrameData[2] & 0x10) >> 4U;
-	}
-
-	/**
-	 * @return Bit 20 of the CLCW (the Retransmit Flag).
-	 * @see p. 4.2.1.8.6 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t retransmit() const {
-		return (transferFrameData[2] & 0x08) >> 3U;
-	}
-
-	/**
-	 * @return Bits 21-22 of the CLCW (the FARM-B Counter).
-	 * @see p. 4.2.1.9 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t farmBCounter() const {
-		return (transferFrameData[2] & 0x06) >> 1U;
-	}
-
-	/**
-	 * @return Bits 24-31 of the CLCW (the Report Value).
-	 * @see p. 4.2.11.1 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t reportValue() const {
-		return transferFrameData[3];
-	}
-
-	/**
-	 * Set the number of repetitions that is determined by the virtual channel
-	 */
-	void setRepetitions(const uint8_t repetitions) {
-		reps = repetitions;
-	}
-
-	/**
-	 * Determines whether the transfer frame is marked for retransmission while in the sent queue
-	 */
-	bool isToBeRetransmitted() const {
-		return toBeRetransmitted;
-	}
-
-	void setToBeRetransmitted(bool f) {
-		toBeRetransmitted = f;
-	}
+    /** PRIMARY HEADER **/
 
 	/**
 	 * @return TC transfer frame primary header (the first 5 octets of the TC transfer frame)
 	 * @see p. 4.1.2 from TC SPACE DATA LINK PROTOCOL
 	 */
-	TransferFrameHeaderTC transferFrameHeader() const {
-		return hdr;
-	}
-
-	/**
-	 * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	// TODO: Use std::optional
-	uint8_t segmentationHeader() const {
-		return transferFrameData[5];
-	}
-
-	/**
-	 * @return Bits  16–21  of  the  Transfer  Frame  Primary  Header (the  Virtual Channel Identifier (VCID)).
-	 * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t virtualChannelId() const {
-		return (transferFrameData[2] & 0xFC) >> 2;
-	};
-
-	// Assumes MAP Id exists
-	// TODO: Replace with std::optional
-	uint8_t mapId() const {
-		if (segmentationHeaderPresent) {
-			return transferFrameData[5] & 0x3F;
-		}
-		return 0;
-	}
+    TransferFrameHeaderTC& getTransferFrameHeader() {
+        return hdr;
+    }
 
 	uint8_t getTransferFrameVersionNumber() const {
-		return (transferFrameData[0] >> 6) & 0x3;
+		return hdr.getTransferFrameVersionNumber();
 	}
 	/**
 	 * @return Bits  6–15  of  the  Transfer  Frame  Primary  Header (the  Spacecraft Identifier (SCID)).
 	 * @see p. 4.1.2.5 from TC SPACE DATA LINK PROTOCOL
 	 */
-	uint16_t spacecraftId() const {
-		return SpacecraftIdentifier;
+	uint16_t getSpacecraftId() const {
+		return hdr.getSpacecraftId(TC);
 	}
 
-	/**
-	 * @return Bits 32–39 of the Transfer Frame Primary Header (the Frame Sequence Number, N(S)).
-	 * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL.
-	 */
-	uint8_t transferFrameSequenceNumber() const {
-		return transferFrameData[4];
-	}
+    /**
+     * @return Bits  16–21  of  the  Transfer  Frame  Primary  Header (the  Virtual Channel Identifier (VCID)).
+     * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
+     */
+    uint8_t getVirtualChannelId() const {
+        return hdr.getVirtualChannelId(TC);
+    };
 
 	/**
 	 * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	ServiceType getServiceType() const {
-		bool bypass = (transferFrameData[0] >> 5) & 0x1;
-		bool ctrl = (transferFrameData[0] >> 4) & 0x1;
+		bool bypass = hdr.getBypassFlag();
+		bool ctrl = hdr.getCtrlAndCmdFlag();
 
 		if (bypass && ctrl) {
 			return ServiceType::TYPE_BC;
@@ -279,7 +138,82 @@ public:
 		return ServiceType::TYPE_AC;
 	}
 
-	bool acknowledged() const {
+    void setServiceType(ServiceType service_type) {
+        serviceType = service_type;
+        transferFrameData[0] = ((static_cast<uint8_t>(service_type) & 0x3) << 4) | (transferFrameData[0] & 0xCF);
+    }
+
+    void setFrameLength(uint16_t frameLength) {
+        transferFrameLength = frameLength;
+        transferFrameData[2] = ((getVirtualChannelId() & 0x3F) << 2) | static_cast<uint8_t>((transferFrameLength & 0x300) >> 8);
+        transferFrameData[3] = static_cast<uint8_t>(transferFrameLength & 0xFF);
+    }
+
+    /**
+     * @return Bits 32–39 of the Transfer Frame Primary Header (the Frame Sequence Number, N(S)).
+     * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL.
+     */
+    uint8_t getTransferFrameSequenceNumber() const {
+        return hdr.getTransferFrameSequenceNumber();
+    }
+
+    void setTransferFrameSequenceNumber(uint8_t frame_seq_number) {
+        transferFrameData[4] = frame_seq_number;
+    }
+
+    /** SEGMENTATION HEADER **/
+
+    /**
+     * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
+     */
+    // TODO: Use std::optional
+    uint8_t segmentationHeader() const {
+        return transferFrameData[5];
+    }
+
+    /**
+     *  Sets the sequence flag, assuming that the segment header exists
+     */
+    void setSequenceFlags(SequenceFlags seqFlags){
+        transferFrameData[5] = ((static_cast<uint8_t>(seqFlags) & 0x3) << 6) | (transferFrameData[5] & 0x3F);
+    }
+
+    // Assumes MAP Id exists
+    // TODO: Replace with std::optional
+    uint8_t getMapId() const {
+        if (segmentationHeaderPresent) {
+            return transferFrameData[5] & 0x3F;
+        }
+        return 0;
+    }
+
+
+    /** AUXILIARY VARIABLES **/
+
+    void setConfSignal(FDURequestType reqSignal) {
+        confSignal = reqSignal;
+        // TODO Maybe signal the higher procedures here instead of having them manually take care of them
+    }
+
+    /**
+     * Set the number of repetitions that is determined by the virtual channel
+     */
+    void setRepetitions(const uint8_t repetitions) {
+        reps = repetitions;
+    }
+
+    /**
+     * Determines whether the transfer frame is marked for retransmission while in the sent queue
+     */
+    bool isToBeRetransmitted() const {
+        return toBeRetransmitted;
+    }
+
+    void setToBeRetransmitted(bool f) {
+        toBeRetransmitted = f;
+    }
+
+    bool acknowledged() const {
 		return ack;
 	}
 
@@ -290,33 +224,9 @@ public:
 		return reps;
 	}
 
-	// Setters are not strictly needed in this case. They are just offered as a utility functions for the VC/MAP
-	// generation services when segmenting or blocking transfer frames.
-	void setFrameLength(uint16_t frameLength) {
-        transferFrameLength = frameLength;
-        transferFrameData[2] = ((virtualChannelId() & 0x3F) << 2) | (transferFrameLength & 0x300 >> 8);
-        transferFrameData[3] = transferFrameLength & 0xFF;
-	}
-
-	void setServiceType(ServiceType service_type) {
-		serviceType = service_type;
-        transferFrameData[0] = (static_cast<uint8_t>(service_type) >> 2) | (transferFrameData[0] & 0xCF);
-	}
-
 	void setAcknowledgement(bool acknowledgement) {
 		ack = acknowledgement;
 	}
-
-	void setTransferFrameSequenceNumber(uint8_t frame_seq_number) {
-        transferFrameData[4] = frame_seq_number;
-	}
-
-    /**
-     *  Sets the sequence flag, assuming that the segment header exists
-     */
-    void setSequenceFlag(uint8_t sequenceFlag){
-        transferFrameData[5] = (sequenceFlag << 6) | (transferFrameData[5] & 0x3F);
-    }
 
 	/**
 	 * Indicates that the frame has been passed to the physical layer and supposedly transmitted
@@ -352,10 +262,10 @@ public:
           toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
 		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
-        frameData[0] = (TransferFrameVersionNumber << 6) | (bypassFlag << 5) | (ctrlCmdFlag << 4) | ((SpacecraftIdentifier & 0x300) >> 8);
-        frameData[1] = SpacecraftIdentifier & 0xFF;
-        frameData[2] = ((vid & 0x3F) << 2) | (frameLength & 0x300 >> 8);
-        frameData[3] = frameLength & 0xFF;
+        frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6) | (bypassFlag << 5) | (ctrlCmdFlag << 4) | 0 | static_cast<uint8_t>((SpacecraftIdentifier & 0x300) >> 8);
+        frameData[1] = static_cast<uint8_t>(SpacecraftIdentifier & 0xFF);
+        frameData[2] = ((vid & 0x3F) << 2) | static_cast<uint8_t>((frameLength & 0x300) >> 8);
+        frameData[3] = static_cast<uint8_t>(frameLength & 0xFF);
 
         if (segHdrPresent){
             frameData[5] = (sequenceFlag << 6) | (mapId);

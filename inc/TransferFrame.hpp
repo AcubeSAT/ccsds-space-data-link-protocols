@@ -24,10 +24,11 @@ struct TransferFrameHeader {
 	 */
 	uint16_t getSpacecraftId(enum FrameType frameType) const {
 		if (frameType == TC) {
-			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x03) << 8U) | (static_cast<uint16_t>(transferFrameHeader[1]));
+			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x03) << 8U) |
+                   (static_cast<uint16_t>(transferFrameHeader[1]));
 		} else {
-			return ((static_cast<uint16_t>(transferFrameHeader[0] & 0x3F)) << 4U) |
-                   ((static_cast<uint16_t>(transferFrameHeader[1] & 0xF0)) >> 4U);
+			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x3F) << 4U) |
+                   (static_cast<uint16_t>(transferFrameHeader[1] & 0xF0) >> 4U);
 		}
 	}
 
