@@ -451,9 +451,7 @@ TEST_CASE("VC Generation Service") {
         serv_channel.mcGenerationRequestTxTM();
         const TransferFrameTM* frame4 = serv_channel.frontFrameAfterVcGenerationTxTM();
 
-        CHECK(frame1->getSegmentLengthId() == 1);
         CHECK(frame1->getFirstHeaderPointer() == 0);
-        CHECK(frame2->getSegmentLengthId() == 1);
         CHECK(frame2->getFirstHeaderPointer() == 2);
         CHECK(frame3->getFirstHeaderPointer() == TmNoPacketStartFirstHeaderPointer);
         CHECK(frame4->getFirstHeaderPointer() == 2);
@@ -562,11 +560,11 @@ TEST_CASE("MAP Request Service") {
     };
 
     MasterChannel master_channel = MasterChannel();
-    // MAP channels supported (segmentHeaderPresent == true)
+    // MAP channels supported (segmentHeaderTCPresent == true)
     master_channel.addVC(0, true, 128, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
-    // without MAP channels support (segmentHeaderPresent == false)
+    // without MAP channels support (segmentHeaderTCPresent == false)
     master_channel.addVC(1, false, 128, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3);
 
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);

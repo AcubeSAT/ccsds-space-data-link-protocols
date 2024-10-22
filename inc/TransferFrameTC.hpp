@@ -256,8 +256,8 @@ public:
 		return processedByFOP;
 	}
 
-	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint8_t vid, ServiceType serviceType, bool segHdrPresent,
-                    uint16_t firstEmptyOctet = 0, uint8_t mapId = 0, uint8_t sequenceFlag = 0x3, FrameType t = TC)
+	TransferFrameTC(uint8_t *frameData, ServiceType serviceType, uint8_t vid, uint16_t frameLength, bool segHdrPresent,
+                    uint8_t sequenceFlag = 0x3, uint8_t mapId = 0, uint16_t firstEmptyOctet = 0, FrameType t = TC)
 	    : TransferFrame(t, frameLength, frameData, firstEmptyOctet), hdr(frameData), serviceType(serviceType), ack(false),
           toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
 		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
@@ -268,11 +268,11 @@ public:
         frameData[3] = static_cast<uint8_t>(frameLength & 0xFF);
 
         if (segHdrPresent){
-            frameData[5] = (sequenceFlag << 6) | (mapId);
+            frameData[5] = (sequenceFlag << 6) | (mapId & 0x3F);
         }
 	}
 
-	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0, FrameType t = TC)
+	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0)
 	    : TransferFrame(FrameType::TC, frameLength, frameData, firstEmptyOctet), hdr(frameData), transmit(false){};
 
 private:

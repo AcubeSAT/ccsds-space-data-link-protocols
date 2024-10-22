@@ -100,7 +100,7 @@ public:
      * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
      * @param vid                            Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
-     *                                      (segmentHeaderPresent = false) or if the service type is BC
+     *                                      (segmentHeaderTCPresent = false) or if the service type is BC
      * @param serviceType                    Type AD, BC, BD frames
      * @return A Service Channel Notification
      */
@@ -117,7 +117,7 @@ public:
      * @param packetLength                   The length of the next packet in the stored TC packet buffer
      * @param vcid                           Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
-     *                                        (segmentHeaderPresent = false) or if the service type is BC
+     *                                        (segmentHeaderTCPresent = false) or if the service type is BC
      * @param serviceType                    Type AD, BC, BD frames
      * @return                               A Service Channel Notification
      */
@@ -133,7 +133,7 @@ public:
      * @param packetLength  Length of the packet
      * @param vid           Virtual channel id
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
-     *                      (segmentHeaderPresent = false) or if the service type is BC
+     *                      (segmentHeaderTCPresent = false) or if the service type is BC
      * @param serviceType  Type AD, BC, BD frames
      */
     ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
@@ -150,7 +150,7 @@ public:
      *
      * @param vid           Virtual Channel ID
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
-     *                      (segmentHeaderPresent == false) or if the service type is BC
+     *                      (segmentHeaderTCPresent == false) or if the service type is BC
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
      *                                          (segment header included)
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
@@ -312,10 +312,10 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderPresent) {
+        if (!virtualChannel.segmentHeaderTCPresent) {
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
-        if (virtualChannel.segmentHeaderPresent &&
+        if (virtualChannel.segmentHeaderTCPresent &&
             (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
@@ -332,10 +332,10 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderPresent) {
+        if (!virtualChannel.segmentHeaderTCPresent) {
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
-        if (virtualChannel.segmentHeaderPresent &&
+        if (virtualChannel.segmentHeaderTCPresent &&
             (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;

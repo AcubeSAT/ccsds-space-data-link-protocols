@@ -174,10 +174,6 @@ struct TransferFrameTM : public TransferFrame {
 		return hdr.getSegmentLengthId();
 	}
 
-    void setSegmentLengthId(uint8_t segmentLengthId) {
-        transferFrameData[4] = (transferFrameData[4] & 0xE7) | (segmentLengthId << 3);
-    }
-
     uint16_t getFirstHeaderPointer() const {
         return hdr.getFirstHeaderPointer();
     }
@@ -209,9 +205,11 @@ struct TransferFrameTM : public TransferFrame {
     /**
      * Constructor that does not initialize the operational control field
      */
-	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint8_t vcid,
-                    bool eccFieldExists, bool ocfFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId, uint8_t packetOrder,
-                    SynchronizationFlag syncFlag, uint16_t  firstHeaderPointer, uint16_t  firstEmptyOctet = 0, FrameType type = TM)
+    TransferFrameTM(uint8_t *frameData, uint16_t frameLength, uint8_t vcid, bool ocfFieldExists,
+                    uint8_t virtualChannelFrameCount, bool transferFrameSecondaryHeaderPresent,
+                    SynchronizationFlag syncFlag, uint8_t packetOrder, uint8_t segmentationLengthId,
+                    uint16_t firstHeaderPointer, bool eccFieldExists, uint16_t firstEmptyOctet = 0,
+                    FrameType type = TM)
 	    : TransferFrame(type, frameLength, frameData, firstEmptyOctet), hdr(frameData), scid(SpacecraftIdentifier), eccFieldExists(eccFieldExists) {
 		// Transfer Frame Version Number + Spacecraft Id
 		frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6) | static_cast<uint8_t>((SpacecraftIdentifier & 0x3F0) >> 4);
@@ -229,9 +227,11 @@ struct TransferFrameTM : public TransferFrame {
 	/**
 	 * Constructor that initializes the operational control field
 	 */
-	TransferFrameTM(uint8_t* frameData, uint16_t frameLength, uint8_t virtualChannelFrameCount, uint16_t vcid,
-                    bool eccFieldExists, bool transferFrameSecondaryHeaderPresent, uint8_t segmentationLengthId, uint8_t packetOrder,
-                    SynchronizationFlag syncFlag, uint16_t firstHeaderPointer, uint32_t operationalControlField, uint16_t  firstEmptyOctet = 0, FrameType type = TM)
+    TransferFrameTM(uint8_t *frameData, uint16_t frameLength, uint16_t vcid, uint32_t operationalControlField,
+                    uint8_t virtualChannelFrameCount, bool transferFrameSecondaryHeaderPresent,
+                    SynchronizationFlag syncFlag, uint8_t packetOrder, uint8_t segmentationLengthId,
+                    uint16_t firstHeaderPointer, bool eccFieldExists, uint16_t firstEmptyOctet = 0,
+                    FrameType type = TM)
 	    : TransferFrame(type, frameLength, frameData, firstEmptyOctet), hdr(frameData), scid(SpacecraftIdentifier), eccFieldExists(eccFieldExists) {
 		// Transfer Frame Version Number + Spacecraft Id
 		frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6) | static_cast<uint8_t>((SpacecraftIdentifier & 0x3F0) >> 4);

@@ -5,7 +5,7 @@
 
 TEST_CASE("TC Frame Generation - Raw Data Constructor") {
     uint8_t data[] = {200, 155, 32, 40, 66};
-    TransferFrameTC frame = TransferFrameTC(data, 5, 0, TC);
+    TransferFrameTC frame = TransferFrameTC(data, 5, 0);
     TransferFrameHeaderTC hdr = frame.getTransferFrameHeader();
     CHECK(hdr.getTransferFrameVersionNumber() == 0x3);
     CHECK(hdr.getBypassFlag() == 0x0);
@@ -18,7 +18,7 @@ TEST_CASE("TC Frame Generation - Raw Data Constructor") {
 
 TEST_CASE("TC Frame Generation - Field Constructor") {
     uint8_t data[MaxTcTransferFrameSize] = {0};
-    TransferFrameTC frame = TransferFrameTC(data, 10, 0x08, ServiceType::TYPE_AD, false, 0, 4, 0x3, TC);
+    TransferFrameTC frame = TransferFrameTC(data, ServiceType::TYPE_AD, 0x08, 10, true, 0x3, 4, 0, TC);
     TransferFrameHeaderTC hdr = frame.getTransferFrameHeader();
     CHECK(hdr.getTransferFrameVersionNumber() == 0x0);
     CHECK(hdr.getBypassFlag() == 0x0);
@@ -28,7 +28,7 @@ TEST_CASE("TC Frame Generation - Field Constructor") {
     CHECK(hdr.getVirtualChannelId(TC) == 0x08);
     CHECK(hdr.getTransferFrameLength() == 0x0A);
     CHECK(hdr.getTransferFrameSequenceNumber() == 0x0);
-    CHECK(frame.getMapId());
+    CHECK(frame.getMapId() == 4);
 
     // Test setters
     frame.setServiceType(ServiceType::TYPE_BC);
@@ -63,7 +63,9 @@ TEST_CASE("TM Frame Generation - Raw Data Constructor") {
 
 TEST_CASE("TM Frame Generation - Field Constructor") {
     uint8_t data[TmTransferFrameSize] = {0};
-    TransferFrameTM frame = TransferFrameTM(data, 10, 0x17, 4, true, false, false, SegmentLengthIdentifier, PacketOrder, OCTET_SYNCHRONIZED_FORWARD_ORDERED, 0xBE, 0, TM );
+    TransferFrameTM frame = TransferFrameTM(data, 10, 4, false, 0x17, false,
+                                            OCTET_SYNCHRONIZED_FORWARD_ORDERED, PacketOrder, SegmentLengthIdentifier,
+                                            0xBE, true, 0, TM);
     TransferFrameHeaderTM hdr = frame.getTransferFrameHeader();
 
     CHECK(hdr.getTransferFrameVersionNumber() == 0);

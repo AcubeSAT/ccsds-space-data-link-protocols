@@ -30,9 +30,11 @@ inline constexpr uint8_t errorControlFieldSize = 2;
 inline constexpr uint8_t ControlWordType = 0;
 
 
-// Idle space packet constants (for more details, see Space Packet Protocol)
+/**
+ * Idle space packet constants (for more details, see Space Packet Protocol)
+ */
 static constexpr uint8_t packetPrimaryHeaderLength = 6;
-static constexpr uint8_t packetVersionNumber = 0x0;  // Defines this packet as a space packet
+static constexpr uint8_t packetVersionNumber = 0x0;  // Defines this packet as a 'Version 1' space packet
 static constexpr bool packetType = false;            // Telemetry Packet
 static constexpr bool secondaryHeaderFlag = false;   // Must always be false for idle packets
 static constexpr uint16_t APID = 0x7FF;              // Reserved value for idle packets

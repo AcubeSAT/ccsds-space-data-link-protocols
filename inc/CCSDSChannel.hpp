@@ -207,7 +207,7 @@ public:
 	/**
 	 * Determines whether the Segment Header is present (enables MAP services for type AD, BD packets)
 	 */
-	const bool segmentHeaderPresent;
+	const bool segmentHeaderTCPresent;
 
 	/**
 	 * Maximum length of a single transfer frame
@@ -305,7 +305,7 @@ public:
 	}
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
-                   const bool segmentHeaderPresent, const uint16_t maxFrameLengthTC, const bool blockingTM,
+                   const bool segmentHeaderTCPresent, const uint16_t maxFrameLengthTC, const bool blockingTM,
                    const bool segmentationTM, const bool blockingTC,
                    const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
@@ -315,7 +315,7 @@ public:
                    const etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
           secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-          segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLengthTC), blockingTM(blockingTM),
+          segmentHeaderTCPresent(segmentHeaderTCPresent), maxFrameLengthTC(maxFrameLengthTC), blockingTM(blockingTM),
           segmentationTM(segmentationTM), blockingTC(blockingTC),
           repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions),
           repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
@@ -328,7 +328,7 @@ public:
 	}
 
 	VirtualChannel(const VirtualChannel& v)
-	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
+	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderTCPresent(v.segmentHeaderTCPresent),
           maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
           repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM),
           waitQueueTxTC(v.waitQueueTxTC), sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC),
