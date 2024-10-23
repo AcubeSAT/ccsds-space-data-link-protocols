@@ -1445,6 +1445,56 @@ void ServiceChannel::TransferFrameHelperFunctionTC(TransferFrameTC& TransferFram
 	{
 		DataArray[i] = TransferFrameTC.getFrameData()[i];
 	}
+
+	//Frame Error Control Field
+	uint8_t FrameErrorControlField[2];
+	FrameErrorControlField[0] = (TransferFrameTC.getFrameData()[DataLength + 5] & 0xFF) >> 8;
+	FrameErrorControlField[1] = (TransferFrameTC.getFrameData()[DataLength + 6] & 0xFF);
+
+
+	if(detailed == true) {
+
+		constexpr size_t MaxSize = 500;
+		etl::string<MaxSize> TCTransferFrameString1;
+
+		//Primary Header
+		TCTransferFrameString1 += std::to_string(TransferFrameVersionNumber);
+		TCTransferFrameString1 += "|";
+		TCTransferFrameString1 += std::to_string(ByPassFlag);
+		TCTransferFrameString1 += "|";
+		TCTransferFrameString1 += std::to_string(ControlCommandFlag);
+		TCTransferFrameString1 += "|";
+		TCTransferFrameString1 += std::to_string(RSVDSpare);
+		TCTransferFrameString1 += "|";
+		TCTransferFrameString1 += std::to_string(SpacecraftID);
+		TCTransferFrameString1 += "|";
+		TCTransferFrameString1 += std::to_string(VirtualChannelID);
+		TCTransferFrameString1 += "|";
+		TCTransferFrameString1 += std::to_string(FrameLength);
+		TCTransferFrameString1 += "|";
+		TCTransferFrameString1 += std::to_string(FrameSequenceNumber);
+		TCTransferFrameString1 += "|";
+
+		//Data Field
+		for(int k = 0; k < DataLength; k++) {
+			TCTransferFrameString1 += DataArray[k];
+		}
+		TCTransferFrameString1 += "|";
+
+		//Frame Error Control Field
+		TCTransferFrameString1 += std::to_string(FrameErrorControlField[0]);
+		TCTransferFrameString1 += std::to_string(FrameErrorControlField[1]);
+		TCTransferFrameString1 += "|";
+
+
+		LOG_DEBUG<<"TC Transfer Frame: "<<TCTransferFrameString1.c_str()<<std::endl;
+
+	}
+	else {
+
+
+	}
+
 }
 
 void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed,uint8_t vid, uint16_t DataLength)
@@ -1500,9 +1550,65 @@ void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrameTM& TransferFram
 	FrameErrorControlField[1] = (TransferFrameTM.getFrameData()[74] & 0xFF);
 
 	if (detailed == true) {
-		LOG_DEBUG<<"TM Transfer Frame\n";
-		LOG_DEBUG<<"TRANSFER FRAME PRIMARY HEADER\n";
-		LOG_DEBUG<<TransferFrameVersionNumber<<"|"<<SpacecraftId<<"|"<<VirtualChannelId<<"|"<<OCFFlag<<"|"<<MCFrameCount<<"|"<<VCFrameCount<<"|"<<TransferFrameDataFieldStatus; ;
+
+		constexpr size_t MaxSize = 500;
+		etl::string<MaxSize> TMTransferFrameString1;
+
+		//Primary Header
+		TMTransferFrameString1 += std::to_string(TransferFrameVersionNumber);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(SpacecraftId);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(VirtualChannelId);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(OCFFlag);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(MCFrameCount);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(VCFrameCount);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(TransferFrameDataFieldStatus[0]);
+		TMTransferFrameString1 += std::to_string(TransferFrameDataFieldStatus[1]);
+		TMTransferFrameString1 += "|";
+
+		TMTransferFrameString1 += std::to_string(TransferFrameSecondaryHeaderFlag);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(SynchronizationFlag);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(PacketOrderFlag);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(SegmentLengthID);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(FirstHeaderPointer);
+		TMTransferFrameString1 += "|";
+
+		//Secondary Header
+		TMTransferFrameString1 += std::to_string(TransferFrameSecondaryHeaderVersionNumber);
+		TMTransferFrameString1 += "|";
+		TMTransferFrameString1 += std::to_string(TransferFrameSecondaryHeaderLength);
+		TMTransferFrameString1 += "|";
+
+		//Data Field
+		for(int k = 0; k < DataLength; k++) {
+			TMTransferFrameString1 += DataArray[k];
+		}
+		TMTransferFrameString1 += "|";
+
+		//Trailer
+		for(int i = 0; i < 4; i++) {
+			TMTransferFrameString1 += OperationalControlField[i];
+		}
+		TMTransferFrameString1 += "|";
+
+		TMTransferFrameString1 += std::to_string(FrameErrorControlField[0]);
+		TMTransferFrameString1 += std::to_string(FrameErrorControlField[1]);
+		TMTransferFrameString1 += "|";
+
+
+		LOG_DEBUG<<"TM Transfer Frame: "<<TMTransferFrameString1.c_str()<<std::endl;
+	}
+
+	else {
 
 	}
 
