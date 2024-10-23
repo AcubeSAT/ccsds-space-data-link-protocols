@@ -591,5 +591,5 @@ public:
 
 	void TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed, uint8_t DataArray[], uint16_t DataLength);
 
-	void TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed);
+	void TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed, uint8_t vid, uint8_t mapid, uint8_t DataArray[], uint16_t DataLength);
 };

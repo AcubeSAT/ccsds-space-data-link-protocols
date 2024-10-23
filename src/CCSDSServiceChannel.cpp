@@ -1420,7 +1420,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTM(uint8_t vid, uin
 
 
 
-void ServiceChannel::TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed, uint8_t vid, uint8_t mapid, uint8_t DataArray[], uint16_t DataLength)
+void ServiceChannel::TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed, uint8_t vid, uint8_t mapid, uint16_t DataLength)
 {
 	LOG_DEBUG<<"TransferFrameHelperFunctionTC";
 
@@ -1435,13 +1435,19 @@ void ServiceChannel::TransferFrameHelperFunctionTC(TransferFrameTC& TransferFram
 	uint8_t FrameSequenceNumber = (TransferFrameTC.getFrameData()[4] & 0xFF);
 
 	//Transfer Frame Data Field
+	static uint8_t DataArray[MaxTcTransferFrameSize];
+	for(uint16_t j = 0; j < DataLength; j++)
+	{
+		DataArray[j] = 0;
+	}
+
 	for(int i = 0; i < DataLength; i++)
 	{
-		DataArray[i] = TransferFrameTM.getFrameData()[i];
+		DataArray[i] = TransferFrameTC.getFrameData()[i];
 	}
 }
 
-void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed, uint8_t DataArray[], uint16_t DataLength)
+void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed,uint8_t vid, uint16_t DataLength)
 {
 	LOG_DEBUG<<"TransferFrameHelperFunctionTM";
 
@@ -1471,22 +1477,33 @@ void ServiceChannel::TransferFrameHelperFunctionTM(TransferFrameTM& TransferFram
 
 
 	//Transfer Frame Data Field
+	static uint8_t DataArray[TmTransferFrameSize];
+	for(uint16_t j = 0; j < DataLength; j++)
+	{
+		DataArray[j] = 0;
+	}
+
 	for(int i = 0; i < DataLength; i++)
 	{
 		DataArray[i] = TransferFrameTM.getFrameData()[i];
 	}
 
 	//TRANSFER FRAME TRAILER
-	uint32_t OperationalControlField[4];
+	uint8_t OperationalControlField[4];
 	OperationalControlField[0] = (TransferFrameTM.getFrameData()[69] & 0xFF) >> 24;
 	OperationalControlField[1] = (TransferFrameTM.getFrameData()[70] & 0xFF) >> 16;
 	OperationalControlField[2] = (TransferFrameTM.getFrameData()[71] & 0xFF) >> 8;
 	OperationalControlField[3] = (TransferFrameTM.getFrameData()[72] & 0xFF);
 
-	uint16_t FrameErrorControlField[2];
+	uint8_t FrameErrorControlField[2];
 	FrameErrorControlField[0] = (TransferFrameTM.getFrameData()[73] & 0xFF) >> 8;
 	FrameErrorControlField[1] = (TransferFrameTM.getFrameData()[74] & 0xFF);
 
+	if (detailed == true) {
+		LOG_DEBUG<<"TM Transfer Frame\n";
+		LOG_DEBUG<<"TRANSFER FRAME PRIMARY HEADER\n";
+		LOG_DEBUG<<TransferFrameVersionNumber<<"|"<<SpacecraftId<<"|"<<VirtualChannelId<<"|"<<OCFFlag<<"|"<<MCFrameCount<<"|"<<VCFrameCount<<"|"<<TransferFrameDataFieldStatus; ;
 
+	}
 
 }
