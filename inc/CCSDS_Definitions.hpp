@@ -7,7 +7,7 @@
 #include <cstdint>
 
 inline constexpr uint8_t TransferFrameVersionNumber = 0; // Version-1 synchronous transfer frames
-inline constexpr uint16_t SpacecraftIdentifier = 0x237; // A 10-bit unique identifier, assigned by the SANA
+inline constexpr uint16_t SpacecraftIdentifier = 0xAC; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those inline constants don't need to be global and can be defined in the class instead
 

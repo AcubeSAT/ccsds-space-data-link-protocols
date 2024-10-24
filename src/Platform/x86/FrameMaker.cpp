@@ -8,9 +8,9 @@ ServiceChannelNotification FrameMaker::transmitChain(uint8_t vid) {
     uint8_t initialPacketsNum = PacketBufferTmSize - serviceChannel->availablePacketLengthBufferTxTM(vid);
     ser = serviceChannel->vcGenerationServiceTxTM(transferFrameDataFieldLength, vid);
     numberOfPacketsSent += initialPacketsNum - (PacketBufferTmSize - serviceChannel->availablePacketLengthBufferTxTM(vid));
-    if(ser != NO_SERVICE_EVENT){
-        return ser;
-    }
+//    if(ser != NO_SERVICE_EVENT){
+//        return ser;
+//    }
 
     // (secondary header) and CLCW insertion for all created frames
     do {

@@ -100,7 +100,7 @@ public:
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	void appendCRC() {
-		uint16_t len = transferFrameLength - 2;
+		uint16_t len = transferFrameLength - ErrorControlFieldSize;
 		uint16_t crc = calculateCRC(transferFrameData, len);
 
 		// append CRC

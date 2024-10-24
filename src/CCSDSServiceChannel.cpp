@@ -1114,7 +1114,8 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 TM);
 
         // add clcw to the operational control field
-        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+      //  if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+        if (vchan.operationalControlFieldTMPresent){
             transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
         }
@@ -1166,6 +1167,7 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
 
         for (uint8_t i = 0; i < packetPrimaryHeaderLength - 2; i++){
             vchan.packetBufferTxTM.push_back(packetPrimaryHeader[i]);
+
         }
 
         vchan.packetBufferTxTM.push_back(static_cast<uint8_t>(idlePacketDataLength >> 8));
@@ -1263,7 +1265,9 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                                 TM);
 
         // add clcw to the operational control field
-        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+//        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+        if (vchan.operationalControlFieldTMPresent) {
+            uint32_t test = vchan.generatedClcwBuffer.front().clcw;
             frameOID.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
         }
