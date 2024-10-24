@@ -587,8 +587,6 @@ public:
 	 * an order that defines the different segments of the Transfer Frame (e.g. print separately the data field and the
 	 * primary header in a TM frame), so that the reader can see each part of the transfer frame separately.
 	 */
-
-
 	void TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed, uint8_t DataArray[], uint16_t DataLength);
 
 	void TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed, uint8_t vid, uint8_t mapid, uint8_t DataArray[], uint16_t DataLength);
