@@ -7,11 +7,11 @@
 #include <cstdint>
 
 inline constexpr uint8_t TransferFrameVersionNumber = 0; // Version-1 synchronous transfer frames
-inline constexpr uint16_t SpacecraftIdentifier = 567; // A 10-bit unique identifier, assigned by the SANA
+inline constexpr uint16_t SpacecraftIdentifier = 0x237; // A 10-bit unique identifier, assigned by the SANA
 
 // TODO? See if some of those inline constants don't need to be global and can be defined in the class instead
 
-inline constexpr uint16_t TmTransferFrameSize = 128;
+inline constexpr uint16_t TmTransferFrameSize = 1024; // If different frame sizes are created (for test purposes) make sure that they do not extend this value.
 inline constexpr uint8_t TmPrimaryHeaderSize = 6;
 inline constexpr uint8_t TmOperationalControlFieldSize = 4;
 inline constexpr uint16_t TmOIDFrameFirstHeaderPointer = 0x7FE;
@@ -21,7 +21,7 @@ inline constexpr uint16_t MaxTcTransferFrameSize = 128;
 inline constexpr uint8_t TcPrimaryHeaderSize = 5;
 inline constexpr uint8_t TcSegmentHeaderSize = 1;
 
-inline constexpr uint8_t errorControlFieldSize = 2;
+inline constexpr uint8_t ErrorControlFieldSize = 2;
 
 /**
  * Report type  carried by the OCF field of TM frames. The value 0 indicates that 'Communications Link Control Words'

@@ -83,18 +83,18 @@ TEST_CASE("Retransmission"){
 
 	//Create a CLCW  that indicates that retransmission is needed aka a negative acknowledgement
 	CLCW clcw = CLCW(0,0,0,1,0,0,1,0,0,0,1,0,0,0);
-	uint8_t clcwData[TmTransferFrameSize] = {0};
-	for (uint8_t i = TmPrimaryHeaderSize; i < TmTransferFrameSize ; i++) {
+	uint8_t clcwData[128] = {0};
+	for (uint8_t i = TmPrimaryHeaderSize; i < 128 ; i++) {
 		// add idle data
 		clcwData[i] = idle_data[i];
 	}
 	//Create a transfer frame that carries the above CLCW
 	TransferFrameTM clcwTransferFrame =
-            TransferFrameTM(clcwData, TmTransferFrameSize, 0, clcw.clcw, 0, false,
-                            VCA_SDU, PacketOrder, NoSegmentation, 2046,
+            TransferFrameTM(clcwData, 128, 0, clcw.clcw, 0, false,
+                            VCA_SDU, PacketOrderFlag, NoSegmentation, 2046,
                             false, 0, TM);
 	//Receive the CLCW frame
-    serv_channel.allFramesReceptionRequestRxTM(clcwData, TmTransferFrameSize);
+    serv_channel.allFramesReceptionRequestRxTM(clcwData, 128);
 	//E10 enters
 	CHECK(serv_channel.fopState(0) ==  RETRANSMIT_WITHOUT_WAIT);
 }

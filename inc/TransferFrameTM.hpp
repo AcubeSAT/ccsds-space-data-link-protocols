@@ -8,7 +8,7 @@
 /**
  * @see p. 4.1.2.7.4 from TM SPACE DATA LINK PROTOCOL
  */
-inline constexpr uint8_t PacketOrder = 0;
+inline constexpr uint8_t PacketOrderFlag = 0;
 
 /**
  *  @see p. 4.1.2.7.5 from TM SPACE DATA LINK PROTOCOL
@@ -219,7 +219,7 @@ struct TransferFrameTM : public TransferFrame {
 		frameData[2] = 0;
         frameData[3] = virtualChannelFrameCount;
 		// Data field status
-		frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | static_cast<uint8_t>(syncFlag << 6) | ((packetOrder & 0x1) << 4) |
+		frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | static_cast<uint8_t>(syncFlag << 6) | ((packetOrder & 0x1) << 5) |
                        ((segmentationLengthId & 0x3) << 3) | static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8);
         frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
 	}
@@ -241,7 +241,7 @@ struct TransferFrameTM : public TransferFrame {
 		frameData[2] = 0;
         frameData[3] = virtualChannelFrameCount;
 		// Data field status
-        frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | static_cast<uint8_t>(syncFlag << 6) | ((packetOrder & 0x1) << 4) |
+        frameData[4] = (transferFrameSecondaryHeaderPresent << 7) | static_cast<uint8_t>(syncFlag << 6) | ((packetOrder & 0x1) << 5) |
                        ((segmentationLengthId & 0x3) << 3) | static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8);
         frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
 		uint8_t* ocfPointer = frameData + transferFrameLength - 4 - 2 * eccFieldExists;

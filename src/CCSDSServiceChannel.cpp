@@ -108,7 +108,7 @@ ServiceChannelNotification ServiceChannel::segmentationTC(uint16_t maxTransferFr
 
     static uint8_t tmpData[MaxTcTransferFrameSize] = {0};
     uint16_t numberOfNewTransferFrames = 0;
-    uint8_t trailerSize = vchan->frameErrorControlFieldPresent * errorControlFieldSize;
+    uint8_t trailerSize = vchan->frameErrorControlFieldPresent * ErrorControlFieldSize;
     uint8_t segmentHeaderOffset = (vchan->segmentHeaderTCPresent && (serviceType == ServiceType::TYPE_AD || serviceType == ServiceType::TYPE_BD))
             ? TcSegmentHeaderSize : 0;
 
@@ -224,7 +224,7 @@ ServiceChannelNotification ServiceChannel::blockingTC(uint16_t maxTransferFrameD
         }
     }
 
-    uint8_t trailerSize = vchan->frameErrorControlFieldPresent * errorControlFieldSize;
+    uint8_t trailerSize = vchan->frameErrorControlFieldPresent * ErrorControlFieldSize;
     uint8_t segmentHeaderOffset = (vchan->segmentHeaderTCPresent && (serviceType == ServiceType::TYPE_AD || serviceType == ServiceType::TYPE_BD))
                                   ? TcSegmentHeaderSize : 0;
 
@@ -369,7 +369,7 @@ ServiceChannelNotification ServiceChannel::packetProcessingRequestTxTC(uint8_t v
     }
 
     if (maxTransferFrameDataFieldLength >
-    MaxTcTransferFrameSize - TcPrimaryHeaderSize - vchan->frameErrorControlFieldPresent * errorControlFieldSize) {
+    MaxTcTransferFrameSize - TcPrimaryHeaderSize - vchan->frameErrorControlFieldPresent * ErrorControlFieldSize) {
         return ServiceChannelNotification::INVALID_INPUT;
     }
 
@@ -953,11 +953,13 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
     if (masterChannel.framesAfterVcGenerationServiceTxTM.available() < numberOfNewTransferFrames) {
         return TX_MC_FRAME_BUFFER_FULL;
     }
-    if (masterChannel.masterChannelPoolTM.findFit(numberOfNewTransferFrames * TmTransferFrameSize).second != NO_MC_ALERT) {
+    if (masterChannel.masterChannelPoolTM.findFit(numberOfNewTransferFrames * (TmPrimaryHeaderSize + transferFrameDataFieldLength +
+                                                   vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize +
+                                                   vchan.frameErrorControlFieldPresent * ErrorControlFieldSize)).second != NO_MC_ALERT) {
         return MEMORY_POOL_FULL;
     }
 
-    uint8_t trailerSize = vchan.frameErrorControlFieldPresent * errorControlFieldSize + vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize;
+    uint8_t trailerSize = vchan.frameErrorControlFieldPresent * ErrorControlFieldSize + vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize;
     // fill previous frame
     if (prevFrame != nullptr){
         for (uint16_t i = 0; i< TmTransferFrameSize; i++){  // clear up array between consecutive calls
@@ -1021,7 +1023,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                                 vchan.secondaryHeaderTMPresent,
                                 vchan.synchronization,
                                 SegmentLengthIdentifier,
-                                PacketOrder, firstHeaderPointer,
+                                PacketOrderFlag, firstHeaderPointer,
                                 vchan.frameErrorControlFieldPresent,
                                 currentTransferFrameDataFieldLength,
                                 TM);
@@ -1058,7 +1060,9 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
         if (masterChannel.framesAfterVcGenerationServiceTxTM.available() == 0) {
             return TX_MC_FRAME_BUFFER_FULL;
         }
-        if (masterChannel.masterChannelPoolTM.findFit(TmTransferFrameSize).second != NO_MC_ALERT) {
+        if (masterChannel.masterChannelPoolTM.findFit(TmPrimaryHeaderSize + transferFrameDataFieldLength +
+                                                      vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize +
+                                                      vchan.frameErrorControlFieldPresent * ErrorControlFieldSize).second != NO_MC_ALERT) {
             return MEMORY_POOL_FULL;
         }
     }
@@ -1085,7 +1089,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
     }
 
     uint8_t trailerSize = vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize +
-                            vchan.frameErrorControlFieldPresent * errorControlFieldSize;
+                          vchan.frameErrorControlFieldPresent * ErrorControlFieldSize;
     if (prevFrame == nullptr) {
         uint8_t *transferFrameData = masterChannel.masterChannelPoolTM.allocatePacket(
                 tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + trailerSize);
@@ -1102,7 +1106,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 vchan.frameCountTM,
                                 vchan.secondaryHeaderTMPresent,
                                 vchan.synchronization,
-                                PacketOrder,
+                                PacketOrderFlag,
                                 SegmentLengthIdentifier,
                                 0,
                                 vchan.frameErrorControlFieldPresent,
@@ -1222,7 +1226,9 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
 
     // generate OID frame
     if (vchan.packetLengthBufferTxTM.empty()) {
-        if (masterChannel.masterChannelPoolTM.findFit(TmTransferFrameSize).second != NO_MC_ALERT) {
+        if (masterChannel.masterChannelPoolTM.findFit(TmPrimaryHeaderSize + transferFrameDataFieldLength +
+                                                      vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize +
+                                                      vchan.frameErrorControlFieldPresent * ErrorControlFieldSize).second != NO_MC_ALERT) {
             return MEMORY_POOL_FULL;
         }
 
@@ -1237,19 +1243,19 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                 tmpData,
                 TmPrimaryHeaderSize + transferFrameDataFieldLength +
                 TmOperationalControlFieldSize * vchan.operationalControlFieldTMPresent +
-                errorControlFieldSize * vchan.frameErrorControlFieldPresent);
+                ErrorControlFieldSize * vchan.frameErrorControlFieldPresent);
         vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
         TransferFrameTM frameOID =
                 TransferFrameTM(transferFrameData,
                                 TmPrimaryHeaderSize + transferFrameDataFieldLength +
                                 TmOperationalControlFieldSize * vchan.operationalControlFieldTMPresent +
-                                errorControlFieldSize * vchan.frameErrorControlFieldPresent,
+                                ErrorControlFieldSize * vchan.frameErrorControlFieldPresent,
                                 vid,
                                 vchan.operationalControlFieldTMPresent,
                                 vchan.frameCountTM,
                                 vchan.secondaryHeaderTMPresent,
                                 vchan.synchronization,
-                                PacketOrder,
+                                PacketOrderFlag,
                                 SequenceFlags::NoSegmentation,
                                 TmOIDFrameFirstHeaderPointer,
                                 vchan.frameErrorControlFieldPresent,
@@ -1405,9 +1411,9 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTM(uint8_t
 
     VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
     uint8_t trailerSize = virtualChannel->operationalControlFieldTMPresent * TmOperationalControlFieldSize +
-                          virtualChannel->frameErrorControlFieldPresent * errorControlFieldSize;
+                          virtualChannel->frameErrorControlFieldPresent * ErrorControlFieldSize;
     TransferFrameTM frame = TransferFrameTM(frameData, frameLength, virtualChannel->frameErrorControlFieldPresent,
-                                            TmTransferFrameSize - TmPrimaryHeaderSize - trailerSize);
+                                            frameLength - TmPrimaryHeaderSize - trailerSize);
     bool eccFieldExists = virtualChannel->frameErrorControlFieldPresent;
 
     if (virtualChannel->framesAfterMcReceptionRxTM.full()) {

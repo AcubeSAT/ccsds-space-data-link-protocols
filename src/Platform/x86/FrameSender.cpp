@@ -10,7 +10,7 @@ FrameSender::FrameSender() {
     for(;;) {
         if (bind(socket, (sockaddr*)&destination, sizeof(destination)) < 0) {
             printf("\nTCP socket binding failed\n");
-            sleep(2);
+            sleep(1);
         }
         else {
             printf("\nBinding with 10014 finished successfully\n");
@@ -34,7 +34,7 @@ FrameSender::FrameSender() {
     }
     else{
         printf("\nAccepted\n");
-        sleep(5);
+        sleep(2);
         //sleep(15);
         //LOG_DEBUG <<"Accepted";
     }

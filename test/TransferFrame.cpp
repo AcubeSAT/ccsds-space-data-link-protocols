@@ -64,7 +64,7 @@ TEST_CASE("TM Frame Generation - Raw Data Constructor") {
 TEST_CASE("TM Frame Generation - Field Constructor") {
     uint8_t data[TmTransferFrameSize] = {0};
     TransferFrameTM frame = TransferFrameTM(data, 10, 4, false, 0x17, false,
-                                            OCTET_SYNCHRONIZED_FORWARD_ORDERED, PacketOrder, SegmentLengthIdentifier,
+                                            OCTET_SYNCHRONIZED_FORWARD_ORDERED, PacketOrderFlag, SegmentLengthIdentifier,
                                             0xBE, true, 0, TM);
     TransferFrameHeaderTM hdr = frame.getTransferFrameHeader();
 
@@ -76,7 +76,7 @@ TEST_CASE("TM Frame Generation - Field Constructor") {
     CHECK(hdr.getVirtualChannelFrameCount() == 0x17);
     CHECK(hdr.getTransferFrameSecondaryHeaderFlag() == false);
     CHECK(hdr.getSynchronizationFlag() == OCTET_SYNCHRONIZED_FORWARD_ORDERED);
-    CHECK(hdr.getPacketOrderFlag() == PacketOrder);
+    CHECK(hdr.getPacketOrderFlag() == PacketOrderFlag);
     CHECK(hdr.getSegmentLengthId() == SegmentLengthIdentifier);
     CHECK(hdr.getFirstHeaderPointer() == 0xBE);
 }

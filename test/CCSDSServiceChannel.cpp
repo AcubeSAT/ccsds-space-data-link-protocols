@@ -188,30 +188,31 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.frontFrameAfterAllFramesGenerationTxTM().second == nullptr);
 	*/
 
-	uint8_t vaild_frame_TM[128] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t valid_frame_TM[128] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
 	uint8_t len = 14;
-	for (uint16_t i = 0; i < TmTransferFrameSize-len-2; i++) {
-		vaild_frame_TM[i+14]= idle_data[i];
+    uint16_t test = sizeof(valid_frame_TM);
+	for (uint16_t i = 0; i < sizeof(valid_frame_TM)-len-2; i++) {
+        valid_frame_TM[i + 14]= idle_data[i];
 	}
 	uint16_t crc = 36061;
-	vaild_frame_TM[TmTransferFrameSize-2] = (crc >> 8) & 0xFF;
-	vaild_frame_TM[TmTransferFrameSize - 1] = crc & 0xFF;
+    valid_frame_TM[sizeof(valid_frame_TM) - 2] = (crc >> 8) & 0xFF;
+    valid_frame_TM[sizeof(valid_frame_TM) - 1] = crc & 0xFF;
 
-	uint8_t invalid_vcid_TM[TmTransferFrameSize] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
-	uint8_t invalid_crc_TM[TmTransferFrameSize] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
+	uint8_t invalid_vcid_TM[128] = {0x00, 0x0F, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x1F, 0xD6, 0xA2, 0xB3, 0x1F, 0x7B, 0x7C};
+	uint8_t invalid_crc_TM[128] = {0x00, 0x01, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xB3, 0x1F, 0xD6, 0x01};
 
 	// Packets that carry a CLCW
-	uint8_t valid_no_crc_frame_TM[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x0};
-	uint8_t valid_no_crc_frame_TM2[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x0};
-	uint8_t valid_no_crc_frame_TM3[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x0};
-	uint8_t valid_no_crc_frame_TM4[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x01};
-	uint8_t valid_no_crc_frame_TM5[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x01};
-	uint8_t valid_no_crc_frame_TM6[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x01};
-	uint8_t valid_no_crc_frame_TM7[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x01};
-	uint8_t valid_no_crc_frame_TM8[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x04};
-	uint8_t valid_no_crc_frame_TM9[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x05};
-	uint8_t valid_no_crc_frame_TM10[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x05};
-	uint8_t valid_no_crc_frame_TM11[TmTransferFrameSize] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x05};
+	uint8_t valid_no_crc_frame_TM[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x0};
+	uint8_t valid_no_crc_frame_TM2[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x0};
+	uint8_t valid_no_crc_frame_TM3[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x0};
+	uint8_t valid_no_crc_frame_TM4[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x01};
+	uint8_t valid_no_crc_frame_TM5[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD0, 0x01};
+	uint8_t valid_no_crc_frame_TM6[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x01};
+	uint8_t valid_no_crc_frame_TM7[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x01};
+	uint8_t valid_no_crc_frame_TM8[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x04};
+	uint8_t valid_no_crc_frame_TM9[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC7, 0x05};
+	uint8_t valid_no_crc_frame_TM10[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xC8, 0x05};
+	uint8_t valid_no_crc_frame_TM11[128] = {0x00, 0x05, 0x00, 0x03, 0x04, 0xA2, 0xB3, 0x5B, 0x54, 0xA2, 0xD8, 0x05};
 
 	// TM Reception
 
@@ -221,16 +222,16 @@ TEST_CASE("Service Channel") {
 	CHECK(serv_channel.availableFramesVcCopyRxTM(0) == MaxReceivedRxTmInVirtBuffer);
 	CHECK(serv_channel.availableFramesAfterVcGenerationTxTM() == MaxReceivedUnprocessedTxTmInVirtBuffer - 0);
 
-	err = serv_channel.allFramesReceptionRequestRxTM(vaild_frame_TM, TmTransferFrameSize);
+	err = serv_channel.allFramesReceptionRequestRxTM(valid_frame_TM, 128);
 	CHECK(serv_channel.availableFramesVcCopyRxTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableFramesMcCopyRxTM() == MaxTxInMasterChannel - 1);
 
-	err = serv_channel.allFramesReceptionRequestRxTM(invalid_vcid_TM, TmTransferFrameSize);
+	err = serv_channel.allFramesReceptionRequestRxTM(invalid_vcid_TM, 128);
 	CHECK(err == ServiceChannelNotification::INVALID_VC_ID);
 	CHECK(serv_channel.availableFramesVcCopyRxTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableFramesMcCopyRxTM() == MaxRxInMasterChannel - 1);
 
-	err = serv_channel.allFramesReceptionRequestRxTM(invalid_crc_TM, TmTransferFrameSize);
+	err = serv_channel.allFramesReceptionRequestRxTM(invalid_crc_TM, 128);
 	CHECK(err == ServiceChannelNotification::RX_INVALID_CRC);
 	CHECK(serv_channel.availableFramesVcCopyRxTM(0) == MaxReceivedRxTmInVirtBuffer - 1);
 	CHECK(serv_channel.availableFramesMcCopyRxTM() == MaxRxInMasterChannel - 1);
@@ -688,7 +689,7 @@ TEST_CASE("MAP Request Service") {
         const TransferFrameTC* transferFrame = serv_channel.frontUnprocessedFrameTxTC(1).second;
 
         CHECK(transferFrame->getServiceType() == ServiceType::TYPE_BD);
-        CHECK(transferFrame->getFrameLength() == TcPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + errorControlFieldSize);
+        CHECK(transferFrame->getFrameLength() == TcPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + ErrorControlFieldSize);
         for (uint8_t i = TcPrimaryHeaderSize; i < sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + TcPrimaryHeaderSize; i++) {
             if (i < TcPrimaryHeaderSize + sizeof(packet1)) {
                 CHECK(transferFrame->getFrameData()[i] == packet1[i - TcPrimaryHeaderSize]);
@@ -719,21 +720,21 @@ TEST_CASE("MAP Request Service") {
 
         uint16_t  offset = TcPrimaryHeaderSize + TcSegmentHeaderSize;
 
-        CHECK(frame1->getFrameLength() == offset + 4 + errorControlFieldSize);
+        CHECK(frame1->getFrameLength() == offset + 4 + ErrorControlFieldSize);
         CHECK(((frame1->segmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationStart);
         CHECK(frame1->getFrameData()[offset + 0] == 47);
         CHECK(frame1->getFrameData()[offset + 1] == 31);
         CHECK(frame1->getFrameData()[offset + 2] == 65);
         CHECK(frame1->getFrameData()[offset + 3] == 81);
 
-        CHECK(frame2->getFrameLength() == offset + 4 + errorControlFieldSize);
+        CHECK(frame2->getFrameLength() == offset + 4 + ErrorControlFieldSize);
         CHECK(((frame2->segmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationMiddle);
         CHECK(frame2->getFrameData()[offset + 0] == 25);
         CHECK(frame2->getFrameData()[offset + 1] == 44);
         CHECK(frame2->getFrameData()[offset + 2] == 76);
         CHECK(frame2->getFrameData()[offset + 3] == 99);
 
-        CHECK(frame3->getFrameLength() == offset + 2 + errorControlFieldSize);
+        CHECK(frame3->getFrameLength() == offset + 2 + ErrorControlFieldSize);
         CHECK(((frame3->segmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationEnd);
         CHECK(frame3->getFrameData()[offset + 0] == 13);
         CHECK(frame3->getFrameData()[offset + 1] == 43);
