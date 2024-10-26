@@ -29,6 +29,7 @@ public:
 
     void clcwFeeder(uint32_t clcw, uint8_t vid) {
         serviceChannel->pushClcwInBuffer(CLCW(clcw), vid);
+        serviceChannel->getMasterChannel().virtualChannels.at(vid).clcwWaitingToBeTransmitted = true;
     }
 
     void packetFeeder(uint8_t* packet, uint16_t packetLength, uint8_t vid) {

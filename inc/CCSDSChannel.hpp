@@ -250,6 +250,11 @@ public:
 	 */
 	uint8_t frameCountTM;
 
+    /**
+     * Flag to indicate that a clcw was generated
+     */
+    bool clcwWaitingToBeTransmitted = false;
+
 	/**
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
@@ -458,11 +463,6 @@ private:
      * Applicable to Type-BC Frames
      */
     etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBC;
-
-    /**
-     * Flag to indicate that a clcw was generated
-     */
-     bool clcwWaitingToBeTransmitted = false;
 
     /**
      * Buffer to store the clcws waiting to be transmited

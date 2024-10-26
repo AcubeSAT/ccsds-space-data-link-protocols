@@ -6,19 +6,17 @@ void manual(FrameMaker frameMaker){
     // Choose virtual channel
     uint8_t vid = 0;
 
-    // Feed packets to certain virtual channels
-    //uint8_t packet1[] = {8, 1, 192, 0, 0, 10, 32, 17, 2, 0, 0, 0, 1, 15, 43, 209, 58};
-    //uint8_t packet2[] = {8, 9, 10, 11, 12};
-    uint8_t  packet4[]  = {8, 1, 195, 39, 0, 10, 32, 17, 2, 1, 70, 0, 1, 37, 165, 61, 202};
-//    uint8_t packet3[] = {8, 1, 195, 39, 0, 76, 32, 4, 2, 1, 70, 0, 1, 37, 165, 61, 202, 14, 224, 184, 148, 14, 224, 185, 92, 0, 2, 19, 152, 0, 3, 64, 160, 0, 0, 14, 224, 185, 92, 63, 128, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 63, 209, 5, 236, 19, 153, 0, 6, 65, 80, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 14, 224, 185, 92, 65, 0, 0, 0,0,0,0,0};
-    uint8_t  packet3[]  = {8, 1, 195, 39, 0, 10, 32, 17, 2, 1, 70, 0, 1, 37, 165, 61, 202};
-    uint8_t packet5[]    = {8, 1, 195, 39, 0, 76, 32, 4, 2, 1, 70, 0, 1, 37, 165, 61, 202, 14, 224, 184, 148, 14, 224, 185, 92, 0, 2, 19, 152, 0, 3, 64, 160, 0, 0, 14, 224, 185, 92, 63, 128, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 63, 209, 5, 236, 19, 153, 0, 6, 65, 80, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 14, 224, 185, 92, 65, 0, 0, 0,0,0,0,0};
-    uint8_t  packet6[]  = {8, 1, 195, 39, 0, 10, 32, 17, 2, 1, 70, 0, 1, 37, 165, 61, 202};
+    // Feed packets to certain virtual channels (must be ecss packets)
+    // TM(17,2)_are_you_alive_connection_test_report:
+    // uint8_t packet1[] = {8, 1, 195, 39, 0, 10, 32, 17, 2, 1, 70, 0, 1, 37, 165, 61, 202}
+    // TM(4,2)_parameter_statistics_report
+    // uint8_t packet1[] = {8, 1, 195, 39, 0, 76, 32, 4, 2, 1, 70, 0, 1, 37, 165, 61, 202, 14, 224, 184, 148, 14, 224, 185, 92, 0, 2, 19, 152, 0, 3, 64, 160, 0, 0, 14, 224, 185, 92, 63, 128, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 63, 209, 5, 236, 19, 153, 0, 6, 65, 80, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 14, 224, 185, 92, 65, 0, 0, 0,0,0,0,0};
 
-    frameMaker.packetFeeder(packet4,sizeof(packet4) ,vid);
-    frameMaker.packetFeeder(packet3,sizeof(packet3) ,vid);
-    frameMaker.packetFeeder(packet5,sizeof(packet5) ,vid);
-    frameMaker.packetFeeder(packet6,sizeof(packet6) ,vid);
+    uint8_t packet1[] = {8, 1, 195, 39, 0, 10, 32, 17, 2, 1, 70, 0, 1, 37, 165, 61, 202};
+    uint8_t packet2[] = {8, 1, 195, 39, 0, 76, 32, 4, 2, 1, 70, 0, 1, 37, 165, 61, 202, 14, 224, 184, 148, 14, 224, 185, 92, 0, 2, 19, 152, 0, 3, 64, 160, 0, 0, 14, 224, 185, 92, 63, 128, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 63, 209, 5, 236, 19, 153, 0, 6, 65, 80, 0, 0, 14, 224, 185, 92, 64, 64, 0, 0, 14, 224, 185, 92, 65, 0, 0, 0,0,0,0,0};
+
+    frameMaker.packetFeeder(packet1,sizeof(packet1) ,vid);
+    frameMaker.packetFeeder(packet2,sizeof(packet2) ,vid);
 
     // Feed CLCW
     uint32_t clcw = 0xFFFFFFFF;
@@ -36,8 +34,6 @@ void manual(FrameMaker frameMaker){
     // If the full output is not shown, press enter
     FrameSender frameSender = FrameSender();
     uint8_t frame[TmTransferFrameSize] = {0};
-    uint8_t sendAttempts = 1;
-    uint8_t test = frameMaker.getNumberOfFramesSent();
     for (uint16_t i = 0; i < frameMaker.getNumberOfFramesSent(); ++i) {
         frameMaker.popWaitingFrame(frame);
 
@@ -61,11 +57,8 @@ void manual(FrameMaker frameMaker){
                ((static_cast<uint16_t>(((frame[4]) & 0x07)) << 8U) | (static_cast<uint16_t>((frame[5]))))
                );
 
-        for (uint16_t j = 0; j < sendAttempts; ++j) {
-            frameSender.sendFrameToYamcs(frame, frameMaker.getFrameLength());
-            sleep(2);
-        }
-        sleep(5);
+        frameSender.sendFrameToYamcs(frame, frameMaker.getFrameLength());
+        sleep(5);  // Do NOT remove or change this delay (or else consecutive frames might not be recognized)
     }
     //Print number of packet sent
     printf("Number of non Idle Packets Sent %d\n", frameMaker.getNumberOfPacketsSent());
@@ -111,7 +104,7 @@ int main(){
     ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
     // Create Frame Maker class instance, set frame data field length
-    uint16_t  transferFrameDataFieldLength = 33;
+    uint16_t  transferFrameDataFieldLength = 17 + 7;   // ensure corresponding length in yamcs matches
     FrameMaker frameMaker = FrameMaker(&serv_channel, transferFrameDataFieldLength);
 
     // Call manual or automatic frame sending here

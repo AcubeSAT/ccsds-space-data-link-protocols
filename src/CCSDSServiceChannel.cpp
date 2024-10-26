@@ -1032,6 +1032,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
         if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
             transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
+            vchan.clcwWaitingToBeTransmitted = false;
         }
 
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
@@ -1114,10 +1115,10 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 TM);
 
         // add clcw to the operational control field
-      //  if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
-        if (vchan.operationalControlFieldTMPresent){
+        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
             transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
+            vchan.clcwWaitingToBeTransmitted = false;
         }
 
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
@@ -1155,7 +1156,7 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
     uint16_t idlePacketDataLength;
     uint16_t remainingSpace = transferFrameDataFieldLength - firstDataFieldEmptyOctet;
     if (vchan.packetLengthBufferTxTM.empty()) {
-        if (remainingSpace > packetPrimaryHeaderLength + 1){
+        if (remainingSpace >= packetPrimaryHeaderLength + 1){
             // The idle packet can fit in the transfer frame (packetPrimaryHeaderLength + 1 is the minimum size).
             idlePacketDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
         }
@@ -1188,7 +1189,7 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
             return std::make_pair(NO_SERVICE_EVENT, false);
         }
 
-        if (remainingSpace > packetPrimaryHeaderLength + 1){
+        if (remainingSpace >= packetPrimaryHeaderLength + 1){
             // The idle packet can fit in the transfer frame (packetPrimaryHeaderLength + 1 is the minimum size).
             idlePacketDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
         }
@@ -1265,11 +1266,10 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                                 TM);
 
         // add clcw to the operational control field
-//        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
-        if (vchan.operationalControlFieldTMPresent) {
-            uint32_t test = vchan.generatedClcwBuffer.front().clcw;
+        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
             frameOID.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
+            vchan.clcwWaitingToBeTransmitted = false;
         }
 
         masterChannel.masterCopyTxTM.push_back(frameOID);
