@@ -51,3 +51,4 @@ TEST_CASE("PacketTΜ Generation") {
 	CHECK(frame.getOperationalControlField() == 0x80210405);
 	// CHECK(frame.global_virtual_channel_id() == 32);
 }
+
