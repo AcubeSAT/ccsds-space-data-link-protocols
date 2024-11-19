@@ -2,7 +2,7 @@ flowchart TB
     subgraph A["TC Tx Services"]
         subgraph A1 ["Map Packet Processing"]
             A1s1[["storePacketTxTc(packet, packetLength, vid, mapid)"]]
-            A1s2[["packetProcessingTxTC(vid, mapid, transferFrameDataLength, serviceType)<br>calls internally:<br>-segmentationTC<br>-blockingTC"]]
+            A1s2[["packetProcessingRequestTxTC(vid, mapid, transferFrameDataLength, serviceType)<br>calls internally:<br>-segmentationTC<br>-blockingTC"]]
             A1s3[["frontUnprocessedFrameMcCopyTxTC()"]]
             A1s4[["getLastMasterCopyTcFrame()"]]
             A1s5[["frontUnprocessedFrameTxTC(vid)"]]
@@ -155,15 +155,15 @@ flowchart TB
         end
 
         subgraph C2["Virtual Channel Generation"]
-            C2s1[["vcGenerationServiceTxTM(transferFrameDataFieldLength, vid) <br> calls internally:<br>-segmentationTM<br>-blockingTM"]]
+            C2s1[["vcGenerationServiceTxTM(transferFrameDataFieldLength, vid) <br> calls internally:<br>-segmentationTM<br>-blockingTM<br>-generateacket"]]
             C2s2[["availableFramesAfterVcGenerationTxTM()"]]
             C2s3[["backFrameAfterVcGenerationTxTM()"]]
             C2s4[["frontFrameAfterVcGenerationTxTM()"]]
             C1s1 --> C2s1
             C2s1 -.-x|"(from segmentation,blocking)"| vc8 & vc9
             C2s1 -.->|"(from segmentation,blocking)"| master13 & master11 & master17
-            C2s2 -.-|"remaining space"| master13
-            C2s3 -.-|"back reference"| master13
+            C2s2 -.-|"remaining space"| master11
+            C2s3 -.-|"back reference"| master11
             C2s4 -.-|"front reference"| master11
         end
 
@@ -264,7 +264,7 @@ flowchart TB
     master16[("masterChannelPoolTC (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTC frames")]
     master17[("masterChannelPoolTM (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTM frames")]
 
-    service1[("clcwTransferFrameBuffer (frameTM) <br> Single capacity")]
+    service1[("generatedClcwBuffer (CLCW) <br> Single capacity")]
 
     classDef map_channel_buffer fill:#3d8215;
     classDef virtual_channel_buffer fill:#a6161f;

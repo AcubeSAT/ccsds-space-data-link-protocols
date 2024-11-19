@@ -7,8 +7,6 @@
 #include <utility>
 #include <CCSDSLoggerImpl.h>
 
-enum SegmentLengthID { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentationEnd = 0x2, NoSegmentation = 0x3 };
-
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
  *  bidirectional interface between the receiving and transmitting parties
@@ -27,18 +25,6 @@ private:
 	 * TODO: Replace defines for maxFrameLength
 	 */
 	PhysicalChannel physicalChannel;
-
-	/**
-	 * Variable to indicate that a CLCW has been constructed and should be sent
-	 */
-	bool clcwWaitingToBeTransmitted = false;
-
-	/**
-	 * Buffer to store the data of the clcw transfer frame
-	 */
-	uint8_t clcwTransferFrameDataBuffer[TmTransferFrameSize] = {0};
-
-	etl::list<TransferFrameTM, 1> clcwTransferFrameBuffer;
 
 public:
     /**
@@ -109,19 +95,16 @@ public:
     /**
      * Auxiliary function to implement the segmentation of packets stored in
      * the packet buffer
-     *
-     * @param prevFrame              Half full frame waiting in the master channel (nullptr if it does
-     *                              not exist or is full)
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-     *                                          (segment header included)
+     *                                          (segment header is included, if it exists)
      * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
      * @param vid                            Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
-     *                                      (segmentHeaderPresent = false) or if the service type is BC
-     * @param serviceType                    Type AD or BC frames
+     *                                      (segmentHeaderTCPresent = false) or if the service type is BC
+     * @param serviceType                    Type AD, BC, BD frames
      * @return A Service Channel Notification
      */
-    ServiceChannelNotification segmentationTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+    ServiceChannelNotification segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                               uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
     /**
@@ -130,15 +113,15 @@ public:
      * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
      *                                       not exist or is full)
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-     *                                          (segment header included)
+     *                                          (segment header is included, if it exists)
      * @param packetLength                   The length of the next packet in the stored TC packet buffer
      * @param vcid                           Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
-     *                                        (segmentHeaderPresent = false) or if the service type is BC
-     * @param serviceType                    Type AD or BC frames
+     *                                        (segmentHeaderTCPresent = false) or if the service type is BC
+     * @param serviceType                    Type AD, BC, BD frames
      * @return                               A Service Channel Notification
      */
-    ServiceChannelNotification blockingTC(TransferFrameTC* prevFrame, uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+    ServiceChannelNotification blockingTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                           uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
 
@@ -150,8 +133,8 @@ public:
      * @param packetLength  Length of the packet
      * @param vid           Virtual channel id
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
-     *                      (segmentHeaderPresent = false) or if the service type is BC
-     * @param serviceType  Service Type
+     *                      (segmentHeaderTCPresent = false) or if the service type is BC
+     * @param serviceType  Type AD, BC, BD frames
      */
     ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
                                                ServiceType serviceType);
@@ -167,14 +150,14 @@ public:
      *
      * @param vid           Virtual Channel ID
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
-     *                      (segmentHeaderPresent == false) or if the service type is BC
+     *                      (segmentHeaderTCPresent == false) or if the service type is BC
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
      *                                          (segment header included)
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
      *                                  be grouped together
      */
-    ServiceChannelNotification packetProcessingTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
-                                                    ServiceType serviceType);
+    ServiceChannelNotification packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
+                                                           ServiceType serviceType);
 
     //     - Virtual Channel Generation
     /**
@@ -225,9 +208,12 @@ public:
 
     void invalidDirective(uint8_t vid);
 
-    CLCW getClcwInBuffer();
+    CLCW getClcwInBuffer(uint8_t vid);
 
-    uint8_t* getClcwTransferFrameDataBuffer();
+    // for testing purposes
+    void pushClcwInBuffer(CLCW clcw, uint8_t vid) {
+        masterChannel.virtualChannels.at(vid).generatedClcwBuffer.push_back(clcw);
+    }
 
     /**
 	 * Get FOP State of the virtual channel
@@ -326,10 +312,10 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderPresent) {
+        if (!virtualChannel.segmentHeaderTCPresent) {
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
-        if (virtualChannel.segmentHeaderPresent &&
+        if (virtualChannel.segmentHeaderTCPresent &&
             (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
@@ -346,10 +332,10 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderPresent) {
+        if (!virtualChannel.segmentHeaderTCPresent) {
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
-        if (virtualChannel.segmentHeaderPresent &&
+        if (virtualChannel.segmentHeaderTCPresent &&
             (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
@@ -424,7 +410,7 @@ public:
 
     //     - Utility and Debugging
     uint16_t availableFramesAfterVcGenerationTxTM() const {
-        return masterChannel.masterCopyTxTM.available();
+        return masterChannel.framesAfterVcGenerationServiceTxTM.available();
     }
     /**
      * Returns the available space in the packetLengthBufferTxTM buffer
@@ -437,7 +423,7 @@ public:
     uint16_t availablePacketBufferTxTM(uint8_t gvcid);
 
     /**
-     * Return the last stored TM transfer frame from masterCopyTxTM
+     * Return the last stored TM transfer frame from framesAfterVcGenerationServiceTxTM buffer
      */
     std::pair<ServiceChannelNotification, const TransferFrameTM*> backFrameAfterVcGenerationTxTM() const;
 
@@ -475,10 +461,11 @@ public:
      * @param transferFrameDataFieldLength The length of the data field of the TM Transfer frame, taken by the
      *                                     vcGenerationServiceTxTM parameter
      * @param packetLength                 The length of the next transfer frame data in the packetBufferTxTM
+     * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
      * @return                             A Service Channel Notification as it is the case with vcGenerationServiceTxTM
      */
     ServiceChannelNotification segmentationTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength,
-                                              uint16_t packetLength,uint8_t gvcid);
+                                              uint16_t packetLength, uint8_t vid);
 
     /**
      * Auxiliary function for blocking of packets stored in the stored packet buffer
@@ -489,15 +476,28 @@ public:
      *                                       stored)
      * @param packetLength                   The length of the next packet in the stored TM packet buffer
      * @param vcid                           Virtual Channel ID
+     * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
      * @return                               A Service Channel Notification
      */
-    ServiceChannelNotification blockingTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength, uint8_t vid);
+    ServiceChannelNotification blockingTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength,
+                                          uint16_t packetLength, uint8_t vid);
+
+    /**
+     * Auxiliary function for generating idle space packets in the scenario that there are not enough packets to
+     * fill the transfer frame data field, or blocking and segmentation permissions do not allow for their placement.
+     * @see Space Packet Protocol for details on the idle space packet
+     *
+     * @param vid                   Virtual channel ID
+     * @param lastPacketPlacedIdle  An indicator on whether the last packet placed in a frame was idle.
+     * @return                      A service channel notification and an indication on whether an idle packet was generated or not
+     */
+     std::pair<ServiceChannelNotification, bool> generateIdleSpacePacket(uint8_t vid, TransferFrameTM* lastProcessedFrame, uint16_t transferFrameDataFieldLength, bool lastPacketPlacedIdle);
 
     /**
      * Service that generates a transfer frame by combining the packets via blocking and segmentation and initializing
      * the transfer frame primary header @see p. 4.2.2 and 4.2.3 of TM Space Data Link protocol
      *
-     * @param transferFrameDataFieldLength the maximum transfer frame data field length
+     * @param transferFrameDataFieldLength the transfer frame data field length
      * @param gvcid the global virtual channel id
      * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
      * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
@@ -521,8 +521,7 @@ public:
      * rate to the Channel Coding Sublayer.
      * @see p. 4.2.7 from TM Space Data Link Protocol
      */
-    ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget,
-                                                              uint16_t frameLength = TmTransferFrameSize);
+    ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget, uint16_t& frameLength);
 
 
     // TM TransferFrame - Receiving End (TM Rx)

@@ -10,17 +10,25 @@ struct TransferFrameHeader {
         transferFrameHeader = frameData;
 	}
 
+    /**
+     *  Frame version
+     */
+    uint8_t getTransferFrameVersionNumber() const {
+        return (transferFrameHeader[0] & 0xC0) >> 6;
+    }
+
 	/**
 	 * The ID of the spacecraft
 	 * 			TC: Bits  6–15  of  the  Transfer  Frame  Primary  Header
 	 * 			TM: Bits  2–11  of  the  Transfer  Frame  Primary  Header
 	 */
-	uint16_t spacecraftId(enum FrameType frameType) const {
+	uint16_t getSpacecraftId(enum FrameType frameType) const {
 		if (frameType == TC) {
-			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x03) << 8U) | (static_cast<uint16_t>(transferFrameHeader[1]));
+			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x03) << 8U) |
+                   (static_cast<uint16_t>(transferFrameHeader[1]));
 		} else {
-			return ((static_cast<uint16_t>(transferFrameHeader[0]) & 0x3F) << 2U) |
-                   ((static_cast<uint16_t>(transferFrameHeader[1])) & 0xC0) >> 6U;
+			return (static_cast<uint16_t>(transferFrameHeader[0] & 0x3F) << 4U) |
+                   (static_cast<uint16_t>(transferFrameHeader[1] & 0xF0) >> 4U);
 		}
 	}
 
@@ -29,7 +37,7 @@ struct TransferFrameHeader {
 	 * 			TC: Bits 16–21 of the Transfer Frame Primary Header
 	 * 			TM: Bits 12–14 of the Transfer Frame Primary Header
 	 */
-	uint8_t vcid(enum FrameType frameType) const {
+	uint8_t getVirtualChannelId(enum FrameType frameType) const {
 		if (frameType == TC) {
 			return (transferFrameHeader[2] >> 2U) & 0x3F;
 		} else {
@@ -71,7 +79,20 @@ public:
         std::memcpy(transferFrameData, dataSource, dataLength * sizeof(uint8_t));
     }
 
-	virtual uint16_t calculateCRC(const uint8_t* data, uint16_t len) = 0;
+    /**
+     * Calculates the CRC code
+     * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
+     */
+    static uint16_t calculateCRC(const uint8_t* data, uint16_t len) {
+        uint16_t crc = 0xFFFF;
+
+        // calculate remainder of binary polynomial division
+        for (uint16_t i = 0; i < len; i++) {
+            crc = crc_16_ccitt_table[(data[i] ^ (crc >> 8)) & 0xFF] ^ (crc << 8);
+        }
+
+        return crc;
+    }
 
 	/**
 	 * Appends the CRC code (given that the corresponding Error Correction field is present in the given
@@ -79,14 +100,12 @@ public:
 	 * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
 	 */
 	void appendCRC() {
-		uint16_t len = transferFrameLength - 2;
+		uint16_t len = transferFrameLength - ErrorControlFieldSize;
 		uint16_t crc = calculateCRC(transferFrameData, len);
 
-		uint16_t frameLength = (type == FrameType::TC) ? transferFrameLength : TmTransferFrameSize;
-
 		// append CRC
-		transferFrameData[frameLength - 2] = (crc >> 8) & 0xFF;
-        transferFrameData[frameLength - 1] = crc & 0xFF;
+		transferFrameData[transferFrameLength - 2] = (crc >> 8) & 0xFF;
+        transferFrameData[transferFrameLength - 1] = crc & 0xFF;
 	}
 
 protected:

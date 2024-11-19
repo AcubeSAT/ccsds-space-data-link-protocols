@@ -101,7 +101,7 @@ void FrameOperationProcedure::initiateBcRetransmission() {
 
 void FrameOperationProcedure::acknowledgeFrame(uint8_t frameSeqNumber) {
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->transferFrameSequenceNumber() == frameSeqNumber) {
+		if (frame->getTransferFrameSequenceNumber() == frameSeqNumber) {
 			frame->setAcknowledgement(true);
 		}
 	}
@@ -180,7 +180,7 @@ COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
 	}
 	TransferFrameTC* frame = waitQueueFOP->front();
 	if ((frame->getServiceType() == ServiceType::TYPE_AD) &&
-	    (frame->transferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
+	    (frame->getTransferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindow)) {
 		transmitAdFrame();
 		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
@@ -208,7 +208,8 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 // This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
 // separate data structure hold down the transitions between each state but this works too... it's just ugly
 COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-	CLCW clcw = vchan->currentlyProcessedCLCW.getClcw();
+	CLCW clcw = vchan->receivedClcwBuffer.front();
+    vchan->receivedClcwBuffer.pop_front();
 
 	if (clcw.getLockout() == 0) {
 		if (clcw.getReportValue() == transmitterFrameSeqNumber) {
@@ -659,7 +660,7 @@ void FrameOperationProcedure::bdReject() {
 COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 	TransferFrameTC* frame = vchan->unprocessedFrameListBufferTxTC.front();
 
-	if (frame->transferFrameHeader().bypassFlag() == 0) {
+	if (frame->getTransferFrameHeader().getBypassFlag() == 0) {
 		if (frame->getServiceType() == ServiceType::TYPE_AD) {
 			if (!waitQueueFOP->full()) {
 				// E19
@@ -705,9 +706,9 @@ COPDirectiveResponse FrameOperationProcedure::transferFdu() {
 
 void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if ((frame->transferFrameSequenceNumber() < frameSequenceNumber ||
-		     frame->transferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
-			acknowledgeFrame(frame->transferFrameSequenceNumber());
+		if ((frame->getTransferFrameSequenceNumber() < frameSequenceNumber ||
+                frame->getTransferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
+			acknowledgeFrame(frame->getTransferFrameSequenceNumber());
 		}
 	}
 	expectedAcknowledgementSeqNumber = frameSequenceNumber;

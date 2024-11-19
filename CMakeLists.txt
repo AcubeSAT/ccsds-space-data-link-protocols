@@ -5,7 +5,7 @@ project(ccsds_tm_packets)
 set(CMAKE_CXX_STANDARD 17)
 
 # Specify the directories for #includes
-include_directories("${PROJECT_SOURCE_DIR}/inc" "${PROJECT_SOURCE_DIR}/lib/etl/include")
+include_directories("${PROJECT_SOURCE_DIR}/inc" "${PROJECT_SOURCE_DIR}/lib/etl/include" "${PROJECT_SOURCE_DIR}/inc/Platform/x86")
 
 add_compile_options(-Wvla)
 
@@ -30,11 +30,16 @@ add_library(common OBJECT
         )
 
 # Specify the .cpp files for the executables
-file(GLOB x86_main_SRC "src/Platform/x86/*.cpp")
-add_executable(ccsds_tm_packets
-        src/main.cpp
+add_executable(ccsds_tm_packets_default
         $<TARGET_OBJECTS:common>
-        #        ${x86_main_SRC}
+        src/main.cpp
+        )
+
+add_executable(ccsds_tm_packets_yamcs_connection
+        $<TARGET_OBJECTS:common>
+        src/Platform/x86/FrameMaker.cpp
+        src/Platform/x86/FrameSender.cpp
+        src/Platform/x86/main.cpp
         )
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")

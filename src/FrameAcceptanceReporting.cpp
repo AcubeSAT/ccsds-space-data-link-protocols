@@ -6,7 +6,7 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 	waitQueue->pop_front();
 
 	if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
-		if (frame->transferFrameSequenceNumber() == receiverFrameSeqNumber) {
+		if (frame->getTransferFrameSequenceNumber() == receiverFrameSeqNumber) {
 			if (!sentQueue->full()) {
 				// E1
 				if (state == FARMState::OPEN) {
@@ -29,21 +29,21 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 				return COPDirectiveResponse::REJECT;
 			}
-		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber) &&
-		           (frame->transferFrameSequenceNumber() <= receiverFrameSeqNumber + farmPositiveWinWidth - 1)) {
+		} else if ((frame->getTransferFrameSequenceNumber() > receiverFrameSeqNumber) &&
+                   (frame->getTransferFrameSequenceNumber() <= receiverFrameSeqNumber + farmPositiveWinWidth - 1)) {
 			// E3
 			if (state == FARMState::OPEN) {
 				retransmit = FlagState::READY;
 			}
 			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
-		} else if ((frame->transferFrameSequenceNumber() < receiverFrameSeqNumber) &&
-		           (frame->transferFrameSequenceNumber() >= receiverFrameSeqNumber - farmNegativeWidth)) {
+		} else if ((frame->getTransferFrameSequenceNumber() < receiverFrameSeqNumber) &&
+                   (frame->getTransferFrameSequenceNumber() >= receiverFrameSeqNumber - farmNegativeWidth)) {
 			// E4
 			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
 			return COPDirectiveResponse::REJECT;
-		} else if ((frame->transferFrameSequenceNumber() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
-		           (frame->transferFrameSequenceNumber() < (receiverFrameSeqNumber > farmNegativeWidth)
+		} else if ((frame->getTransferFrameSequenceNumber() > receiverFrameSeqNumber + farmPositiveWinWidth - 1) &&
+                   (frame->getTransferFrameSequenceNumber() < (receiverFrameSeqNumber > farmNegativeWidth)
 		                ? receiverFrameSeqNumber - farmNegativeWidth
 		                : 256 - farmNegativeWidth)) {
 			// E5
@@ -54,13 +54,13 @@ COPDirectiveResponse FrameAcceptanceReporting::frameArrives() {
 		}
 	} else if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
 	            (frame->getServiceType() == ServiceType::TYPE_BD)) &&
-	           !frame->transferFrameHeader().ctrlAndCmdFlag()) {
+	           !frame->getTransferFrameHeader().getCtrlAndCmdFlag()) {
 		// E6
 		farmBCount += 1;
 		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
 		return COPDirectiveResponse::ACCEPT;
 	} else if (frame->getServiceType() == ServiceType::TYPE_BC) {
-		if (frame->controlWordType() == 0) {
+		if (ControlWordType == 0) {
 			if (frame->getFrameData()[5] == 0) {
 				// E7
 				farmBCount += 1;

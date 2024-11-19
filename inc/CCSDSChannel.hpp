@@ -8,6 +8,7 @@
 #include <etl/flat_map.h>
 #include <etl/list.h>
 #include <etl/queue.h>
+#include <etl/deque.h>
 
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
@@ -206,7 +207,7 @@ public:
 	/**
 	 * Determines whether the Segment Header is present (enables MAP services for type AD, BD packets)
 	 */
-	const bool segmentHeaderPresent;
+	const bool segmentHeaderTCPresent;
 
 	/**
 	 * Maximum length of a single transfer frame
@@ -214,26 +215,20 @@ public:
 	const uint16_t maxFrameLengthTC;
 
     /**
-     * Determines whether smaller data units can be combined into a single TM transfer frame
+     * Determines whether smaller data units can be combined into a single TM transfer frame.
      */
      const bool blockingTM;
 
     /**
-    * Determines whether large packets can be segmented to multiple TM transfer frames
+    * Determines whether large packets can be segmented to multiple TM transfer frames.
     */
     const bool segmentationTM;
 
     /**
-     * Determines whether smaller data units can be combined into a single TC transfer frame
+     * Determines whether smaller data units can be combined into a single TC transfer frame.
      * (applies for Type BC packets, and for Type AD, BD packets if a segmentHeader is not present)
      */
     const bool blockingTC;
-
-    /**
-     * Determines whether large packets can be segmented to multiple TC transfer frames
-     * (applies for Type BC packets, and for Type AD, BD packets if a segmentHeader is not present)
-     */
-    const bool segmentationTC;
 
 	/**
 	 * Determines the maximum number of times Type A frames will be re-transmitted
@@ -254,6 +249,11 @@ public:
 	 * Determines the number of TM Transfer Frames transmitted
 	 */
 	uint8_t frameCountTM;
+
+    /**
+     * Flag to indicate that a clcw was generated
+     */
+    bool clcwWaitingToBeTransmitted = false;
 
 	/**
 	 * Returns availableVCBufferTC space in the VC TC buffer
@@ -310,8 +310,8 @@ public:
 	}
 
 	VirtualChannel(std::reference_wrapper<MasterChannel> masterChannel, const uint8_t vcid,
-                   const bool segmentHeaderPresent, const uint16_t maxFrameLengthTC, const bool blockingTM,
-                   const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                   const bool segmentHeaderTCPresent, const uint16_t maxFrameLengthTC, const bool blockingTM,
+                   const bool segmentationTM, const bool blockingTC,
                    const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
                    const bool operationalControlFieldTMPresent, bool frameErrorControlFieldPresent,
@@ -320,31 +320,30 @@ public:
                    const etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan)
 	    : masterChannel(masterChannel), VCID(vcid & 0x3FU), GVCID((MCID << 0x06U) + VCID),
           secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-          segmentHeaderPresent(segmentHeaderPresent), maxFrameLengthTC(maxFrameLengthTC), blockingTM(blockingTM),
-          segmentationTM(segmentationTM), blockingTC(blockingTC), segmentationTC(segmentationTC),
+          segmentHeaderTCPresent(segmentHeaderTCPresent), maxFrameLengthTC(maxFrameLengthTC), blockingTM(blockingTM),
+          segmentationTM(segmentationTM), blockingTC(blockingTC),
           repetitionTypeAFrame(repetitionTypeAFrame), vcRepetitions(vcRepetitions),
           repetitionTypeBFrame(repetitionTypeBFrame), waitQueueTxTC(), sentQueueTxTC(), waitQueueRxTC(),
           sentQueueRxTC(), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
           operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
-          currentlyProcessedCLCW(0), frameCountTM(0),
+          frameCountTM(0),
           fop(FrameOperationProcedure(this, &waitQueueTxTC, &sentQueueTxTC, repetitionTypeBFrame)),
           farm(FrameAcceptanceReporting(this, &waitQueueRxTC, &sentQueueRxTC, farmSlidingWinWidth, farmPositiveWinWidth,
 	                                    farmNegativeWinWidth)), mapChannels(mapChan) {
 	}
 
 	VirtualChannel(const VirtualChannel& v)
-	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderPresent(v.segmentHeaderPresent),
+	    : VCID(v.VCID), GVCID(v.GVCID), segmentHeaderTCPresent(v.segmentHeaderTCPresent),
           maxFrameLengthTC(v.maxFrameLengthTC), repetitionTypeAFrame(v.repetitionTypeAFrame),
           repetitionTypeBFrame(v.repetitionTypeBFrame), vcRepetitions(v.vcRepetitions), frameCountTM(v.frameCountTM),
           waitQueueTxTC(v.waitQueueTxTC), sentQueueTxTC(v.sentQueueTxTC), waitQueueRxTC(v.waitQueueRxTC),
           sentQueueRxTC(v.waitQueueRxTC), unprocessedFrameListBufferTxTC(v.unprocessedFrameListBufferTxTC),
           fop(v.fop), farm(v.farm), masterChannel(v.masterChannel), blockingTM(v.blockingTM), segmentationTM(v.segmentationTM),
-          blockingTC(v.blockingTC), segmentationTC(v.segmentationTC),
+          blockingTC(v.blockingTC),
           synchronization(v.synchronization), secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
           secondaryHeaderTMLength(v.secondaryHeaderTMLength),
           frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
-          operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels),
-          currentlyProcessedCLCW(0) {
+          operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
 		fop.vchan = this;
 		fop.sentQueueFOP = &sentQueueTxTC;
 		fop.waitQueueFOP = &waitQueueTxTC;
@@ -407,9 +406,9 @@ private:
 	FrameOperationProcedure fop;
 
 	/**
-	 * Buffer holding the master copy of the CLCW that is currently being processed
+	 * Buffer holding the CLCW that is received
 	 */
-	CLCW currentlyProcessedCLCW;
+    etl::list<CLCW, 1> receivedClcwBuffer;
 
 	/**
 	 * Holds the FARM state of the virtual channel
@@ -424,12 +423,12 @@ private:
 	/**
 	 *  Queue that stores the pointers of the packets that will eventually be concatenated to TM transfer frame data.
 	 */
-	etl::queue<uint16_t, PacketBufferTmSize> packetLengthBufferTxTM;
+	etl::deque<uint16_t, PacketBufferTmSize> packetLengthBufferTxTM;
 
 	/**
 	 *  Queue that stores the packet data that will eventually be concatenated to TM transfer frame data
 	 */
-	etl::queue<uint8_t, PacketBufferTmSize> packetBufferTxTM;
+	etl::deque<uint8_t, PacketBufferTmSize> packetBufferTxTM;
 
     /**
      * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.
@@ -464,6 +463,11 @@ private:
      * Applicable to Type-BC Frames
      */
     etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBC;
+
+    /**
+     * Buffer to store the clcws waiting to be transmited
+     */
+    etl::list<CLCW, 1> generatedClcwBuffer;
 
 };
 
@@ -545,7 +549,7 @@ struct MasterChannel {
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-                             const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                             const bool segmentationTM, const bool blockingTC,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
@@ -557,7 +561,7 @@ struct MasterChannel {
 	 * Add virtual channel to master channel
 	 */
 	MasterChannelAlert addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-                             const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                             const bool segmentationTM, const bool blockingTC,
 	                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
 	                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
 	                         const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,

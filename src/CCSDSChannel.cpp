@@ -26,7 +26,7 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTC* transferFrameTc) {
 		return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
 	}
 	outFramesBeforeAllFramesGenerationListTxTC.push_back(transferFrameTc);
-	uint8_t vid = transferFrameTc->virtualChannelId();
+	uint8_t vid = transferFrameTc->getVirtualChannelId();
 	// virtChannels.at(0).fop.
 	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
 	return MasterChannelAlert::NO_MC_ALERT;
@@ -64,7 +64,7 @@ MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* transferF
 }
 
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-                                        const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                                        const bool segmentationTM, const bool blockingTC,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
@@ -79,7 +79,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 	}
 
 	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blockingTM, segmentationTM,
-                                                 blockingTC, segmentationTC, repetitionTypeAFrame,
+                                                 blockingTC, repetitionTypeAFrame,
 	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
 	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -88,7 +88,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 }
 
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-                                        const bool segmentationTM, const bool blockingTC, const bool segmentationTC,
+                                        const bool segmentationTM, const bool blockingTC,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
@@ -102,7 +102,7 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 
 	virtualChannels.emplace(vcid,
 	                        VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blockingTM,
-                                           segmentationTM, blockingTC, segmentationTC, repetitionTypeAFrame,
+                                           segmentationTM, blockingTC, repetitionTypeAFrame,
 	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
 	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
 	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
@@ -151,7 +151,7 @@ void MasterChannel::removeMasterRx(TransferFrameTM* frame_ptr) {
 }
 void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC& transferFrame : masterCopyTxTC) {
-		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
+		if (transferFrame.getTransferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setAcknowledgement(true);
 			return;
 		}
@@ -160,7 +160,7 @@ void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
 
 void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
 	for (TransferFrameTC transferFrame : masterCopyTxTC) {
-		if (transferFrame.transferFrameSequenceNumber() == frameSequenceNumber) {
+		if (transferFrame.getTransferFrameSequenceNumber() == frameSequenceNumber) {
 			transferFrame.setToBeRetransmitted(true);
 			return;
 		}

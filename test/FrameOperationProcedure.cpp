@@ -12,13 +12,13 @@ TEST_CASE("Initiate FOP Directives") {
 
 	uint8_t data[] = {0x00, 0xDA, 0x42, 0x32, 0x43, 0x12, 0x77, 0xFA, 0x3C, 0xBB, 0x92};
 	MasterChannel master_channel_fop = MasterChannel();
-	master_channel_fop.addVC(3, false, 1024, true, true, true, true, 32, 32, true, true, true, 32, SynchronizationFlag::FORWARD_ORDERED, 255, 10,
-	                         10, 3, map_channels_fop);
+	master_channel_fop.addVC(3, false, 1024, true, true, true, 32, 32, true, true, 32, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10,
+                             10, 3, map_channels_fop);
 
 	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
 
     serv_channel_fop.storePacketTxTC(data, 11, 3, 2, ServiceType::TYPE_AD);
-    serv_channel_fop.packetProcessingTxTC(3, 2, 11, ServiceType::TYPE_AD);
+    serv_channel_fop.packetProcessingRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
 
 //	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
     CHECK(serv_channel_fop.availableUnprocessedFramesTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
@@ -55,10 +55,10 @@ TEST_CASE("Retransmission"){
 	};
 
 	MasterChannel master_channel = MasterChannel();
-	master_channel.addVC(0, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
-	                     map_channels);
-	master_channel.addVC(1, false, 128, true, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::FORWARD_ORDERED, 255, 10, 10, 3,
-	                     map_channels);
+	master_channel.addVC(0, false, 128, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
+	master_channel.addVC(1, false, 128, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+                         map_channels);
 
 	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
@@ -74,27 +74,27 @@ TEST_CASE("Retransmission"){
     serv_channel.storePacketTxTC(packet2, 9, 0, 0, ServiceType::TYPE_AD);
     serv_channel.storePacketTxTC(packet3, 9, 0, 0, ServiceType::TYPE_AD);
 	for (uint8_t i = 0; i < 3; i++){
-        serv_channel.packetProcessingTxTC(0, 0, 9, ServiceType::TYPE_AD);
+        serv_channel.packetProcessingRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
         serv_channel.vcGenerationRequestTxTC(0);
         serv_channel.allFramesGenerationRequestTxTC();
 	}
-	CHECK(serv_channel.getLastMasterCopyTcFrame().transferFrameSequenceNumber() == 2);
-	CHECK(serv_channel.frontUnprocessedFrameMcCopyTxTC().transferFrameSequenceNumber() == 0);
+	CHECK(serv_channel.getLastMasterCopyTcFrame().getTransferFrameSequenceNumber() == 2);
+	CHECK(serv_channel.frontUnprocessedFrameMcCopyTxTC().getTransferFrameSequenceNumber() == 0);
 
 	//Create a CLCW  that indicates that retransmission is needed aka a negative acknowledgement
 	CLCW clcw = CLCW(0,0,0,1,0,0,1,0,0,0,1,0,0,0);
-	uint8_t clcwData[TmTransferFrameSize] = {0};
-	for (uint8_t i = TmPrimaryHeaderSize; i < TmTransferFrameSize ; i++) {
+	uint8_t clcwData[128] = {0};
+	for (uint8_t i = TmPrimaryHeaderSize; i < 128 ; i++) {
 		// add idle data
 		clcwData[i] = idle_data[i];
 	}
 	//Create a transfer frame that carries the above CLCW
 	TransferFrameTM clcwTransferFrame =
-	    TransferFrameTM(clcwData, TmTransferFrameSize, 0, 0,
-	                    false, false, NoSegmentation,
-	                    FORWARD_ORDERED, 2046, clcw.clcw, 0, TM);
+            TransferFrameTM(clcwData, 128, 0, clcw.clcw, 0, false,
+                            VCA_SDU, PacketOrderFlag, NoSegmentation, 2046,
+                            false, 0, TM);
 	//Receive the CLCW frame
-    serv_channel.allFramesReceptionRequestRxTM(clcwData, TmTransferFrameSize);
+    serv_channel.allFramesReceptionRequestRxTM(clcwData, 128);
 	//E10 enters
 	CHECK(serv_channel.fopState(0) ==  RETRANSMIT_WITHOUT_WAIT);
 }
