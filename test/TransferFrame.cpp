@@ -80,4 +80,3 @@ TEST_CASE("TM Frame Generation - Field Constructor") {
     CHECK(hdr.getSegmentLengthId() == SegmentLengthIdentifier);
     CHECK(hdr.getFirstHeaderPointer() == 0xBE);
 }
-

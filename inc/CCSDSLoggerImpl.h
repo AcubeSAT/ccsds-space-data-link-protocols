@@ -21,7 +21,7 @@ void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotificat
 
 template <class CCSDSNotification>
 void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif) {
-	switch (log_verbose) {
+	switch (logVerbose) {
 		case 0:
 			LOG_NOTICE << txRx << ":" << notificationType << ":" << Notif;
 			break;

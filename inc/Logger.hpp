@@ -87,7 +87,7 @@ public:
 	 * @internal
 	 */
 	struct LogEntry {
-		String<logger_max_message_size> message; ///< The current log message itself, starting from a blank slate
+		String<LoggerMaxMessageSize> message; ///< The current log message itself, starting from a blank slate
 		LogLevel level; ///< The log level of this message
 
 		explicit LogEntry(LogLevel level); ///< Create a new LogEntry

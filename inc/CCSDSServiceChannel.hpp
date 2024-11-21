@@ -573,22 +573,27 @@ public:
 	void process();
 
 
+    /**
+     * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging puproses
+     * @param verbosePrimaryHeader, verboseOCF     If true, subfield names will also appear for each field, but more space is taken
+     * @param vid                                 Used to detect the existence of certain fields, that depend on certain virtual/MAP channel flags
+     */
+    void transferFrameHelperServiceTM(TransferFrameTM& TransferFrameTM, bool verbosePrimaryHeader, bool verboseOCF, uint8_t vid,
+                                      uint16_t transferFrameDataFieldLength);
+
+    /**
+     * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging puproses
+     * @param verbose     If true, names will also be printed for each field
+     * @param vid, mapid  Used to detect the existence of certain fields, that depend on certain virtual/MAP channel flags
+     *                    mapid will be ignored if MAP channels do not exist in the given virtual channel
+     */
+    void transferFrameHelperServiceTC(TransferFrameTC& TransferFrameTC, bool verbosePrimaryHeader, uint8_t vid,
+                                       uint8_t mapid, uint16_t transferFrameDataFieldLength);
+
+
 	// This is honestly a bit confusing
 	ServiceChannel(const MasterChannel& masterChannel, const PhysicalChannel& physicalChannel)
 	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
 	//Default constructor
 	ServiceChannel() : masterChannel(), physicalChannel(){};
-
-	/**
-	 *
-	 * @param TransferFrame
-	 * Helper functions both for TM and TC will take as argument a Transfer Frame inserted by the user and print it in
-	 * an order that defines the different segments of the Transfer Frame (e.g. print separately the data field and the
-	 * primary header in a TM frame), so that the reader can see each part of the transfer frame separately.
-	 */
-	void TransferFrameHelperFunctionTM(TransferFrameTM& TransferFrameTM, bool detailed,uint8_t vid,
-												   uint8_t mapid, uint16_t dataFieldLength, bool ecf, bool ocf);
-
-	void TransferFrameHelperFunctionTC(TransferFrameTC& TransferFrameTC, bool detailed, uint8_t vid,
-													uint8_t mapid, uint16_t dataFieldLength, bool ecf);
 };

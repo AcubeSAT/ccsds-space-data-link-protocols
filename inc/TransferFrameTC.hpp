@@ -15,7 +15,7 @@ class TransferFrameTC;
  */
 enum class ServiceType {
 	TYPE_AD = 0x0,
-	TYPE_AC = 0x1,
+	TYPE_RESERVED = 0x1,
 	TYPE_BD = 0x2,
 	TYPE_BC = 0x3,
 };
@@ -135,7 +135,7 @@ public:
 			return ServiceType::TYPE_AD;
 		}
 		// Reserved type not normally used as per the standard
-		return ServiceType::TYPE_AC;
+		return ServiceType::TYPE_RESERVED;
 	}
 
     void setServiceType(ServiceType service_type) {
@@ -260,8 +260,8 @@ public:
                     uint8_t sequenceFlag = 0x3, uint8_t mapId = 0, uint16_t firstEmptyOctet = 0, FrameType t = TC)
 	    : TransferFrame(t, frameLength, frameData, firstEmptyOctet), hdr(frameData), serviceType(serviceType), ack(false),
           toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
-		uint8_t bypassFlag = (serviceType == ServiceType::TYPE_AD) ? 0 : 1;
-		uint8_t ctrlCmdFlag = (serviceType == ServiceType::TYPE_BC) ? 1 : 0;
+		uint8_t bypassFlag = ((serviceType == ServiceType::TYPE_AD) || (serviceType == ServiceType::TYPE_RESERVED)) ? 0 : 1;
+		uint8_t ctrlCmdFlag = ((serviceType == ServiceType::TYPE_BC) || (serviceType == ServiceType::TYPE_RESERVED)) ? 1 : 0;
         frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6) | (bypassFlag << 5) | (ctrlCmdFlag << 4) | 0 | static_cast<uint8_t>((SpacecraftIdentifier & 0x300) >> 8);
         frameData[1] = static_cast<uint8_t>(SpacecraftIdentifier & 0xFF);
         frameData[2] = ((vid & 0x3F) << 2) | static_cast<uint8_t>((frameLength & 0x300) >> 8);

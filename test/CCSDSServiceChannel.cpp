@@ -911,3 +911,41 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.vcReceptionRxTC(1);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 }
+
+//TEST_CASE("Transfer Frame Helper Services") {
+//    PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
+//
+//    etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
+//            {0, MAPChannel(0, true, true)},
+//            {1, MAPChannel(1, false, false)},
+//            {2, MAPChannel(2, true, false)},
+//    };
+//
+//    MasterChannel master_channel = MasterChannel();
+//    master_channel.addVC(0, false, 128, true, true, true, 2, 2, true, false, 0, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+//                         map_channels);
+//    master_channel.addVC(1, true, 128, true, true, true, 2, 2, true, false, 0, false, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+//                         map_channels);
+//    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+//
+//    uint8_t dataTM[TmTransferFrameSize] = {0};
+//    uint16_t dataFieldLength = 10;
+//    TransferFrameTM frameTM = TransferFrameTM(dataTM, 6 + dataFieldLength + 4 + 2, 0, true, 78, false,
+//                                            OCTET_SYNCHRONIZED_FORWARD_ORDERED, PacketOrderFlag, SegmentLengthIdentifier,
+//                                            0xBE, true, 0, TM);
+//    dataTM[TmPrimaryHeaderSize] = 5;
+//    dataTM[TmPrimaryHeaderSize + 1] = 86;
+//    dataTM[TmPrimaryHeaderSize + 6] = 255;
+//
+//    serv_channel.transferFrameHelperServiceTM(frameTM, true, true, 0, dataFieldLength);
+//
+//    uint8_t dataTC[TmTransferFrameSize] = {0};
+//    TransferFrameTC frameTC = TransferFrameTC(dataTC, ServiceType::TYPE_RESERVED, 1, dataFieldLength, true, 0x1, 1, 0, TC);
+//
+//    dataTC[TcPrimaryHeaderSize + 1] = 5;
+//    dataTC[TcPrimaryHeaderSize + 2] = 86;
+//    dataTC[TcPrimaryHeaderSize + 5] = 255;
+//    dataTC[TcPrimaryHeaderSize + dataFieldLength + 1] = 232;
+//
+//    //serv_channel.transferFrameHelperServiceTC(frameTC, true, 1, 1, dataFieldLength);
+//}
