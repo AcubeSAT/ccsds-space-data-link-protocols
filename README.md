@@ -5,4 +5,5 @@ Implementation of the CCSDS TM and TC Data Link standards (232.0-B-4, CCSDS 232.
 For more information refer to
 the [wiki](https://gitlab.com/groups/acubesat/comms/-/wikis/CCSDS-Data-Link-Layer) (WIP).
 
-(Note: There is no planned support for SDLS)
+(Note: There is limited support for SDLS, in the form of 40-bit HMAC authentication
+ for the TC Data Link)
