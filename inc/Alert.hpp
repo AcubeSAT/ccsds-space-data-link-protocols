@@ -63,6 +63,15 @@ enum MasterChannelAlert : uint8_t {
 	NO_SPACE = 0x05
 };
 
+enum SDLSVerificationStatusCode {
+    NO_FAILURE,
+    INVALID_SPI,
+    INVALID_OR_UNASSOCIATED_CHANNEL,
+    MAC_VERIFICATION_FAILURE,
+    ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE,
+    PADDING_ERROR
+};
+
 enum TxRx : uint8_t { Rx = 0x00, Tx = 0x01 };
 
 enum NotificationType : uint8_t {
@@ -72,6 +81,6 @@ enum NotificationType : uint8_t {
 	TypeServiceChannelNotif = 0x02,
 	TypeCOPDirectiveResponse = 0x03,
 	TypeFOPNotif = 0x04,
-	TypeFDURequestType = 0x05
-
+	TypeFDURequestType = 0x05,
+    TypeSDLSVerificationStatusCode = 0x06
 };
