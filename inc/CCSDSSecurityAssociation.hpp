@@ -118,7 +118,7 @@ public:
                 initializationVectorLength = 0;
                 padFieldLength = 0;
 
-                macFieldLength = 8;  // 64 bits HMAC (the minimum defined by table 6-1)
+                macFieldLength = 5;  // 40 bits HMAC
                 authenticationKeyLength = 8; // 8 bytes key is the most computationally efficient size with SHA-256
                 for (uint8_t i = 0; i < authenticationKeyLength; i++){
                     authenticationKey[i] = AuthenticationKey[i];
@@ -149,7 +149,7 @@ public:
 
     /**
      * IMPORTANT NOTE: the length of the segment header is included in transferFrameDataFieldLength
-     *
+     * @TODO add documentation
      *
      */
     void applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
