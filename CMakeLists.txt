@@ -5,7 +5,10 @@ project(ccsds_tm_packets)
 set(CMAKE_CXX_STANDARD 17)
 
 # Specify the directories for #includes
-include_directories("${PROJECT_SOURCE_DIR}/inc" "${PROJECT_SOURCE_DIR}/lib/etl/include" "${PROJECT_SOURCE_DIR}/inc/Platform/x86")
+include_directories("${PROJECT_SOURCE_DIR}/inc"
+                    "${PROJECT_SOURCE_DIR}/lib/etl/include"
+                    "${PROJECT_SOURCE_DIR}/inc/Platform/x86"
+                    "${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include")
 
 add_compile_options(-Wvla)
 
@@ -15,6 +18,12 @@ add_custom_target(check
         COMMAND ./clang-tidy.sh
         COMMAND ./cppcheck-misra.sh
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/ci")
+
+# Define TinyCrypt as an imported static library
+add_library(TinyCryptLib STATIC IMPORTED)
+set_target_properties(TinyCryptLib PROPERTIES
+        IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a
+        INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include)
 
 # Specify the .cpp files common across all targets
 add_library(common OBJECT
@@ -27,6 +36,7 @@ add_library(common OBJECT
         src/logOperators.cpp
         src/MemoryPool.cpp
         src/CLCW.cpp
+        src/CCSDSSecurityAssociation.cpp
         )
 
 # Specify the .cpp files for the executables
@@ -34,6 +44,7 @@ add_executable(ccsds_tm_packets_default
         $<TARGET_OBJECTS:common>
         src/main.cpp
         )
+target_link_libraries(ccsds_tm_packets_default PRIVATE TinyCryptLib)
 
 add_executable(ccsds_tm_packets_yamcs_connection
         $<TARGET_OBJECTS:common>
@@ -41,6 +52,7 @@ add_executable(ccsds_tm_packets_yamcs_connection
         src/Platform/x86/FrameSender.cpp
         src/Platform/x86/main.cpp
         )
+target_link_libraries(ccsds_tm_packets_yamcs_connection PRIVATE TinyCryptLib)
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     # Gather all the .cpp files corresponding to tests
@@ -52,7 +64,7 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
             $<TARGET_OBJECTS:common>
             ${test_main_SRC}
             ${test_SRC})
-    target_link_libraries(tests Catch2::Catch2WithMain)
+    target_link_libraries(tests Catch2::Catch2WithMain TinyCryptLib)
 ENDIF ()
 set_target_properties(common PROPERTIES COMPILE_DEFINITIONS LOGLEVEL_TRACE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")

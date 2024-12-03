@@ -26,6 +26,16 @@ enum EncryptionAlgorithm {
     NO_ENCRYPTION
 };
 
+/**
+ * For cryptographic algorithm recommendations, @see CCSDS CRYPTOGRAPHIC ALGORITHMS (CCSDS 352.0-B-2)
+ *
+ * Description of configurations
+ * =================================================================================================================
+ * HMAC_40_BIT: AUTHENTICATION service type, using symmetric hash based MACs. SHA-256 is used as the hash function.
+ *              They authentication key is 8 bytes in length. To reduce the overhead of MAC inside the frames,
+ *              only the 40 leftmost bits are kept.
+ *
+ */
 enum Config {
     HMAC_40_BIT
 };
@@ -35,13 +45,14 @@ enum Config {
  * (CCSDS 355.0-B-2) and is responsible for offering authentication and encryption capabilities for
  * the Data Link Layer. This specific implementation:
  *  - is static, meaning that SAs will not be created and destroyed for the duration of the mission
- *  - offers only authentication capabilities (40-bit HMAC)
- *  - supports only the TC Data Link Protocol
  *  - is built as a bidirectional interface. This means that it stores the necessary parameters for both ends.
- *    the sending end user is meant to call the 'applySecurity' functions, while the receiving end user is meant to
- *    call the 'processSecurity' functions.
+ *    The sending end user is meant to call the 'applySecurity' function, while the receiving end user is meant to
+ *    call the 'processSecurity' function. Certain buffers are shared, so separate instances MUST be created for
+ *    the sender and the receiver in testing. The implemented functions support TC frames (@see TC Space Data Link Protocol),
+ *    but functions for other CCSDS data link protocols can be implemented in a similar manner.
  *
- *  Support for more features can be easily extended by using an extra Config and adding Config specific code
+ *  Support for more service types can be easily extended by adding an extra configuration to the 'Config' enum and then adding specific code
+ *  for it in the constructor, applySecurity and process Security functions.
 */
 class SecurityAssociation {
 private:
@@ -57,25 +68,37 @@ private:
     Config saConfig;
 
     /**
-     * Authentication related parameters
+     * Authentication related parameters. Max lengths (in octets) are defined in table
+     * 6-1 (with the exception of the authentication key)
      */
     AuthenticationAlgorithm authenticationAlgorithm;
-    uint16_t authKey;
-    uint8_t macLength;
+    uint8_t authenticationKey[MaxAuthenticationKeyLength];
+    uint8_t authenticationKeyLength;
+
+    uint8_t mac[MaxMACLength];
+    uint8_t macFieldLength;
+
     uint8_t authMaskTC[MaxTcTransferFrameSize];
     uint16_t authMaskTCLength;
-    uint8_t sequenceNumberLength;
+
     uint64_t sequenceNumberWindow;
-    uint64_t senderSequenceNumber;
-    uint64_t receiverSequenceNumber;
+    uint64_t sequenceNumber = 0;
+    uint8_t sequenceNumberFieldLength;
+
+    uint8_t authenticationPayload[MaxTcTransferFrameSize];
 
     /**
-     * Encryption related parameters
+     * Encryption related parameters. Max lengths (in octets) are defined in table
+     * 6-1 (with the exception of the encryption key)
      */
     EncryptionAlgorithm encryptionAlgorithm;
-    uint16_t encryptionKey;
+    uint64_t encryptionKey;
+
+    uint8_t initializationVector[MaxInitializationVectorLength];
     uint8_t initializationVectorLength;
-    uint8_t padLength;
+
+    uint16_t padLength;
+    uint8_t padFieldLength;
 
 
 public:
@@ -83,9 +106,7 @@ public:
                         uint16_t securityParameterIndex,
                         etl::flat_map<uint8_t, etl::array<uint8_t, MaxMapChannels>, MaxVirtualChannels>& permittedChannels,
                         Config saConfig) :
-
-            masterChannel(masterChannel) , securityParameterIndex(securityParameterIndex), associatedChannels(permittedChannels){
-
+            masterChannel(masterChannel) , securityParameterIndex(securityParameterIndex), associatedChannels(permittedChannels) {
 
         switch (saConfig) {
             case (HMAC_40_BIT):
@@ -93,15 +114,46 @@ public:
                 authenticationAlgorithm = HMAC;
                 encryptionAlgorithm = NO_ENCRYPTION;
 
+                // Make encryption related fields have 0 length
                 initializationVectorLength = 0;
-                padLength = 0;
+                padFieldLength = 0;
+
+                macFieldLength = 8;  // 64 bits HMAC (the minimum defined by table 6-1)
+                authenticationKeyLength = 8; // 8 bytes key is the most computationally efficient size with SHA-256
+                for (uint8_t i = 0; i < authenticationKeyLength; i++){
+                    authenticationKey[i] = AuthenticationKey[i];
+                }
+
+                // setup authentication mask (see p.4.2.2.6.2)
+                // mask  virtual channel id, security header, data field
+                authMaskTCLength = MaxTcTransferFrameSize;
+                authMaskTC[0] = 0x00;
+                authMaskTC[1] = 0x00;
+                authMaskTC[2] = 0xFC;
+                authMaskTC[3] = 0x00;
+                authMaskTC[4] = 0x00;
+                for (uint16_t i = 5; i < MaxTcTransferFrameSize; i++) {
+                    authMaskTC[i] = 0xFF;
+                }
+
+                sequenceNumberFieldLength = 4;
+                sequenceNumberWindow = 100;
                 break;
             // add config specific initialization code here
         }
     }
 
-    void applySecurityTC(TransferFrameTC& frameTc, uint8_t vid, uint8_t mapid);
+    uint8_t getSecurityHeaderLength() const;
 
-    SDLSVerificationStatusCode processSecurityTC(TransferFrameTC& frameTc, uint8_t vid, uint8_t mapid);
+    uint8_t getSecurityTrailerLength() const;
+
+    /**
+     * IMPORTANT NOTE: the length of the segment header is included in transferFrameDataFieldLength
+     *
+     *
+     */
+    void applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
+
+    SDLSVerificationStatusCode processSecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
 
 };

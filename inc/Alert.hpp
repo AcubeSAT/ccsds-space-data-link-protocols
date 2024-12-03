@@ -75,7 +75,6 @@ enum SDLSVerificationStatusCode {
 enum TxRx : uint8_t { Rx = 0x00, Tx = 0x01 };
 
 enum NotificationType : uint8_t {
-
 	TypeVirtualChannelAlert = 0x00,
 	TypeMasterChannelAlert = 0x01,
 	TypeServiceChannelNotif = 0x02,

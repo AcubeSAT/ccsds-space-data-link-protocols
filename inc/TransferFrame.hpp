@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <CCSDS_Definitions.hpp>
 
 enum FrameType { TC, TM };

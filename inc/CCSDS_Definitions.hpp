@@ -230,6 +230,19 @@ inline constexpr uint16_t crc_16_ccitt_table[]{
     0x1ce0, 0x0cc1, 0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
     0x2e93, 0x3eb2, 0x0ed1, 0x1ef0};
 
+// SDLS Constants (all lengths are referring to octets)
+inline constexpr uint16_t securityParameterIndex = 0xFFFFFFFF;
+inline constexpr uint8_t securityParameterIndexLength = 2;
+
+inline  constexpr uint8_t AuthenticationKey[8] = {0xFF, 0x34, 0x56, 0x00, 0x12, 0x34, 0x99, 0x10};
+inline constexpr uint8_t MaxAuthenticationKeyLength = 8;
+
+inline constexpr uint8_t MaxInitializationVectorLength = 32;
+inline constexpr uint8_t MaxSequenceNumberLength = 8;
+inline constexpr uint8_t MinMACLength = 8;
+inline constexpr uint8_t MaxMACLength = 64;
+
+// Logger and helper functions
 inline constexpr uint16_t TmHelperFuncMaxMessageSize = TmTransferFrameSize * 6 + 500;
 inline constexpr uint16_t TcHelperFuncMaxMessageSize = MaxTcTransferFrameSize * 6 + 330;
 inline constexpr uint16_t LoggerMaxMessageSize = TmHelperFuncMaxMessageSize;
