@@ -171,15 +171,15 @@ public:
         return transferFrameData[5];
     }
 
+    bool getSegmentationHeaderPresent() const {
+        return segmentationHeaderPresent;
+    }
+
     /**
      *  Sets the sequence flag, assuming that the segment header exists
      */
     void setSequenceFlags(SequenceFlags seqFlags){
         transferFrameData[5] = ((static_cast<uint8_t>(seqFlags) & 0x3) << 6) | (transferFrameData[5] & 0x3F);
-    }
-
-    bool getSegmentationHeaderPresent() const {
-        return segmentationHeaderPresent;
     }
 
     // Assumes MAP Id exists
@@ -276,8 +276,9 @@ public:
         }
 	}
 
-	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0)
-	    : TransferFrame(FrameType::TC, frameLength, frameData, firstEmptyOctet), hdr(frameData), transmit(false){};
+	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0, bool segHdrPresent = false)
+	    : TransferFrame(FrameType::TC, frameLength, frameData, firstEmptyOctet), hdr(frameData), transmit(false),
+        segmentationHeaderPresent(segHdrPresent) {};
 
 private:
 	bool toBeRetransmitted;

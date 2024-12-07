@@ -49,7 +49,7 @@ TEST_CASE("Security Association (40 bit HMAC)") {
                                0x00, 0x00, 0x00, 0x00, 0x00  // mac
         };
         uint16_t transferFrameDataFieldLength = 6; // segment header + payload data
-        TransferFrameTC frameTc = TransferFrameTC(frameData, 22);
+        TransferFrameTC frameTc = TransferFrameTC(frameData, 22, 0, true);
 
         verCode = senderSA.applySecurityTC(frameTc, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);

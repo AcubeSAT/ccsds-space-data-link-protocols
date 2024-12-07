@@ -109,7 +109,7 @@ public:
     SecurityAssociation(uint16_t securityParameterIndex,
                         etl::flat_map<uint8_t, etl::array<uint8_t, MaxMapChannels>, MaxVirtualChannels>& permittedChannels,
                         Config saConfig, User user) :
-            masterChannel(masterChannel) , securityParameterIndex(securityParameterIndex), associatedChannels(permittedChannels),
+            securityParameterIndex(securityParameterIndex), associatedChannels(permittedChannels),
             saConfig(saConfig), user(user) {
 
         switch (saConfig) {
