@@ -178,6 +178,10 @@ public:
         transferFrameData[5] = ((static_cast<uint8_t>(seqFlags) & 0x3) << 6) | (transferFrameData[5] & 0x3F);
     }
 
+    bool getSegmentationHeaderPresent() const {
+        return segmentationHeaderPresent;
+    }
+
     // Assumes MAP Id exists
     // TODO: Replace with std::optional
     uint8_t getMapId() const {

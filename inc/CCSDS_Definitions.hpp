@@ -231,11 +231,12 @@ inline constexpr uint16_t crc_16_ccitt_table[]{
     0x2e93, 0x3eb2, 0x0ed1, 0x1ef0};
 
 // SDLS Constants (all lengths are referring to octets)
-inline constexpr uint16_t securityParameterIndex = 0xFFFFFFFF;
+inline constexpr uint16_t SecurityParameterIndex = 0xFFFF;
 inline constexpr uint8_t securityParameterIndexLength = 2;
 
-inline  constexpr uint8_t AuthenticationKey[8] = {0xFF, 0x34, 0x56, 0x00, 0x12, 0x34, 0x99, 0x10};
-inline constexpr uint8_t MaxAuthenticationKeyLength = 8;
+// A random 32 byte key for testing (+1 for the null terminating character)
+inline  constexpr uint8_t AuthenticationKey[33] = "3F7A1C89B2D5E6F07A3C91E4B5D7F9A2";
+inline constexpr uint8_t MaxAuthenticationKeyLength = 64;
 
 inline constexpr uint8_t MaxInitializationVectorLength = 32;
 inline constexpr uint8_t MaxSequenceNumberLength = 8;

@@ -9,22 +9,23 @@ uint8_t SecurityAssociation::getSecurityTrailerLength() const {
     return macFieldLength;
 }
 
-void SecurityAssociation::applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength,uint8_t vid, uint8_t mapid) {
-
-    // ensure virtual channel exists and is associated with this SA
-    if ((masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) ||
-         (associatedChannels.find(vid) == associatedChannels.end())) {
-        return;
+SDLSVerificationStatusCode SecurityAssociation::applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength,uint8_t vid, uint8_t mapid) {
+    if (user == RECEIVER) {
+        return INVALID_USER;
     }
-    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
 
-    // ensure MAP channel exists (if this virtual channel has map channels) and is associated with this SA
-    MAPChannel *mapChannel;
-    if (vchan->segmentHeaderTCPresent) {
-        if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
-            return;
-        }
+    // ensure virtual channel is associated with this SA
+    if (associatedChannels.find(vid) == associatedChannels.end()) {
+        return UNASSOCIATED_CHANNEL;
+    }
 
+    // ensure the frame type is correct
+    if ((frameTc.getServiceType() == ServiceType::TYPE_BC) || (frameTc.getServiceType() == ServiceType::TYPE_RESERVED)) {
+        return INVALID_FRAME_TYPE;
+    }
+
+    // ensure MAP channel  is associated with this SA
+    if (frameTc.getSegmentationHeaderPresent()) {
         bool found = false;
         for (auto it = associatedChannels.at(vid).begin(); it != associatedChannels.at(vid).end(); ++it) {
             if (*it == mapid) {
@@ -33,18 +34,15 @@ void SecurityAssociation::applySecurityTC(TransferFrameTC& frameTc, uint16_t tra
             break;
         }
 
-        if (found) {
-            mapChannel = &(vchan->mapChannels.at(mapid));
-        }
-        else {
-            return;
+        if (!found) {
+            return UNASSOCIATED_CHANNEL;
         }
     }
 
     // If a segment header exists, the transferFrameDataFieldLength will now represent
     // the actual length of the payload data
-    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + vchan->segmentHeaderTCPresent * TcSegmentHeaderSize;
-    transferFrameDataFieldLength = transferFrameDataFieldLength - vchan->segmentHeaderTCPresent * TcSegmentHeaderSize;
+    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
+    transferFrameDataFieldLength = transferFrameDataFieldLength - frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
 
     uint8_t* frameData = frameTc.getFrameData();
     switch (saConfig) {
@@ -83,27 +81,29 @@ void SecurityAssociation::applySecurityTC(TransferFrameTC& frameTc, uint16_t tra
                 frameData[i + securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength] = mac[i];
             }
 
+            return NO_FAILURE;
             break;
     // add config specific applySecurity code here
     }
 }
 
 SDLSVerificationStatusCode SecurityAssociation::processSecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid) {
-
-    // ensure virtual channel exists and is associated with this SA
-    if ((masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) ||
-        (associatedChannels.find(vid) == associatedChannels.end())) {
-        return INVALID_OR_UNASSOCIATED_CHANNEL;
+    if (user == SENDER) {
+        return INVALID_USER;
     }
-    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
 
-    // ensure MAP channel exists (if this virtual channel has map channels) and is associated with this SA
-    MAPChannel *mapChannel;
-    if (vchan->segmentHeaderTCPresent) {
-        if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
-            return INVALID_OR_UNASSOCIATED_CHANNEL;
-        }
+    // ensure virtual channel is associated with this SA
+    if (associatedChannels.find(vid) == associatedChannels.end()) {
+        return UNASSOCIATED_CHANNEL;
+    }
 
+    // ensure the frame type is correct
+    if ((frameTc.getServiceType() == ServiceType::TYPE_BC) || (frameTc.getServiceType() == ServiceType::TYPE_RESERVED)) {
+        return INVALID_FRAME_TYPE;
+    }
+
+    // ensure MAP channel  is associated with this SA
+    if (frameTc.getSegmentationHeaderPresent()) {
         bool found = false;
         for (auto it = associatedChannels.at(vid).begin(); it != associatedChannels.at(vid).end(); ++it) {
             if (*it == mapid) {
@@ -112,18 +112,15 @@ SDLSVerificationStatusCode SecurityAssociation::processSecurityTC(TransferFrameT
             break;
         }
 
-        if (found) {
-            mapChannel = &(vchan->mapChannels.at(mapid));
-        }
-        else {
-            return INVALID_OR_UNASSOCIATED_CHANNEL;
+        if (!found) {
+            return UNASSOCIATED_CHANNEL;
         }
     }
 
     // If a segment header exists, the transferFrameDataFieldLength will now represent
     // the actual length of the payload data
-    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + vchan->segmentHeaderTCPresent * TcSegmentHeaderSize;
-    transferFrameDataFieldLength = transferFrameDataFieldLength - vchan->segmentHeaderTCPresent * TcSegmentHeaderSize;
+    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
+    transferFrameDataFieldLength = transferFrameDataFieldLength - frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
 
     uint8_t* frameData = frameTc.getFrameData();
     switch (saConfig) {
@@ -163,18 +160,19 @@ SDLSVerificationStatusCode SecurityAssociation::processSecurityTC(TransferFrameT
 
             // compare sequence numbers
             uint64_t receivedSeqNumber = 0;
-            for (uint8_t i = 0; i < macFieldLength; i++){
+            for (uint8_t i = 0; i < sequenceNumberFieldLength; i++){
                 receivedSeqNumber = receivedSeqNumber |
-                                    (static_cast<uint64_t>(frameData[securityHeaderOffset + securityParameterIndexLength + initializationVectorLength + macFieldLength -1 -i]) << 8*i);
+                                    (static_cast<uint64_t>(frameData[securityHeaderOffset + securityParameterIndexLength + initializationVectorLength + sequenceNumberFieldLength -1 -i]) << 8*i);
             }
             if ((receivedSeqNumber <= sequenceNumber) || (receivedSeqNumber > sequenceNumber + sequenceNumberWindow)) {
                 return ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE;
             }
 
-            // passed all verification operations: increase sequence number
+            // passed all verification operations: update sequence number
             sequenceNumber = receivedSeqNumber;
 
             return NO_FAILURE;
+            break;
     // add config specific processSecurity code here
     }
 }

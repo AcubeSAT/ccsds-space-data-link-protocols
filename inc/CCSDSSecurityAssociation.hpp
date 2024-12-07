@@ -40,6 +40,11 @@ enum Config {
     HMAC_40_BIT
 };
 
+enum User {
+    SENDER,
+    RECEIVER
+};
+
 /**
  * The Security Association (SA) is an entity defined within the Space Data Link Security Protocol
  * (CCSDS 355.0-B-2) and is responsible for offering authentication and encryption capabilities for
@@ -57,8 +62,6 @@ enum Config {
 class SecurityAssociation {
 private:
 
-    MasterChannel& masterChannel;
-
     uint16_t securityParameterIndex;
 
     etl::flat_map<uint8_t, etl::array<uint8_t, MaxMapChannels>, MaxVirtualChannels> associatedChannels;
@@ -66,6 +69,7 @@ private:
     SecurityAssociationServiceType saServiceType;
 
     Config saConfig;
+    User user;
 
     /**
      * Authentication related parameters. Max lengths (in octets) are defined in table
@@ -102,11 +106,11 @@ private:
 
 
 public:
-    SecurityAssociation(MasterChannel& masterChannel,
-                        uint16_t securityParameterIndex,
+    SecurityAssociation(uint16_t securityParameterIndex,
                         etl::flat_map<uint8_t, etl::array<uint8_t, MaxMapChannels>, MaxVirtualChannels>& permittedChannels,
-                        Config saConfig) :
-            masterChannel(masterChannel) , securityParameterIndex(securityParameterIndex), associatedChannels(permittedChannels) {
+                        Config saConfig, User user) :
+            masterChannel(masterChannel) , securityParameterIndex(securityParameterIndex), associatedChannels(permittedChannels),
+            saConfig(saConfig), user(user) {
 
         switch (saConfig) {
             case (HMAC_40_BIT):
@@ -119,7 +123,7 @@ public:
                 padFieldLength = 0;
 
                 macFieldLength = 5;  // 40 bits HMAC
-                authenticationKeyLength = 8; // 8 bytes key is the most computationally efficient size with SHA-256
+                authenticationKeyLength = 32;
                 for (uint8_t i = 0; i < authenticationKeyLength; i++){
                     authenticationKey[i] = AuthenticationKey[i];
                 }
@@ -152,7 +156,7 @@ public:
      * @TODO add documentation
      *
      */
-    void applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
+    SDLSVerificationStatusCode applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
 
     SDLSVerificationStatusCode processSecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
 
