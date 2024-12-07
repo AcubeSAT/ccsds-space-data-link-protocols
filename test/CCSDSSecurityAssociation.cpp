@@ -38,17 +38,29 @@ TEST_CASE("Security Association (40 bit HMAC)") {
     SecurityAssociation receiverSA = SecurityAssociation(SecurityParameterIndex,
                                                        associatedChannels, HMAC_40_BIT, RECEIVER);
 
+    // test frames
+    uint8_t frameData1[] = {0x00, 0xAC, 0x00, 0x0A, 0x00,    // primary header (type ad frame)
+                           0x00,                                             // segment header
+                           0xFF, 0xFF,                                   // spi
+                           0x00, 0x00, 0x00, 0x00,             // sequence number
+                           0x00, 0x00, 0x1C, 0x0E, 0xFD, // payload data
+                           0x00, 0x00, 0x00, 0x00, 0x00  // mac
+    };
+    uint8_t frameData2[] = {0x00, 0xAC, 0x00, 0x0A, 0x00,    // primary header (type ad frame)
+                            0x00,                                             // segment header
+                            0xFF, 0xFF,                                   // spi
+                            0x00, 0x00, 0x00, 0x00,             // sequence number
+                            0x45, 0xAF, 0x1C, 0x03, 0xFD, // payload data
+                            0x00, 0x00, 0x00, 0x00, 0x00  // mac
+    };
+    uint16_t transferFrameDataFieldLength = 6; // segment header + payload data
 
     SDLSVerificationStatusCode verCode;
     SECTION("Normal Operation") {
-        uint8_t frameData[] = {0x00, 0xAC, 0x00, 0x0A, 0x00,     // primary header (type ad frame)
-                               0x00,                                             // segment header
-                               0xFF, 0xFF,                                   // spi
-                               0x00, 0x00, 0x00, 0x00,             // sequence number
-                               0x00, 0x00, 0x1C, 0x0E, 0xFD, // payload data
-                               0x00, 0x00, 0x00, 0x00, 0x00  // mac
-        };
-        uint16_t transferFrameDataFieldLength = 6; // segment header + payload data
+        senderSA.resetSequenceNumber();
+        receiverSA.resetSequenceNumber();
+        uint8_t* frameData = frameData1;
+
         TransferFrameTC frameTc = TransferFrameTC(frameData, 22, 0, true);
 
         verCode = senderSA.applySecurityTC(frameTc, transferFrameDataFieldLength, 0, 0);
@@ -57,8 +69,87 @@ TEST_CASE("Security Association (40 bit HMAC)") {
         CHECK(((static_cast<uint16_t>(frameData[6]) << 8) | static_cast<uint16_t>(frameData[7])) == SecurityParameterIndex);
         // sequence number
         CHECK(frameData[11] == 0x01);
+        // print MAC
+        etl::string<20> macString;
+        for (uint8_t i = 0; i < 5; i++) {
+            macString.append(std::to_string(frameData[i + 17]).c_str());
+            macString.append(" ");
+        }
+        LOG_DEBUG << "Mac value:" << macString.c_str();
 
         verCode = receiverSA.processSecurityTC(frameTc, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
+    }
+
+    SECTION("Multiple frames") {
+        senderSA.resetSequenceNumber();
+        receiverSA.resetSequenceNumber();
+
+        TransferFrameTC frameTc1 = TransferFrameTC(frameData1, 22, 0, true);
+        TransferFrameTC frameTc2 = TransferFrameTC(frameData2, 22, 0, true);
+
+        // process first frame
+        verCode = senderSA.applySecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == NO_FAILURE);
+        // spi
+        CHECK(((static_cast<uint16_t>(frameData1[6]) << 8) | static_cast<uint16_t>(frameData1[7])) == SecurityParameterIndex);
+        // sequence number
+        CHECK(frameData1[11] == 0x01);
+
+        // process second frame
+        verCode = senderSA.applySecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == NO_FAILURE);
+        // spi
+        CHECK(((static_cast<uint16_t>(frameData2[6]) << 8) | static_cast<uint16_t>(frameData2[7])) == SecurityParameterIndex);
+        // sequence number
+        CHECK(frameData2[11] == 0x02);
+
+        // send first frame
+        verCode = receiverSA.processSecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == NO_FAILURE);
+
+        // try to send frame again (replay attack)
+        verCode = receiverSA.processSecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE);
+
+        // send second frame
+        verCode = receiverSA.processSecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == NO_FAILURE);
+    }
+
+    SECTION("Wrong MAC") {
+        senderSA.resetSequenceNumber();
+        receiverSA.resetSequenceNumber();
+
+        TransferFrameTC frameTc1 = TransferFrameTC(frameData1, 22, 0, true);
+        TransferFrameTC frameTc2 = TransferFrameTC(frameData2, 22, 0, true);
+
+        // make first frame
+        verCode = senderSA.applySecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == NO_FAILURE);
+        // spi
+        CHECK(((static_cast<uint16_t>(frameData1[6]) << 8) | static_cast<uint16_t>(frameData1[7])) == SecurityParameterIndex);
+        // sequence number
+        CHECK(frameData1[11] == 0x01);
+        // corrupt mac
+        frameData1[18] = 0x9;
+
+        // process second frame
+        verCode = senderSA.applySecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == NO_FAILURE);
+        // spi
+        CHECK(((static_cast<uint16_t>(frameData2[6]) << 8) | static_cast<uint16_t>(frameData2[7])) == SecurityParameterIndex);
+        // sequence number
+        CHECK(frameData2[11] == 0x02);
+        // corrupt payload
+        frameData2[14] = 0x00;
+
+        // send first frame
+        verCode = receiverSA.processSecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == MAC_VERIFICATION_FAILURE);
+
+        // send second frame
+        verCode = receiverSA.processSecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        CHECK(verCode == MAC_VERIFICATION_FAILURE);
     }
 }

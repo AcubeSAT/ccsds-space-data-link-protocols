@@ -4,6 +4,5 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/lib/Catch2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/lib/etl" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/lib/tinycrypt" vcs="Git" />
   </component>
 </project>

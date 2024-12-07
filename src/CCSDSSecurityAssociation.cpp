@@ -9,6 +9,10 @@ uint8_t SecurityAssociation::getSecurityTrailerLength() const {
     return macFieldLength;
 }
 
+void SecurityAssociation::resetSequenceNumber() {
+    sequenceNumber = 0;
+};
+
 SDLSVerificationStatusCode SecurityAssociation::applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength,uint8_t vid, uint8_t mapid) {
     if (user == RECEIVER) {
         return INVALID_USER;
@@ -68,12 +72,17 @@ SDLSVerificationStatusCode SecurityAssociation::applySecurityTC(TransferFrameTC&
             }
 
             // compute MAC
+            uint8_t err = 1; // According to tiny crypt documentation, successful operation returns 1
             static tc_hmac_state_struct hmacStruct;
-            tc_hmac_set_key(&hmacStruct, authenticationKey, authenticationKeyLength);
-            tc_hmac_init(&hmacStruct);
-            tc_hmac_update(&hmacStruct, authenticationPayload,
+            err = tc_hmac_set_key(&hmacStruct, authenticationKey, authenticationKeyLength);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
+            err = tc_hmac_init(&hmacStruct);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
+            err = tc_hmac_update(&hmacStruct, authenticationPayload,
                            securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength);
-            tc_hmac_final(mac, macFieldLength, &hmacStruct);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
+            tc_hmac_final(mac, TC_SHA256_DIGEST_SIZE, &hmacStruct);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
 
             // place MAC to the security trailer
             // Note: SHA-256 HMAC outputs a 256 bit long MAC, so it is truncated to macFieldLength*8 bits
@@ -139,12 +148,17 @@ SDLSVerificationStatusCode SecurityAssociation::processSecurityTC(TransferFrameT
             }
 
             // compute MAC
+            uint8_t err = 1; // According to tiny crypt documentation, successful operation returns 1
             static tc_hmac_state_struct hmacStruct;
             tc_hmac_set_key(&hmacStruct, authenticationKey, authenticationKeyLength);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
             tc_hmac_init(&hmacStruct);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
             tc_hmac_update(&hmacStruct, authenticationPayload,
                            securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength);
-            tc_hmac_final(mac, macFieldLength, &hmacStruct);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
+            tc_hmac_final(mac, TC_SHA256_DIGEST_SIZE, &hmacStruct);
+            if (err != 1) {return MAC_CALCULATION_ERROR;}
 
             // compare computed MAC with frame's MAC
             bool valid = true;

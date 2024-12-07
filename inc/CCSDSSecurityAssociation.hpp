@@ -50,11 +50,11 @@ enum User {
  * (CCSDS 355.0-B-2) and is responsible for offering authentication and encryption capabilities for
  * the Data Link Layer. This specific implementation:
  *  - is static, meaning that SAs will not be created and destroyed for the duration of the mission
- *  - is built as a bidirectional interface. This means that it stores the necessary parameters for both ends.
- *    The sending end user is meant to call the 'applySecurity' function, while the receiving end user is meant to
- *    call the 'processSecurity' function. Certain buffers are shared, so separate instances MUST be created for
- *    the sender and the receiver in testing. The implemented functions support TC frames (@see TC Space Data Link Protocol),
- *    but functions for other CCSDS data link protocols can be implemented in a similar manner.
+ *  - Stores necessary parameters for both ends. The sending end user is meant to call the 'applySecurity' function,
+ *    while the receiving end user is meant to call the 'processSecurity' function. Certain buffers are shared, so
+ *    separate instances MUST be created for the sender and the receiver. The implemented functions support TC frames
+ *    (@see TC Space Data Link Protocol), but functions for other CCSDS data link protocols can be implemented in a
+ *    similar manner.
  *
  *  Support for more service types can be easily extended by adding an extra configuration to the 'Config' enum and then adding specific code
  *  for it in the constructor, applySecurity and process Security functions.
@@ -141,7 +141,7 @@ public:
                 }
 
                 sequenceNumberFieldLength = 4;
-                sequenceNumberWindow = 100;
+                sequenceNumberWindow = 128;
                 break;
             // add config specific initialization code here
         }
@@ -150,6 +150,8 @@ public:
     uint8_t getSecurityHeaderLength() const;
 
     uint8_t getSecurityTrailerLength() const;
+
+    void resetSequenceNumber();
 
     /**
      * IMPORTANT NOTE: the length of the segment header is included in transferFrameDataFieldLength
