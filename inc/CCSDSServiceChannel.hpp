@@ -6,6 +6,7 @@
 #include <TransferFrameTC.hpp>
 #include <utility>
 #include <CCSDSLoggerImpl.h>
+#include <CCSDSSecurityAssociation.hpp>
 
 /**
  *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
@@ -25,6 +26,13 @@ private:
 	 * TODO: Replace defines for maxFrameLength
 	 */
 	PhysicalChannel physicalChannel;
+
+    /**
+     * The security association is used for TC frame authentication
+     * TODO: use std optional
+     */
+     SecurityAssociation senderSA;
+     SecurityAssociation receiverSA;
 
 public:
     /**
@@ -96,7 +104,8 @@ public:
      * Auxiliary function to implement the segmentation of packets stored in
      * the packet buffer
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-     *                                          (segment header is included, if it exists)
+     *                                          (segment header is included, if it exists). Note: Should a segment header
+     *                                           exist, it's 1 octet length is included in this parameter.
      * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
      * @param vid                            Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
@@ -113,7 +122,8 @@ public:
      * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
      *                                       not exist or is full)
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-     *                                          (segment header is included, if it exists)
+     *                                          (segment header is included, if it exists). Note: Should a segment header exist,
+     *                                           it's 1 octet length is included in this parameter.
      * @param packetLength                   The length of the next packet in the stored TC packet buffer
      * @param vcid                           Virtual Channel ID
      * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
@@ -152,12 +162,19 @@ public:
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
      *                      (segmentHeaderTCPresent == false) or if the service type is BC
      * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-     *                                          (segment header included)
+     *                                          (segment header included). Note: Should a segment header exist, it's 1
+     *                                          octet length is included in this parameter.
      * @param serviceType               Service type of resulting frame. Only packets from the respective service will
      *                                  be grouped together
      */
     ServiceChannelNotification packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
                                                            ServiceType serviceType);
+
+    //    - SDLS Processing
+    /**
+     * Apply security services for TC frames
+     */
+    ServiceChannelNotification applySDLSSecurityTC(uint8_t vid, uint8_t mapid);
 
     //     - Virtual Channel Generation
     /**
@@ -172,7 +189,6 @@ public:
 
 
     //         -- FOP Directives
-
     ServiceChannelNotification frameTransmission(uint8_t* frameTarget);
 
     ServiceChannelNotification transmitAdFrame(uint8_t vid);
@@ -254,7 +270,6 @@ public:
      */
     uint8_t expectedFrameSeqNumber(uint8_t vid) const;
 
-
     //     - All frames generation
     /**
      * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
@@ -301,26 +316,6 @@ public:
             return ServiceChannelNotification::INVALID_VC_ID;
         }
         return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionRxTC.available();
-    }
-
-    /**
-     * Available space for TC transfer frames at inFramesAfterVCReceptionRxTC buffer
-     */
-    uint16_t getAvailableInFramesAfterVCReceptionRxTC(uint8_t vid, uint8_t mapid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
-        const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderTCPresent) {
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
-        if (virtualChannel.segmentHeaderTCPresent &&
-            (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
-        return masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).inFramesAfterVCReceptionRxTC.available();
     }
 
     /**
@@ -379,6 +374,11 @@ public:
      */
     ServiceChannelNotification clcwReportTime(uint8_t vid);
 
+    /**
+     * Processes TC frames that belong in a security association and discards them if they do not pass checks
+     */
+    ServiceChannelNotification processSDLSSecurityTC(uint8_t vid, uint8_t mapid);
+
     //     - Virtual Channel Extraction
     /**
      * The VC Packet Extraction Function shall be used to extract variable-length
@@ -395,7 +395,7 @@ public:
 
     //     - MAP Packet Extraction
 /**
-	 * The MAP Packet Extraction Function shall be used to extract variable-length
+	 * The Packet Extraction Function shall be used to extract variable-length
 	 * Packets from Frame Data Units on a MAP Channel.
 	 * @see 4.4.1 from TC Data Link Protocol
 	 *
@@ -573,6 +573,7 @@ public:
 	void process();
 
 
+    // Debugging services
     /**
      * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging puproses
      * @param verbosePrimaryHeader, verboseOCF     If true, subfield names will also appear for each field, but more space is taken
@@ -591,9 +592,23 @@ public:
                                        uint8_t mapid, uint16_t transferFrameDataFieldLength);
 
 
+    // Other SDLS services
+    /**
+     * Reset anti replay attack sequence numbers, used for frame authentication by the security association (SA).
+     * A reset may be performed for the following reasons:
+     * - Testing of the SA
+     * - Sequence number overflow
+     * - Sender-Receiver sequence number difference exceeded sequenceNumberWindow
+     */
+    void resetSequenceCountersSA() {
+        senderSA.resetSequenceNumber();
+        receiverSA.resetSequenceNumber();
+    }
+
 	// This is honestly a bit confusing
-	ServiceChannel(const MasterChannel& masterChannel, const PhysicalChannel& physicalChannel)
-	    : masterChannel(masterChannel), physicalChannel(physicalChannel) {}
+	ServiceChannel(const MasterChannel& masterChannel, const PhysicalChannel& physicalChannel,
+                   const SecurityAssociation& senderSA, const SecurityAssociation& receiverSA)
+	    : masterChannel(masterChannel), physicalChannel(physicalChannel), senderSA(senderSA), receiverSA(receiverSA) {}
 	//Default constructor
-	ServiceChannel() : masterChannel(), physicalChannel(){};
+	ServiceChannel() : masterChannel(), physicalChannel() , senderSA(), receiverSA() {};
 };

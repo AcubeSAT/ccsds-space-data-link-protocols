@@ -6,7 +6,7 @@
 #include <CCSDSSecurityAssociation.hpp>
 #include <etl/array.h>
 
-TEST_CASE("Security Association (40 bit HMAC)") {
+TEST_CASE("Security Association (40 bit HMAC authentication)") {
     // Set up Service Channel
     PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
 
@@ -24,7 +24,6 @@ TEST_CASE("Security Association (40 bit HMAC)") {
 
     master_channel.addVC(2, false, 128, false, false, false, 2, 2, false, true, true, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 20, 3, 3, 3);
 
-    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
 
     // Set up security association. Associate vc 0 (with only map channels 0,1) and vc 1
     etl::array<uint8_t, MaxMapChannels> vc0MapsChannels = {0, 1, 2};
@@ -37,6 +36,8 @@ TEST_CASE("Security Association (40 bit HMAC)") {
                                                        associatedChannels, HMAC_40_BIT, SENDER);
     SecurityAssociation receiverSA = SecurityAssociation(SecurityParameterIndex,
                                                        associatedChannels, HMAC_40_BIT, RECEIVER);
+
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, senderSA, receiverSA);
 
     // test frames
     uint8_t frameData1[] = {0x00, 0xAC, 0x00, 0x0A, 0x00,    // primary header (type ad frame)
@@ -63,7 +64,7 @@ TEST_CASE("Security Association (40 bit HMAC)") {
 
         TransferFrameTC frameTc = TransferFrameTC(frameData, 22, 0, true);
 
-        verCode = senderSA.applySecurityTC(frameTc, transferFrameDataFieldLength, 0, 0);
+        verCode = senderSA.applySecurityTC(&frameTc, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
         // spi
         CHECK(((static_cast<uint16_t>(frameData[6]) << 8) | static_cast<uint16_t>(frameData[7])) == SecurityParameterIndex);
@@ -75,9 +76,9 @@ TEST_CASE("Security Association (40 bit HMAC)") {
             macString.append(std::to_string(frameData[i + 17]).c_str());
             macString.append(" ");
         }
-        LOG_DEBUG << "Mac value:" << macString.c_str();
+        LOG_DEBUG << "Mac value: " << macString.c_str();
 
-        verCode = receiverSA.processSecurityTC(frameTc, transferFrameDataFieldLength, 0, 0);
+        verCode = receiverSA.processSecurityTC(&frameTc, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
     }
 
@@ -89,7 +90,7 @@ TEST_CASE("Security Association (40 bit HMAC)") {
         TransferFrameTC frameTc2 = TransferFrameTC(frameData2, 22, 0, true);
 
         // process first frame
-        verCode = senderSA.applySecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        verCode = senderSA.applySecurityTC(&frameTc1, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
         // spi
         CHECK(((static_cast<uint16_t>(frameData1[6]) << 8) | static_cast<uint16_t>(frameData1[7])) == SecurityParameterIndex);
@@ -97,7 +98,7 @@ TEST_CASE("Security Association (40 bit HMAC)") {
         CHECK(frameData1[11] == 0x01);
 
         // process second frame
-        verCode = senderSA.applySecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        verCode = senderSA.applySecurityTC(&frameTc2, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
         // spi
         CHECK(((static_cast<uint16_t>(frameData2[6]) << 8) | static_cast<uint16_t>(frameData2[7])) == SecurityParameterIndex);
@@ -105,15 +106,15 @@ TEST_CASE("Security Association (40 bit HMAC)") {
         CHECK(frameData2[11] == 0x02);
 
         // send first frame
-        verCode = receiverSA.processSecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        verCode = receiverSA.processSecurityTC(&frameTc1, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
 
         // try to send frame again (replay attack)
-        verCode = receiverSA.processSecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        verCode = receiverSA.processSecurityTC(&frameTc1, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE);
 
         // send second frame
-        verCode = receiverSA.processSecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        verCode = receiverSA.processSecurityTC(&frameTc2, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
     }
 
@@ -125,7 +126,7 @@ TEST_CASE("Security Association (40 bit HMAC)") {
         TransferFrameTC frameTc2 = TransferFrameTC(frameData2, 22, 0, true);
 
         // make first frame
-        verCode = senderSA.applySecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        verCode = senderSA.applySecurityTC(&frameTc1, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
         // spi
         CHECK(((static_cast<uint16_t>(frameData1[6]) << 8) | static_cast<uint16_t>(frameData1[7])) == SecurityParameterIndex);
@@ -135,7 +136,7 @@ TEST_CASE("Security Association (40 bit HMAC)") {
         frameData1[18] = 0x9;
 
         // process second frame
-        verCode = senderSA.applySecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        verCode = senderSA.applySecurityTC(&frameTc2, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == NO_FAILURE);
         // spi
         CHECK(((static_cast<uint16_t>(frameData2[6]) << 8) | static_cast<uint16_t>(frameData2[7])) == SecurityParameterIndex);
@@ -145,11 +146,21 @@ TEST_CASE("Security Association (40 bit HMAC)") {
         frameData2[14] = 0x00;
 
         // send first frame
-        verCode = receiverSA.processSecurityTC(frameTc1, transferFrameDataFieldLength, 0, 0);
+        verCode = receiverSA.processSecurityTC(&frameTc1, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == MAC_VERIFICATION_FAILURE);
 
         // send second frame
-        verCode = receiverSA.processSecurityTC(frameTc2, transferFrameDataFieldLength, 0, 0);
+        verCode = receiverSA.processSecurityTC(&frameTc2, transferFrameDataFieldLength, 0, 0);
         CHECK(verCode == MAC_VERIFICATION_FAILURE);
+    }
+    SECTION("Unassociated channels") {
+        senderSA.resetSequenceNumber();
+        receiverSA.resetSequenceNumber();
+    }
+    SECTION("Data Link Integration (TxTC side) ") {
+        serv_channel.resetSequenceCountersSA();
+    }
+    SECTION("Data Link Integration (RxTC side) ") {
+        serv_channel.resetSequenceCountersSA();
     }
 }

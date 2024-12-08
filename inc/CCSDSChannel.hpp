@@ -154,10 +154,7 @@ protected:
 	 * TODO i don't think that this should exist,since MAP channels exist for TC Frames only
 	 */
 	etl::list<TransferFrameTM*, MaxReceivedTmInMapChannel> unprocessedFrameListBufferTM;
-	/**
-	 * Store frames before being extracted
-	 */
-	etl::list<TransferFrameTC*, MaxReceivedRxTcInMAPBuffer> inFramesAfterVCReceptionRxTC;
+
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
 	 * Applicable to Type-AD Frames
@@ -180,6 +177,11 @@ protected:
 	 * Applicable to Type-BD Frames
 	 */
 	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
+
+    /**
+     * Buffer to hold created frame after SDLS processing
+     */
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTmInVirtBuffer> framesAfterSDLSProcessingRxTC;
 };
 
 /**
@@ -399,6 +401,16 @@ private:
 	 * Buffer to store created frames during and after blocking and segmentation
 	 */
 	etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> unprocessedFrameListBufferTxTC;
+
+    /**
+     * Buffer to hold created frame after packet processing and before SDLS processing
+     */
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesBeforeSDLSProcessingTxTC;
+
+    /**
+     * Buffer to hold created frame after SDLS processing
+     */
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTmInVirtBuffer> framesAfterSDLSProcessingRxTC;
 
 	/**
 	 * Holds the FOP state of the virtual channel

@@ -2,53 +2,87 @@
 #include "tinycrypt/hmac.h"
 
 uint8_t SecurityAssociation::getSecurityHeaderLength() const {
-    return securityParameterIndexLength + initializationVectorLength + sequenceNumberFieldLength + padFieldLength;
+    if (saConfig == NO_SECURITY){
+        return 0;
+    }
+    else {
+        return securityParameterIndexLength + initializationVectorLength + sequenceNumberFieldLength + padFieldLength;
+    }
 }
 
 uint8_t SecurityAssociation::getSecurityTrailerLength() const {
-    return macFieldLength;
+    if (saConfig == NO_SECURITY){
+        return 0;
+    }
+    else {
+        return macFieldLength;
+    }
 }
 
 void SecurityAssociation::resetSequenceNumber() {
     sequenceNumber = 0;
 };
 
-SDLSVerificationStatusCode SecurityAssociation::applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength,uint8_t vid, uint8_t mapid) {
+bool SecurityAssociation::isAssociated(uint8_t vid) {
+    if (associatedChannels.find(vid) == associatedChannels.end()) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+bool SecurityAssociation::isAssociated(uint8_t vid, uint8_t mapid) {
+    if (associatedChannels.find(vid) == associatedChannels.end()) {
+        return false;
+    }
+
+    bool found = false;
+    for (auto it = associatedChannels.at(vid).begin(); it != associatedChannels.at(vid).end(); ++it) {
+        if (*it == mapid) {
+            found = true;
+        }
+        break;
+    }
+
+    if (!found) {
+        return false;
+    }
+    return true;
+}
+
+SDLSVerificationStatusCode SecurityAssociation::applySecurityTC(TransferFrameTC* frameTc, uint16_t transferFrameDataFieldLength,uint8_t vid, uint8_t mapid) {
+    if (saConfig == NO_SECURITY) {
+        return NO_FAILURE;
+    }
+
     if (user == RECEIVER) {
         return INVALID_USER;
     }
-
-    // ensure virtual channel is associated with this SA
-    if (associatedChannels.find(vid) == associatedChannels.end()) {
-        return UNASSOCIATED_CHANNEL;
-    }
-
-    // ensure the frame type is correct
-    if ((frameTc.getServiceType() == ServiceType::TYPE_BC) || (frameTc.getServiceType() == ServiceType::TYPE_RESERVED)) {
+    // ensure the frame type is correct (SDLS cannot be applied to type-BC frames)
+    if ((frameTc->getServiceType() == ServiceType::TYPE_BC) || (frameTc->getServiceType() == ServiceType::TYPE_RESERVED)) {
         return INVALID_FRAME_TYPE;
     }
 
-    // ensure MAP channel  is associated with this SA
-    if (frameTc.getSegmentationHeaderPresent()) {
-        bool found = false;
-        for (auto it = associatedChannels.at(vid).begin(); it != associatedChannels.at(vid).end(); ++it) {
-            if (*it == mapid) {
-                found = true;
-            }
-            break;
-        }
+    // ensure the given channel is associated with this sa
+    bool associated = false;
+    if (frameTc->getSegmentationHeaderPresent()) {
+        associated = isAssociated(vid, mapid);
+    }
+    else {
+        associated = isAssociated(vid);
+    }
 
-        if (!found) {
-            return UNASSOCIATED_CHANNEL;
-        }
+    if (!associated) {
+        return UNASSOCIATED_CHANNEL;
     }
 
     // If a segment header exists, the transferFrameDataFieldLength will now represent
     // the actual length of the payload data
-    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
-    transferFrameDataFieldLength = transferFrameDataFieldLength - frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
+    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + frameTc->getSegmentationHeaderPresent() * TcSegmentHeaderSize;
+    transferFrameDataFieldLength = transferFrameDataFieldLength - frameTc->getSegmentationHeaderPresent() * TcSegmentHeaderSize;
 
-    uint8_t* frameData = frameTc.getFrameData();
+    uint8_t* frameData = frameTc->getFrameData();
     switch (saConfig) {
         case (HMAC_40_BIT):
             // increase sequence number
@@ -96,42 +130,40 @@ SDLSVerificationStatusCode SecurityAssociation::applySecurityTC(TransferFrameTC&
     }
 }
 
-SDLSVerificationStatusCode SecurityAssociation::processSecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid) {
+SDLSVerificationStatusCode SecurityAssociation::processSecurityTC(TransferFrameTC* frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid) {
+    if (saConfig == NO_SECURITY) {
+        return NO_FAILURE;
+    }
+
     if (user == SENDER) {
         return INVALID_USER;
     }
 
-    // ensure virtual channel is associated with this SA
-    if (associatedChannels.find(vid) == associatedChannels.end()) {
+    // move to service
+    // ensure the frame type is correct (SDLS cannot be applied to type-BC frames)
+//    if ((frameTc->getServiceType() == ServiceType::TYPE_BC) || (frameTc->getServiceType() == ServiceType::TYPE_RESERVED)) {
+//        return INVALID_FRAME_TYPE;
+//    }
+
+    // ensure the given channel is associated with this sa
+    bool associated = false;
+    if (frameTc->getSegmentationHeaderPresent()) {
+        associated = isAssociated(vid, mapid);
+    }
+    else {
+        associated = isAssociated(vid);
+    }
+
+    if (!associated) {
         return UNASSOCIATED_CHANNEL;
-    }
-
-    // ensure the frame type is correct
-    if ((frameTc.getServiceType() == ServiceType::TYPE_BC) || (frameTc.getServiceType() == ServiceType::TYPE_RESERVED)) {
-        return INVALID_FRAME_TYPE;
-    }
-
-    // ensure MAP channel  is associated with this SA
-    if (frameTc.getSegmentationHeaderPresent()) {
-        bool found = false;
-        for (auto it = associatedChannels.at(vid).begin(); it != associatedChannels.at(vid).end(); ++it) {
-            if (*it == mapid) {
-                found = true;
-            }
-            break;
-        }
-
-        if (!found) {
-            return UNASSOCIATED_CHANNEL;
-        }
     }
 
     // If a segment header exists, the transferFrameDataFieldLength will now represent
     // the actual length of the payload data
-    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
-    transferFrameDataFieldLength = transferFrameDataFieldLength - frameTc.getSegmentationHeaderPresent() * TcSegmentHeaderSize;
+    uint8_t securityHeaderOffset = TcPrimaryHeaderSize + frameTc->getSegmentationHeaderPresent() * TcSegmentHeaderSize;
+    transferFrameDataFieldLength = transferFrameDataFieldLength - frameTc->getSegmentationHeaderPresent() * TcSegmentHeaderSize;
 
-    uint8_t* frameData = frameTc.getFrameData();
+    uint8_t* frameData = frameTc->getFrameData();
     switch (saConfig) {
         case (HMAC_40_BIT):
             // check security parameter index

@@ -27,7 +27,7 @@ TEST_CASE("Service Channel") {
 	master_channel.addVC(2, false, 128, false, false, false, 2, 2, false, true, true, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 20, 3, 3, 3,
                          map_channels);
 
-	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
 
 	//    memset(reinterpret_cast<uint8_t*>(&master_channel), 0xff, sizeof(master_channel));
 
@@ -59,6 +59,7 @@ TEST_CASE("Service Channel") {
     // Create 2 frames for Type-A packets
 	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.packetProcessingRequestTxTC(0, 0, 10, ServiceType::TYPE_AD);
+    serv_channel.applySDLSSecurityTC()
     const TransferFrameTC* frame_a = serv_channel.frontUnprocessedFrameTxTC(0).second;
 
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
@@ -322,7 +323,7 @@ TEST_CASE("VC Generation Service") {
                          map_channels);
 
 
-	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
 	ServiceChannelNotification err;
 
 	SECTION("Blocking") {
@@ -568,7 +569,7 @@ TEST_CASE("MAP Request Service") {
     // without MAP channels support (segmentHeaderTCPresent == false)
     master_channel.addVC(1, false, 128, true, true, true, 2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3);
 
-    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
     ServiceChannelNotification err;
 
     // Simple tests to determine if packets of a specific service type are pushed-to/popped-from their corresponding packet
@@ -754,7 +755,7 @@ TEST_CASE("CLCW construction at VC Reception") {
 	master_channel.addVC(0, false, 128, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
-	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
 
 	ServiceChannelNotification err;
@@ -826,7 +827,7 @@ TEST_CASE("Frame Acknowledgement") {
 	master_channel.addVC(1, false, 128, true, true, true, 2, 2, false, false, 0, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
-	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
 
 	uint8_t packet[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0xA2, 0xB3, 0x21, 0xA1};

@@ -31,12 +31,14 @@ enum EncryptionAlgorithm {
  *
  * Description of configurations
  * =================================================================================================================
+ * NO_SECURITY: Does not offer any security services, security header and trailer lengths are 0 (used for testing purposes).
  * HMAC_40_BIT: AUTHENTICATION service type, using symmetric hash based MACs. SHA-256 is used as the hash function.
  *              They authentication key is 8 bytes in length. To reduce the overhead of MAC inside the frames,
  *              only the 40 leftmost bits are kept.
  *
  */
 enum Config {
+    NO_SECURITY,
     HMAC_40_BIT
 };
 
@@ -106,6 +108,10 @@ private:
 
 
 public:
+    SecurityAssociation() {
+        saConfig = NO_SECURITY;
+    }
+
     SecurityAssociation(uint16_t securityParameterIndex,
                         etl::flat_map<uint8_t, etl::array<uint8_t, MaxMapChannels>, MaxVirtualChannels>& permittedChannels,
                         Config saConfig, User user) :
@@ -151,6 +157,10 @@ public:
 
     uint8_t getSecurityTrailerLength() const;
 
+    bool isAssociated(uint8_t vid);
+
+    bool isAssociated(uint8_t vid, uint8_t mapid);
+
     void resetSequenceNumber();
 
     /**
@@ -158,8 +168,8 @@ public:
      * @TODO add documentation
      *
      */
-    SDLSVerificationStatusCode applySecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
+    SDLSVerificationStatusCode applySecurityTC(TransferFrameTC* frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
 
-    SDLSVerificationStatusCode processSecurityTC(TransferFrameTC& frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
+    SDLSVerificationStatusCode processSecurityTC(TransferFrameTC* frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
 
 };

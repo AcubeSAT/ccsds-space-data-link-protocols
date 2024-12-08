@@ -15,7 +15,7 @@ TEST_CASE("Initiate FOP Directives") {
 	master_channel_fop.addVC(3, false, 1024, true, true, true, 32, 32, true, true, 32, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10,
                              10, 3, map_channels_fop);
 
-	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop);
+	ServiceChannel serv_channel_fop = ServiceChannel(master_channel_fop, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
 
     serv_channel_fop.storePacketTxTC(data, 11, 3, 2, ServiceType::TYPE_AD);
     serv_channel_fop.packetProcessingRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
@@ -60,7 +60,7 @@ TEST_CASE("Retransmission"){
 	master_channel.addVC(1, false, 128, true, true, true, 2, 2, false, false, 0, 8, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
-	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+	ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
 	VirtualChannel virtualChannel = master_channel.virtualChannels.at(0);
 
 	uint8_t packet1[] = {0x10, 0xB1, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x1C, 0xD3, 0x8C};

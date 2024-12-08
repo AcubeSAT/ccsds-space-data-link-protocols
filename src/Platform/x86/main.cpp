@@ -101,7 +101,7 @@ int main(){
     master_channel.addVC(2, true, 128, blockingV3, segmentationV3, true,  2, 2, errorControlFieldV3, false, 8, operationalControlFieldPresentV3, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
-    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop);
+    ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(), SecurityAssociation());
 
     // Create Frame Maker class instance, set frame data field length
     uint16_t  transferFrameDataFieldLength = 17 + 7;   // ensure corresponding length in yamcs matches

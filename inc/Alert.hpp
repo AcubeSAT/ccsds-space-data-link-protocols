@@ -33,6 +33,7 @@ enum ServiceChannelNotification : int {
 	MC_RX_INVALID_COUNT = 0x1E,
 	MEMORY_POOL_FULL = 0x1F,
     INVALID_INPUT = 0x20,
+    SDLS_ERROR = 0X21
 };
 
 enum SynchronizationFlag : bool { OCTET_SYNCHRONIZED_FORWARD_ORDERED = 0, VCA_SDU = 1 };
