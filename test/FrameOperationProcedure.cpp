@@ -21,7 +21,7 @@ TEST_CASE("Initiate FOP Directives") {
     serv_channel_fop.packetProcessingRequestTxTC(3, 2, 11, ServiceType::TYPE_AD);
 
 //	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
-    CHECK(serv_channel_fop.availableUnprocessedFramesTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+    CHECK(serv_channel_fop.availableFramesBeforeSDLSProcessing(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 
 	CHECK(serv_channel_fop.fopState(3) == FOPState::INITIAL);
 	serv_channel_fop.initiateAdNoClcw(3);
@@ -75,6 +75,7 @@ TEST_CASE("Retransmission"){
     serv_channel.storePacketTxTC(packet3, 9, 0, 0, ServiceType::TYPE_AD);
 	for (uint8_t i = 0; i < 3; i++){
         serv_channel.packetProcessingRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
+        serv_channel.applySDLSSecurityTC(0, 0);
         serv_channel.vcGenerationRequestTxTC(0);
         serv_channel.allFramesGenerationRequestTxTC();
 	}

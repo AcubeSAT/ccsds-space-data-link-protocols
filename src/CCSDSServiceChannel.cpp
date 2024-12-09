@@ -21,9 +21,9 @@ std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::ba
 TransferFrameTC ServiceChannel::getLastMasterCopyTcFrame() {
     return masterChannel.getLastTxMasterCopyTcFrame();
 }
-std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::frontUnprocessedFrameTxTC(uint8_t vid) const {
+std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::frontFrameBeforeSDLSProcessing(uint8_t vid) const {
     const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>* vc =
-            &(masterChannel.virtualChannels.at(vid).unprocessedFrameListBufferTxTC);
+            &(masterChannel.virtualChannels.at(vid).framesBeforeSDLSProcessingTxTC);
     if (vc->empty()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
         return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
@@ -32,9 +32,9 @@ std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::fr
     return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, vc->front());
 }
 
-const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& ServiceChannel::getUnprocessedFramesListBuffer(uint16_t vid){
+const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& ServiceChannel::getFramesBeforeSDLSProcessing(uint16_t vid){
     VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
-    return vchan->unprocessedFrameListBufferTxTC;
+    return vchan->framesBeforeSDLSProcessingTxTC;
 }
 
 std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::frontFrameAfterAllFramesGenerationTxTC() const {

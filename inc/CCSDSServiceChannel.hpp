@@ -69,7 +69,7 @@ public:
     /**
      * Available space in TC virtual channel buffer
      */
-    uint16_t availableUnprocessedFramesTxTC(const uint8_t vid) const {
+    uint16_t availableFramesBeforeSDLSProcessing(const uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
@@ -78,9 +78,9 @@ public:
     }
 
     /**
-     * Read first TC transfer frame of the virtual channel buffer (unprocessedFrameListBufferTxTC)
+     * Read first TC transfer frame of the virtual channel buffer (framesBeforeSDLSProcessingTxTC)
      */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> frontUnprocessedFrameTxTC(uint8_t vid) const;
+    std::pair<ServiceChannelNotification, const TransferFrameTC*> frontFrameBeforeSDLSProcessing(uint8_t vid) const;
 
     /**
      * Return the last stored transfer frame from masterCopyTxTC
@@ -95,9 +95,9 @@ public:
     std::optional<TransferFrameTC> frontFrameBeforeAllFramesGenerationTxTC();
 
     /**
-     * @return The buffer unprocessedFrameLIstBufferTxTc
+     * @return The buffer framesBeforeSDLSProcessingTxTC
      */
-    const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& getUnprocessedFramesListBuffer(uint16_t vid);
+    const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& getFramesBeforeSDLSProcessing(uint16_t vid);
 
     //     - MAP/VC Packet Processing and Frame Initialization
     /**

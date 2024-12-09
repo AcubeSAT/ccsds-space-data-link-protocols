@@ -44,8 +44,8 @@ TEST_CASE("MAPP blocking") {
 	// TODO: Rework with Memory Pool
 	// serv_channel.packetProcessingRequestTxTC(3, 2);
 
-	// CHECK(serv_channel.availableUnprocessedFramesTxTC(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 6);
-	// CHECK(serv_channel.availableUnprocessedFramesTxTC(3, 2) == MaxReceivedTcInMapChannel - 0);
+	// CHECK(serv_channel.availableFramesBeforeSDLSProcessing(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 6);
+	// CHECK(serv_channel.availableFramesBeforeSDLSProcessing(3, 2) == MaxReceivedTcInMapChannel - 0);
 }
 
 TEST_CASE("Virtual Channel Generation") {}

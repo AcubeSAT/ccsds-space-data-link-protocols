@@ -6,6 +6,8 @@ flowchart TB
             A1s3[["frontUnprocessedFrameMcCopyTxTC()"]]
             A1s4[["getLastMasterCopyTcFrame()"]]
             A1s5[["backUnprocessedFrameMcCopyTxTC()"]]
+            A1s6[["frontFrameBeforeSDLSProcessing(vid)"]]
+            A1s7[["getFramesBeforeSDLSProcessing(vid)"]]
 
             subgraph MAP_AD ["MAP Type AD Buffers"]
                 map4
@@ -54,20 +56,19 @@ flowchart TB
             A1s5 -.back reference.-master12
 
             A1s2 -.-> |"(from segmentation,blocking)"|vc16
+
+            A1s6 -.front reference.-vc16
+            A1s7 -.remaining space.-vc16
         end
 
         subgraph A2 ["SDLS Processing"]
             A2s1[["applySecurityTC(vid, mapid)"]]
-            A2s2[["frontUnprocessedFrameTxTC(vid)"]]
-            A2s3[["getUnprocessedFramesListBuffer(vid)"]]
 
             A1s2 --> A2s1
             A2s1-.-x vc16
             A2s1 -.-x master12
             A2s1 -.-x master16
             A2s1 -.-> vc7
-            A2s2 -.front reference.-vc7
-            A2s3 -.remaining space.-vc7
         end
 
         subgraph A3 ["Virtual Channel Generation"]
@@ -295,4 +296,4 @@ class map1,map2,map4,map5,map6,map7,map8,E3 map_channel_buffer;
 class vc1,vc2,vc3,vc4,vc5,vc6,vc7,vc8,vc9,vc10,vc11,vc12,vc13,vc14,vc15,vc16,vc17,E4 virtual_channel_buffer;
 class master1,master2,master3,master4,master5,master6,master7,master8,master9,master10,master11,master12,master13,master14,master15,master16,master17,E5 master_channel_buffer
 class A1s1,A1s2,A2s1,A3s1,A4s1,A4s2,B1s1,B1s2,B2s1,B3s1,B4s1,B4s2,C1s1,C2s1,C3s1,C4s1,D1s1,D2s1,E1 main_services;
-class A1s3,A1s4,A1s5,A2s2,A2s3,A3s2,A4s3,A4s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;
+class A1s3,A1s4,A1s5,A1s6,A1s7,A3s2,A4s3,A4s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;

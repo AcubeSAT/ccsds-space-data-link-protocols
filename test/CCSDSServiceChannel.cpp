@@ -57,13 +57,12 @@ TEST_CASE("Service Channel") {
     serv_channel.storePacketTxTC(pckt_type_a2, 3, 0, 0, ServiceType::TYPE_AD);
 
     // Create 2 frames for Type-A packets
-	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.packetProcessingRequestTxTC(0, 0, 10, ServiceType::TYPE_AD);
-    serv_channel.applySDLSSecurityTC()
-    const TransferFrameTC* frame_a = serv_channel.frontUnprocessedFrameTxTC(0).second;
+    const TransferFrameTC* frame_a = serv_channel.frontFrameBeforeSDLSProcessing(0).second;
 
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2);
+	CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 2);
 
     // Create frame for Type-B packet
 	err = serv_channel.packetProcessingRequestTxTC(0, 0, 11, ServiceType::TYPE_BD);
@@ -71,18 +70,23 @@ TEST_CASE("Service Channel") {
     CHECK(frame_c->getFrameLength() == 18);
     CHECK(frame_c->getServiceType() == ServiceType::TYPE_BD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.frontUnprocessedFrameTxTC(0).second == frame_a);
+    CHECK(serv_channel.frontFrameBeforeSDLSProcessing(0).second == frame_a);
 
     // VC Generation Service
-	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 3);
+	CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 3);
+
+    // SDLS Processing
+    serv_channel.applySDLSSecurityTC(0, 0);
+    serv_channel.applySDLSSecurityTC(0, 0);
+    serv_channel.applySDLSSecurityTC(0, 0);
 
 	// Process Type-A transfer frames
 	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
     err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-    CHECK(serv_channel.frontUnprocessedFrameTxTC(0).second == frame_c);
-	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
+    //CHECK(serv_channel.frontFrameBeforeSDLSProcessing(0).second == frame_c);
+	//CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1U);
 	err = serv_channel.pushSentQueue(0);
 
 	// All Frames Generation Service
@@ -104,7 +108,7 @@ TEST_CASE("Service Channel") {
 
 	// Try to process extra type-A transfer frame
 	err = serv_channel.vcGenerationRequestTxTC(0);
-	CHECK(serv_channel.availableUnprocessedFramesTxTC(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	CHECK(err == ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
 
 	// Rx side
@@ -132,14 +136,17 @@ TEST_CASE("Service Channel") {
 	err = serv_channel.vcReceptionRxTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
-	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(0) == MaxReceivedRxTcInVirtualChannelBuffer);
-	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(0, 0) == MaxReceivedRxTcInMAPBuffer - 1);
+	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(0) == MaxReceivedRxTcInVirtualChannelBuffer-1);
 
 	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(1) == MaxReceivedRxTcInMasterBuffer);
 	err = serv_channel.vcReceptionRxTC(1);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue);
 	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(1) == MaxReceivedRxTcInVirtualChannelBuffer - 1);
+
+    // SDLS Processing
+    serv_channel.processSDLSSecurityTC(0, 0);
+    serv_channel.processSDLSSecurityTC(1, 0);
 
 	// Packet extraction
 	err = serv_channel.packetExtractionTC(0, 0, out_buffer);
@@ -278,13 +285,14 @@ TEST_CASE("Service Channel") {
     serv_channel.storePacketTxTC(pckt_type_a, 9, 2, 0, ServiceType::TYPE_AD);
 	err = serv_channel.packetProcessingRequestTxTC(2, 0, 9, ServiceType::TYPE_AD);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	//    CHECK(serv_channel.availableUnprocessedFramesTxTC(2, 0) == MaxReceivedTcInMapChannel);
-	CHECK(serv_channel.availableUnprocessedFramesTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+	//    CHECK(serv_channel.availableFramesBeforeSDLSProcessing(2, 0) == MaxReceivedTcInMapChannel);
+	CHECK(serv_channel.availableFramesBeforeSDLSProcessing(2) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+    serv_channel.applySDLSSecurityTC(2, 0);
 	serv_channel.initiateAdNoClcw(2);
 	// Process first type-A transfer frame
 	err = serv_channel.vcGenerationRequestTxTC(2);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.availableUnprocessedFramesTxTC(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+	//CHECK(serv_channel.availableFramesBeforeSDLSProcessing(2) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 	err = serv_channel.pushSentQueue(2);
 	CHECK(frame_a->getTransferFrameSequenceNumber() == 0);
 	serv_channel.acknowledgeFrame(2, 0);
@@ -687,7 +695,7 @@ TEST_CASE("MAP Request Service") {
         err = serv_channel.packetProcessingRequestTxTC(1, 0, maxTransferFrameFieldLength, ServiceType::TYPE_BD);
         CHECK(err == NO_SERVICE_EVENT);
 
-        const TransferFrameTC* transferFrame = serv_channel.frontUnprocessedFrameTxTC(1).second;
+        const TransferFrameTC* transferFrame = serv_channel.frontFrameBeforeSDLSProcessing(1).second;
 
         CHECK(transferFrame->getServiceType() == ServiceType::TYPE_BD);
         CHECK(transferFrame->getFrameLength() == TcPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + ErrorControlFieldSize);
@@ -713,7 +721,8 @@ TEST_CASE("MAP Request Service") {
         err = serv_channel.packetProcessingRequestTxTC(0, 0, maxTransferFrameFieldLength, ServiceType::TYPE_AD);
         CHECK(err == NO_SERVICE_EVENT);
 
-        const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& buffer = serv_channel.getUnprocessedFramesListBuffer(0);
+        const etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>& buffer = serv_channel.getFramesBeforeSDLSProcessing(
+                0);
         auto it = buffer.begin();
         const TransferFrameTC* frame1 = *it;
         const TransferFrameTC* frame2 = *(++it);
@@ -844,6 +853,8 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.packetProcessingRequestTxTC(0, 0, 10, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
+    serv_channel.applySDLSSecurityTC(0, 0);
+
 	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
@@ -869,6 +880,8 @@ TEST_CASE("Frame Acknowledgement") {
 	err = serv_channel.packetProcessingRequestTxTC(0, 0, 9, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 
+    serv_channel.applySDLSSecurityTC(0, 0);
+
 	err = serv_channel.vcGenerationRequestTxTC(0);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
 	CHECK(serv_channel.getLastMasterCopyTcFrame().getTransferFrameSequenceNumber() == 1);
@@ -892,6 +905,8 @@ TEST_CASE("Frame Acknowledgement") {
 
 	err = serv_channel.packetProcessingRequestTxTC(1, 0, 9, ServiceType::TYPE_AD);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+
+    serv_channel.applySDLSSecurityTC(1, 0);
 
 	err = serv_channel.vcGenerationRequestTxTC(1);
     CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);

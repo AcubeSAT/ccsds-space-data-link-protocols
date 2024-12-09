@@ -261,7 +261,7 @@ public:
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
 	uint16_t availableBufferTC() const {
-		return unprocessedFrameListBufferTxTC.available();
+		return framesBeforeSDLSProcessingTxTC.available();
 	}
 
 	/**
