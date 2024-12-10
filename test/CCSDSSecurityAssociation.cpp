@@ -17,7 +17,7 @@ TEST_CASE("Security Association (40 bit HMAC authentication)") {
     };
 
     MasterChannel master_channel = MasterChannel();
-    master_channel.addVC(0, true, 128, true, true, true,  2, 2, true, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
+    master_channel.addVC(0, true, 128, true, true, true,  2, 2, false, true, 8, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 255, 10, 10, 3,
                          map_channels);
 
     master_channel.addVC(1, false, 128, false, false, false,  2, 2, true, true, true, true, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 20, 3, 3, 3);
@@ -192,7 +192,6 @@ TEST_CASE("Security Association (40 bit HMAC authentication)") {
         CHECK(err == NO_SERVICE_EVENT);
         CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
 
-
         CHECK(frameData3[TcPrimaryHeaderSize + TcSegmentHeaderSize] ==
               static_cast<uint8_t>(SecurityParameterIndex >> 8));
         CHECK(frameData3[TcPrimaryHeaderSize + TcSegmentHeaderSize + 1] ==
@@ -238,9 +237,38 @@ TEST_CASE("Security Association (40 bit HMAC authentication)") {
         CHECK(frameData6[TcPrimaryHeaderSize + sizeof(packet1) - 1] == 0xF0); // payload end
     }
     SECTION("Data Link Integration (RxTC side) ") {
+        ServiceChannelNotification err;
         serv_channel.resetSequenceCountersSA();
 
+        // set sequence number
+        frameData1[11] = 1;
+        frameData2[11] = 2;
 
+        // set correct hmac for first frame only (obtained from applySecurityTC in normal operation section)
+        frameData1[17] = 250;
+        frameData1[18] = 125;
+        frameData1[19] = 86;
+        frameData1[20] = 198;
+        frameData1[21] = 83;
+
+        serv_channel.storeFrameRxTC(frameData1, sizeof (frameData1));
+        serv_channel.storeFrameRxTC(frameData2, sizeof (frameData2));
+
+        // All frames reception;
+        err = serv_channel.allFramesReceptionRequestRxTC();
+        CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+        err = serv_channel.allFramesReceptionRequestRxTC();
+        CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+        err = serv_channel.vcReceptionRxTC(0);
+        CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+        err = serv_channel.vcReceptionRxTC(0);
+        CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
+        CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(0) == MaxReceivedRxTcInVirtualChannelBuffer - 2);
+
+        // SDLS Processing
+        err = serv_channel.processSDLSSecurityRxTC(0, 0); // frame 1 should pass
+        CHECK(err == NO_SERVICE_EVENT);
+        err = serv_channel.processSDLSSecurityRxTC(0, 0); // frame 2 should be discarded because of wrong mac
+        CHECK(err == SDLS_ERROR);
     }
-
 }

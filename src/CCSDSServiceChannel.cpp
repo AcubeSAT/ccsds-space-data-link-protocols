@@ -845,6 +845,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC() {
         masterChannel.inFramesBeforeAllFramesReceptionListRxTC.pop_front();
         return ServiceChannelNotification::NO_SERVICE_EVENT;
     }
+    frame->setSegmentationHeaderPresent(virtualChannel.segmentHeaderTCPresent);
     virtualChannel.waitQueueRxTC.push_back(frame);
     masterChannel.inFramesBeforeAllFramesReceptionListRxTC.pop_front();
     return ServiceChannelNotification::NO_SERVICE_EVENT;

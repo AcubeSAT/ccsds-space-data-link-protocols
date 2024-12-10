@@ -175,6 +175,10 @@ public:
         return segmentationHeaderPresent;
     }
 
+    void setSegmentationHeaderPresent(bool segHdrPresent) {
+        segmentationHeaderPresent = segHdrPresent;
+    }
+
     /**
      *  Sets the sequence flag, assuming that the segment header exists
      */
