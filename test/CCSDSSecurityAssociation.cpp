@@ -156,11 +156,91 @@ TEST_CASE("Security Association (40 bit HMAC authentication)") {
     SECTION("Unassociated channels") {
         senderSA.resetSequenceNumber();
         receiverSA.resetSequenceNumber();
+
+        // virtual channel with no map channels
+        TransferFrameTC frameTc1 = TransferFrameTC(frameData1, 22, 0, false);
+        verCode = senderSA.applySecurityTC(&frameTc1, transferFrameDataFieldLength, 5, 0);
+        CHECK(verCode == UNASSOCIATED_CHANNEL);
+        verCode = receiverSA.processSecurityTC(&frameTc1, transferFrameDataFieldLength, 5, 0);
+        CHECK(verCode == UNASSOCIATED_CHANNEL);
+
+        // virtual channel with map channels
+        TransferFrameTC frameTc2 = TransferFrameTC(frameData2, 22, 0, true);
+        verCode = senderSA.applySecurityTC(&frameTc2, transferFrameDataFieldLength, 0, 5);
+        CHECK(verCode == UNASSOCIATED_CHANNEL);
+        verCode = receiverSA.processSecurityTC(&frameTc2, transferFrameDataFieldLength, 0, 5);
+        CHECK(verCode == UNASSOCIATED_CHANNEL);
     }
     SECTION("Data Link Integration (TxTC side) ") {
+        ServiceChannelNotification err;
         serv_channel.resetSequenceCountersSA();
+        uint8_t packet1[] = {0x9A, 0x06, 0x00, 0x3, 0xF0};
+        uint8_t packet2[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA};
+
+        // normal operation (generate 3 frames, the first via blocking and the other 2 via sgementation)
+        serv_channel.storePacketTxTC(packet1, sizeof(packet1), 0, 0, ServiceType::TYPE_AD);
+        serv_channel.storePacketTxTC(packet2, sizeof(packet2), 0, 0, ServiceType::TYPE_AD);
+        serv_channel.packetProcessingRequestTxTC(0, 0, transferFrameDataFieldLength, ServiceType::TYPE_AD);
+
+        CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 3);
+        uint8_t *frameData3 = serv_channel.frontFrameBeforeSDLSProcessing(0).second->getFrameData();
+        err = serv_channel.applySDLSSecurityTxTC(0, 0);
+        uint8_t *frameData4 = serv_channel.frontFrameBeforeSDLSProcessing(0).second->getFrameData();
+        err = serv_channel.applySDLSSecurityTxTC(0, 0);
+        uint8_t *frameData5 = serv_channel.frontFrameBeforeSDLSProcessing(0).second->getFrameData();
+        err = serv_channel.applySDLSSecurityTxTC(0, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+
+
+        CHECK(frameData3[TcPrimaryHeaderSize + TcSegmentHeaderSize] ==
+              static_cast<uint8_t>(SecurityParameterIndex >> 8));
+        CHECK(frameData3[TcPrimaryHeaderSize + TcSegmentHeaderSize + 1] ==
+              static_cast<uint8_t>(SecurityParameterIndex));
+        CHECK(frameData3[TcPrimaryHeaderSize + TcSegmentHeaderSize + 5] == 0x01); // seq counter
+        CHECK(frameData3[TcPrimaryHeaderSize + TcSegmentHeaderSize + senderSA.getSecurityHeaderLength()] ==
+              0x9A); // payload start
+        CHECK(frameData3[TcPrimaryHeaderSize + TcSegmentHeaderSize + senderSA.getSecurityHeaderLength() +
+                         sizeof(packet1) - 1] == 0xF0); // payload end
+
+        CHECK(frameData4[TcPrimaryHeaderSize + TcSegmentHeaderSize] ==
+              static_cast<uint8_t>(SecurityParameterIndex >> 8));
+        CHECK(frameData4[TcPrimaryHeaderSize + TcSegmentHeaderSize + 1] ==
+              static_cast<uint8_t>(SecurityParameterIndex));
+        CHECK(frameData4[TcPrimaryHeaderSize + TcSegmentHeaderSize + 5] == 0x02); // seq counter
+        CHECK(frameData4[TcPrimaryHeaderSize + TcSegmentHeaderSize + senderSA.getSecurityHeaderLength()] ==
+              0x11); // payload start
+        CHECK(frameData4[TcPrimaryHeaderSize + TcSegmentHeaderSize + senderSA.getSecurityHeaderLength() + 5 - 1] ==
+              0x55); // payload end
+
+        CHECK(frameData5[TcPrimaryHeaderSize + TcSegmentHeaderSize] ==
+              static_cast<uint8_t>(SecurityParameterIndex >> 8));
+        CHECK(frameData5[TcPrimaryHeaderSize + TcSegmentHeaderSize + 1] ==
+              static_cast<uint8_t>(SecurityParameterIndex));
+        CHECK(frameData5[TcPrimaryHeaderSize + TcSegmentHeaderSize + 5] == 0x03); // seq counter
+        CHECK(frameData5[TcPrimaryHeaderSize + TcSegmentHeaderSize + senderSA.getSecurityHeaderLength()] ==
+              0x66); // payload start
+        CHECK(frameData5[TcPrimaryHeaderSize + TcSegmentHeaderSize + senderSA.getSecurityHeaderLength() + 5 - 1] ==
+              0xAA); // payload end
+
+        // send a type-BC frame (security services not applicable)
+        serv_channel.storePacketTxTC(packet1, sizeof(packet1), 0, 0, ServiceType::TYPE_BC);
+        serv_channel.packetProcessingRequestTxTC(0, 0, transferFrameDataFieldLength, ServiceType::TYPE_BC);
+
+        CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
+        uint8_t *frameData6 = serv_channel.frontFrameBeforeSDLSProcessing(0).second->getFrameData();
+
+        err = serv_channel.applySDLSSecurityTxTC(0, 0);
+        CHECK(err == NO_SERVICE_EVENT);
+        CHECK(serv_channel.availableFramesBeforeSDLSProcessing(0) == MaxReceivedUnprocessedTxTcInVirtBuffer);
+
+        CHECK(frameData6[TcPrimaryHeaderSize] == 0x9A); // payload start
+        CHECK(frameData6[TcPrimaryHeaderSize + sizeof(packet1) - 1] == 0xF0); // payload end
     }
     SECTION("Data Link Integration (RxTC side) ") {
         serv_channel.resetSequenceCountersSA();
+
+
     }
+
 }

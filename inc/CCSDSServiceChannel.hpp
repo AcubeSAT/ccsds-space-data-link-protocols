@@ -174,7 +174,7 @@ public:
     /**
      * Apply security services for TC frames
      */
-    ServiceChannelNotification applySDLSSecurityTC(uint8_t vid, uint8_t mapid);
+    ServiceChannelNotification applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid);
 
     //     - Virtual Channel Generation
     /**
@@ -377,34 +377,23 @@ public:
     /**
      * Processes TC frames that belong in a security association and discards them if they do not pass checks
      */
-    ServiceChannelNotification processSDLSSecurityTC(uint8_t vid, uint8_t mapid);
+    ServiceChannelNotification processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid);
 
-    //     - Virtual Channel Extraction
+    //     - Packet Extraction
     /**
      * The VC Packet Extraction Function shall be used to extract variable-length
-     * Packets from Frame Data Units on a Virtual Channel in case a segmentation header
-     * isn't used.
+     * Packets from Frame Data Units on a Virtual Channel
      * @see 4.4.1 from TC Data Link Protocol
      *
      * @param vid Virtual channel ID
+     * @param mapid MAP channel ID. This parameter is ignored if a segmentation header does not exist for the given virtual channel
+     *              or TYPE_BC packets are asked to be extracted (serviceType = TYPE_BC)
+     * @param serviceType The frames type packets will be extracted from
      * @param packetTarget Provided packetTarget data destination
      *
      * @warning This function assumes that the transfer frame data size is checked and correct
      */
-    ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t* packetTarget);
-
-    //     - MAP Packet Extraction
-/**
-	 * The Packet Extraction Function shall be used to extract variable-length
-	 * Packets from Frame Data Units on a MAP Channel.
-	 * @see 4.4.1 from TC Data Link Protocol
-	 *
-	 * @param vid Virtual channel ID
-	 * @param mapid MAP channel ID
-	 * @param packet Provided packet data destination
-	 */
-    ServiceChannelNotification packetExtractionTC(uint8_t vid, uint8_t mapid, uint8_t* packet);
-
+    ServiceChannelNotification packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetTarget);
 
     // TM TransferFrame - Sending End (TM Tx)
 
@@ -520,6 +509,7 @@ public:
      * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
      * rate to the Channel Coding Sublayer.
      * @see p. 4.2.7 from TM Space Data Link Protocol
+     * @TODO do not forget to have a mechanism for sending frames at an appropriate rate (unless lower layers can handle it by transmitting empty codewords)
      */
     ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget, uint16_t& frameLength);
 

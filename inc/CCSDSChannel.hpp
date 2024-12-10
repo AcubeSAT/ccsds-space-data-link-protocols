@@ -179,9 +179,10 @@ protected:
 	etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
 
     /**
-     * Buffer to hold created frame after SDLS processing
+     * Buffers to hold created frame after SDLS processing
      */
-    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTmInVirtBuffer> framesAfterSDLSProcessingRxTC;
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeADRxTC;
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeBDRxTC;
 };
 
 /**
@@ -408,9 +409,11 @@ private:
     etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesBeforeSDLSProcessingTxTC;
 
     /**
-     * Buffer to hold created frame after SDLS processing
+     * Buffers to hold created frame after SDLS processing
      */
-    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTmInVirtBuffer> framesAfterSDLSProcessingRxTC;
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeADRxTC;
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeBDRxTC;
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeBCRxTC;
 
 	/**
 	 * Holds the FOP state of the virtual channel
