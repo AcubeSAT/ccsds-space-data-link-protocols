@@ -173,6 +173,7 @@ public:
     //    - SDLS Processing
     /**
      * Apply security services for TC frames
+     * @param mapid Is ignored if no MAP channels exist for the given virtual channel
      */
     ServiceChannelNotification applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid);
 
@@ -374,8 +375,10 @@ public:
      */
     ServiceChannelNotification clcwReportTime(uint8_t vid);
 
+    //    - SDLS Processing
     /**
-     * Processes TC frames that belong in a security association and discards them if they do not pass checks
+     * Processes TC frames that belong in a security association and discards them if they do not pass checks.
+     * @param mapid Is ignored if no MAP channels exist for the given virtual channel
      */
     ServiceChannelNotification processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid);
 

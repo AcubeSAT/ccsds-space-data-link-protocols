@@ -63,35 +63,67 @@ enum User {
 */
 class SecurityAssociation {
 private:
+    /**
+     * For a general overview of the managed parameters and SA management procedures,
+     * @see p. 3.4.2.1 & 0. 4.2.2 of Space Data Link Security Protocol
+     */
 
+    /**
+     * A 2 byte id that is placed in the start of the security header and used to associate a transfer
+     * frame with this SA
+     * @see p. 4.1.1.2
+     */
     uint16_t securityParameterIndex;
 
+    /**
+     * A structure that holds virtual channels associated with this SA, as well their MAP channels
+     * @see p. 3.4.2.2.1 & p. 3.4.2.2.2
+     */
     etl::flat_map<uint8_t, etl::array<uint8_t, MaxMapChannels>, MaxVirtualChannels> associatedChannels;
 
+    /**
+     * Defines which of the 3 services is offered by this SA: authentication, enryption, authenticated encryption
+     */
     SecurityAssociationServiceType saServiceType;
 
+    /**
+     * A configuration given by the user upon initializing the SA. For a given configuration:
+     * 1) Needed authentication parameters are initialized in the constructor (eg. for HMAC_40_BIT, parameters related
+     *    to authentication are set up, like the field that holds the MAC being set to 40 bits)
+     * 2) Specific code is executed when calling the applySecurity function
+     * 3) Specific code is executed when calling the processSecurity function
+     *
+     * The NO_SECURITY configuration bypasses all security checks (used for testing other aspects of the data link), and
+     * is the default one.
+     */
     Config saConfig;
+
+    /**
+     * SENDER or RECEIVER.The SENDER is not allowed to use the processSecurity function. Similarly, the RECEIVER is not
+     * allowed to use the applySecurityFunction.
+     */
     User user;
 
     /**
-     * Authentication related parameters. Max lengths (in octets) are defined in table
-     * 6-1 (with the exception of the authentication key)
+     * Authentication related parameters.
      */
     AuthenticationAlgorithm authenticationAlgorithm;
-    uint8_t authenticationKey[MaxAuthenticationKeyLength];
+    uint8_t authenticationKey[MaxAuthenticationKeyLength]; // container for given authentication key
     uint8_t authenticationKeyLength;
 
-    uint8_t mac[MaxMACLength];
+    uint8_t mac[MaxMACLength]; // container for holding calculated mac
     uint8_t macFieldLength;
 
-    uint8_t authMaskTC[MaxTcTransferFrameSize];
+    uint8_t authMaskTC[MaxTcTransferFrameSize]; // mask for choosing which fields will be used in the authentication payload
     uint16_t authMaskTCLength;
 
-    uint64_t sequenceNumberWindow;
-    uint64_t sequenceNumber = 0;
+    uint64_t sequenceNumber = 0;         // Sender SA: number that increases in each consecutive frame sent through this SA (replay attack protection)
+                                         // Receiver SA: accepts frames only if they have a sequence number larger than the stored one
     uint8_t sequenceNumberFieldLength;
+    uint64_t sequenceNumberWindow;      // Largest sequence number accepted by the receiver SA
 
-    uint8_t authenticationPayload[MaxTcTransferFrameSize];
+    uint8_t authenticationPayload[MaxTcTransferFrameSize]; // container for the transfer frame segment that the authentication
+                                                           // algorithm will be applied on
 
     /**
      * Encryption related parameters. Max lengths (in octets) are defined in table
@@ -157,19 +189,42 @@ public:
 
     uint8_t getSecurityTrailerLength() const;
 
+    /**
+     * Return whether a given virtual channel is associated with this SA or not
+     */
     bool isAssociated(uint8_t vid);
 
+    /**
+     * Return whether a given map channel is associated with this SA or not
+     */
     bool isAssociated(uint8_t vid, uint8_t mapid);
 
     void resetSequenceNumber();
 
     /**
-     * IMPORTANT NOTE: the length of the segment header is included in transferFrameDataFieldLength
-     * @TODO add documentation
-     *
+     * Add an authentication code and/or encrypt a transfer frame, for the TC Data Link Protocol (sender side)
+     * For general sending procedures, @see p. 4.2.3 of the Security Data Link Protocol
+     * For TC Data Link implementation details, @see p. 6.4 of TC Space Data LInk Protocol
+     * @param frameTc                       Pointer to transfer frame for the services to be applied. Type_BC frames cannot
+     *                                      use security services
+     * @param transferFrameDataFieldLength  The length of the payload of the frame AND the segment header
+     * @param vid                           Virtual channel of the frame
+     * @param mapid                         MAP channel of the frame. If MAP channels do not exist for the given virtual channel,
+     *                                      this parameter is ignored
      */
     SDLSVerificationStatusCode applySecurityTC(TransferFrameTC* frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
 
+    /**
+     * Apply security checks to a transfer frame (receiver side)
+     * For general sending procedures, @see p. 4.2.4 of the Security Data Link Protocol
+     * For TC Data Link implementation details, @see p. 6.5 of TC Space Data LInk Protocol
+     * @param frameTc                       Pointer to transfer frame for the services to be applied. Type_BC frames cannot
+     *                                      use security services
+     * @param transferFrameDataFieldLength  The length of the payload of the frame AND the segment header
+     * @param vid                           Virtual channel of the frame
+     * @param mapid                         MAP channel of the frame. If MAP channels do not exist for the given virtual channel,
+     *                                      this parameter is ignored
+     */
     SDLSVerificationStatusCode processSecurityTC(TransferFrameTC* frameTc, uint16_t transferFrameDataFieldLength, uint8_t vid, uint8_t mapid);
 
 };
