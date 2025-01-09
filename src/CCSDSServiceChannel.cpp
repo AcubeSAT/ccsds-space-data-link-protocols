@@ -1923,7 +1923,7 @@ void ServiceChannel::transferFrameHelperServiceTC(TransferFrameTC& TransferFrame
     // Data Field
     debugOutput.append("\n- Data Field -\n| ");
     // Technically speaking, the segment header is the first byte of the dataField, if it exists
-    for (uint16_t i = vchan.segmentHeaderTCPresent*TcSegmentHeaderSize; i < transferFrameDataFieldLength - 1; i++){
+    for (uint16_t i = vchan.segmentHeaderTCPresent*TcSegmentHeaderSize + senderSA.getSecurityHeaderLength(); i < transferFrameDataFieldLength - 1; i++){
         debugOutput.append(std::to_string(dataPtr[TcPrimaryHeaderSize + i]).c_str());
         debugOutput.append(" | ");
     }
@@ -1933,8 +1933,11 @@ void ServiceChannel::transferFrameHelperServiceTC(TransferFrameTC& TransferFrame
     // Error Control Field
     debugOutput.append("\n- Error Control Field -\n");
     if (vchan.frameErrorControlFieldPresent){
-        debugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[TcPrimaryHeaderSize + transferFrameDataFieldLength]) << 8) |
-                                          static_cast<uint16_t>(dataPtr[TcPrimaryHeaderSize + transferFrameDataFieldLength + 1])).c_str());
+        debugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[TcPrimaryHeaderSize +
+        transferFrameDataFieldLength +
+        senderSA.getSecurityHeaderLength() + senderSA.getSecurityTrailerLength()]) << 8) |
+        static_cast<uint16_t>(dataPtr[TcPrimaryHeaderSize + transferFrameDataFieldLength +
+        senderSA.getSecurityHeaderLength() + senderSA.getSecurityTrailerLength() +1])).c_str());
     }
     debugOutput.append("\n");
 
