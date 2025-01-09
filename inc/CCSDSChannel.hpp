@@ -469,17 +469,6 @@ private:
     etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
 
     /**
-    * @brief Queue that stores the packets that will eventually be concatenated to TC transfer frame data.
-    * Applicable to Type-BC Frames
-    */
-    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBC;
-    /**
-     * @brief Queue that stores the pointers of the packets that will eventually be concatenated to TC transfer frame data.
-     * Applicable to Type-BC Frames
-     */
-    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBC;
-
-    /**
      * Buffer to store the clcws waiting to be transmited
      */
     etl::list<CLCW, 1> generatedClcwBuffer;

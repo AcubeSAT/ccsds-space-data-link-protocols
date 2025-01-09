@@ -139,11 +139,11 @@ SDLSVerificationStatusCode SecurityAssociation::processSecurityTC(TransferFrameT
         return INVALID_USER;
     }
 
-    // move to service
+
     // ensure the frame type is correct (SDLS cannot be applied to type-BC frames)
-//    if ((frameTc->getServiceType() == ServiceType::TYPE_BC) || (frameTc->getServiceType() == ServiceType::TYPE_RESERVED)) {
-//        return INVALID_FRAME_TYPE;
-//    }
+    if ((frameTc->getServiceType() == ServiceType::TYPE_BC) || (frameTc->getServiceType() == ServiceType::TYPE_RESERVED)) {
+       return INVALID_FRAME_TYPE;
+    }
 
     // ensure the given channel is associated with this sa
     bool associated = false;

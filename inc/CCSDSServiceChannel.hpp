@@ -144,7 +144,7 @@ public:
      * @param vid           Virtual channel id
      * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
      *                      (segmentHeaderTCPresent = false) or if the service type is BC
-     * @param serviceType  Type AD, BC, BD frames
+     * @param serviceType  Type AD, BD frames
      */
     ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
                                                ServiceType serviceType);
