@@ -9,10 +9,8 @@ enum ServiceChannelNotification : int {
 	NO_TX_PACKETS_TO_PROCESS = 0x06,
 	NO_RX_PACKETS_TO_PROCESS = 0x07,
 	PACKET_EXCEEDS_MAX_SIZE = 0x08,
-	FOP_SENT_QUEUE_FULL = 0x09,
 	TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY = 0x0A,
 	TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x0B,
-	FOP_REQUEST_REJECTED = 0x0C,
 	RX_IN_MC_FULL = 0x0D,
 	RX_IN_BUFFER_FULL = 0x0E,
 	RX_OUT_BUFFER_FULL = 0x0F,
@@ -20,12 +18,9 @@ enum ServiceChannelNotification : int {
 	RX_INVALID_SCID = 0x11,
 	RX_INVALID_LENGTH = 0x12,
 	VC_RX_WAIT_QUEUE_FULL = 0x13,
-	TX_FOP_REJECTED = 0x14,
 	VC_MC_FRAME_BUFFER_EMPTY = 0x15,
 	INVALID_VC_ID = 0x16,
 	INVALID_MAP_ID = 0x17,
-	VC_RECEPTION_BUFFER_AFTER_FARM_FULL = 0x18,
-	NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM = 0x19,
 	RX_INVALID_CRC = 0x1A,
 	INVALID_SERVICE_CALL = 0x1B,
 	PACKET_BUFFER_EMPTY = 0x1C,
@@ -36,17 +31,9 @@ enum ServiceChannelNotification : int {
     SDLS_ERROR = 0X21
 };
 
-enum SynchronizationFlag : bool { OCTET_SYNCHRONIZED_FORWARD_ORDERED = 0, VCA_SDU = 1 };
-
-enum FOPNotification : uint8_t {
-	NO_FOP_EVENT = 0x01,
-	SENT_QUEUE_FULL = 0x02,
-	WAIT_QUEUE_EMPTY = 0x03,
-};
-
-enum COPDirectiveResponse : uint8_t {
-	ACCEPT = 0x01,
-	REJECT = 0x02,
+enum SynchronizationFlag : bool {
+    OCTET_SYNCHRONIZED_FORWARD_ORDERED = false,
+    VCA_SDU = true
 };
 
 enum VirtualChannelAlert : uint8_t {
@@ -82,8 +69,6 @@ enum NotificationType : uint8_t {
 	TypeVirtualChannelAlert = 0x00,
 	TypeMasterChannelAlert = 0x01,
 	TypeServiceChannelNotif = 0x02,
-	TypeCOPDirectiveResponse = 0x03,
-	TypeFOPNotif = 0x04,
 	TypeFDURequestType = 0x05,
     TypeSDLSVerificationStatusCode = 0x06
 };

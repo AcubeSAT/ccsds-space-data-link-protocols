@@ -20,13 +20,11 @@ enum class ServiceType {
 	TYPE_BC = 0x3,
 };
 
-enum FDURequestType : uint8_t {
-	REQUEST_PENDING = 0,
-	REQUEST_POSITIVE_CONFIRM = 1,
-	REQUEST_NEGATIVE_CONFIRM = 2,
+enum SequenceFlags { SegmentationMiddle = 0x0,
+        SegmentationStart = 0x1,
+        SegmentationEnd = 0x2,
+        NoSegmentation = 0x3
 };
-
-enum SequenceFlags { SegmentationMiddle = 0x0, SegmentationStart = 0x1, SegmentationEnd = 0x2, NoSegmentation = 0x3 };
 
 struct TransferFrameHeaderTC : public TransferFrameHeader {
 public:
@@ -195,21 +193,6 @@ public:
         return 0;
     }
 
-
-    /** AUXILIARY VARIABLES **/
-
-    void setConfSignal(FDURequestType reqSignal) {
-        confSignal = reqSignal;
-        // TODO Maybe signal the higher procedures here instead of having them manually take care of them
-    }
-
-    /**
-     * Set the number of repetitions that is determined by the virtual channel
-     */
-    void setRepetitions(const uint8_t repetitions) {
-        reps = repetitions;
-    }
-
     /**
      * Determines whether the transfer frame is marked for retransmission while in the sent queue
      */
@@ -221,53 +204,10 @@ public:
         toBeRetransmitted = f;
     }
 
-    bool acknowledged() const {
-		return ack;
-	}
-
-	/**
-	 * @see p. 2.4.2 from TC SPACE DATA LINK PROTOCOL
-	 */
-	uint8_t repetitions() const {
-		return reps;
-	}
-
-	void setAcknowledgement(bool acknowledgement) {
-		ack = acknowledgement;
-	}
-
-	/**
-	 * Indicates that the frame has been passed to the physical layer and supposedly transmitted
-	 */
-	void setToTransmitted() {
-		transmit = true;
-	}
-
-	/**
-	 * Indicates whether transfer frame has been transmitted
-	 */
-	bool isTransmitted() {
-		return transmit;
-	}
-
-	/**
-	 * Indicates that the frame has gone through the FOP checks
-	 */
-	void setToProcessedByFOP() {
-		processedByFOP = true;
-	}
-
-	/**
-	 * Indicates whether the frame has gone through the FOP checks
-	 */
-	bool getProcessedByFOP() {
-		return processedByFOP;
-	}
-
 	TransferFrameTC(uint8_t *frameData, ServiceType serviceType, uint8_t vid, uint16_t frameLength, bool segHdrPresent,
                     uint8_t sequenceFlag = 0x3, uint8_t mapId = 0, uint16_t firstEmptyOctet = 0, FrameType t = TC)
-	    : TransferFrame(t, frameLength, frameData, firstEmptyOctet), hdr(frameData), serviceType(serviceType), ack(false),
-          toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transmit(false), processedByFOP(false) {
+	    : TransferFrame(t, frameLength, frameData, firstEmptyOctet), hdr(frameData), serviceType(serviceType),
+          toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
 		uint8_t bypassFlag = ((serviceType == ServiceType::TYPE_AD) || (serviceType == ServiceType::TYPE_RESERVED)) ? 0 : 1;
 		uint8_t ctrlCmdFlag = ((serviceType == ServiceType::TYPE_BC) || (serviceType == ServiceType::TYPE_RESERVED)) ? 1 : 0;
         frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6) | (bypassFlag << 5) | (ctrlCmdFlag << 4) | 0 | static_cast<uint8_t>((SpacecraftIdentifier & 0x300) >> 8);
@@ -281,18 +221,12 @@ public:
 	}
 
 	TransferFrameTC(uint8_t* frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0, bool segHdrPresent = false)
-	    : TransferFrame(FrameType::TC, frameLength, frameData, firstEmptyOctet), hdr(frameData), transmit(false),
+	    : TransferFrame(FrameType::TC, frameLength, frameData, firstEmptyOctet), hdr(frameData),
         segmentationHeaderPresent(segHdrPresent) {};
 
 private:
 	bool toBeRetransmitted;
-	// This is used by COP to signal the higher procedures
-	FDURequestType confSignal;
 	TransferFrameHeaderTC hdr;
 	ServiceType serviceType;
 	bool segmentationHeaderPresent;
-	bool ack;
-	bool transmit;
-	bool processedByFOP;
-	uint8_t reps;
 };

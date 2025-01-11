@@ -18,9 +18,8 @@ std::ostream& operator<<(std::ostream& out, const NotificationType value) {
 		INSERT_ELEMENT(TypeVirtualChannelAlert);
 		INSERT_ELEMENT(TypeMasterChannelAlert);
 		INSERT_ELEMENT(TypeServiceChannelNotif);
-		INSERT_ELEMENT(TypeCOPDirectiveResponse);
-		INSERT_ELEMENT(TypeFOPNotif);
 		INSERT_ELEMENT(TypeFDURequestType);
+        INSERT_ELEMENT(TypeSDLSVerificationStatusCode);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];

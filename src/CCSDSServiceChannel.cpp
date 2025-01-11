@@ -670,7 +670,7 @@ uint16_t ServiceChannel::t1Timer(uint8_t vid) const {
 }
 
 uint8_t ServiceChannel::fopSlidingWindowWidth(uint8_t vid) const {
-    return masterChannel.virtualChannels.at(vid).fop.fopSlidingWindow;
+    return masterChannel.virtualChannels.at(vid).fop.fopSlidingWindowWidth;
 }
 
 bool ServiceChannel::timeoutType(uint8_t vid) const {

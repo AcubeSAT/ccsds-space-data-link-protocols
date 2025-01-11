@@ -53,7 +53,7 @@ inline constexpr uint16_t MCID = SpacecraftIdentifier;
 inline constexpr uint8_t MaxReceivedTcInMapChannel = 5;
 inline constexpr uint8_t MaxReceivedTmInMapChannel = 5;
 
-inline constexpr uint8_t MaxReceivedTxTcInWaitQueue = 10; ///> Maximum received TX TCs in wait queue (before COP checks).
+inline constexpr uint8_t MaxReceivedTxTcInWaitQueue = 1; ///> Maximum received TX TCs in wait queue (before COP checks).
 inline constexpr uint8_t MaxReceivedRxTcInWaitQueue = 10; ///> Maximum received RX TCs in wait queue (before COP checks).
 
 inline constexpr uint8_t MaxReceivedTxTcInFOPSentQueue =
@@ -115,6 +115,10 @@ inline constexpr uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
 
 inline constexpr uint8_t FopSlidingWindowInitial = 255;
 inline constexpr uint8_t FopTimerInitial = 60; // sec
+inline constexpr uint8_t DirectiveRequestSignalQueueSize = 10;
+inline constexpr uint8_t TransferfduSignalQueueSize = 10;
+inline constexpr uint8_t FopTransmitRequestResponseSignalQueueSize = 10;
+inline constexpr uint8_t clcwQueueSize = 5;
 
 inline constexpr uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 inline constexpr uint16_t MaxAllocatedPackets = 50;
