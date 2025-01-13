@@ -589,7 +589,7 @@ void ServiceChannel::acknowledgeFrame(uint8_t vid, uint8_t frameSeqNumber) {
 
 void ServiceChannel::clearAcknowledgedFrames(uint8_t vid) {
     VirtualChannel* virtualChannel = &(masterChannel.virtualChannels.at(vid));
-    virtualChannel->fop.removeAcknowledgedFrames();
+    virtualChannel->fop.removeAcknowledgedFramesFromSentQueue();
 }
 
 void ServiceChannel::initiateAdNoClcw(uint8_t vid) {

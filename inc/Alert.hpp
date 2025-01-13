@@ -63,6 +63,20 @@ enum SDLSVerificationStatusCode {
     PADDING_ERROR = 0x09
 };
 
+enum FOPNotification {
+    NO_FOP_EVENT = 0x01,
+    SENT_QUEUE_FULL = 0x02,
+    SENT_QUEUE_EMPTY = 0x03,
+    WAIT_QUEUE_FULL = 0x04,
+    WAIT_QUEUE_EMPTY = 0x05,
+    SIGNAL_QUEUE_FULL = 0x06,
+    SIGNAL_QUEUE_EMPTY  = 0x07,
+    FOP_MEMORY_POOL_FULL = 0x08,
+    FOP_MASTER_COPY_BUFFER_FULL = 0x09,
+    NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT = 0x0A,
+    FOP_UNEXPECTED_VALUE = 0x0B,
+};
+
 enum TxRx : uint8_t { Rx = 0x00, Tx = 0x01 };
 
 enum NotificationType : uint8_t {
@@ -70,5 +84,6 @@ enum NotificationType : uint8_t {
 	TypeMasterChannelAlert = 0x01,
 	TypeServiceChannelNotif = 0x02,
 	TypeFDURequestType = 0x05,
-    TypeSDLSVerificationStatusCode = 0x06
+    TypeSDLSVerificationStatusCode = 0x06,
+    TypeFOPNotif = 0x07
 };

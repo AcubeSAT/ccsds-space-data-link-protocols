@@ -1,180 +1,393 @@
 #include <FrameOperationProcedure.hpp>
 #include <CCSDSChannel.hpp>
 #include "CCSDSLoggerImpl.h"
-FOPNotification FrameOperationProcedure::purgeSentQueue() {
-	etl::ilist<TransferFrameTC*>::iterator cur_frame = sentQueueFOP->begin();
 
-	while (cur_frame != sentQueueFOP->end()) {
-		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
-		sentQueueFOP->erase(cur_frame++);
+/** FOP-1 actions **/
+FOPNotification FrameOperationProcedure::purgeSentQueue() {
+	etl::ilist<TransferFrameTC*>::iterator sent_queue_it = sentQueueFOP.begin();
+    etl::ilist<TransferFrameTC>::iterator master_copy_it;
+
+    if (sent_queue_it == sentQueueFOP.end()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_EMPTY);
+        return SENT_QUEUE_EMPTY;
+    };
+
+
+	while (sent_queue_it != sentQueueFOP.end()) {
+		if ((*sent_queue_it)->getServiceType() == ServiceType::TYPE_AD && !transferNotificationSignalQueue.full()) {
+            transferNotificationSignalQueue.push(TransferNotificationSignal((*sent_queue_it)->getTransferRequestId(),
+                                                                            NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU));
+        }
+
+        if ((*sent_queue_it)->getServiceType() == ServiceType::TYPE_BC && !directiveNotificationSignalQueue.full()) {
+            directiveNotificationSignalQueue.push(DirectiveNotificationSignal((*sent_queue_it)->getTransferRequestId(),
+                                                                              NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+        }
+
+
+        // delete frame octets
+		memoryPool.deletePacket((*sent_queue_it)->getFrameData(), (*sent_queue_it)->getFrameLength());
+
+        // delete frame master copy
+        for (master_copy_it = frameMasterCopyBuffer.begin(); master_copy_it != frameMasterCopyBuffer.end(); ++master_copy_it) {
+            if (&(*master_copy_it) == *sent_queue_it) {
+                frameMasterCopyBuffer.erase(master_copy_it);
+                break;
+            }
+        }
+
+        // remove from sent queue
+        sentQueueFOP.erase(sent_queue_it++);
 	}
+
 	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
-	return FOPNotification::NO_FOP_EVENT;
+	return NO_FOP_EVENT;
 }
 
 FOPNotification FrameOperationProcedure::purgeWaitQueue() {
-	etl::ilist<TransferFrameTC*>::iterator cur_frame = waitQueueFOP->begin();
 
-	while (cur_frame != waitQueueFOP->end()) {
-		(*cur_frame)->setConfSignal(FDURequestType::REQUEST_NEGATIVE_CONFIRM);
-		waitQueueFOP->erase(cur_frame++);
-	}
-	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
-	return FOPNotification::NO_FOP_EVENT;
+    if (waitQueueFOP.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
+        return WAIT_QUEUE_EMPTY;
+    };
+
+    if (transferNotificationSignalQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return SIGNAL_QUEUE_FULL;
+    }
+
+    etl::ilist<TransferFrameTC*>::iterator wait_queue_it = waitQueueFOP.begin();
+    uint8_t requestIdentifier = (*wait_queue_it)->getTransferRequestId();
+
+    // delete frame octets
+    memoryPool.deletePacket((*wait_queue_it)->getFrameData(), (*wait_queue_it)->getFrameLength());
+
+    // delete frame master copy
+    etl::ilist<TransferFrameTC>::iterator master_copy_it;
+    for (master_copy_it = frameMasterCopyBuffer.begin(); master_copy_it != frameMasterCopyBuffer.end(); ++master_copy_it) {
+        if (&master_copy_it == *wait_queue_it) {
+            frameMasterCopyBuffer.erase(master_copy_it);
+            break;
+        }
+    }
+
+    // remove pointer from sent queue
+    sentQueueFOP.erase(wait_queue_it++);
+
+    transferNotificationSignalQueue.push(TransferNotificationSignal(requestIdentifier, NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU));
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitAdFrame() {
-	if (sentQueueFOP->full()) {
+// TODO ensure fop does not break in case the sent/wait/signal queues are full. this is true for the other 2 transmit functions as well
+FOPNotification FrameOperationProcedure::transmitAdFrame(const DfuTransferSignal& dfuTransferSignal) {
+	if (sentQueueFOP.full()) {
 		ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
 		return FOPNotification::SENT_QUEUE_FULL;
 	}
 
-	if (sentQueueFOP->empty()) {
-		transmissionCount = 1;
-	}
+    if (waitQueueFOP.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
+        return FOPNotification::WAIT_QUEUE_EMPTY;
+    }
 
-	TransferFrameTC* adFrame = waitQueueFOP->front();
-	if (waitQueueFOP->empty()) {
-		ccsdsLogNotice(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
-		return FOPNotification::WAIT_QUEUE_EMPTY;
-	}
+    if (dfuTransferSignal.serviceType != ServiceType::TYPE_AD) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
+        return FOPNotification::FOP_UNEXPECTED_VALUE;
+    }
 
-	adFrame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
-	if(!adFrame->isToBeRetransmitted()){
-		transmitterFrameSeqNumber++;;
-	}
+    TransferFrameTC* adFrame = waitQueueFOP.front();
+    waitQueueFOP.pop_front();
+
+    adFrame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
+    if(!adFrame->isToBeRetransmitted()) {
+        transmitterFrameSeqNumber = (transmitterFrameSeqNumber == 255) ? 0 : (transmitterFrameSeqNumber + 1);
+    }
+
 	adFrame->setToBeRetransmitted(false);
-	adFrame->setToProcessedByFOP();
+    adFrame->setTransferRequestId(dfuTransferSignal.requestIdentifier);
+	sentQueueFOP.push_back(adFrame);
 
-	sentQueueFOP->push_back(adFrame);
-	adOut = false;
+    if (sentQueueFOP.empty()) {
+        transmissionCount = 1;
+    }
 
 	// TODO start the timer
-	// pass the frame into the all frames generation service
-	vchan->master_channel().storeOut(adFrame);
-	waitQueueFOP->pop_front();
-	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+
+    adOut = NOT_READY;
+    fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_AD, adFrame));
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitBcFrame(TransferFrameTC* bc_frame) {
-	bc_frame->setToBeRetransmitted(0);
+FOPNotification FrameOperationProcedure::transmitBcFrame(const DirectiveRequestSignal& directiveSignal) {
+    if (directiveSignal.directiveType != INITIATE_AD_SERVICE_WITH_UNLOCK &&
+        directiveSignal.directiveType != INITIATE_AD_SERVICE_WITH_SET_VR) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
+        return FOPNotification::FOP_UNEXPECTED_VALUE;
+    }
+
+    if (!directiveSignal.directiveQualifier) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
+        return FOPNotification::FOP_UNEXPECTED_VALUE;
+    }
+
+    if (!directiveSignal.requestIdentifier) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
+        return FOPNotification::FOP_UNEXPECTED_VALUE;
+    }
+
+    if (sentQueueFOP.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
+        return FOPNotification::SENT_QUEUE_FULL;
+    }
+
+    if (fopToLowerLayerRequestSignalQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return FOPNotification::SIGNAL_QUEUE_FULL;
+    }
+
+    // bc frames do not have a segmentation header, security header or security trailer
+    uint8_t dataFieldSize = (directiveSignal.directiveType == INITIATE_AD_SERVICE_WITH_UNLOCK) ? UnlockCommandSize : SetVrCommandSize;
+    uint8_t bcFrameLen = TcPrimaryHeaderSize + dataFieldSize + vchan->frameErrorControlFieldPresent * ErrorControlFieldSize;
+
+    if (memoryPool.findFit(bcFrameLen).second != NO_MC_ALERT) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_MEMORY_POOL_FULL);
+        return FOP_MEMORY_POOL_FULL;
+    }
+
+    if (frameMasterCopyBuffer.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_MASTER_COPY_BUFFER_FULL);
+        return FOP_MASTER_COPY_BUFFER_FULL;
+    }
+
+    static uint8_t tmpData[TcPrimaryHeaderSize + SetVrCommandSize + ErrorControlFieldSize];
+
+    if (directiveSignal.directiveType == INITIATE_AD_SERVICE_WITH_UNLOCK) {
+        tmpData[TcPrimaryHeaderSize] = UnlockCommand;
+    }
+    else {
+        tmpData[TcPrimaryHeaderSize] = SetVrCommandOctet1;
+        tmpData[TcPrimaryHeaderSize + 1] = SetVrCommandOctet2;
+        tmpData[TcPrimaryHeaderSize + 2] = static_cast<uint8_t>(directiveSignal.directiveQualifier.value());
+    }
+
+    // place octets in the memory pool
+    uint8_t* data = memoryPool.allocatePacket(tmpData, bcFrameLen);
+
+    TransferFrameTC bcFrame = TransferFrameTC(data,
+                                              ServiceType::TYPE_BC,
+                                              vchan->VCID,
+                                              bcFrameLen,
+                                              false);
+    bcFrame.setToBeRetransmitted(false);
+    bcFrame.setTransferFrameSequenceNumber(0); /// @see p. 4.2.1.8 of TC Data Link
+    bcFrame.setTransferRequestId(directiveSignal.requestIdentifier);
+
+    // store master copy
+    frameMasterCopyBuffer.push_back(bcFrame);
+
+    // store to sent queue
+    TransferFrameTC* bcFramePtr = &bcFrame;
+    sentQueueFOP.push_back(bcFramePtr);
+
 	transmissionCount = 1;
 
 	// TODO start the timer
-	vchan->master_channel().storeOut(bc_frame);
+
+    bcOut = NOT_READY;
+
+    fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_BC, bcFramePtr));
 	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitBdFrame(TransferFrameTC* bd_frame) {
-	bdOut = NOT_READY;
-	// Pass frame to all frames generation service
-	vchan->master_channel().storeOut(bd_frame);
+FOPNotification FrameOperationProcedure::transmitBdFrame(const DfuTransferSignal& dfuTransferSignal) {
+	if (dfuTransferSignal.serviceType != ServiceType::TYPE_BD) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
+        return FOPNotification::FOP_UNEXPECTED_VALUE;
+    }
+
+    if (fopToLowerLayerRequestSignalQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return FOPNotification::SIGNAL_QUEUE_FULL;
+    }
+
+    bdOut = NOT_READY;
+    dfuTransferSignal.frame->setTransferFrameSequenceNumber(0);  /// @see p. 4.2.1.8 of TC Data Link
+    dfuTransferSignal.frame->setTransferRequestId(dfuTransferSignal.requestIdentifier);
+
+    fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_BD, dfuTransferSignal.frame));
 	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-void FrameOperationProcedure::initiateAdRetransmission() {
-	// TODO generate an `abort` request to lower procedures
+FOPNotification FrameOperationProcedure::initiateRetransmission(ServiceType serviceType) {
+    if ((serviceType != ServiceType::TYPE_AD) && (serviceType != ServiceType::TYPE_BC)) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
+        return FOPNotification::FOP_UNEXPECTED_VALUE;
+    }
+
+    if (sentQueueFOP.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_EMPTY);
+        return FOPNotification::SENT_QUEUE_EMPTY;
+    }
+
+    if (fopToLowerLayerRequestSignalQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return FOPNotification::SIGNAL_QUEUE_FULL;
+    }
+
+	fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_ABORT, serviceType));
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
 	// TODO start the timer
 
-	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->getServiceType() == ServiceType::TYPE_AD) {
+	for (TransferFrameTC* frame : sentQueueFOP) {
+		if (frame->getServiceType() == serviceType) {
 			frame->setToBeRetransmitted(true);
 		}
 	}
+
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
 }
 
-void FrameOperationProcedure::initiateBcRetransmission() {
-	// TODO generate an `abort` request to lower procedures
-	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
-	// TODO start the timer
+FOPNotification FrameOperationProcedure::removeAcknowledgedFramesFromSentQueue(uint8_t reportValue) {
+    if (frameMasterCopyBuffer.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, FOP_MASTER_COPY_BUFFER_FULL);
+        return FOPNotification::FOP_MASTER_COPY_BUFFER_FULL;
+    }
 
-	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if ((frame->getServiceType() == ServiceType::TYPE_BC) || (frame->getServiceType() == ServiceType::TYPE_BD)) {
-			frame->setToBeRetransmitted(1);
-		}
-	}
-}
+    if (sentQueueFOP.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_EMPTY);
+        return FOPNotification::SENT_QUEUE_EMPTY;
+    }
 
-void FrameOperationProcedure::acknowledgeFrame(uint8_t frameSeqNumber) {
-	for (TransferFrameTC* frame : *sentQueueFOP) {
-		if (frame->getTransferFrameSequenceNumber() == frameSeqNumber) {
-			frame->setAcknowledgement(true);
-		}
-	}
-}
+	etl::ilist<TransferFrameTC*>::iterator sent_queue_it = sentQueueFOP.begin();
+    etl::ilist<TransferFrameTC>::iterator master_copy_it;
+    TransferFrameTC* adFrame;
+    while (sent_queue_it != sentQueueFOP.end()) {
+        adFrame = *sent_queue_it;
+        if ((adFrame->getServiceType() == ServiceType::TYPE_AD) && (adFrame->getTransferFrameSequenceNumber() <= reportValue)) {
+            // message higher layers about the successful reception
+            if (!transferNotificationSignalQueue.full()) {
+                transferNotificationSignalQueue.push(TransferNotificationSignal(adFrame->getTransferRequestId(),
+                                                                                POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU));
+            }
 
-void FrameOperationProcedure::removeAcknowledgedFrames() {
-	etl::ilist<TransferFrameTC>::iterator cur_frame = vchan->master_channel().masterCopyTxTC.begin();
+            // delete octets
+            memoryPool.deletePacket(adFrame->getFrameData(), adFrame->getFrameLength());
 
-	while (cur_frame != vchan->master_channel().masterCopyTxTC.end()) {
-		if ((*cur_frame).acknowledged()) {
-            vchan->master_channel().masterChannelPoolTC.deletePacket(cur_frame->getFrameData(), cur_frame->getFrameLength());
-			vchan->master_channel().masterCopyTxTC.erase(cur_frame++);
-		} else {
-			++cur_frame;
-		}
-	}
-
-	transmissionCount = 1;
-}
-
-void FrameOperationProcedure::lookForDirective() {
-	if (bcOut == FlagState::READY) {
-		for (TransferFrameTC* frame : *sentQueueFOP) {
-			if (((frame->getServiceType() == ServiceType::TYPE_BC) ||
-			     (frame->getServiceType() == ServiceType::TYPE_BD)) &&
-			    frame->isToBeRetransmitted()) {
-				bcOut = FlagState::NOT_READY;
-				frame->setToBeRetransmitted(0);
-			}
-			// transmit_bc_frame();
-		}
-	} else {
-		// @TODO? call look_for_fdu once bcOut is set to ready
-	}
-}
-
-COPDirectiveResponse FrameOperationProcedure::lookForFdu() {
-    // If Ad Out Flag isn't set to ready, the process shall be aborted
-    if (adOut == FlagState::READY) {
-        // Check if some transmitted transfer frame is set to be retransmitted
-        for(TransferFrameTC* frame : *sentQueueFOP){
-            if ((frame->getServiceType() == ServiceType::TYPE_AD)) {
-                if (frame->isToBeRetransmitted()) {
-                    adOut = FlagState::NOT_READY;
-                    waitQueueFOP->push_front(frame);
-                    transmitAdFrame();
-                    return COPDirectiveResponse::ACCEPT;
+            // delete master copy
+            for (master_copy_it = frameMasterCopyBuffer.begin(); master_copy_it != frameMasterCopyBuffer.end(); ++master_copy_it) {
+                if (&(*master_copy_it) == *sent_queue_it) {
+                    frameMasterCopyBuffer.erase(master_copy_it);
+                    break;
                 }
             }
+
+            // delete pointer from the sent queue
+            sent_queue_it = sentQueueFOP.erase(sent_queue_it); // erase() returns the iterator to the next element
+            continue;
+        }
+        sent_queue_it++; // This frame was either not TYPE_AD or not acknowledged, move to the next one.
+    }
+
+    expectedAcknowledgementSeqNumber = reportValue;
+	transmissionCount = 1;
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
+}
+
+FOPNotification FrameOperationProcedure::lookForDirective() {
+    if (bcOut == FlagState::NOT_READY) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+        return FOPNotification::NO_FOP_EVENT;
+    }
+
+    if (sentQueueFOP.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_EMPTY);
+        return FOPNotification::SENT_QUEUE_EMPTY;
+    }
+
+    etl::ilist<TransferFrameTC*>::iterator sent_queue_it = sentQueueFOP.begin();
+    while (sent_queue_it != sentQueueFOP.end()) {
+        if (((*sent_queue_it)->getServiceType() == ServiceType::TYPE_BC) && ((*sent_queue_it)->isToBeRetransmitted())) {
+           if (!fopToLowerLayerRequestSignalQueue.full()) {
+               fopToLowerLayerRequestSignalQueue.push(
+                       FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_BC, *sent_queue_it));
+           }
+
+            // NOTE: Resting the retransmission flag to false is not included in the protocol, but the corresponding action
+            // for TYPE-AD frames does (see lookForFdu()), so it might have been an omission.
+            (*sent_queue_it)->setToBeRetransmitted(false);
+            bcOut = FlagState::NOT_READY;
+            break;
         }
     }
 
-    // Check if there is an AD frame in the wait queue such as V(S) < NN(R) + K
-    if (waitQueueFOP->empty()) {
-        return COPDirectiveResponse::REJECT;
-    }
-    TransferFrameTC* frame = waitQueueFOP->front();
-    if ((frame->getServiceType() == ServiceType::TYPE_AD) &&
-        (frame->getTransferFrameSequenceNumber() < expectedAcknowledgementSeqNumber + fopSlidingWindowWidth)) {
-        transmitAdFrame();
-        ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-        return COPDirectiveResponse::ACCEPT;
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
+}
+
+FOPNotification FrameOperationProcedure::lookForFdu(const DfuTransferSignal& dfuTransferSignal) {
+    if (adOut == FlagState::NOT_READY) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+        return FOPNotification::NO_FOP_EVENT;
     }
 
-    ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-    return COPDirectiveResponse::REJECT;
+    if (sentQueueFOP.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_EMPTY);
+        return FOPNotification::SENT_QUEUE_EMPTY;
+    }
+
+    // Check if there are TYPE-AD marked 'toBeRetransmitted'. If so, retransmit the first one
+    etl::ilist<TransferFrameTC*>::iterator sent_queue_it = sentQueueFOP.begin();
+    while (sent_queue_it != sentQueueFOP.end()) {
+        if (((*sent_queue_it)->getServiceType() == ServiceType::TYPE_AD) && ((*sent_queue_it)->isToBeRetransmitted())) {
+            if (!fopToLowerLayerRequestSignalQueue.full()) {
+                fopToLowerLayerRequestSignalQueue.push(
+                        FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_AD, *sent_queue_it));
+            }
+
+            (*sent_queue_it)->setToBeRetransmitted(false);
+            adOut = FlagState::NOT_READY;
+
+            ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+            return FOPNotification::NO_FOP_EVENT;
+        }
+    }
+
+    // No TYPE-AD frame is marked 'toBeRetransmitted'. See if the wait queue has a TYPE-AD frame
+    // such that V(S) < NN(R) + K, and transmit it
+    if (waitQueueFOP.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+        return FOPNotification::NO_FOP_EVENT;
+    }
+
+    if (waitQueueFOP.front()->getServiceType() == ServiceType::TYPE_AD &&
+    transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindowWidth) {
+        FOPNotification notification = transmitAdFrame(dfuTransferSignal);
+        if (notification == NO_FOP_EVENT) {
+
+        }
+    }
+
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
 }
 
 void FrameOperationProcedure::initialize() {
     purgeSentQueue();
     purgeWaitQueue();
+
+    directiveNotificationSignalQueue.clear();
+    transferFduSignalQueue.clear();
+    lowerLayerResponseSignalQueue.clear();
+    clcwQueue.clear();
+
     transmissionCount = 1;
-    suspendState = FOPState::INITIAL;
+    suspendState = SuspendVariableState::NOT_SUSPENDED;
 }
 
 void FrameOperationProcedure::alert(AlertEvent event) {
@@ -182,7 +395,131 @@ void FrameOperationProcedure::alert(AlertEvent event) {
     purgeSentQueue();
     purgeWaitQueue();
     // TODO: Generate a ‘Negative Confirm Response to Directive’ for any ongoing 'Initiate AD Service' request
-    // TODO: Generate Alert notification (also the reason for the alert needs to be passed here)
+    // TODO: should all signal queues be cleared here
+    asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, event));
+}
+
+void FrameOperationProcedure::resume() {
+    // TODO start the timer
+    suspendState = SuspendVariableState::NOT_SUSPENDED;
+}
+
+/** Implementation specific FOP-1 methods (for usage inside vcGeneration service)**/
+
+std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable() {
+    // clear output signal queues
+    directiveNotificationSignalQueue.clear();
+    transferNotificationSignalQueue.clear();
+    asynchronousNotificationSignalQueue.clear();
+    fopToLowerLayerRequestSignalQueue.clear();
+
+    // detect event
+    // uint8_t eventCode = detectEvent()
+
+    // perform the necessary actions for that event
+    // switch(eventCode)
+
+    // return std::make_pair(fopNotif, eventCode);
+}
+
+FOPNotification FrameOperationProcedure::pushTransferFduSignal(DfuTransferSignal signal) {
+    if (transferFduSignalQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return FOPNotification::SIGNAL_QUEUE_FULL;
+    }
+
+    transferFduSignalQueue.push(signal);
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
+}
+
+FOPNotification FrameOperationProcedure::pushLowerLayerResponseSignal(LowerLayerResponseSignal signal) {
+    if (lowerLayerResponseSignalQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return FOPNotification::SIGNAL_QUEUE_FULL;
+    }
+
+    lowerLayerResponseSignalQueue.push(signal);
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
+}
+
+std::pair<FOPNotification, etl::optional<TransferNotificationSignal>> FrameOperationProcedure::popTransferNotificationSignal() {
+    if (transferNotificationSignalQueue.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_EMPTY);
+        return std::make_pair(FOPNotification::SIGNAL_QUEUE_EMPTY, etl::nullopt);
+    }
+
+    TransferNotificationSignal signal = transferNotificationSignalQueue.front();
+    transferNotificationSignalQueue.pop();
+
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return std::make_pair(NO_FOP_EVENT, signal);
+}
+
+std::pair<FOPNotification, etl::optional<FopToLowerLayerRequestSignal>> FrameOperationProcedure::popFopToLowerLayerRequestSignal() {
+    if (fopToLowerLayerRequestSignalQueue.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_EMPTY);
+        return std::make_pair(FOPNotification::SIGNAL_QUEUE_EMPTY, etl::nullopt);
+    }
+
+    FopToLowerLayerRequestSignal signal = fopToLowerLayerRequestSignalQueue.front();
+    fopToLowerLayerRequestSignalQueue.pop();
+
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return std::make_pair(NO_FOP_EVENT, signal);
+}
+
+/** Implementation specific FOP-1 methods (for the the TC Data Link User). Wrapper functions are provided
+  * in ServiceChannel
+  */
+
+FOPNotification FrameOperationProcedure::pushDirectiveRequestSignal(const DirectiveRequestSignal& signal) {
+    if (directiveRequestSignalQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return FOPNotification::SIGNAL_QUEUE_FULL;
+    }
+
+    directiveRequestSignalQueue.push(signal);
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
+}
+
+FOPNotification FrameOperationProcedure::pushClcw(CLCW clcw) {
+    if (clcwQueue.full()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
+        return FOPNotification::SIGNAL_QUEUE_FULL;
+    }
+
+    clcwQueue.push(clcw);
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return FOPNotification::NO_FOP_EVENT;
+}
+
+std::pair<FOPNotification, etl::optional<DirectiveNotificationSignal>> FrameOperationProcedure::popDirectiveNotificationSignal() {
+    if (directiveNotificationSignalQueue.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_EMPTY);
+        return std::make_pair(FOPNotification::SIGNAL_QUEUE_EMPTY, etl::nullopt);
+    }
+
+    DirectiveNotificationSignal signal = directiveNotificationSignalQueue.front();
+    directiveNotificationSignalQueue.pop();
+
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return std::make_pair(NO_FOP_EVENT, signal);
+}
+
+std::pair<FOPNotification, etl::optional<AsynchronousNotificationSignal>> FrameOperationProcedure::popAsynchronousNotificationSignal() {
+    if (asynchronousNotificationSignalQueue.empty()) {
+        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_EMPTY);
+        return std::make_pair(FOPNotification::SIGNAL_QUEUE_EMPTY, etl::nullopt);
+    }
+
+    AsynchronousNotificationSignal signal = asynchronousNotificationSignalQueue.front();
+    asynchronousNotificationSignalQueue.pop();
+
+    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
+    return std::make_pair(NO_FOP_EVENT, signal);
 }
 
 
@@ -246,7 +583,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 //							case FOPState::ACTIVE:
 //							case FOPState::RETRANSMIT_WITHOUT_WAIT:
 //							case FOPState::RETRANSMIT_WITH_WAIT:
-//								removeAcknowledgedFrames();
+//								removeAcknowledgedFramesFromSentQueue();
 //								// cancel timer
 //								lookForFdu();
 //								state = FOPState::ACTIVE;
@@ -312,7 +649,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 //							case FOPState::ACTIVE:
 //							case FOPState::RETRANSMIT_WITHOUT_WAIT:
 //							case FOPState::RETRANSMIT_WITH_WAIT:
-//								removeAcknowledgedFrames();
+//								removeAcknowledgedFramesFromSentQueue();
 //								lookForFdu();
 //								state = FOPState::ACTIVE;
 //								break;
@@ -345,7 +682,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 //							case FOPState::ACTIVE:
 //							case FOPState::RETRANSMIT_WITHOUT_WAIT:
 //							case FOPState::RETRANSMIT_WITH_WAIT:
-//								removeAcknowledgedFrames();
+//								removeAcknowledgedFramesFromSentQueue();
 //								alert(AlertEvent::ALRT_LIMIT);
 //								state = FOPState::INITIAL;
 //								break;
@@ -377,7 +714,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 //								case FOPState::ACTIVE:
 //								case FOPState::RETRANSMIT_WITHOUT_WAIT:
 //								case FOPState::RETRANSMIT_WITH_WAIT:
-//									removeAcknowledgedFrames();
+//									removeAcknowledgedFramesFromSentQueue();
 //									initiateAdRetransmission();
 //									lookForFdu();
 //									state = FOPState::RETRANSMIT_WITHOUT_WAIT;
@@ -393,7 +730,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 //								case FOPState::ACTIVE:
 //								case FOPState::RETRANSMIT_WITHOUT_WAIT:
 //								case FOPState::RETRANSMIT_WITH_WAIT:
-//									removeAcknowledgedFrames();
+//									removeAcknowledgedFramesFromSentQueue();
 //									state = FOPState::RETRANSMIT_WITH_WAIT;
 //									break;
 //								case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
@@ -538,7 +875,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 //		// E25
 //		initialize();
 //		state = FOPState::INITIALIZING_WITH_BC_FRAME;
-//		// @todo transmit unlock frame
+//		// TODO transmit unlock frame
 //	}
 //	// E26
 //	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
@@ -551,7 +888,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 //		initialize();
 //		transmitterFrameSeqNumber = vr;
 //		expectedAcknowledgementSeqNumber = vr;
-//		// @todo transmit Set V(R) frame
+//		// TODO transmit Set V(R) frame
 //		state = FOPState::INITIALIZING_WITH_BC_FRAME;
 //	}
 //	// E28

@@ -193,9 +193,7 @@ public:
         return 0;
     }
 
-    /**
-     * Determines whether the transfer frame is marked for retransmission while in the sent queue
-     */
+
     bool isToBeRetransmitted() const {
         return toBeRetransmitted;
     }
@@ -204,10 +202,20 @@ public:
         toBeRetransmitted = f;
     }
 
+    uint8_t getTransferRequestId() const {
+        return transferRequestId;
+    }
+
+    void setTransferRequestId(uint8_t transfer_request_Id) {
+        transferRequestId = transfer_request_Id;
+    }
+
+
 	TransferFrameTC(uint8_t *frameData, ServiceType serviceType, uint8_t vid, uint16_t frameLength, bool segHdrPresent,
-                    uint8_t sequenceFlag = 0x3, uint8_t mapId = 0, uint16_t firstEmptyOctet = 0, FrameType t = TC)
+                    uint8_t sequenceFlag = 0x3, uint8_t mapId = 0, uint16_t firstEmptyOctet = 0, FrameType t = TC,
+                    uint8_t transferRequestId = 0)
 	    : TransferFrame(t, frameLength, frameData, firstEmptyOctet), hdr(frameData), serviceType(serviceType),
-          toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
+          toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent), transferRequestId(transferRequestId) {
 		uint8_t bypassFlag = ((serviceType == ServiceType::TYPE_AD) || (serviceType == ServiceType::TYPE_RESERVED)) ? 0 : 1;
 		uint8_t ctrlCmdFlag = ((serviceType == ServiceType::TYPE_BC) || (serviceType == ServiceType::TYPE_RESERVED)) ? 1 : 0;
         frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6) | (bypassFlag << 5) | (ctrlCmdFlag << 4) | 0 | static_cast<uint8_t>((SpacecraftIdentifier & 0x300) >> 8);
@@ -225,7 +233,8 @@ public:
         segmentationHeaderPresent(segHdrPresent) {};
 
 private:
-	bool toBeRetransmitted;
+	bool toBeRetransmitted; // Used by FOP-1 to determine if the frame should be retransmitted
+    uint8_t transferRequestId; // Used by FOP-1 to associate a frame with a specific transfer fdu request signal
 	TransferFrameHeaderTC hdr;
 	ServiceType serviceType;
 	bool segmentationHeaderPresent;
