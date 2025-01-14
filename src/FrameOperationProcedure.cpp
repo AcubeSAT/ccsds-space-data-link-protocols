@@ -80,24 +80,16 @@ FOPNotification FrameOperationProcedure::purgeWaitQueue() {
 }
 
 // TODO ensure fop does not break in case the sent/wait/signal queues are full. this is true for the other 2 transmit functions as well
-FOPNotification FrameOperationProcedure::transmitAdFrame(const DfuTransferSignal& dfuTransferSignal) {
+FOPNotification FrameOperationProcedure::transmitAdFrame(TransferFrameTC* adFrame) {
 	if (sentQueueFOP.full()) {
 		ccsdsLogNotice(Tx, TypeFOPNotif, SENT_QUEUE_FULL);
 		return FOPNotification::SENT_QUEUE_FULL;
 	}
 
-    if (waitQueueFOP.empty()) {
-        ccsdsLogNotice(Tx, TypeFOPNotif, WAIT_QUEUE_EMPTY);
-        return FOPNotification::WAIT_QUEUE_EMPTY;
-    }
-
-    if (dfuTransferSignal.serviceType != ServiceType::TYPE_AD) {
+    if (adFrame->getServiceType() != ServiceType::TYPE_AD) {
         ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
         return FOPNotification::FOP_UNEXPECTED_VALUE;
     }
-
-    TransferFrameTC* adFrame = waitQueueFOP.front();
-    waitQueueFOP.pop_front();
 
     adFrame->setTransferFrameSequenceNumber(transmitterFrameSeqNumber);
     if(!adFrame->isToBeRetransmitted()) {
@@ -105,7 +97,6 @@ FOPNotification FrameOperationProcedure::transmitAdFrame(const DfuTransferSignal
     }
 
 	adFrame->setToBeRetransmitted(false);
-    adFrame->setTransferRequestId(dfuTransferSignal.requestIdentifier);
 	sentQueueFOP.push_back(adFrame);
 
     if (sentQueueFOP.empty()) {
@@ -202,8 +193,8 @@ FOPNotification FrameOperationProcedure::transmitBcFrame(const DirectiveRequestS
 	return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::transmitBdFrame(const DfuTransferSignal& dfuTransferSignal) {
-	if (dfuTransferSignal.serviceType != ServiceType::TYPE_BD) {
+FOPNotification FrameOperationProcedure::transmitBdFrame(TransferFrameTC* bdFrame) {
+	if (bdFrame->getServiceType() != ServiceType::TYPE_BD) {
         ccsdsLogNotice(Tx, TypeFOPNotif, FOP_UNEXPECTED_VALUE);
         return FOPNotification::FOP_UNEXPECTED_VALUE;
     }
@@ -214,10 +205,11 @@ FOPNotification FrameOperationProcedure::transmitBdFrame(const DfuTransferSignal
     }
 
     bdOut = NOT_READY;
-    dfuTransferSignal.frame->setTransferFrameSequenceNumber(0);  /// @see p. 4.2.1.8 of TC Data Link
-    dfuTransferSignal.frame->setTransferRequestId(dfuTransferSignal.requestIdentifier);
+    bdFrame->setTransferFrameSequenceNumber(0);  /// @see p. 4.2.1.8 of TC Data Link
+    bdFrame->setTransferRequestId(bdFrame->getTransferRequestId());
+    bdFrameRequestIdentifier.emplace(bdFrame->getTransferRequestId());
 
-    fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_BD, dfuTransferSignal.frame));
+    fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_BD, bdFrame));
 	ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
 	return FOPNotification::NO_FOP_EVENT;
 }
@@ -330,7 +322,7 @@ FOPNotification FrameOperationProcedure::lookForDirective() {
     return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::lookForFdu(const DfuTransferSignal& dfuTransferSignal) {
+FOPNotification FrameOperationProcedure::lookForFdu() {
     if (adOut == FlagState::NOT_READY) {
         ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
         return FOPNotification::NO_FOP_EVENT;
@@ -358,18 +350,23 @@ FOPNotification FrameOperationProcedure::lookForFdu(const DfuTransferSignal& dfu
         }
     }
 
-    // No TYPE-AD frame is marked 'toBeRetransmitted'. See if the wait queue has a TYPE-AD frame
+    // No TYPE-AD frame is marked 'toBeRetransmitted'. See if the wait queue has an fdu
     // such that V(S) < NN(R) + K, and transmit it
     if (waitQueueFOP.empty()) {
         ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
         return FOPNotification::NO_FOP_EVENT;
     }
 
-    if (waitQueueFOP.front()->getServiceType() == ServiceType::TYPE_AD &&
-    transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindowWidth) {
-        FOPNotification notification = transmitAdFrame(dfuTransferSignal);
+    if ((waitQueueFOP.front()->getServiceType() == ServiceType::TYPE_AD) && (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindowWidth)) {
+        TransferFrameTC* adFrame = waitQueueFOP.front();
+        FOPNotification notification = transmitAdFrame(adFrame);
         if (notification == NO_FOP_EVENT) {
-
+            waitQueueFOP.pop_front();
+            transferNotificationSignalQueue.push(TransferNotificationSignal(adFrame->getTransferRequestId(), ACCEPT_RESPONSE_TO_TRANSFER_FDU));
+        }
+        else {
+            ccsdsLogNotice(Tx, TypeFOPNotif, notification);
+            return notification;
         }
     }
 
@@ -395,7 +392,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
     purgeSentQueue();
     purgeWaitQueue();
     // TODO: Generate a ‘Negative Confirm Response to Directive’ for any ongoing 'Initiate AD Service' request
-    // TODO: should all signal queues be cleared here
+    // TODO: should all signal queues be cleared here?
     asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, event));
 }
 
@@ -405,22 +402,6 @@ void FrameOperationProcedure::resume() {
 }
 
 /** Implementation specific FOP-1 methods (for usage inside vcGeneration service)**/
-
-std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable() {
-    // clear output signal queues
-    directiveNotificationSignalQueue.clear();
-    transferNotificationSignalQueue.clear();
-    asynchronousNotificationSignalQueue.clear();
-    fopToLowerLayerRequestSignalQueue.clear();
-
-    // detect event
-    // uint8_t eventCode = detectEvent()
-
-    // perform the necessary actions for that event
-    // switch(eventCode)
-
-    // return std::make_pair(fopNotif, eventCode);
-}
 
 FOPNotification FrameOperationProcedure::pushTransferFduSignal(DfuTransferSignal signal) {
     if (transferFduSignalQueue.full()) {
@@ -521,534 +502,3 @@ std::pair<FOPNotification, etl::optional<AsynchronousNotificationSignal>> FrameO
     ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
     return std::make_pair(NO_FOP_EVENT, signal);
 }
-
-
-//// TODO: Sent Queue as-is is pretty much tx
-//COPDirectiveResponse FrameOperationProcedure::pushSentQueue() {
-//	if (vchan->sentQueueTxTC.empty()) {
-//		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-//		return COPDirectiveResponse::REJECT;
-//	}
-//
-//	TransferFrameTC* pckt = sentQueueFOP->front();
-//
-//	MasterChannelAlert err = vchan->master_channel().storeOut(pckt);
-//
-//	if (err == MasterChannelAlert::NO_MC_ALERT) {
-//		// sentQueueTC->pop_front();
-//		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//		return COPDirectiveResponse::ACCEPT;
-//	}
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-//	return COPDirectiveResponse::REJECT;
-//}
-//
-//
-//// This is just a representation of the transitions of the state machine. This can be cleaned up a lot and have a
-//// separate data structure hold down the transitions between each state but this works too... it's just ugly
-//COPDirectiveResponse FrameOperationProcedure::validClcwArrival() {
-//	CLCW clcw = vchan->receivedClcwBuffer.front();
-//    vchan->receivedClcwBuffer.pop_front();
-//
-//	if (clcw.getLockout() == 0) {
-//		if (clcw.getReportValue() == transmitterFrameSeqNumber) {
-//			if (clcw.getRetransmit() == 0) {
-//				if (clcw.getWait() == 0) {
-//					if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {
-//						// E1
-//						switch (state) {
-//							case FOPState::ACTIVE:
-//								break;
-//							case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//							case FOPState::RETRANSMIT_WITH_WAIT:
-//								alert(AlertEvent::ALRT_SYNCH);
-//								state = FOPState::INITIAL;
-//								break;
-//							case FOPState::INITIALIZING_WITH_BC_FRAME:
-//								state = FOPState::ACTIVE;
-//								// cancel timer
-//								break;
-//							case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-//								// bc_accept()??
-//								//  cancel timer
-//								state = FOPState::ACTIVE;
-//								break;
-//							case FOPState::INITIAL:
-//								state = FOPState::INITIAL;
-//								break;
-//						}
-//					} else {
-//						// E2
-//						switch (state) {
-//							case FOPState::ACTIVE:
-//							case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//							case FOPState::RETRANSMIT_WITH_WAIT:
-//								removeAcknowledgedFramesFromSentQueue();
-//								// cancel timer
-//								lookForFdu();
-//								state = FOPState::ACTIVE;
-//								break;
-//							case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//							case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//							case FOPState::INITIAL:
-//								break;
-//						}
-//					}
-//				} else {
-//					// E3
-//					switch (state) {
-//						case FOPState::ACTIVE:
-//						case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//						case FOPState::RETRANSMIT_WITH_WAIT:
-//						case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-//						case FOPState::INITIALIZING_WITH_BC_FRAME:
-//							alert(AlertEvent::ALRT_CLCW);
-//							state = FOPState::INITIAL;
-//							break;
-//						case FOPState::INITIAL:
-//							break;
-//					}
-//				}
-//			} else {
-//				// E4
-//				switch (state) {
-//					case FOPState::ACTIVE:
-//					case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//					case FOPState::RETRANSMIT_WITH_WAIT:
-//					case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-//						alert(AlertEvent::ALRT_SYNCH);
-//						state = FOPState::INITIAL;
-//						break;
-//					case FOPState::INITIALIZING_WITH_BC_FRAME:
-//					case FOPState::INITIAL:
-//						break;
-//				}
-//			}
-//		} else if (clcw.getReportValue() < transmitterFrameSeqNumber &&
-//		           clcw.getReportValue() >= expectedAcknowledgementSeqNumber) {
-//			if (clcw.getRetransmit() == 0) {
-//				if (clcw.getWait() == 0) {
-//					if (expectedAcknowledgementSeqNumber == clcw.getReportValue()) {
-//						// E5
-//						switch (state) {
-//							case FOPState::ACTIVE:
-//								break;
-//							case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//							case FOPState::RETRANSMIT_WITH_WAIT:
-//								alert(AlertEvent::ALRT_SYNCH);
-//								state = FOPState::INITIAL;
-//								break;
-//							case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//							case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//							case FOPState::INITIAL:
-//								break;
-//						}
-//					} else {
-//						// E6
-//						switch (state) {
-//							case FOPState::ACTIVE:
-//							case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//							case FOPState::RETRANSMIT_WITH_WAIT:
-//								removeAcknowledgedFramesFromSentQueue();
-//								lookForFdu();
-//								state = FOPState::ACTIVE;
-//								break;
-//							case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//							case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//							case FOPState::INITIAL:
-//								break;
-//						}
-//					}
-//				} else {
-//					// E7
-//					switch (state) {
-//						case FOPState::ACTIVE:
-//						case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//						case FOPState::RETRANSMIT_WITH_WAIT:
-//							alert(AlertEvent::ALRT_CLCW);
-//							state = FOPState::INITIAL;
-//							break;
-//						case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//						case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//						case FOPState::INITIAL:
-//							break;
-//					}
-//				}
-//			} else {
-//				if (transmissionLimit == 1) {
-//					if (expectedAcknowledgementSeqNumber != clcw.getReportValue()) {
-//						// E101
-//						switch (state) {
-//							case FOPState::ACTIVE:
-//							case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//							case FOPState::RETRANSMIT_WITH_WAIT:
-//								removeAcknowledgedFramesFromSentQueue();
-//								alert(AlertEvent::ALRT_LIMIT);
-//								state = FOPState::INITIAL;
-//								break;
-//							case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//							case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//							case FOPState::INITIAL:
-//								break;
-//						}
-//					} else {
-//						// E102
-//						switch (state) {
-//							case FOPState::ACTIVE:
-//							case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//							case FOPState::RETRANSMIT_WITH_WAIT:
-//								alert(AlertEvent::ALRT_LIMIT);
-//								state = FOPState::INITIAL;
-//								break;
-//							case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//							case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//							case FOPState::INITIAL:
-//								break;
-//						}
-//					}
-//				} else if (transmissionLimit > 1) {
-//					if (expectedAcknowledgementSeqNumber != clcw.getReportValue()) {
-//						if (clcw.getWait() == 0) {
-//							// E8
-//							switch (state) {
-//								case FOPState::ACTIVE:
-//								case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//								case FOPState::RETRANSMIT_WITH_WAIT:
-//									removeAcknowledgedFramesFromSentQueue();
-//									initiateAdRetransmission();
-//									lookForFdu();
-//									state = FOPState::RETRANSMIT_WITHOUT_WAIT;
-//									break;
-//								case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//								case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//								case FOPState::INITIAL:
-//									break;
-//							}
-//						} else {
-//							// E9
-//							switch (state) {
-//								case FOPState::ACTIVE:
-//								case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//								case FOPState::RETRANSMIT_WITH_WAIT:
-//									removeAcknowledgedFramesFromSentQueue();
-//									state = FOPState::RETRANSMIT_WITH_WAIT;
-//									break;
-//								case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//								case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//								case FOPState::INITIAL:
-//									break;
-//							}
-//						}
-//					} else {
-//						if (transmissionCount < transmissionLimit) {
-//							if (clcw.getWait() == 0) {
-//								//  E10
-//								switch (state) {
-//									case FOPState::ACTIVE:
-//									case FOPState::RETRANSMIT_WITH_WAIT:
-//										initiateAdRetransmission();
-//										lookForFdu();
-//										state = FOPState::RETRANSMIT_WITHOUT_WAIT;
-//										break;
-//									case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//									case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//									case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//									case FOPState::INITIAL:
-//										break;
-//								}
-//							} else {
-//								// E11
-//								switch (state) {
-//									case FOPState::ACTIVE:
-//									case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//										state = FOPState::RETRANSMIT_WITH_WAIT;
-//										break;
-//									case FOPState::RETRANSMIT_WITH_WAIT:
-//									case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//									case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//									case FOPState::INITIAL:
-//										break;
-//								}
-//							}
-//						} else {
-//							if (clcw.getWait() == 0) {
-//								// E12
-//								switch (state) {
-//									case FOPState::ACTIVE:
-//									case FOPState::RETRANSMIT_WITH_WAIT:
-//										state = FOPState::RETRANSMIT_WITHOUT_WAIT;
-//										break;
-//									case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//									case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//									case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//									case FOPState::INITIAL:
-//										break;
-//								}
-//							} else {
-//								// E103
-//								switch (state) {
-//									case FOPState::ACTIVE:
-//									case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//										state = FOPState::RETRANSMIT_WITH_WAIT;
-//										break;
-//									case FOPState::RETRANSMIT_WITH_WAIT:
-//									case FOPState::INITIALIZING_WITHOUT_BC_FRAME: // N/A
-//									case FOPState::INITIALIZING_WITH_BC_FRAME: // N/A
-//									case FOPState::INITIAL:
-//										break;
-//								}
-//							}
-//						}
-//					}
-//				}
-//			}
-//		} else {
-//			// E13
-//			switch (state) {
-//				case FOPState::ACTIVE:
-//				case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//				case FOPState::RETRANSMIT_WITH_WAIT:
-//				case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-//					alert(AlertEvent::ALRT_NNR);
-//					state = FOPState::INITIAL;
-//					break;
-//				case FOPState::INITIALIZING_WITH_BC_FRAME:
-//				case FOPState::INITIAL:
-//					break;
-//			}
-//		}
-//	} else {
-//		switch (state) {
-//			case FOPState::ACTIVE:
-//			case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//			case FOPState::RETRANSMIT_WITH_WAIT:
-//			case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-//				alert(AlertEvent::ALRT_LOCKOUT);
-//				state = FOPState::INITIAL;
-//				break;
-//			case FOPState::INITIALIZING_WITH_BC_FRAME:
-//			case FOPState::INITIAL:
-//				break;
-//		}
-//	}
-//
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//	return COPDirectiveResponse::ACCEPT;
-//}
-//
-//void FrameOperationProcedure::invalidClcwArrival() {
-//	switch (state) {
-//		case FOPState::ACTIVE:
-//		case FOPState::RETRANSMIT_WITHOUT_WAIT:
-//		case FOPState::RETRANSMIT_WITH_WAIT:
-//		case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-//		case FOPState::INITIALIZING_WITH_BC_FRAME:
-//			alert(AlertEvent::ALRT_CLCW);
-//			state = FOPState::INITIAL;
-//			break;
-//		case FOPState::INITIAL:
-//			break;
-//	}
-//}
-//
-//FDURequestType FrameOperationProcedure::initiateAdNoClcw() {
-//	// E23
-//	if (state == FOPState::INITIAL) {
-//		initialize();
-//		state = FOPState::ACTIVE;
-//	}
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
-//}
-//
-//FDURequestType FrameOperationProcedure::initiateAdClcw() {
-//	// E24
-//	if (state == FOPState::INITIAL) {
-//		initialize();
-//		state = FOPState::ACTIVE;
-//	}
-//	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
-//}
-//
-//FDURequestType FrameOperationProcedure::initiateAdUnlock() {
-//	if (state == FOPState::INITIAL && bcOut == FlagState::READY) {
-//		// E25
-//		initialize();
-//		state = FOPState::INITIALIZING_WITH_BC_FRAME;
-//		// TODO transmit unlock frame
-//	}
-//	// E26
-//	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
-//	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
-//}
-//
-//FDURequestType FrameOperationProcedure::initiateAdVr(uint8_t vr) {
-//	if (state == FOPState::INITIAL && bcOut == FlagState::READY) {
-//		// E27
-//		initialize();
-//		transmitterFrameSeqNumber = vr;
-//		expectedAcknowledgementSeqNumber = vr;
-//		// TODO transmit Set V(R) frame
-//		state = FOPState::INITIALIZING_WITH_BC_FRAME;
-//	}
-//	// E28
-//	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
-//	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
-//}
-//
-//FDURequestType FrameOperationProcedure::terminateAdService() {
-//	// E29
-//	if (state != FOPState::INITIAL) {
-//		alert(AlertEvent::ALRT_TERM);
-//		state = FOPState::INITIAL;
-//	}
-//	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
-//	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
-//}
-//
-//FDURequestType FrameOperationProcedure::resumeAdService() {
-//	state = suspendState;
-//	ccsdsLogNotice(Tx, TypeFDURequestType, REQUEST_POSITIVE_CONFIRM);
-//	return FDURequestType::REQUEST_POSITIVE_CONFIRM;
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::setVs(uint8_t vs) {
-//	// E35
-//	if (state == FOPState::INITIAL && suspendState == FOPState::INITIAL) {
-//		transmitterFrameSeqNumber = vs;
-//		expectedAcknowledgementSeqNumber = vs;
-//		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//		return COPDirectiveResponse::ACCEPT;
-//	} else {
-//		ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-//		return COPDirectiveResponse::REJECT;
-//	}
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::setFopWidth(uint8_t width) {
-//	// E36
-//	fopSlidingWindowWidth = width;
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//	return COPDirectiveResponse::ACCEPT;
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::setT1Initial(uint16_t t1_init) {
-//	// E37
-//	tiInitial = t1_init;
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//	return COPDirectiveResponse::ACCEPT;
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::setTransmissionLimit(uint8_t vr) {
-//	// E38
-//	transmissionLimit = vr;
-//	return COPDirectiveResponse::ACCEPT;
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::setTimeoutType(bool vr) {
-//	// E39
-//	timeoutType = vr;
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//	return COPDirectiveResponse::ACCEPT;
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::invalidDirective() {
-//	// E40
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-//	return COPDirectiveResponse::REJECT;
-//}
-//
-//void FrameOperationProcedure::adAccept() {
-//	// E41
-//	adOut = FlagState::READY;
-//	if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT) {
-//		lookForFdu();
-//	}
-//}
-//
-//void FrameOperationProcedure::adReject() {
-//	// E42
-//	alert(AlertEvent::ALRT_LLIF);
-//	state = FOPState::INITIAL;
-//}
-//
-//void FrameOperationProcedure::bcAccept() {
-//	// E43
-//	bcOut = FlagState::READY;
-//	if (state == FOPState::INITIALIZING_WITH_BC_FRAME) {
-//		lookForDirective();
-//	}
-//}
-//
-//void FrameOperationProcedure::bcReject() {
-//	alert(AlertEvent::ALRT_LLIF);
-//	state = FOPState::INITIAL;
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::bdAccept() {
-//	bdOut = FlagState::READY;
-//	ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//	return COPDirectiveResponse::ACCEPT;
-//}
-//
-//void FrameOperationProcedure::bdReject() {
-//	alert(AlertEvent::ALRT_LLIF);
-//	state = FOPState::INITIAL;
-//}
-//
-//COPDirectiveResponse FrameOperationProcedure::transferFdu() {
-//	TransferFrameTC* frame = vchan->unprocessedFrameListBufferTxTC.front();
-//
-//	if (frame->getTransferFrameHeader().getBypassFlag() == 0) {
-//		if (frame->getServiceType() == ServiceType::TYPE_AD) {
-//			if (!waitQueueFOP->full()) {
-//				// E19
-//				if (state == FOPState::ACTIVE || state == FOPState::RETRANSMIT_WITHOUT_WAIT) {
-//					waitQueueFOP->push_back(frame);
-//					lookForFdu();
-//				} else if (state == FOPState::RETRANSMIT_WITH_WAIT) {
-//					waitQueueFOP->push_back(frame);
-//				} else {
-//					ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-//					return COPDirectiveResponse::REJECT;
-//				}
-//				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//				return COPDirectiveResponse::ACCEPT;
-//			} else {
-//				// E20
-//				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-//				return COPDirectiveResponse::REJECT;
-//			}
-//		} else if ((frame->getServiceType() == ServiceType::TYPE_BC) ||
-//		           (frame->getServiceType() == ServiceType::TYPE_BD)) {
-//			if (bdOut == FlagState::READY) {
-//				//
-//				transmitBcFrame(frame);
-//				ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, ACCEPT);
-//				return COPDirectiveResponse::ACCEPT;
-//			} else {
-//				// E22
-//				COPDirectiveResponse::REJECT;
-//			}
-//		}
-//	} else {
-//		// transfer directly to lower procedure
-//
-//		MasterChannelAlert mc = vchan->master_channel().storeOut(frame);
-//		if (mc != MasterChannelAlert::NO_MC_ALERT) {
-//			ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-//			return COPDirectiveResponse::REJECT;
-//		}
-//	}
-//	return COPDirectiveResponse::ACCEPT;
-//}
-//
-//void FrameOperationProcedure::acknowledgePreviousFrames(uint8_t frameSequenceNumber) {
-//	for (TransferFrameTC* frame : *sentQueueFOP) {
-//		if ((frame->getTransferFrameSequenceNumber() < frameSequenceNumber ||
-//                frame->getTransferFrameSequenceNumber() > transmitterFrameSeqNumber)) {
-//			acknowledgeFrame(frame->getTransferFrameSequenceNumber());
-//		}
-//	}
-//	expectedAcknowledgementSeqNumber = frameSequenceNumber;
-//}

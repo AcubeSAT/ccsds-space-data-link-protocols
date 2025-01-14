@@ -73,7 +73,8 @@ enum AlertEvent {
 	ALRT_LLIF = 4,
 	ALRT_NNR = 5,
 	ALRT_LOCKOUT = 6,
-    ALRT_NONE = 7
+    ALRT_T1 = 7,
+    ALRT_NONE = 8
 };
 
 struct AsynchronousNotificationSignal {
@@ -308,6 +309,22 @@ private:
     etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer;
     MemoryPool& memoryPool;
 
+    /*
+     * Since type BD frames bypass fop (they are not stored), this variable will hold the request identifier,
+     * until a response from the lower layers is received.
+     */
+    etl::optional<uint8_t> bdFrameRequestIdentifier;
+
+    /**
+     * There are 3 directives that will not receive confirmation immediately upon processing:
+     * Initiate AD service (with CLCW check)
+     * Initiate AD service (with unlock)
+     * Initiate AD service (with set V(R))
+     *
+     * The last 2 generate TYPE-BC frames that stay in the sent queue, so their request identifiers are stored within those
+     * frames. The first one however does not, so it's request identifier is stored in this variable
+     */
+     etl::optional<uint8_t> initiateDirectiveWithClcwCheckRequestIdentifier;
 
     /** FOP-1 ACTIONS **/
 
@@ -328,7 +345,7 @@ private:
      * and placed in the sent queue. They will be removed once there is confirmation of their reception.
      * @see p. 5.2.4 from COP-1 CCSDS
      */
-    FOPNotification transmitAdFrame(const DfuTransferSignal& dfuTransferSignal);
+    FOPNotification transmitAdFrame(TransferFrameTC* adFrame);
 
     /**
      * Prepares a Type-BC Frame for transmission. Type-BC frames are generated in this function
@@ -349,7 +366,7 @@ private:
      *
      * @see p. 5.2.6 from COP-1 CCSDS
      */
-    FOPNotification transmitBdFrame(const DfuTransferSignal& dfuTransferSignal);
+    FOPNotification transmitBdFrame(TransferFrameTC* bdFrame);
 
     /**
      * Marks AD (or BC) Frames stored in the sent queue to be retransmitted
@@ -380,7 +397,7 @@ private:
      * the wait_queue
      * @see p. 5.2.10 from COP-1 CCSDS
      */
-    FOPNotification lookForFdu(const DfuTransferSignal& dfuTransferSignal);
+    FOPNotification lookForFdu();
 
     /**
      * initializes FOP service
@@ -484,12 +501,11 @@ private:
     std::pair<FOPNotification, etl::optional<AsynchronousNotificationSignal>> popAsynchronousNotificationSignal();
 
 public:
-    FrameOperationProcedure(VirtualChannel* vchan, const uint16_t fopTimerInitial, const uint8_t transmissionLimit, const uint8_t foSlidingWindowWidth,
-                            etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer, MemoryPool& memoryPool)
+    FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer, MemoryPool& memoryPool)
             : vchan(vchan), state(FOPState::INITIAL),
-              suspendState(NOT_SUSPENDED), transmitterFrameSeqNumber(0), adOut(FlagState::NOT_READY),
-              bdOut(FlagState::NOT_READY), bcOut(FlagState::NOT_READY), expectedAcknowledgementSeqNumber(0),
-              tiInitial(fopTimerInitial), transmissionLimit(transmissionLimit), transmissionCount(1),
-              fopSlidingWindowWidth(foSlidingWindowWidth), timeoutType(false), frameMasterCopyBuffer(frameMasterCopyBuffer),
+              suspendState(NOT_SUSPENDED), transmitterFrameSeqNumber(0), adOut(FlagState::READY),
+              bdOut(FlagState::READY), bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0),
+              tiInitial(FopTimerInitial), transmissionLimit(TransmissionLimit), transmissionCount(1),
+              fopSlidingWindowWidth(FopSlidingWindowInitial), timeoutType(false), frameMasterCopyBuffer(frameMasterCopyBuffer),
               memoryPool(memoryPool){};
 };

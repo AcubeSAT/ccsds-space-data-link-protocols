@@ -32,6 +32,7 @@ add_library(common OBJECT
         src/CCSDSServiceChannel.cpp
         src/CCSDSChannel.cpp
         src/FrameOperationProcedure.cpp
+        src/FopStateTable.cpp
         src/FrameAcceptanceReporting.cpp
         src/logOperators.cpp
         src/MemoryPool.cpp

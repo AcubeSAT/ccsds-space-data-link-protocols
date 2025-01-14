@@ -24,13 +24,6 @@ inline constexpr uint8_t TcSegmentHeaderSize = 1;
 inline constexpr uint8_t ErrorControlFieldSize = 2;
 
 /**
- * Report type  carried by the OCF field of TM frames. The value 0 indicates that 'Communications Link Control Words'
- * (CLCWs) are carried, which are defined in p. 4.2 of the TC Space Data Link Protocol.
- */
-inline constexpr uint8_t ControlWordType = 0;
-
-
-/**
  * Idle space packet constants (for more details, see Space Packet Protocol)
  */
 static constexpr uint8_t packetPrimaryHeaderLength = 6;
@@ -115,6 +108,7 @@ inline constexpr uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
 
 inline constexpr uint8_t FopSlidingWindowInitial = 255;
 inline constexpr uint8_t FopTimerInitial = 60; // sec
+inline constexpr uint8_t TransmissionLimit = 5;
 inline constexpr uint8_t DirectiveRequestSignalQueueSize = 10;
 inline constexpr uint8_t TransferfduSignalQueueSize = 10;
 inline constexpr uint8_t LowerLayerResponseSignalQueueSize = 10;
@@ -122,12 +116,18 @@ inline constexpr uint8_t clcwQueueSize = 5;
 inline constexpr uint8_t DirectiveNotificationSignalQueueSize = 10;
 inline constexpr uint8_t AsynchronousNotificationSignalQueueSize = 3;
 
-/// @see p. 4.1.3.3 of TC Data LInk protocol
+/// @see p. 4.1.3.3 of TC Data Link protocol
 inline constexpr uint8_t UnlockCommandSize = 1;  // in octets
 inline constexpr uint8_t UnlockCommand = 0;      // all zeroes
 inline constexpr uint8_t SetVrCommandSize = 3;   // in octets
 inline constexpr uint8_t SetVrCommandOctet1 = 0x82;
 inline constexpr uint8_t SetVrCommandOctet2 = 0;
+
+/// CLCW fields @see p. 4.2 of TC Data Link Protocol
+inline constexpr uint8_t ControlWordType = 0x00;  // the value of 0 indicates that clcws are carried as a report word
+inline constexpr uint8_t ClcwVersionNumber = 0x0; // '00' is the only available value currently
+inline constexpr uint8_t CopInEffect = 0x01;      // Indicates COP-1 is used
+
 
 inline constexpr uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 inline constexpr uint16_t MaxAllocatedPackets = 50;
