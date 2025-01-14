@@ -6,6 +6,11 @@
 
 enum FrameType { TC, TM };
 
+enum SynchronizationFlag : bool {
+    OCTET_SYNCHRONIZED_FORWARD_ORDERED = false,
+    VCA_SDU = true
+};
+
 struct TransferFrameHeader {
 	TransferFrameHeader(uint8_t* frameData) {
         transferFrameHeader = frameData;

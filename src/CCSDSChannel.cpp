@@ -43,26 +43,6 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTM* transferFrameTm) {
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTC* transferFrameTc) {
-	if (toBeTransmittedFramesAfterAllFramesGenerationListTxTC.full()) {
-		ccsdsLogNotice(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
-		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
-	}
-    toBeTransmittedFramesAfterAllFramesGenerationListTxTC.push_back(transferFrameTc);
-	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
-	return MasterChannelAlert::NO_MC_ALERT;
-}
-
-MasterChannelAlert MasterChannel::storeTransmittedOut(TransferFrameTM* transferFrameTm) {
-	if (toBeTransmittedFramesAfterAllFramesGenerationListTxTM.full()) {
-		ccsdsLogNotice(Tx, TypeMasterChannelAlert, TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
-		return MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL;
-	}
-	toBeTransmittedFramesAfterAllFramesGenerationListTxTM.push_back(transferFrameTm);
-	ccsdsLogNotice(Tx, TypeMasterChannelAlert, NO_MC_ALERT);
-	return MasterChannelAlert::NO_MC_ALERT;
-}
-
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
                                         const bool segmentationTM, const bool blockingTC,
                                         const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
@@ -145,23 +125,6 @@ void MasterChannel::removeMasterRx(TransferFrameTM* frame_ptr) {
 	for (it = masterCopyRxTM.begin(); it != masterCopyRxTM.end(); ++it) {
 		if (&it == frame_ptr) {
 			masterCopyRxTM.erase(it);
-			return;
-		}
-	}
-}
-void MasterChannel::acknowledgeFrame(uint8_t frameSequenceNumber) {
-	for (TransferFrameTC& transferFrame : masterCopyTxTC) {
-		if (transferFrame.getTransferFrameSequenceNumber() == frameSequenceNumber) {
-			transferFrame.setAcknowledgement(true);
-			return;
-		}
-	}
-}
-
-void MasterChannel::setRetransmitFrame(uint8_t frameSequenceNumber) {
-	for (TransferFrameTC transferFrame : masterCopyTxTC) {
-		if (transferFrame.getTransferFrameSequenceNumber() == frameSequenceNumber) {
-			transferFrame.setToBeRetransmitted(true);
 			return;
 		}
 	}

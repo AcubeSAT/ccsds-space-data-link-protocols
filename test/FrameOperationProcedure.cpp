@@ -23,27 +23,27 @@ TEST_CASE("Initiate FOP Directives") {
 //	CHECK(serv_channel_fop.txAvailableTC(3, 2) == MaxReceivedTcInMapChannel);
     CHECK(serv_channel_fop.availableFramesBeforeSDLSProcessing(3) == MaxReceivedUnprocessedTxTcInVirtBuffer - 1);
 
-	CHECK(serv_channel_fop.fopState(3) == FOPState::INITIAL);
+	CHECK(serv_channel_fop.getFopState(3) == FOPState::INITIAL);
 	serv_channel_fop.initiateAdNoClcw(3);
-	CHECK(serv_channel_fop.fopState(3) == FOPState::ACTIVE);
+	CHECK(serv_channel_fop.getFopState(3) == FOPState::ACTIVE);
 	serv_channel_fop.terminateAdService(3);
 	serv_channel_fop.setVs(3, 6);
-	CHECK(serv_channel_fop.expectedFrameSeqNumber(3) == 6);
-	CHECK(serv_channel_fop.transmitterFrameSeqNumber(3) == 6);
-	CHECK(serv_channel_fop.fopState(3) == FOPState::INITIAL);
+	CHECK(serv_channel_fop.getExpectedFrameSeqNumber(3) == 6);
+	CHECK(serv_channel_fop.getTransmitterFrameSeqNumber(3) == 6);
+	CHECK(serv_channel_fop.getFopState(3) == FOPState::INITIAL);
 	serv_channel_fop.initiateAdUnlock(3);
 
-	CHECK(serv_channel_fop.timeoutType(3) == 0);
+	CHECK(serv_channel_fop.getTimeoutType(3) == 0);
 	serv_channel_fop.setTimeoutType(3, 1);
-	CHECK(serv_channel_fop.timeoutType(3) == 1);
+	CHECK(serv_channel_fop.getTimeoutType(3) == 1);
 
-	CHECK(serv_channel_fop.t1Timer(3) == FopTimerInitial);
+	CHECK(serv_channel_fop.getT1Timer(3) == FopTimerInitial);
 	serv_channel_fop.setT1Initial(3, 55);
-	CHECK(serv_channel_fop.t1Timer(3) == 55);
+	CHECK(serv_channel_fop.getT1Timer(3) == 55);
 
-	CHECK(serv_channel_fop.fopSlidingWindowWidth(3) == FopSlidingWindowInitial);
+	CHECK(serv_channel_fop.getFopSlidingWindowWidth(3) == FopSlidingWindowInitial);
 	serv_channel_fop.setFopWidth(3, 100);
-	CHECK(serv_channel_fop.fopSlidingWindowWidth(3) == 100);
+	CHECK(serv_channel_fop.getFopSlidingWindowWidth(3) == 100);
 }
 TEST_CASE("Retransmission"){
 	PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
@@ -97,5 +97,5 @@ TEST_CASE("Retransmission"){
 	//Receive the CLCW frame
     serv_channel.allFramesReceptionRequestRxTM(clcwData, 128);
 	//E10 enters
-	CHECK(serv_channel.fopState(0) ==  RETRANSMIT_WITHOUT_WAIT);
+	CHECK(serv_channel.getFopState(0) == RETRANSMIT_WITHOUT_WAIT);
 }

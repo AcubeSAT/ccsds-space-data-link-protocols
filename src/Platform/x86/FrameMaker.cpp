@@ -15,7 +15,7 @@ ServiceChannelNotification FrameMaker::transmitChain(uint8_t vid) {
     } while (ser == NO_SERVICE_EVENT);
 
     // error control encoding for all frames
-    while (serviceChannel->allFramesGenerationRequestTxTM(frameTarget, frameLength) == NO_SERVICE_EVENT) {
+    while (serviceChannel->allFramesGenerationRequestTxTM(frameTarget) == NO_SERVICE_EVENT) {
         numberOfFramesSent += 1;
         std::array<uint8_t, TmTransferFrameSize> frameArray = {0};
         for (uint16_t i = 0; i < frameLength; ++i) {

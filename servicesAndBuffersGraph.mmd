@@ -51,7 +51,8 @@ flowchart TB
             A1s2 -.-> |"(from segmentation,blocking)"|vc16
 
             A1s6 -.front reference.-vc16
-            A1s7 -.remaining space.-vc16
+            A1s7 -.get queue reference.-vc16
+
         end
 
         subgraph A2 ["SDLS Processing"]
@@ -69,32 +70,23 @@ flowchart TB
             A3s2[["frontFrameBeforeAllFramesGenerationTxTC()"]]
 
             A2s1 --> A3s1
-            A3s1 -.->|"Push and deletion from fop"| vc2
-            A3s1 -.->|"Push and deletion from fop"| vc4
-            A3s1 -..-x|"From fop"| master12
-            A3s1 -..-x|"From fop"| master16
-            A3s1 -.-x|"After fop finishes"| vc7
-            A3s1 -.->|"from vcGenerationRequestTC() AND transferFdu()?"| master1
+            A3s1 -..-x|"From fop (after reception confirmation)"| master12
+            A3s1 -..-x|"From fop (after reception confirmation)"| master16
+            A3s1 -.-> vc7
+            A3s1 -.-> master1
             A3s2 -.-|"front reference"| master1
         end
 
         
         subgraph A4 ["All Frames Generation"]
-            A4s1[["allFramesGenerationRequestTxTC()"]]
-            A4s2[["frameTransmission(frameTarget)<br>NOTE:is a fop service"]]
-            A4s3[["frontFrameAfterAllFramesGenerationTxTC()"]]
-            A4s4[["availableFramesAfterAllFramesGenerationTxTC()"]]
-
-            A3s1 --> A4s1 --> A4s2
+            A4s1[["allFramesGenerationRequestTxTC(frameTarget)"]]
+           
+            A3s1 --> A4s1
             A4s1 -.-x master1
-            A4s1 -.-> master2
-            A4s2 -.-x master2
-            A4s3 -.-|"front reference"| master2
-            A4s4 -.-|"remaining space"| master2
         end
     end
 
-    A1s2 ~~~ A2s1 ~~~ A3s1 ~~~ A4s1
+    A1 ~~~ A2 ~~~ A3 ~~~ A4
 
     subgraph B ["TC Rx Services"]
         subgraph B1["All Frames Reception"]
@@ -194,7 +186,7 @@ flowchart TB
         end
 
         subgraph C4["All Frames Generation"]
-            C4s1[["allFramesGenerationRequestTxTM(frameDataTarget, frameLength)"]]
+            C4s1[["allFramesGenerationRequestTxTM(frameDataTarget)"]]
             C4s2[["frontFrameAfterAllFramesGenerationTxTM()"]]
 
             C3s1 --> C4s1
@@ -251,9 +243,7 @@ map9[("framesAfterSDLSProcessingTypeBDRxTC (frameTC*)")]
 
 
 vc1[("framesAfterMCReceptionRxTM (frameTM*)")]
-vc2[("waitQueueTxTC (frameTC*)")]
 vc3[("waitQueueRxTC (frameTC*)")]
-vc4[("sentQueueTxTC (frameTC*)")]
 vc5[("sentQueueRxTC (frameTC*)")]
 vc6[("inFramesAfterVCReceptionRxTC (frameTC*)")]
 vc7[("unprocessedFrameListBufferTxTC (frameTC*)")]
@@ -270,7 +260,6 @@ vc19[("framesAfterSDLSProcessingTypeBDRxTC (frameTC*)")]
 
 
 master1[("outFramesBeforeAllFramesGenerationListTxTC (frameTC*)")]
-master2[("toBeTransmittedFramesAfterAllFramesGenerationListTxTC (frameTC*)")]
 master3[("txOutFramesBeforeMCGenerationListTM<br>Note: Seems unused")]
 master4[("toBeTransmittedFramesAfterMCGenerationListTxTM (frameTM*)")]
 master5[("txOutFramesBeforeMCReceptionListTM<br>Note:seems unused")]
@@ -297,6 +286,6 @@ classDef utility_services fill:#648D98;
 
 class map1,map2,map4,map5,map6,map7,map8,map9,E3 map_channel_buffer;
 class vc1,vc2,vc3,vc4,vc5,vc6,vc7,vc8,vc9,vc10,vc11,vc12,vc13,vc16,vc17,vc18,vc19,E4 virtual_channel_buffer;
-class master1,master2,master3,master4,master5,master6,master7,master8,master9,master10,master11,master12,master13,master14,master15,master16,master17,E5 master_channel_buffer
+class master1,master3,master4,master5,master6,master7,master8,master9,master10,master11,master12,master13,master14,master15,master16,master17,E5 master_channel_buffer
 class A1s1,A1s2,A2s1,A3s1,A4s1,A4s2,B1s1,B1s2,B2s1,B3s1,B4s1,C1s1,C2s1,C3s1,C4s1,D1s1,D2s1,E1 main_services;
 class A1s3,A1s4,A1s5,A1s6,A1s7,A3s2,A4s3,A4s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;

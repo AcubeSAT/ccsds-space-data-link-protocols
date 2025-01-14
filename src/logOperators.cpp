@@ -20,6 +20,7 @@ std::ostream& operator<<(std::ostream& out, const NotificationType value) {
 		INSERT_ELEMENT(TypeServiceChannelNotif);
 		INSERT_ELEMENT(TypeFDURequestType);
         INSERT_ELEMENT(TypeSDLSVerificationStatusCode);
+        INSERT_ELEMENT(TypeFOPNotif);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];
@@ -37,10 +38,8 @@ std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification val
 		INSERT_ELEMENT(NO_TX_PACKETS_TO_PROCESS);
 		INSERT_ELEMENT(NO_RX_PACKETS_TO_PROCESS);
 		INSERT_ELEMENT(PACKET_EXCEEDS_MAX_SIZE);
-		INSERT_ELEMENT(FOP_SENT_QUEUE_FULL);
 		INSERT_ELEMENT(TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY);
 		INSERT_ELEMENT(TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
-		INSERT_ELEMENT(FOP_REQUEST_REJECTED);
 		INSERT_ELEMENT(RX_IN_MC_FULL);
 		INSERT_ELEMENT(RX_IN_BUFFER_FULL);
 		INSERT_ELEMENT(RX_OUT_BUFFER_FULL);
@@ -48,18 +47,20 @@ std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification val
 		INSERT_ELEMENT(RX_INVALID_SCID);
 		INSERT_ELEMENT(RX_INVALID_LENGTH);
 		INSERT_ELEMENT(VC_RX_WAIT_QUEUE_FULL);
-		INSERT_ELEMENT(TX_FOP_REJECTED);
-#undef INSERT_ELEMENT
-	}
-	return out << strings[value];
-}
-
-std::ostream& operator<<(std::ostream& out, const COPDirectiveResponse value) {
-	static std::map<COPDirectiveResponse, std::string> strings;
-	if (strings.empty()) {
-#define INSERT_ELEMENT(p) strings[p] = #p
-		INSERT_ELEMENT(ACCEPT);
-		INSERT_ELEMENT(REJECT);
+        INSERT_ELEMENT(VC_MC_FRAME_BUFFER_EMPTY);
+        INSERT_ELEMENT(INVALID_VC_ID);
+        INSERT_ELEMENT(INVALID_MAP_ID);
+        INSERT_ELEMENT(RX_INVALID_CRC);
+        INSERT_ELEMENT(INVALID_SERVICE_CALL);
+        INSERT_ELEMENT(PACKET_BUFFER_EMPTY);
+        INSERT_ELEMENT(NO_TX_PACKETS_TO_TRANSFER_FRAME);
+        INSERT_ELEMENT(MC_RX_INVALID_COUNT);
+        INSERT_ELEMENT(MEMORY_POOL_FULL);
+        INSERT_ELEMENT(INVALID_INPUT);
+        INSERT_ELEMENT(SDLS_ERROR);
+        INSERT_ELEMENT(FOP_BUFFER_FULL);
+        INSERT_ELEMENT(FOP_BUFFER_EMPTY);
+        INSERT_ELEMENT(INVALID_SERVICE_TYPE);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];
@@ -69,9 +70,17 @@ std::ostream& operator<<(std::ostream& out, const FOPNotification value) {
 	static std::map<FOPNotification, std::string> strings;
 	if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
-		INSERT_ELEMENT(NO_FOP_EVENT);
-		INSERT_ELEMENT(SENT_QUEUE_FULL);
-		INSERT_ELEMENT(WAIT_QUEUE_EMPTY);
+        INSERT_ELEMENT(NO_FOP_EVENT);
+        INSERT_ELEMENT(SENT_QUEUE_FULL);
+        INSERT_ELEMENT(SENT_QUEUE_EMPTY);
+        INSERT_ELEMENT(WAIT_QUEUE_FULL);
+        INSERT_ELEMENT(WAIT_QUEUE_EMPTY);
+        INSERT_ELEMENT(SIGNAL_QUEUE_FULL);
+        INSERT_ELEMENT(SIGNAL_QUEUE_EMPTY);
+        INSERT_ELEMENT(FOP_MEMORY_POOL_FULL);
+        INSERT_ELEMENT(FOP_MASTER_COPY_BUFFER_FULL);
+        INSERT_ELEMENT(NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
+        INSERT_ELEMENT(FOP_UNEXPECTED_VALUE);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];
@@ -85,6 +94,7 @@ std::ostream& operator<<(std::ostream& out, const MasterChannelAlert value) {
 		INSERT_ELEMENT(OUT_FRAMES_LIST_FULL);
 		INSERT_ELEMENT(TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
 		INSERT_ELEMENT(MAX_AMOUNT_OF_VIRT_CHANNELS);
+        INSERT_ELEMENT(NO_SPACE);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];
@@ -103,14 +113,20 @@ std::ostream& operator<<(std::ostream& out, const VirtualChannelAlert value) {
 	return out << strings[value];
 }
 
-std::ostream& operator<<(std::ostream& out, const FDURequestType value) {
-	static std::map<FDURequestType, std::string> strings;
-	if (strings.empty()) {
+std::ostream& operator<<(std::ostream& out, const SDLSVerificationStatusCode value) {
+    static std::map<SDLSVerificationStatusCode, std::string> strings;
+    if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
-		INSERT_ELEMENT(REQUEST_PENDING);
-		INSERT_ELEMENT(REQUEST_POSITIVE_CONFIRM);
-		INSERT_ELEMENT(REQUEST_NEGATIVE_CONFIRM);
+        INSERT_ELEMENT(NO_FAILURE);
+        INSERT_ELEMENT(INVALID_SPI);
+        INSERT_ELEMENT(INVALID_FRAME_TYPE);
+        INSERT_ELEMENT(UNASSOCIATED_CHANNEL);
+        INSERT_ELEMENT(INVALID_USER);
+        INSERT_ELEMENT(MAC_CALCULATION_ERROR);
+        INSERT_ELEMENT(MAC_VERIFICATION_FAILURE);
+        INSERT_ELEMENT(ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE);
+        INSERT_ELEMENT(PADDING_ERROR);
 #undef INSERT_ELEMENT
-	}
-	return out << strings[value];
+    }
+    return out << strings[value];
 }

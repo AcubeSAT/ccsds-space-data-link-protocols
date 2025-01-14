@@ -87,8 +87,6 @@ public:
      */
     std::pair<ServiceChannelNotification, const TransferFrameTC*> backUnprocessedFrameMcCopyTxTC() const;
 
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> frontFrameAfterAllFramesGenerationTxTC() const;
-
     /**
      * @return The front TC TransferFrame from outFramesBeforeAllFramesGenerationListTxTC
      */
@@ -189,71 +187,41 @@ public:
     ServiceChannelNotification vcGenerationRequestTxTC(uint8_t vid);
 
 
-    //         -- FOP Directives
-    ServiceChannelNotification frameTransmission(uint8_t* frameTarget);
+    //         -- FOP-1 User services and debugging methods
 
-    ServiceChannelNotification transmitAdFrame(uint8_t vid);
+    ServiceChannelNotification pushDirectiveRequestSignal(uint8_t vid, const DirectiveRequestSignal& directiveRequestSignal);
 
-    ServiceChannelNotification pushSentQueue(uint8_t vid);
 
-    // TODO: Properly handle Notifications
-    void acknowledgeFrame(uint8_t vid, uint8_t frameSeqNumber);
+    ServiceChannelNotification pushCLCW(uint8_t vid, CLCW clcw);
 
-    void clearAcknowledgedFrames(uint8_t vid);
 
-    void initiateAdNoClcw(uint8_t vid);
+    std::pair<ServiceChannelNotification, etl::optional<DirectiveNotificationSignal>> popDirectiveNotificationSignal(uint8_t vid);
 
-    void initiateAdClcw(uint8_t vid);
 
-    void initiateAdUnlock(uint8_t vid);
-
-    void initiateAdVr(uint8_t vid, uint8_t vr);
-
-    void terminateAdService(uint8_t vid);
-
-    void resumeAdService(uint8_t vid);
-
-    void setVs(uint8_t vid, uint8_t vs);
-
-    void setFopWidth(uint8_t vid, uint8_t width);
-
-    void setT1Initial(uint8_t vid, uint16_t t1_init);
-
-    void setTransmissionLimit(uint8_t vid, uint8_t vr);
-
-    void setTimeoutType(uint8_t vid, bool vr);
-
-    void invalidDirective(uint8_t vid);
-
-    CLCW getClcwInBuffer(uint8_t vid);
-
-    // for testing purposes
-    void pushClcwInBuffer(CLCW clcw, uint8_t vid) {
-        masterChannel.virtualChannels.at(vid).generatedClcwBuffer.push_back(clcw);
-    }
+    std::pair<ServiceChannelNotification, etl::optional<AsynchronousNotificationSignal>> popAsynchronousNotificationSignal(uint8_t vid);
 
     /**
 	 * Get FOP State of the virtual channel
 	 */
-    FOPState fopState(uint8_t vid) const;
+    FOPState getFopState(uint8_t vid) const;
 
     /**
      * Returns the value of the timer that is used to determine the time frame for acknowledging transferred
      * frames
      */
-    uint16_t t1Timer(uint8_t vid) const;
+    uint16_t getT1Timer(uint8_t vid) const;
 
     /**
      * Indicates the width of the sliding window which is used to proceed to the lockout state in case the
      * transfer frame number of the received packet deviates too much from the expected one.
      */
-    uint8_t fopSlidingWindowWidth(uint8_t vid) const;
+    uint8_t getFopSlidingWindowWidth(uint8_t vid) const;
 
     /**
      * Returns the timeout action which is to be performed once the maximum transmission limit is reached and
      * the timer has expired.
      */
-    bool timeoutType(uint8_t vid) const;
+    bool getTimeoutType(uint8_t vid) const;
 
     /**
      * Returns the last frame sequence number, V(S), that will be placed in the header of the next transferred
@@ -261,7 +229,7 @@ public:
      *
      * @param vid Virtual Channel ID
      */
-    uint8_t transmitterFrameSeqNumber(uint8_t vid) const;
+    uint8_t getTransmitterFrameSeqNumber(uint8_t vid) const;
 
     /**
      * Returns the expected acknowledgement frame sequence number, NN(R). This is essentially the frame sequence
@@ -269,7 +237,7 @@ public:
      *
      * @param vid Virtual Channel ID
      */
-    uint8_t expectedFrameSeqNumber(uint8_t vid) const;
+    uint8_t getExpectedFrameSeqNumber(uint8_t vid) const;
 
     //     - All frames generation
     /**
@@ -277,8 +245,12 @@ public:
      * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
      * rate to the Channel Coding Sublayer.
      * @see p. 4.3.8 from TC Space Data Link Protocol
+     * @param frameTarget: Location to copy the frame to. The buffer should be at least as large as the maximum
+     *  TC transfer frame length
+     *
+     * @returns The number of octets copied (since TC transfer frames have variable length)
      */
-    ServiceChannelNotification allFramesGenerationRequestTxTC();
+    std::pair<ServiceChannelNotification, uint16_t> allFramesGenerationRequestTxTC(uint8_t* frameTarget);
 
     // TC TransferFrame - Receiving End (TC Rx)
 
@@ -514,7 +486,7 @@ public:
      * @see p. 4.2.7 from TM Space Data Link Protocol
      * @TODO do not forget to have a mechanism for sending frames at an appropriate rate (unless lower layers can handle it by transmitting empty codewords)
      */
-    ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget, uint16_t& frameLength);
+    ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t* frameDataTarget);
 
 
     // TM TransferFrame - Receiving End (TM Rx)

@@ -1,5 +1,16 @@
 #pragma once
 
+enum TxRx : uint8_t { Rx = 0x00, Tx = 0x01 };
+
+enum NotificationType : uint8_t {
+    TypeVirtualChannelAlert = 0x00,
+    TypeMasterChannelAlert = 0x01,
+    TypeServiceChannelNotif = 0x02,
+    TypeFDURequestType = 0x05,
+    TypeSDLSVerificationStatusCode = 0x06,
+    TypeFOPNotif = 0x07
+};
+
 enum ServiceChannelNotification : int {
 	NO_SERVICE_EVENT = 0x01,
 	MAP_CHANNEL_FRAME_BUFFER_FULL = 0x02,
@@ -28,12 +39,10 @@ enum ServiceChannelNotification : int {
 	MC_RX_INVALID_COUNT = 0x1E,
 	MEMORY_POOL_FULL = 0x1F,
     INVALID_INPUT = 0x20,
-    SDLS_ERROR = 0X21
-};
-
-enum SynchronizationFlag : bool {
-    OCTET_SYNCHRONIZED_FORWARD_ORDERED = false,
-    VCA_SDU = true
+    SDLS_ERROR = 0x21,
+    FOP_BUFFER_FULL = 0x22,
+    FOP_BUFFER_EMPTY = 0x23,
+    INVALID_SERVICE_TYPE = 0x24
 };
 
 enum VirtualChannelAlert : uint8_t {
@@ -75,15 +84,4 @@ enum FOPNotification {
     FOP_MASTER_COPY_BUFFER_FULL = 0x09,
     NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT = 0x0A,
     FOP_UNEXPECTED_VALUE = 0x0B,
-};
-
-enum TxRx : uint8_t { Rx = 0x00, Tx = 0x01 };
-
-enum NotificationType : uint8_t {
-	TypeVirtualChannelAlert = 0x00,
-	TypeMasterChannelAlert = 0x01,
-	TypeServiceChannelNotif = 0x02,
-	TypeFDURequestType = 0x05,
-    TypeSDLSVerificationStatusCode = 0x06,
-    TypeFOPNotif = 0x07
 };

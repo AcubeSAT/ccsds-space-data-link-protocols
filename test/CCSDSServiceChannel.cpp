@@ -40,9 +40,9 @@ TEST_CASE("Service Channel") {
 	uint8_t pckt_type_a2[] = {0xE1, 0x32, 0x12};
 
 	// Initialize service
-	CHECK(serv_channel.fopState(0) == FOPState::INITIAL);
+	CHECK(serv_channel.getFopState(0) == FOPState::INITIAL);
 	serv_channel.initiateAdNoClcw(0);
-	CHECK(serv_channel.fopState(0) == FOPState::ACTIVE);
+	CHECK(serv_channel.getFopState(0) == FOPState::ACTIVE);
 
 //	CHECK(serv_channel.txAvailableTC(0, 0) == MaxReceivedTcInMapChannel);
 //	CHECK(serv_channel.txAvailableTC(0, 1) == MaxReceivedTcInMapChannel);
@@ -251,30 +251,30 @@ TEST_CASE("Service Channel") {
 
 	// E1 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 
 	// E3 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM2, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 
 	// E4 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM3, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 
 	// E5 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM4, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 
 	// E7 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM5, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 
 	// E11 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM6, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM7, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 
 //  This buffer is not used anywhere
 //	CHECK(serv_channel.txAvailableTC(2, 0) == MaxReceivedTcInMapChannel);
@@ -295,19 +295,19 @@ TEST_CASE("Service Channel") {
 	serv_channel.acknowledgeFrame(2, 0);
 	// E13 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 	// E2 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM8, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 	// E6 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM9, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 	// E8 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM10, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 	// E9 change of state
 	err = serv_channel.allFramesReceptionRequestRxTM(valid_no_crc_frame_TM11, 12);
-	CHECK(serv_channel.fopState(2) == INITIAL);
+	CHECK(serv_channel.getFopState(2) == INITIAL);
 }
 
 TEST_CASE("VC Generation Service") {

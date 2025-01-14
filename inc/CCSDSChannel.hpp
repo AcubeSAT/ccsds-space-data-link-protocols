@@ -376,17 +376,7 @@ private:
 	/**
 	 * Buffer to store incoming transfer frames BEFORE being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueTxTC;
-
-	/**
-	 * Buffer to store incoming transfer frames BEFORE being processed by COP
-	 */
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueRxTC;
-
-	/**
-	 * Buffer to store outcoming transfer frames AFTER being processed by COP
-	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue> sentQueueTxTC;
 
 	/**
 	 * Buffer to storeOut outcoming transfer frames AFTER being processed by COP
@@ -490,14 +480,11 @@ struct MasterChannel {
 	uint8_t frameCount{};
 
 	MasterChannel()
-	    : virtualChannels(), toBeTransmittedFramesAfterAllFramesGenerationListTxTC(),
-          outFramesBeforeAllFramesGenerationListTxTC(), currFrameCountTM(0) {}
+	    : virtualChannels(), outFramesBeforeAllFramesGenerationListTxTC(), currFrameCountTM(0) {}
 
 	MasterChannel(const MasterChannel& m)
 	    : virtualChannels(m.virtualChannels), frameCount(m.frameCount),
           outFramesBeforeAllFramesGenerationListTxTC(m.outFramesBeforeAllFramesGenerationListTxTC),
-          toBeTransmittedFramesAfterAllFramesGenerationListTxTC(
-	          m.toBeTransmittedFramesAfterAllFramesGenerationListTxTC),
           masterCopyRxTC(m.masterCopyRxTC), masterCopyRxTM(m.masterCopyRxTM), currFrameCountTM(m.currFrameCountTM) {
 		for (auto& vc : virtualChannels) {
 			vc.second.masterChannel = *this;
@@ -576,8 +563,6 @@ struct MasterChannel {
 private:
 	// TC transfer frames stored in frames list, before being processed by the all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInMasterBuffer> outFramesBeforeAllFramesGenerationListTxTC;
-	// TC transfer frames ready to be transmitted having passed through the all frames generation service
-	etl::list<TransferFrameTC*, MaxReceivedTxTcOutInMasterBuffer> toBeTransmittedFramesAfterAllFramesGenerationListTxTC;
 
 	// TM transfer frames stored in frames list, before being processed by the vc generation service
 	etl::list<TransferFrameTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCGenerationListTM;

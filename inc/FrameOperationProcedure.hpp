@@ -481,18 +481,12 @@ private:
      *
      *          - rejected (REJECT_RESPONSE_TO_DIRECTIVE) -> The directive is rejected because either the signal queue
      *          is full, or for there is a FOP related reason (@see FOP-1 State Table)
-     *
-     * @TODO make a wrapper function in  service channel.
-     *       the wrapper function should additionaly have a vid param, since a FOP-1 object will exist for every
-     *       virtual channel
      */
     FOPNotification pushDirectiveRequestSignal(const DirectiveRequestSignal& signal);
 
     /**
      * Push CLCWs for FOP-1 to inspect. A return value of true
      * indicates the action was successful (there was enough space in the CLCWs queue)
-     *
-     * @TODO make a service channel wrapper function, that moves the clcws to the correct virtual channel
      */
     FOPNotification pushClcw(CLCW clcw);
 
