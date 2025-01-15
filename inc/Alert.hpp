@@ -42,7 +42,8 @@ enum ServiceChannelNotification : int {
     SDLS_ERROR = 0x21,
     FOP_BUFFER_FULL = 0x22,
     FOP_BUFFER_EMPTY = 0x23,
-    INVALID_SERVICE_TYPE = 0x24
+    INVALID_SERVICE_TYPE = 0x24,
+    FOP_ERROR = 0x25
 };
 
 enum VirtualChannelAlert : uint8_t {

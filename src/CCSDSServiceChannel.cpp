@@ -494,34 +494,82 @@ ServiceChannelNotification ServiceChannel::applySDLSSecurityTxTC(uint8_t vid, ui
 
 //     - Virtual Channel Generation
 ServiceChannelNotification ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) {
-    VirtualChannel& virt_channel = masterChannel.virtualChannels.at(vid);
-    if (virt_channel.unprocessedFrameListBufferTxTC.empty()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
-        return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
+    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return ServiceChannelNotification::INVALID_VC_ID;
     }
 
-    if (masterChannel.outFramesBeforeAllFramesGenerationListTxTC.full()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, TX_MC_FRAME_BUFFER_FULL);
-        return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
+    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
+
+    // pop transfer notifications
+    // TODO: Right now this is the responsibility of the user, but maybe it
+    //       makes more sense to pop them here and translate them to packet
+    //       transfer notifications (see if this supported by the protocol)
+    //       That way the user could get confirmation about the individual packets
+    //       he sent.
+
+    // push transfer fdu signals
+    static uint8_t requestId = 0;
+    if (!vchan->unprocessedFrameListBufferTxTC.empty()) {
+        TransferFrameTC* frameTc = vchan->unprocessedFrameListBufferTxTC.front();
+        vchan->fop.pushTransferFduSignal(DfuTransferSignal(requestId, frameTc->getServiceType(), frameTc));
     }
 
-    TransferFrameTC& frame = *virt_channel.unprocessedFrameListBufferTxTC.front();
-    COPDirectiveResponse err = COPDirectiveResponse::ACCEPT;
+    // receive low layer requests
+    std::pair<FOPNotification, etl::optional<FopToLowerLayerRequestSignal>> fopToLowerLayerRequestSignalPair = vchan->fop.popFopToLowerLayerRequestSignal();
 
-    err = virt_channel.fop.transferFdu();
-
-    MasterChannelAlert mc = virt_channel.master_channel().storeOut(&frame);
-    if (mc != MasterChannelAlert::NO_MC_ALERT) {
-        ccsdsLogNotice(Tx, TypeCOPDirectiveResponse, REJECT);
-        return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+    if (fopToLowerLayerRequestSignalPair.first == NO_FOP_EVENT) {
+        FopToLowerLayerRequestSignal signal = fopToLowerLayerRequestSignalPair.second.value();
+        if (signal.lowerLayerRequestType == LOW_LAYER_ABORT) {
+            // stop frame transmissions of TYPE-AD AND type-bc by clearing the queues
+            // TODO: (optional) actions could also be taken to stop transmissions in the  Channel Coding and
+            //       Synchronization layer
+            etl::ilist<TransferFrameTC*>::iterator it = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.begin();
+            while (it != masterChannel.outFramesBeforeAllFramesGenerationListTxTC.end()) {
+                if (((*it)->getServiceType() == ServiceType::TYPE_AD) || ((*it)->getServiceType() == ServiceType::TYPE_BC)) {
+                    // delete pointer
+                    it = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.erase(it); // erase() returns the iterator to the next element
+                    continue;
+                }
+                it++;
+            }
+        } else if (!masterChannel.outFramesBeforeAllFramesGenerationListTxTC.full()) {
+            // signal is a transfer request, and there is space in the next queue
+            masterChannel.outFramesBeforeAllFramesGenerationListTxTC.push_back(signal.frame.value());
+            switch (signal.serviceType) {
+                case ServiceType::TYPE_AD:
+                    vchan->fop.pushLowerLayerResponseSignal(AD_ACCEPT);
+                    break;
+                case ServiceType::TYPE_BC:
+                    vchan->fop.pushLowerLayerResponseSignal(BC_ACCEPT);
+                    break;
+                case ServiceType::TYPE_BD:
+                    vchan->fop.pushLowerLayerResponseSignal(BD_ACCEPT);
+            }
+        } else {
+            // signal is a transfer request, and there is no space in the next queue
+            switch (signal.serviceType) {
+                case ServiceType::TYPE_AD:
+                    vchan->fop.pushLowerLayerResponseSignal(AD_ACCEPT);
+                    break;
+                case ServiceType::TYPE_BC:
+                    vchan->fop.pushLowerLayerResponseSignal(BC_REJECT);
+                    break;
+                case ServiceType::TYPE_BD:
+                    vchan->fop.pushLowerLayerResponseSignal(BD_REJECT);
+            }
+        }
     }
 
-    if (err == COPDirectiveResponse::REJECT) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_REQUEST_REJECTED);
-        return ServiceChannelNotification::FOP_REQUEST_REJECTED;
+    // execute fop-1 state machine
+    std::pair<FOPNotification, uint8_t> event = vchan->fop.applyFopStateTable();
+
+    if (event.first != NO_FOP_EVENT) {
+        ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
+        return FOP_ERROR;
     }
-    virt_channel.unprocessedFrameListBufferTxTC.pop_front();
-    return ServiceChannelNotification::NO_SERVICE_EVENT;
+
+    return NO_SERVICE_EVENT;
 }
 
 
