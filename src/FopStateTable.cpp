@@ -64,7 +64,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                     directiveNotificationSignalQueue.push(
                                             DirectiveNotificationSignal(initiateDirectiveWithClcwCheckRequestIdentifier.value(), POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                                     initiateDirectiveWithClcwCheckRequestIdentifier = etl::nullopt;
-                                    // TODO cancel the timer
+                                    timer.stopTimer();
                                     state = ACTIVE;
                                     break;
                                 case INITIALIZING_WITH_BC_FRAME:
@@ -97,7 +97,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                         }
                                         sent_queue_it++; // This frame was not type BC, move to the next one
                                     }
-                                    // TODO cancel the timer
+                                    timer.stopTimer();
                                     state = ACTIVE;
                                     break;
                             }
@@ -109,7 +109,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                 case RETRANSMIT_WITHOUT_WAIT:
                                 case RETRANSMIT_WITH_WAIT:
                                     removeAcknowledgedFramesFromSentQueue(clcw.getReportValue());
-                                    // TODO cancel the timer
+                                    timer.stopTimer();
                                     lookForFdu();
                                     state = ACTIVE;
                                     break;
@@ -352,7 +352,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
     }
 
     /** Timer expiration **/
-    if (true) {  // TODO replace condition with a timerExpired method
+    if (timer.getRunning() && (timer.getRemainingTime() == 0)) {
         if (transmissionCount < transmissionLimit) {
             if (timeoutType == 0) {
                 // E16 rev. B
@@ -539,7 +539,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         directiveNotificationSignalQueue.push(
                                 DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier, ACCEPT_RESPONSE_TO_DIRECTIVE));
                         initialize();
-                        // TODO start the timer
+                        timer.startTimer(tiInitial);
                         state = INITIALIZING_WITHOUT_BC_FRAME;
                         break;
                     default:

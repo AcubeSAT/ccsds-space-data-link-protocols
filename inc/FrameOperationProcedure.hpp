@@ -9,6 +9,7 @@
 #include <CCSDS_Definitions.hpp>
 #include <CLCW.hpp>
 #include <etl/optional.h>
+#include <CountdownTimer.hpp>
 
 /**
  * Directive request signal
@@ -282,6 +283,7 @@ private:
 
 
     /** Implementation Specific variables **/
+    CountdownTimer timer;
 
     /**
      * Queues for storing incoming signals and clcws

@@ -103,7 +103,7 @@ FOPNotification FrameOperationProcedure::transmitAdFrame(TransferFrameTC* adFram
         transmissionCount = 1;
     }
 
-	// TODO start the timer
+	timer.startTimer(tiInitial);
 
     adOut = NOT_READY;
     fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_TRANSMIT, ServiceType::TYPE_AD, adFrame));
@@ -184,7 +184,7 @@ FOPNotification FrameOperationProcedure::transmitBcFrame(const DirectiveRequestS
 
 	transmissionCount = 1;
 
-	// TODO start the timer
+	timer.startTimer(tiInitial);
 
     bcOut = NOT_READY;
 
@@ -232,7 +232,7 @@ FOPNotification FrameOperationProcedure::initiateRetransmission(ServiceType serv
 
 	fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_ABORT, serviceType));
 	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
-	// TODO start the timer
+    timer.startTimer(tiInitial);
 
 	for (TransferFrameTC* frame : sentQueueFOP) {
 		if (frame->getServiceType() == serviceType) {
@@ -388,7 +388,7 @@ void FrameOperationProcedure::initialize() {
 }
 
 void FrameOperationProcedure::alert(AlertEvent event) {
-    // TODO: cancel the timer
+    timer.stopTimer();
     purgeSentQueue();
     purgeWaitQueue();
     // TODO: Generate a ‘Negative Confirm Response to Directive’ for any ongoing 'Initiate AD Service' request
@@ -397,7 +397,7 @@ void FrameOperationProcedure::alert(AlertEvent event) {
 }
 
 void FrameOperationProcedure::resume() {
-    // TODO start the timer
+    timer.startTimer(tiInitial);
     suspendState = SuspendVariableState::NOT_SUSPENDED;
 }
 

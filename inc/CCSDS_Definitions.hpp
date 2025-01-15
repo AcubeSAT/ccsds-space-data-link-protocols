@@ -107,7 +107,7 @@ inline constexpr uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
 /// Set to 0 if VC processing service isn't used
 
 inline constexpr uint8_t FopSlidingWindowInitial = 255;
-inline constexpr uint8_t FopTimerInitial = 60; // sec
+inline constexpr uint16_t FopTimerInitial = 60; // sec
 inline constexpr uint8_t TransmissionLimit = 5;
 inline constexpr uint8_t DirectiveRequestSignalQueueSize = 10;
 inline constexpr uint8_t TransferfduSignalQueueSize = 10;
