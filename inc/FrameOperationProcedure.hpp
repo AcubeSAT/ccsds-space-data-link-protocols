@@ -180,15 +180,16 @@ class VirtualChannel;
  * The frame operation procedure (FOP-1) is a sub-segment of COP-1, a process responsible
  * for TC frame acknowledgment and assurance of their arrival with the correct order. Frames
  * that this service will be applied to are called 'TYPE-AD frames'. It is also possible to bypass
- * this service, in which case we have 'TYPE-BD frames'. For communication with COP-1's reception side
- * subsegment (FARM-1), 'TYPE-BC frames' are generated within FOP-1.
+ * it, by transmitting 'TYPE-BD frames'. For communication with COP-1's reception side
+ * subsegment (FARM-1), 'TYPE-BC frames' are generated within FOP-1. FOP-1 (and FARM-1) are state machines.
  *
  * For proper operation, the TC Data Link user must provide FOP-1 with:
  * 1. CLCWs: Those are carried by TM transfer frames (@see TM Data Link Protocol), and constitute FARM-1's
- *    way of communicating with FOP-1. They are provided with the method pushClcw()
- * 2. directives: Those are commands that initialize the process or change certain parameters.
+ *    method of communicating with FOP-1, thus having a closed loop system. They are provided with the method pushClcw()
+ * 2. directives: Those are commands that initialize the process or change certain parameters. They are provided with the
+ *    method pushDirectiveRequestSignal()
  *
- * Furthermore, signals are returned to the user via vcGeneration, the data processing function where FOP-1 runs within.
+ * Furthermore, signals are returned to the user via vcGeneration, the data processing function where FOP-1 is executed.
  * These can indicate the successful reception of frames (can be collected for monitoring reasons) or alerts, which
  * indicate an unrecoverable problem with the data link, and demand action from higher level protocols.
  *
@@ -208,16 +209,14 @@ private:
      * @see p. 5.1.2 from COP-1 CCSDS
      */
     FOPState state;
-
     /**
      * It contains the value of the Frame Sequence Number to be put in the Transfer Frame Primary Header of
      * the  next  Type-AD Transfer Frame to be transmitted.
      * @see p. 5.1.3 from COP-1 CCSDS
      */
     uint8_t transmitterFrameSeqNumber;
-
     /**
-     * Type-AD transfer frames stored in list, before being processed by the FOP service.
+     * Type-AD transfer frames stored in list, before being processed by the FOP service. It has a capacity of one.
      * @see p. 5.1.4 from COP-1 CCSDS
      */
     etl::list<TransferFrameTC*, 1> waitQueueFOP;
@@ -227,7 +226,6 @@ private:
      * @see p. 5.1.7 from COP-1 CCSDS
      */
     etl::list<TransferFrameTC*, MaxReceivedTxTcInFOPSentQueue> sentQueueFOP;
-
     /**
      * @see p. 5.1.6 from COP-1 CCSDS
      */
@@ -245,7 +243,7 @@ private:
      */
     uint8_t expectedAcknowledgementSeqNumber;
     /**
-     * Timer
+     * Countdown timer initial value, in milliseconds
      * @see p. 5.1.9 from COP-1 CCSDS
      */
     uint16_t tiInitial;
@@ -273,7 +271,6 @@ private:
      * @see p. 5.1.10.3 from COP-1 CCSDS
      */
     bool timeoutType;
-
     /**
      * It records the state that FOP-1 was in when the AD Service was suspended (as described in 5.1.10).
      * This is the state to which FOP-1 will return should the AD Service be resumed.
@@ -283,8 +280,8 @@ private:
 
 
     /** Implementation Specific variables **/
-    CountdownTimer timer;
 
+    CountdownTimer timer;
     /**
      * Queues for storing incoming signals and clcws
      */
@@ -292,7 +289,6 @@ private:
     etl::queue<DfuTransferSignal, TransferfduSignalQueueSize> transferFduSignalQueue;
     etl::queue<LowerLayerResponseSignal, LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
     etl::queue<CLCW, clcwQueueSize> clcwQueue;
-
     /**
      * Queues for storing output signals.
      */
@@ -300,19 +296,16 @@ private:
     etl::queue<TransferNotificationSignal, MaxReceivedTxTcInFOPSentQueue + 1> transferNotificationSignalQueue;
     etl::queue<AsynchronousNotificationSignal, AsynchronousNotificationSignalQueueSize> asynchronousNotificationSignalQueue;
     etl::queue<FopToLowerLayerRequestSignal, MaxReceivedTxTcInFOPSentQueue + 1> fopToLowerLayerRequestSignalQueue;
-
     /**
-     * frame master copy and memory pool: No frame master frame copies will be stored inside FOP-1, to avoid
-     * extra memory overhead and the time it would require to copy them. However, FOP-1 needs to delete frames
-     * once their reception is confirmed and purge frames if an error has occurred, as well as create
-     * TYPE-BC frames. Therefore, the Tx TC chain's master copy buffer and memory pool are stored here as a reference.
-     * FOP-1 will take the responsibility of master copy deletion/creation.
+     * In order to avoid memory overheads, no frame copies will be stored inside FOP-1.
+     * However, FOP-1 needs to delete frames once their reception is confirmed and purge frames if an error has occurred,
+     * as well as generate TYPE-BC frames. Therefore, the Tx TC chain's master copy buffer and memory pool are stored
+     * here as a reference.
      */
     etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer;
     MemoryPool& memoryPool;
-
-    /*
-     * Since type BD frames bypass fop (they are not stored), this variable will hold the request identifier,
+    /**
+     * Since type BD frames bypass fop (they are not stored), this variable will hold their request identifier,
      * until a response from the lower layers is received.
      */
     etl::optional<uint8_t> bdFrameRequestIdentifier;
@@ -324,7 +317,7 @@ private:
      * Initiate AD service (with set V(R))
      *
      * The last 2 generate TYPE-BC frames that stay in the sent queue, so their request identifiers are stored within those
-     * frames. The first one however does not, so it's request identifier is stored in this variable
+     * frames. The first one, however, does not, so its request identifier is stored in this variable
      */
      etl::optional<uint8_t> initiateDirectiveWithClcwCheckRequestIdentifier;
 
@@ -335,20 +328,17 @@ private:
      * @see p. 5.2.2 from COP-1 CCSDS
      */
     FOPNotification purgeSentQueue();
-
     /**
      * Purge the wait queue of the virtual channel and generate a response
      * @see p. 5.2.3 from COP-1 CCSDS
      */
     FOPNotification purgeWaitQueue();
-
     /**
      * Prepares a Type-AD Frame for transmission. Type-AD frames are popped from the wait queue
      * and placed in the sent queue. They will be removed once there is confirmation of their reception.
      * @see p. 5.2.4 from COP-1 CCSDS
      */
     FOPNotification transmitAdFrame(TransferFrameTC* adFrame);
-
     /**
      * Prepares a Type-BC Frame for transmission. Type-BC frames are generated in this function
      * and placed in the sent queue when 2 specific directive types are sent:
@@ -358,7 +348,6 @@ private:
      * @see p. 5.2.5 from COP-1 CCSDS
      */
     FOPNotification transmitBcFrame(const DirectiveRequestSignal& directiveSignal);
-
     /**
      * Prepares a Type-BD Frame for transmission. Type-BD frames essentially bypass FOP-1 services.
      * They are not placed in the wait or sent queue. In case they are accepted to the lower layers,
@@ -369,13 +358,11 @@ private:
      * @see p. 5.2.6 from COP-1 CCSDS
      */
     FOPNotification transmitBdFrame(TransferFrameTC* bdFrame);
-
     /**
      * Marks AD (or BC) Frames stored in the sent queue to be retransmitted
      * @see p. 5.2.7 from COP-1 CCSDS
      */
     FOPNotification initiateRetransmission(ServiceType serviceType);
-
     /**
      * Remove acknowledged TYPE-AD frames from sent queue (TYPE-BD frames are instead cleared upon successful
      * CLCW reception, @see E1 in FOP-1 table). The frames for ready removal are those that have a transfer frame sequence
@@ -387,31 +374,26 @@ private:
      * @see p. 5.2.8 from COP-1 CCSDS
      */
     FOPNotification removeAcknowledgedFramesFromSentQueue(uint8_t reportValue);
-
     /**
      * Search for directives in the sent queue and transmit any eligible frames
      * @see p. 5.2.9 from COP-1 CCSDS
      */
     FOPNotification lookForDirective();
-
     /**
      * Search for a FDU that can be transmitted in the sent_queue. If none are found also search in
      * the wait_queue
      * @see p. 5.2.10 from COP-1 CCSDS
      */
     FOPNotification lookForFdu();
-
     /**
      * initializes FOP service
      * @see p. 5.2.14 from COP-1 CCSDS
      */
     void initialize();
-
     /**
      * @see p. 5.2.15 from COP-1 CCSDS
      */
     void alert(AlertEvent event);
-
     /**
      * @see p. 5.2.17 from COP-1 CCSDS
      */
@@ -422,13 +404,13 @@ private:
 
     /**
      * This is core process of FOP-1. By examining incoming signals, CLCWs and internal variables,
-     * an event is detected, then appropriate actions are taken based on that event and current state
-     * @see FOP-1 state table
+     * an event is detected, then appropriate actions are taken based on that event, and the current state.
+     * @see p. 5.3 from COP-1 CCSDS
      *
      * Any output signals can be collected using the pop signal methods. Each time applyFopStateTable() is
-     * executed, their values are replaced with etl::nullopt in the start.
+     * executed, the output signal queues are cleared.
      *
-     * @returns The event code detected (@see FOP-1 state table). An event code of 0 means no event was detected
+     * @returns The event code detected. An event code of 0 means no event.
      *
      * @TODO figure out a reasonable event processing order. one like this seems fine:
      * 1. directive request event come first: the data link user must have priority
@@ -437,36 +419,29 @@ private:
      * 4. transfer fdu and lower layer responses: essentially requests having to do with frame transfers
      *
      */
-     std::pair<FOPNotification, uint8_t> applyFopStateTable();
+    std::pair<FOPNotification, uint8_t> applyFopStateTable();
+    /**
+     * Attempt to pass a frame data unit to FOP-1.
+     * A signal of ACCEPT_RESPONSE_TO_TRANSFER_FDU indicates that the frame
+     * is now handled by FOP-1. At a later time, applyFopStateTable() will return a
+     * POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU or a NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU
+     * (with the corresponding signal id) to indicate vcGeneration service that the frame was obtained by
+     * the receiving side successfully.
+     *
+     */
+    FOPNotification pushTransferFduSignal(DfuTransferSignal signal);
+    /**
+     * Respond to FOP-1's request for passing a frame to lower layers.
+     */
+    FOPNotification pushLowerLayerResponseSignal(LowerLayerResponseSignal signal);
 
-     /**
-      * Attempt to pass a frame data unit to FOP-1.
-      * Meant to be used by the vcGeneration Service.
-      * A return signal of ACCEPT_RESPONSE_TO_TRANSFER_FDU indicates that the frame
-      * is now handled by FOP-1. At a later time, applyFopStateTable() will return a
-      * POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU or a NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU
-      * (with the corresponding signal Id) to indicate vcGeneration service (and potentially the
-      * TC data link user) that the frame was obtained by the receiving side successfully.
-      *
-      * NOTE: Removal of the frame master copy is handled by FOP-1.
-      */
-     FOPNotification pushTransferFduSignal(DfuTransferSignal signal);
+    std::pair<FOPNotification, etl::optional<TransferNotificationSignal>> popTransferNotificationSignal();
 
-
-      /**
-       * Respond to FOP-1's request for passing a frame to lower layers
-       * Meant to be used by the vcGeneration service. A return value of true
-       * indicates the action was successful (there was enough space in the signal queue)
-       */
-     FOPNotification pushLowerLayerResponseSignal(LowerLayerResponseSignal signal);
-
-     std::pair<FOPNotification, etl::optional<TransferNotificationSignal>> popTransferNotificationSignal();
-
-     std::pair<FOPNotification, etl::optional<FopToLowerLayerRequestSignal>> popFopToLowerLayerRequestSignal();
+    std::pair<FOPNotification, etl::optional<FopToLowerLayerRequestSignal>> popFopToLowerLayerRequestSignal();
 
 
     /** Implementation specific FOP-1 methods (for the the TC Data Link User). Wrapper functions are provided
-     * in ServiceChannel
+     * in ServiceChannel.
      */
 
     /**
@@ -474,21 +449,18 @@ private:
      * to FOP-1
      *
      * @param signal: A DirectiveRequestSignal, specifying the type of directive and a signal ID.
-     *          An response (DirectiveNotificationSignal) on whether the request is accept or rejected.
+     *          At a later time, a ACCEPT_RESPONSE_TO_DIRECTIVE or a REJECT_RESPONSE_TO_DIRECTIVE signal will be returned.
      *          What an acceptance or rejection mean is explained below:
-     *          - accepted (ACCEPT_RESPONSE_TO_DIRECTIVE) -> The directive is successfully stored in the queue. However,
+     *          - ACCEPT_RESPONSE_TO_DIRECTIVE -> The directive is successfully stored in the queue. However,
      *          it's execution will be confirmed at a later time either by receiving a POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE
-     *          or a NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE. This confirmation will be returned by applyFopStateTable()
-     *          (and by extension, vcGenerationService), along with the signal ID, so the user can reaxt appropriately.
+     *          or a NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE.
      *
-     *          - rejected (REJECT_RESPONSE_TO_DIRECTIVE) -> The directive is rejected because either the signal queue
-     *          is full, or for there is a FOP related reason (@see FOP-1 State Table)
+     *          - REJECT_RESPONSE_TO_DIRECTIVE -> The directive is rejected either because the signal queue
+     *          is full, or there is a FOP related reason (@see p. 5.3 from COP-1 CCSDS)
      */
     FOPNotification pushDirectiveRequestSignal(const DirectiveRequestSignal& signal);
-
     /**
-     * Push CLCWs for FOP-1 to inspect. A return value of true
-     * indicates the action was successful (there was enough space in the CLCWs queue)
+     * Push CLCWs for FOP-1 to inspect.
      */
     FOPNotification pushClcw(CLCW clcw);
 
