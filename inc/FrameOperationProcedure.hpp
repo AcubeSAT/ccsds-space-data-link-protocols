@@ -399,6 +399,15 @@ private:
      */
     void resume();
 
+    /**
+     * Due to the FOP-1 arithmetic being mod 256, it is possible in the inequality:
+     * lowerBound < value < upperBound
+     * for upperBound to be numerically smaller than lower bound (wraparound). In order to make this concept
+     * more clear, diagrams exist in the wiki, under section: 'Circular arithmetic'.
+     *
+     * @returns If the given value is within the window or it's edges.
+     */
+     bool withinWindow(uint8_t value, uint8_t lowerBound, uint8_t upperBound);
 
     /** Implementation specific FOP-1 methods (for usage inside vcGeneration service)**/
 

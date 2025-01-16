@@ -144,7 +144,8 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                             state = INITIAL;
                     }
                 }
-            } else if ((clcw.getReportValue() < transmitterFrameSeqNumber) && (clcw.getReportValue() >= expectedAcknowledgementSeqNumber)) {
+            } else if (withinWindow(clcw.getReportValue(), expectedAcknowledgementSeqNumber,
+                                    (transmitterFrameSeqNumber == 0) ? 255 : transmitterFrameSeqNumber - 1)) {
                 if (!clcw.getRetransmit()) {
                     if (!clcw.getWait()) {
                         if (clcw.getReportValue() == expectedAcknowledgementSeqNumber) {

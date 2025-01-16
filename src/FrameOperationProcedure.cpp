@@ -2,6 +2,15 @@
 #include <CCSDSChannel.hpp>
 #include "CCSDSLoggerImpl.h"
 
+bool FrameOperationProcedure::withinWindow(uint8_t value, uint8_t lowerBound, uint8_t upperBound) {
+    if (upperBound < lowerBound) { // wraparound
+        // The window region consists of 2 subregions: [lowerBound, 255] and [0, upperBound]
+        return ((value >= lowerBound) && (value <= 255)) || ((value >= 0) && (value <= upperBound));
+    } else {  // normal comparison
+        return (value >= lowerBound) && (value <= upperBound);
+    }
+}
+
 /** FOP-1 actions **/
 FOPNotification FrameOperationProcedure::purgeSentQueue() {
 	etl::ilist<TransferFrameTC*>::iterator sent_queue_it = sentQueueFOP.begin();
@@ -357,7 +366,18 @@ FOPNotification FrameOperationProcedure::lookForFdu() {
         return FOPNotification::NO_FOP_EVENT;
     }
 
-    if ((waitQueueFOP.front()->getServiceType() == ServiceType::TYPE_AD) && (transmitterFrameSeqNumber < expectedAcknowledgementSeqNumber + fopSlidingWindowWidth)) {
+    // calculate NN(R) + (K - 1)
+    uint8_t upperBound;
+    if (255 - expectedAcknowledgementSeqNumber >= fopSlidingWindowWidth - 1) {  // normal calculation
+        upperBound = expectedAcknowledgementSeqNumber + fopSlidingWindowWidth - 1;
+    } else {  // wraparound
+        // (val & 256) is equal to (val % 256), but faster
+        upperBound = static_cast<uint8_t>(
+                (static_cast<uint16_t>(fopSlidingWindowWidth - 1) + static_cast<uint16_t>(expectedAcknowledgementSeqNumber)) & 256);
+    }
+
+    if ((waitQueueFOP.front()->getServiceType() == ServiceType::TYPE_AD) &&
+    withinWindow(transmitterFrameSeqNumber, expectedAcknowledgementSeqNumber, upperBound)) {
         TransferFrameTC* adFrame = waitQueueFOP.front();
         FOPNotification notification = transmitAdFrame(adFrame);
         if (notification == NO_FOP_EVENT) {
