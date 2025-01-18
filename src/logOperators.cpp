@@ -62,6 +62,7 @@ std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification val
         INSERT_ELEMENT(FOP_BUFFER_EMPTY);
         INSERT_ELEMENT(INVALID_SERVICE_TYPE);
         INSERT_ELEMENT(FOP_ERROR);
+        INSERT_ELEMENT(UNEXPECTED_FOP_RETURN_SIGNAL);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];

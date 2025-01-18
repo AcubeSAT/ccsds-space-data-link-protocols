@@ -179,12 +179,18 @@ public:
     /**
      * The  Virtual  Channel  Generation  Function  shall  perform  the  following  two
      * procedures in the following order:
-     * 		a) the  Frame  Operation  Procedure  (FOP),  which  is  a  sub-procedure  of  the
-     * 		Communications Operation Procedure (COP); and
-     * 		b) the Frame Generation Procedure in this order.
+     * 		The  Frame  Operation  Procedure  (FOP),  which  is  a  sub-procedure  of  the
+     * 		Communications Operation Procedure (COP)
+     *
      * @see p. 4.3.5 from TC Space Data Link Protocol
+     *
+     * @returns - A service channel Notification indicating whether an error occured within FOP,
+     *          or an unexpected value was encountered.
+     *          - A struct, which may or may not contain directive notifications, asynchronous notifications
+     *            and the event code detected by fop. The last field is offered for diagnostic reasons.
+     *          @see p. 4.2 & 4.3 from COP-1 CCSDS
      */
-    ServiceChannelNotification vcGenerationRequestTxTC(uint8_t vid);
+    std::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vid);
 
 
     //         -- FOP-1 User services and debugging methods
@@ -193,12 +199,6 @@ public:
 
 
     ServiceChannelNotification pushCLCW(uint8_t vid, CLCW clcw);
-
-
-    std::pair<ServiceChannelNotification, etl::optional<DirectiveNotificationSignal>> popDirectiveNotificationSignal(uint8_t vid);
-
-
-    std::pair<ServiceChannelNotification, etl::optional<AsynchronousNotificationSignal>> popAsynchronousNotificationSignal(uint8_t vid);
 
     /**
 	 * Get FOP State of the virtual channel

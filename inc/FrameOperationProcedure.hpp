@@ -52,9 +52,10 @@ enum DirectiveNotificationType {
 struct DirectiveNotificationSignal {
     uint8_t requestIdentifier;
     DirectiveNotificationType directiveNotificationType;
+    etl::optional<TransferFrameTC*> frame;
 
-    DirectiveNotificationSignal(uint8_t requestIdentifier, DirectiveNotificationType directiveNotificationType) :
-    requestIdentifier(requestIdentifier), directiveNotificationType(directiveNotificationType) {};
+    DirectiveNotificationSignal(uint8_t requestIdentifier, DirectiveNotificationType directiveNotificationType, const etl::optional<TransferFrameTC*>& frame = etl::nullopt) :
+    requestIdentifier(requestIdentifier), directiveNotificationType(directiveNotificationType), frame(frame) {};
 };
 
 /**
@@ -90,13 +91,12 @@ struct AsynchronousNotificationSignal {
  * FDU Transfer signal
  * @see p. 3.2.2.3 from COP-1 CCSDS
  */
-struct DfuTransferSignal {
-    uint8_t requestIdentifier;
+struct FduTransferSignal {
     ServiceType serviceType;
     TransferFrameTC* frame;
 
-    DfuTransferSignal(uint8_t requestIdentifier, ServiceType serviceType, TransferFrameTC* frame) :
-    requestIdentifier(requestIdentifier), serviceType(serviceType), frame(frame) {};
+    FduTransferSignal(ServiceType serviceType, TransferFrameTC* frame) :
+    serviceType(serviceType), frame(frame) {};
 };
 
 /**
@@ -111,11 +111,11 @@ enum TransferNotificationType {
 };
 
 struct TransferNotificationSignal {
-    uint8_t requestIdentifier;
     TransferNotificationType transferNotificationType;
+    etl::optional<TransferFrameTC*> frame;
 
-    TransferNotificationSignal(uint8_t requestIdentifier, TransferNotificationType transferNotificationType) :
-    requestIdentifier(requestIdentifier), transferNotificationType(transferNotificationType) {};
+    TransferNotificationSignal(TransferNotificationType transferNotificationType, const etl::optional<TransferFrameTC*> frame = etl::nullopt) :
+    transferNotificationType(transferNotificationType), frame(frame) {};
 };
 
 
@@ -136,6 +136,22 @@ struct FopToLowerLayerRequestSignal {
     FopToLowerLayerRequestSignal(LowerLayerRequestType lowerLayerRequestType, ServiceType serviceType,
                                  const etl::optional<TransferFrameTC*>& frame = etl::nullopt) :
     lowerLayerRequestType(lowerLayerRequestType), serviceType(serviceType), frame(frame) {};
+};
+
+/**
+ * This struct can be used by vcGeneration to return in a compact form
+ * any signals that should be viewed by the Data Link User
+ */
+struct FopSignals {
+    uint8_t eventCode;
+    etl::optional<DirectiveNotificationSignal> directiveNotificationSignal;
+    etl::optional<AsynchronousNotificationSignal> asynchronousNotificationSignal;
+
+    FopSignals(uint8_t eventCode,  const etl::optional<DirectiveNotificationSignal>& directiveNotificationSignal = etl::nullopt,
+               const etl::optional<AsynchronousNotificationSignal>& asynchronousNotificationSignal = etl::nullopt)  :
+            eventCode(eventCode),
+            directiveNotificationSignal(directiveNotificationSignal),
+            asynchronousNotificationSignal(asynchronousNotificationSignal){};
 };
 
 /**
@@ -286,40 +302,36 @@ private:
      * Queues for storing incoming signals and clcws
      */
     etl::queue<DirectiveRequestSignal, DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
-    etl::queue<DfuTransferSignal, TransferfduSignalQueueSize> transferFduSignalQueue;
+    etl::queue<FduTransferSignal, TransferfduSignalQueueSize> transferFduSignalQueue;
     etl::queue<LowerLayerResponseSignal, LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
     etl::queue<CLCW, clcwQueueSize> clcwQueue;
     /**
      * Queues for storing output signals.
      */
-    etl::queue<DirectiveNotificationSignal, DirectiveNotificationSignalQueueSize> directiveNotificationSignalQueue;
+    etl::queue<DirectiveNotificationSignal, 1> directiveNotificationSignalQueue;
     etl::queue<TransferNotificationSignal, MaxReceivedTxTcInFOPSentQueue + 1> transferNotificationSignalQueue;
-    etl::queue<AsynchronousNotificationSignal, AsynchronousNotificationSignalQueueSize> asynchronousNotificationSignalQueue;
+    etl::queue<AsynchronousNotificationSignal, 1> asynchronousNotificationSignalQueue;
     etl::queue<FopToLowerLayerRequestSignal, MaxReceivedTxTcInFOPSentQueue + 1> fopToLowerLayerRequestSignalQueue;
     /**
      * In order to avoid memory overheads, no frame copies will be stored inside FOP-1.
-     * However, FOP-1 needs to delete frames once their reception is confirmed and purge frames if an error has occurred,
-     * as well as generate TYPE-BC frames. Therefore, the Tx TC chain's master copy buffer and memory pool are stored
+     * However, FOP-1 needs to generate TYPE-BC frames. Therefore, the Tx TC chain's master copy buffer and memory pool are stored
      * here as a reference.
      */
     etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer;
     MemoryPool& memoryPool;
-    /**
-     * Since type BD frames bypass fop (they are not stored), this variable will hold their request identifier,
-     * until a response from the lower layers is received.
-     */
-    etl::optional<uint8_t> bdFrameRequestIdentifier;
 
     /**
      * There are 3 directives that will not receive confirmation immediately upon processing:
      * Initiate AD service (with CLCW check)
      * Initiate AD service (with unlock)
      * Initiate AD service (with set V(R))
+     * The first makes FOP wait for a CLCW, so that FOP is synchronized by farm.
+     * The last 2 generate and transmit a type BC frame, so that FARM is synchronized by FOP.
      *
-     * The last 2 generate TYPE-BC frames that stay in the sent queue, so their request identifiers are stored within those
-     * frames. The first one, however, does not, so its request identifier is stored in this variable
+     * Their identifier are stored in these variables.
      */
-     etl::optional<uint8_t> initiateDirectiveWithClcwCheckRequestIdentifier;
+     etl::optional<uint8_t> initiateWithClcwCheckId;
+     etl::optional<uint8_t> initiateWithBcFrameId;
 
     /** FOP-1 ACTIONS **/
 
@@ -399,16 +411,6 @@ private:
      */
     void resume();
 
-    /**
-     * Due to the FOP-1 arithmetic being mod 256, it is possible in the inequality:
-     * lowerBound < value < upperBound
-     * for upperBound to be numerically smaller than lower bound (wraparound). In order to make this concept
-     * more clear, diagrams exist in the wiki, under section: 'Circular arithmetic'.
-     *
-     * @returns If the given value is within the window or it's edges.
-     */
-     bool withinWindow(uint8_t value, uint8_t lowerBound, uint8_t upperBound);
-
     /** Implementation specific FOP-1 methods (for usage inside vcGeneration service)**/
 
     /**
@@ -438,7 +440,7 @@ private:
      * the receiving side successfully.
      *
      */
-    FOPNotification pushTransferFduSignal(DfuTransferSignal signal);
+    FOPNotification pushTransferFduSignal(FduTransferSignal signal);
     /**
      * Respond to FOP-1's request for passing a frame to lower layers.
      */
@@ -447,6 +449,10 @@ private:
     std::pair<FOPNotification, etl::optional<TransferNotificationSignal>> popTransferNotificationSignal();
 
     std::pair<FOPNotification, etl::optional<FopToLowerLayerRequestSignal>> popFopToLowerLayerRequestSignal();
+
+    std::pair<FOPNotification, etl::optional<DirectiveNotificationSignal>> popDirectiveNotificationSignal();
+
+    std::pair<FOPNotification, etl::optional<AsynchronousNotificationSignal>> popAsynchronousNotificationSignal();
 
 
     /** Implementation specific FOP-1 methods (for the the TC Data Link User). Wrapper functions are provided
@@ -472,10 +478,6 @@ private:
      * Push CLCWs for FOP-1 to inspect.
      */
     FOPNotification pushClcw(CLCW clcw);
-
-    std::pair<FOPNotification, etl::optional<DirectiveNotificationSignal>> popDirectiveNotificationSignal();
-
-    std::pair<FOPNotification, etl::optional<AsynchronousNotificationSignal>> popAsynchronousNotificationSignal();
 
 public:
     FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer, MemoryPool& memoryPool)

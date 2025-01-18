@@ -128,6 +128,22 @@ inline constexpr uint8_t ControlWordType = 0x00;  // the value of 0 indicates th
 inline constexpr uint8_t ClcwVersionNumber = 0x0; // '00' is the only available value currently
 inline constexpr uint8_t CopInEffect = 0x01;      // Indicates COP-1 is used
 
+/**
+ * Due to the FOP-1 arithmetic being mod 256, it is possible in the inequality:
+ * lowerBound < value < upperBound
+ * for upperBound to be numerically smaller than lower bound (wraparound). In order to make this concept
+ * more clear, diagrams exist in the wiki, under section: 'Circular arithmetic'.
+ *
+ * @returns If the given value is within the window or it's edges.
+ */
+bool withinWindow(uint8_t value, uint8_t lowerBound, uint8_t upperBound) {
+    if (upperBound < lowerBound) { // wraparound
+        // The window region consists of 2 subregions: [lowerBound, 255] and [0, upperBound]
+        return ((value >= lowerBound) && (value <= 255)) || ((value >= 0) && (value <= upperBound));
+    } else {  // normal comparison
+        return (value >= lowerBound) && (value <= upperBound);
+    }
+}
 
 inline constexpr uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
 inline constexpr uint16_t MaxAllocatedPackets = 50;

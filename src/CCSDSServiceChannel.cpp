@@ -1,6 +1,7 @@
 #include <CCSDSServiceChannel.hpp>
 #include <TransferFrameTM.hpp>
 #include <etl/iterator.h>
+#include <etl/optional.h>
 #include "CLCW.hpp"
 
 // TC TransferFrame - Sending End (TC Tx)
@@ -481,7 +482,7 @@ ServiceChannelNotification ServiceChannel::applySDLSSecurityTxTC(uint8_t vid, ui
     if (sdlsNotification == MAC_CALCULATION_ERROR || sdlsNotification == INVALID_FRAME_TYPE) {
         ccsdsLogNotice(Tx, TypeSDLSVerificationStatusCode, sdlsNotification);
 
-        masterChannel.masterChannelPoolTC.deletePacket(frameTc->getFrameData(), frameTc->getTransferRequestId());
+        masterChannel.masterChannelPoolTC.deletePacket(frameTc->getFrameData(), frameTc->getFrameLength());
         vchan->master_channel().masterCopyTxTC.remove(*frameTc);
         return SDLS_ERROR;
     }
@@ -493,83 +494,210 @@ ServiceChannelNotification ServiceChannel::applySDLSSecurityTxTC(uint8_t vid, ui
 }
 
 //     - Virtual Channel Generation
-ServiceChannelNotification ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) {
+std::pair<ServiceChannelNotification, FopSignals> ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) {
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return ServiceChannelNotification::INVALID_VC_ID;
+        return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, FopSignals(0));
     }
 
     VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
 
-    // pop transfer notifications
-    // TODO: Right now this is the responsibility of the user, but maybe it
-    //       makes more sense to pop them here and translate them to packet
-    //       transfer notifications (see if this supported by the protocol)
-    //       That way the user could get confirmation about the individual packets
-    //       he sent.
-
-    // push transfer fdu signals
-    static uint8_t requestId = 0;
-    if (!vchan->unprocessedFrameListBufferTxTC.empty()) {
-        TransferFrameTC* frameTc = vchan->unprocessedFrameListBufferTxTC.front();
-        vchan->fop.pushTransferFduSignal(DfuTransferSignal(requestId, frameTc->getServiceType(), frameTc));
-    }
-
-    // receive low layer requests
-    std::pair<FOPNotification, etl::optional<FopToLowerLayerRequestSignal>> fopToLowerLayerRequestSignalPair = vchan->fop.popFopToLowerLayerRequestSignal();
-
-    if (fopToLowerLayerRequestSignalPair.first == NO_FOP_EVENT) {
-        FopToLowerLayerRequestSignal signal = fopToLowerLayerRequestSignalPair.second.value();
-        if (signal.lowerLayerRequestType == LOW_LAYER_ABORT) {
-            // stop frame transmissions of TYPE-AD AND type-bc by clearing the queues
-            // TODO: (optional) actions could also be taken to stop transmissions in the  Channel Coding and
-            //       Synchronization layer
-            etl::ilist<TransferFrameTC*>::iterator it = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.begin();
-            while (it != masterChannel.outFramesBeforeAllFramesGenerationListTxTC.end()) {
-                if (((*it)->getServiceType() == ServiceType::TYPE_AD) || ((*it)->getServiceType() == ServiceType::TYPE_BC)) {
-                    // delete pointer
-                    it = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.erase(it); // erase() returns the iterator to the next element
-                    continue;
-                }
-                it++;
-            }
-        } else if (!masterChannel.outFramesBeforeAllFramesGenerationListTxTC.full()) {
-            // signal is a transfer request, and there is space in the next queue
-            masterChannel.outFramesBeforeAllFramesGenerationListTxTC.push_back(signal.frame.value());
-            switch (signal.serviceType) {
-                case ServiceType::TYPE_AD:
-                    vchan->fop.pushLowerLayerResponseSignal(AD_ACCEPT);
-                    break;
-                case ServiceType::TYPE_BC:
-                    vchan->fop.pushLowerLayerResponseSignal(BC_ACCEPT);
-                    break;
-                case ServiceType::TYPE_BD:
-                    vchan->fop.pushLowerLayerResponseSignal(BD_ACCEPT);
-            }
-        } else {
-            // signal is a transfer request, and there is no space in the next queue
-            switch (signal.serviceType) {
-                case ServiceType::TYPE_AD:
-                    vchan->fop.pushLowerLayerResponseSignal(AD_ACCEPT);
-                    break;
-                case ServiceType::TYPE_BC:
-                    vchan->fop.pushLowerLayerResponseSignal(BC_REJECT);
-                    break;
-                case ServiceType::TYPE_BD:
-                    vchan->fop.pushLowerLayerResponseSignal(BD_REJECT);
-            }
-        }
-    }
-
-    // execute fop-1 state machine
+    /**
+     * Execute state machine. A notification will be returned to indicate if there was unexpected input
+     * or event-state combination. The detected event code is also returned (0 for no event). Useful for
+     * debugging.
+     */
     std::pair<FOPNotification, uint8_t> event = vchan->fop.applyFopStateTable();
 
     if (event.first != NO_FOP_EVENT) {
         ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
-        return FOP_ERROR;
+        return std::make_pair(FOP_ERROR, FopSignals(event.second));
     }
 
-    return NO_SERVICE_EVENT;
+   /** transfer notification signal handling
+    * - ACCEPT_RESPONSE_TO_TRANSFER_FDU: AD/BD Frame accepted by FOP. Delete pointer from higher layer buffer.
+    * - REJECT_RESPONSE_TO_TRANSFER_FDU: AD/BD Frame was not accepted by FOP. Do nothing (a new push will attempted for that fdu).
+    * - POSITIVE_CONFIRM_TO_TRANSFER_FDU: AD Frame was received by FARM. Delete it's master copy.
+    * - NEGATIVE_CONFIRM_TO_TRANSFER_FDU: AD Frame was not received by FARM, or an error has occurred (usually
+    *   accompanied by an alert signal as well). Delete master copy. Delete the lower layer buffer pointer, if it exists.
+    *  TODO perhaps the POSITIVE_CONFIRM_TO_TRANSFER_FDU can somehow be translated to which packets went through (and
+    *       inform the user)
+    */
+    TransferNotificationSignal* transferNotificationSignal;
+    etl::ilist<TransferFrameTC*>::iterator high_layer_buffer_it = vchan->unprocessedFrameListBufferTxTC.begin();
+    etl::ilist<TransferFrameTC*>::iterator low_layer_buffer_it = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.begin();
+    etl::ilist<TransferFrameTC>::iterator master_copy_buffer_it;
+    while (!vchan->fop.transferNotificationSignalQueue.empty()) {
+        transferNotificationSignal = &vchan->fop.transferNotificationSignalQueue.front();
+        vchan->fop.transferNotificationSignalQueue.pop();
+
+        if (!transferNotificationSignal->frame) {
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
+            return std::make_pair(UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
+        }
+
+        switch (transferNotificationSignal->transferNotificationType) {
+            case ACCEPT_RESPONSE_TO_TRANSFER_FDU:
+                while (high_layer_buffer_it != vchan->unprocessedFrameListBufferTxTC.end()) {
+                    if (*high_layer_buffer_it == transferNotificationSignal->frame.value()) {
+                        vchan->unprocessedFrameListBufferTxTC.erase(high_layer_buffer_it);
+                        break;
+                    }
+                    ++high_layer_buffer_it;
+                }
+                break;
+            case NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU:
+                while (low_layer_buffer_it != masterChannel.outFramesBeforeAllFramesGenerationListTxTC.end()) {
+                    if (*low_layer_buffer_it == transferNotificationSignal->frame.value()) {
+                        masterChannel.outFramesBeforeAllFramesGenerationListTxTC.erase(low_layer_buffer_it);
+                        break;
+                    }
+                    ++low_layer_buffer_it;
+                }
+                // fallthrough
+            case POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU:
+                masterChannel.masterChannelPoolTC.deletePacket(transferNotificationSignal->frame.value()->getFrameData(),
+                                                               transferNotificationSignal->frame.value()->getFrameLength());
+
+                master_copy_buffer_it = masterChannel.masterCopyTxTC.begin();
+                while (master_copy_buffer_it != masterChannel.masterCopyTxTC.end()) {
+                    if (&(*master_copy_buffer_it) == transferNotificationSignal->frame.value()) {
+                        masterChannel.masterCopyTxTC.erase(master_copy_buffer_it);
+                        break;
+                    }
+                    ++master_copy_buffer_it;
+                }
+                break;
+        }
+    }
+
+
+   /** lower layer request signal handling and lower layer response signal pushing
+    * - LOW_LAYER_TRANSMIT: AD/BD/BC request for transmitting frame. If there is space, pass the pointer to the lower layer buffer
+    *   and send *_ACCEPT to FOP. Otherwise, send *_REJECT.
+    * - LOW_LAYER_ABORT: FOP asks to stop ongoing type AD/BC transmission. Delete pointers from lower layer buffer.
+    *  TODO (optional): The protocol optionally suggests to stop transmissions to layers lower than the data link.
+    *                   Maybe a flag could be raised to notify the user about this.
+    */
+
+   FopToLowerLayerRequestSignal* fopToLowerLayerRequestSignal;
+   if (fopToLowerLayerRequestSignal->lowerLayerRequestType == LOW_LAYER_TRANSMIT) {
+       vchan->fop.fopToLowerLayerRequestSignalQueue.front();
+       vchan->fop.fopToLowerLayerRequestSignalQueue.pop();
+
+       if (!fopToLowerLayerRequestSignal->frame) {
+           ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
+           return std::make_pair(UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
+       }
+
+       if (masterChannel.outFramesBeforeAllFramesGenerationListTxTC.full()) {
+           switch (fopToLowerLayerRequestSignal->serviceType) {
+               case ServiceType::TYPE_AD:
+                   vchan->fop.pushLowerLayerResponseSignal(LowerLayerResponseSignal(AD_REJECT));
+                   break;
+               case ServiceType::TYPE_BC:
+                   vchan->fop.pushLowerLayerResponseSignal(LowerLayerResponseSignal(BC_REJECT));
+                   break;
+               case ServiceType::TYPE_BD:
+                   vchan->fop.pushLowerLayerResponseSignal(LowerLayerResponseSignal(BD_REJECT));
+                   break;
+               case ServiceType::TYPE_RESERVED:
+                   ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
+                   return std::make_pair(UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
+           }
+       } else {
+           switch (fopToLowerLayerRequestSignal->serviceType) {
+               case ServiceType::TYPE_AD:
+                   vchan->fop.pushLowerLayerResponseSignal(LowerLayerResponseSignal(AD_ACCEPT));
+                   break;
+               case ServiceType::TYPE_BC:
+                   vchan->fop.pushLowerLayerResponseSignal(LowerLayerResponseSignal(BC_ACCEPT));
+                   break;
+               case ServiceType::TYPE_BD:
+                   vchan->fop.pushLowerLayerResponseSignal(LowerLayerResponseSignal(BD_ACCEPT));
+                   break;
+               case ServiceType::TYPE_RESERVED:
+                   ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
+                   return std::make_pair(UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
+           }
+
+           masterChannel.outFramesBeforeAllFramesGenerationListTxTC.push_back(fopToLowerLayerRequestSignal->frame.value());
+       }
+   } else {
+       masterChannel.outFramesBeforeAllFramesGenerationListTxTC.clear();
+   }
+
+   /** directive notification signal handling
+    * - ACCEPT_RESPONSE_TO_DIRECTIVE: FOP accepted the request. Initiate directives with set V(R) or unlock will also
+    *   generate a type BC frame.
+    * - REJECT_RESPONSE_TO_DIRECTIVE: FOP rejected the request.
+    * - POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE: Initiate directives with set V(R) or unlock successfully received by farm.
+    *   Delete type BC frame master copy.
+    * - NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE: Initiate directives with set V(R) or unlock were not received by farm or
+    *   an error occurred. Delete type BC frame master copy. Delete the lower layer buffer pointer, if it exists.
+    *
+    *   In any case, the user must also informed and receive the corresponding request ID.
+    */
+    DirectiveNotificationSignal *directiveNotificationSignal;
+    if (!vchan->fop.directiveNotificationSignalQueue.empty()) {
+        directiveNotificationSignal = &vchan->fop.directiveNotificationSignalQueue.front();
+
+        if ((directiveNotificationSignal->directiveNotificationType == NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE ||
+             directiveNotificationSignal->directiveNotificationType == POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE) &&
+             !directiveNotificationSignal->frame) {
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
+            return std::make_pair(UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
+        }
+
+        switch (directiveNotificationSignal->directiveNotificationType) {
+            case NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE:
+
+                while (low_layer_buffer_it != masterChannel.outFramesBeforeAllFramesGenerationListTxTC.end()) {
+                    if (*low_layer_buffer_it == directiveNotificationSignal->frame.value()) {
+                        masterChannel.outFramesBeforeAllFramesGenerationListTxTC.erase(low_layer_buffer_it);
+                        break;
+                    }
+                    ++low_layer_buffer_it;
+                }
+                // fallthrough
+            case POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE:
+
+                masterChannel.masterChannelPoolTC.deletePacket(directiveNotificationSignal->frame.value()->getFrameData(),
+                                                               directiveNotificationSignal->frame.value()->getFrameLength());
+
+                master_copy_buffer_it = masterChannel.masterCopyTxTC.begin();
+                while (master_copy_buffer_it != masterChannel.masterCopyTxTC.end()) {
+                    if (&(*master_copy_buffer_it) == directiveNotificationSignal->frame.value()) {
+                        masterChannel.masterCopyTxTC.erase(master_copy_buffer_it);
+                        break;
+                    }
+                    ++master_copy_buffer_it;
+                }
+        }
+    }
+
+   /**
+    *  alert signal handling
+    *  Inform the user. In every alert, FOP purges it's queues and sends NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU
+    *  and NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE. Therefore frame deletion is handled via transfer notification and
+    *  lower request signal handling.
+    */
+    AsynchronousNotificationSignal *asynchronousNotificationSignal;
+    if (!vchan->fop.asynchronousNotificationSignalQueue.empty()) {
+        asynchronousNotificationSignal = &vchan->fop.asynchronousNotificationSignalQueue.front();
+    }
+
+   /** push transfer fdu signals
+    * The higher layer buffer pointer will not be deleted, since it is not yet known if fop can accept the frame.
+    */
+    TransferFrameTC* tcFrame;
+    high_layer_buffer_it = vchan->unprocessedFrameListBufferTxTC.begin();
+    while (high_layer_buffer_it != vchan->unprocessedFrameListBufferTxTC.end()) {
+        vchan->fop.transferFduSignalQueue.push(FduTransferSignal((*high_layer_buffer_it)->getServiceType(), *high_layer_buffer_it));
+        ++high_layer_buffer_it;
+    }
+
+    return std::make_pair(NO_SERVICE_EVENT, FopSignals(event.second, *directiveNotificationSignal, *asynchronousNotificationSignal));
 }
 
 
@@ -610,42 +738,6 @@ ServiceChannelNotification ServiceChannel::pushCLCW(uint8_t vid, CLCW clcw) {
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
-std::pair<ServiceChannelNotification, etl::optional<DirectiveNotificationSignal>> ServiceChannel::popDirectiveNotificationSignal(uint8_t  vid) {
-    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, etl::nullopt);
-    }
-
-    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
-
-    std::pair<FOPNotification, etl::optional<DirectiveNotificationSignal>> signal = vchan->fop.popDirectiveNotificationSignal();
-    if (signal.first == SIGNAL_QUEUE_EMPTY) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_BUFFER_EMPTY);
-        return std::make_pair(FOP_BUFFER_EMPTY, etl::nullopt);
-    }
-
-    ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-    return std::make_pair(NO_SERVICE_EVENT, signal.second);
-}
-
-std::pair<ServiceChannelNotification, etl::optional<AsynchronousNotificationSignal>> ServiceChannel::popAsynchronousNotificationSignal(uint8_t vid) {
-    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, etl::nullopt);
-    }
-
-    VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
-
-    std::pair<FOPNotification, etl::optional<AsynchronousNotificationSignal>> signal = vchan->fop.popAsynchronousNotificationSignal();
-    if (signal.first == SIGNAL_QUEUE_EMPTY) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_BUFFER_EMPTY);
-        return std::make_pair(FOP_BUFFER_EMPTY, etl::nullopt);
-    }
-
-    ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-    return std::make_pair(NO_SERVICE_EVENT, signal.second);
-}
-
 FOPState ServiceChannel::getFopState(uint8_t vid) const {
     return masterChannel.virtualChannels.at(vid).fop.state;
 }
@@ -679,7 +771,6 @@ std::pair<ServiceChannelNotification, uint16_t > ServiceChannel::allFramesGenera
 
     TransferFrameTC* frame = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.front();
     uint16_t frameLength = frame->getFrameLength();
-    masterChannel.outFramesBeforeAllFramesGenerationListTxTC.pop_front();
 
     uint8_t vid = frame->getVirtualChannelId();
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
@@ -690,9 +781,14 @@ std::pair<ServiceChannelNotification, uint16_t > ServiceChannel::allFramesGenera
 
     std::memcpy(frameTarget, frame->getFrameData(), frameLength);
 
-    // NOTE: Once a frame is passed to FOP-1 (whatever service type it is), it has the responsibility
-    // of acknowledging its reception and then deleting it. Therefore, no memory pool and master copy deletion will
-    // take place here
+    // NOTE: Type AD and BC frame deletion occurs in vcGeneration, once the right signal is given from fop.
+    //       Therefore, only type BD frames are deleted here
+    masterChannel.outFramesBeforeAllFramesGenerationListTxTC.pop_front();
+    if (frame->getServiceType() == ServiceType::TYPE_BD) {
+        masterChannel.masterChannelPoolTC.deletePacket(frame->getFrameData(), frameLength);
+        masterChannel.removeMasterTx(frame);
+    }
+
     ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, frameLength);
 }

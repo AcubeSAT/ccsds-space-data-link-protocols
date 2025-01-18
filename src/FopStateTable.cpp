@@ -33,13 +33,15 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 case RETRANSMIT_WITH_WAIT:
                 case INITIALIZING_WITHOUT_BC_FRAME:
                 case INITIALIZING_WITH_BC_FRAME:
-                    asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_CLCW));
+                    alert(ALRT_CLCW);
                     state = INITIAL;
             }
+
+            return std::make_pair(fopNotification, eventCode);
         }
 
         // validity checks of special fields that are not part of cop
-        // @TODO choose which of the following mission specific fields should be used and perform
+        // TODO choose which of the following mission specific fields should be used and perform
         //       checks here: status field, no rf flag, no bit lock flag, farm-B counter
         //       (farm-B counter is updated by farm, but not checked by fop. It can provide
         //       (limited confirmation of type BC and BD frame reception)
@@ -54,16 +56,16 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                             switch (state) {
                                 case RETRANSMIT_WITHOUT_WAIT:
                                 case RETRANSMIT_WITH_WAIT:
-                                    asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_SYNCH));
+                                    alert(ALRT_SYNCH);
                                     state = INITIAL;
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
-                                    if (!initiateDirectiveWithClcwCheckRequestIdentifier) {
+                                    if (!initiateWithClcwCheckId) {
                                         fopNotification = FOP_UNEXPECTED_VALUE;
                                     }
                                     directiveNotificationSignalQueue.push(
-                                            DirectiveNotificationSignal(initiateDirectiveWithClcwCheckRequestIdentifier.value(), POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
-                                    initiateDirectiveWithClcwCheckRequestIdentifier = etl::nullopt;
+                                            DirectiveNotificationSignal(initiateWithClcwCheckId.value(), POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                    initiateWithClcwCheckId = etl::nullopt;
                                     timer.stopTimer();
                                     state = ACTIVE;
                                     break;
@@ -76,19 +78,9 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                         if (frame->getServiceType() == ServiceType::TYPE_BC) {
                                             // message higher layers about the successful directive (type bc frame reception)
                                             if (!directiveNotificationSignalQueue.full()) {
-                                                directiveNotificationSignalQueue.push(DirectiveNotificationSignal(frame->getTransferRequestId(),
-                                                                                                                  POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
-                                            }
-
-                                            // delete octets
-                                            memoryPool.deletePacket(frame->getFrameData(), frame->getFrameLength());
-
-                                            // delete master copy
-                                            for (master_copy_it = frameMasterCopyBuffer.begin(); master_copy_it != frameMasterCopyBuffer.end(); ++master_copy_it) {
-                                                if (&(*master_copy_it) == *sent_queue_it) {
-                                                    frameMasterCopyBuffer.erase(master_copy_it);
-                                                    break;
-                                                }
+                                                directiveNotificationSignalQueue.push(DirectiveNotificationSignal(initiateWithBcFrameId.value(),
+                                                                                                                  POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE, frame));
+                                                initiateWithBcFrameId = etl::nullopt;
                                             }
 
                                             // delete pointer from the sent queue
@@ -128,7 +120,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                             case RETRANSMIT_WITH_WAIT:
                             case INITIALIZING_WITHOUT_BC_FRAME:
                             case INITIALIZING_WITH_BC_FRAME:
-                                asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_CLCW));
+                                alert(ALRT_CLCW);
                                 state = INITIAL;
                         }
                     }
@@ -140,7 +132,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         case RETRANSMIT_WITHOUT_WAIT:
                         case RETRANSMIT_WITH_WAIT:
                         case INITIALIZING_WITHOUT_BC_FRAME:
-                            asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_SYNCH));
+                            alert(ALRT_SYNCH);
                             state = INITIAL;
                     }
                 }
@@ -154,7 +146,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                             switch (state) {
                                 case RETRANSMIT_WITHOUT_WAIT:
                                 case RETRANSMIT_WITH_WAIT:
-                                    asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_SYNCH));
+                                    alert(ALRT_SYNCH);
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
                                 case INITIALIZING_WITH_BC_FRAME:
@@ -183,7 +175,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                             case ACTIVE:
                             case RETRANSMIT_WITHOUT_WAIT:
                             case RETRANSMIT_WITH_WAIT:
-                                asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_CLCW));
+                                alert(ALRT_CLCW);
                                 state = INITIAL;
                                 break;
                             case INITIALIZING_WITHOUT_BC_FRAME:
@@ -201,8 +193,8 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                 case ACTIVE:
                                 case RETRANSMIT_WITHOUT_WAIT:
                                 case RETRANSMIT_WITH_WAIT:
-                                    removeAcknowledgedFramesFromSentQueue(clcw.getReportValue());
-                                    asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_LIMIT));
+                                    fopNotification = removeAcknowledgedFramesFromSentQueue(clcw.getReportValue());
+                                    alert(ALRT_LIMIT);
                                     state = INITIAL;
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
@@ -217,7 +209,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                 case ACTIVE:
                                 case RETRANSMIT_WITHOUT_WAIT:
                                 case RETRANSMIT_WITH_WAIT:
-                                    asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_LIMIT));
+                                    alert(ALRT_LIMIT);
                                     state = INITIAL;
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
@@ -327,7 +319,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                     case RETRANSMIT_WITHOUT_WAIT:
                     case RETRANSMIT_WITH_WAIT:
                     case INITIALIZING_WITHOUT_BC_FRAME:
-                        asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_NNR));
+                        alert(ALRT_NNR);
                         state = INITIAL;
                         break;
                 }
@@ -340,7 +332,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 case RETRANSMIT_WITHOUT_WAIT:
                 case RETRANSMIT_WITH_WAIT:
                 case INITIALIZING_WITHOUT_BC_FRAME:
-                    asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_LOCKOUT));
+                    alert(ALRT_LOCKOUT);
                     state = INITIAL;
                     break;
             }
@@ -361,16 +353,16 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 switch (state) {
                     case ACTIVE:
                     case RETRANSMIT_WITHOUT_WAIT:
-                        fopNotification = initiateRetransmission(ServiceType::TYPE_AD);
-                        lookForFdu();
+                        initiateRetransmission(ServiceType::TYPE_AD);
+                        fopNotification = lookForFdu();
                         break;
                     case INITIALIZING_WITHOUT_BC_FRAME:
-                        asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_T1));
+                        alert(ALRT_T1);
                         state = INITIAL;
                         break;
                     case INITIALIZING_WITH_BC_FRAME:
                         initiateRetransmission(ServiceType::TYPE_BC);
-                        lookForDirective();
+                        fopNotification = lookForDirective();
                         break;
                     case INITIAL:
                         fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
@@ -381,8 +373,8 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 switch (state) {
                     case ACTIVE:
                     case RETRANSMIT_WITHOUT_WAIT:
-                        fopNotification = initiateRetransmission(ServiceType::TYPE_AD);
-                        lookForFdu();
+                        initiateRetransmission(ServiceType::TYPE_AD);
+                        fopNotification = lookForFdu();
                         break;
                     case INITIALIZING_WITHOUT_BC_FRAME:
                         suspendState = SUSPENDED_PREV_STATE_INITIALIZING_WITHOUT_BC_FRAME;
@@ -391,7 +383,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         break;
                     case INITIALIZING_WITH_BC_FRAME:
                         initiateRetransmission(ServiceType::TYPE_BC);
-                        lookForDirective();
+                        fopNotification = lookForDirective();
                         break;
                     case INITIAL:
                         fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
@@ -406,7 +398,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                         break;
                     default:
-                        asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_T1));
+                        alert(ALRT_T1);
                         state = INITIAL;
                 }
             } else { // TT = 1
@@ -425,7 +417,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         state = INITIAL;
                         break;
                     case INITIALIZING_WITH_BC_FRAME:
-                        asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_T1));
+                        alert(ALRT_T1);
                         state = INITIAL;
                         break;
                     case INITIAL:
@@ -442,7 +434,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
 
     /** Receive request to transfer fdu **/
     if (!transferFduSignalQueue.empty()) {
-        DfuTransferSignal fduTransferSignal = transferFduSignalQueue.front();
+        FduTransferSignal fduTransferSignal = transferFduSignalQueue.front();
         transferNotificationSignalQueue.pop();
 
         if (fduTransferSignal.serviceType != ServiceType::TYPE_AD &&
@@ -462,42 +454,35 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 switch (state) {
                     case ACTIVE:
                     case RETRANSMIT_WITHOUT_WAIT:
-                        // assign the signal request id to the frame, so it can be returned with the transfer notification
-                        // at a later time
-                        fduTransferSignal.frame->setTransferRequestId(fduTransferSignal.requestIdentifier);
                         waitQueueFOP.push_back(fduTransferSignal.frame);
                         fopNotification = lookForFdu();
                         break;
                     case RETRANSMIT_WITH_WAIT:
-                        fduTransferSignal.frame->setTransferRequestId(fduTransferSignal.requestIdentifier);
                         waitQueueFOP.push_back((fduTransferSignal.frame));
                         break;
                     case INITIALIZING_WITHOUT_BC_FRAME:
                     case INITIALIZING_WITH_BC_FRAME:
                     case INITIAL:
                         transferNotificationSignalQueue.push(
-                                TransferNotificationSignal(fduTransferSignal.requestIdentifier,REJECT_RESPONSE_TO_TRANSFER_FDU));
+                                TransferNotificationSignal(REJECT_RESPONSE_TO_TRANSFER_FDU, fduTransferSignal.frame));
                 }
             } else { // wait queue not empty
                 // E20
                 eventCode = 20;
                 transferNotificationSignalQueue.push(
-                        TransferNotificationSignal(fduTransferSignal.requestIdentifier,REJECT_RESPONSE_TO_TRANSFER_FDU));
+                        TransferNotificationSignal(REJECT_RESPONSE_TO_TRANSFER_FDU, fduTransferSignal.frame));
             }
         } else { // TYPE BD request
             if (bdOut == READY) {
                 // E21 rev. B
                 eventCode = 21;
-                transferNotificationSignalQueue.push(TransferNotificationSignal(fduTransferSignal.requestIdentifier, ACCEPT_RESPONSE_TO_TRANSFER_FDU));
-                // assign the signal request id to the frame, so it can be returned with the transfer notification
-                // at a later time
-                fduTransferSignal.frame->setTransferRequestId(fduTransferSignal.requestIdentifier);
-                transmitBdFrame(fduTransferSignal.frame);
+                transferNotificationSignalQueue.push(TransferNotificationSignal(ACCEPT_RESPONSE_TO_TRANSFER_FDU, fduTransferSignal.frame));
+                fopNotification = transmitBdFrame(fduTransferSignal.frame);
             } else { // bd_out_flag not ready
                 // E22
                 eventCode = 22;
                 transferNotificationSignalQueue.push(
-                        TransferNotificationSignal(fduTransferSignal.requestIdentifier,REJECT_RESPONSE_TO_TRANSFER_FDU));
+                        TransferNotificationSignal(REJECT_RESPONSE_TO_TRANSFER_FDU, fduTransferSignal.frame));
             }
 
         }
@@ -536,7 +521,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 eventCode = 24;
                 switch (state) {
                     case INITIAL:
-                        initiateDirectiveWithClcwCheckRequestIdentifier = directiveRequestSignal.requestIdentifier; // store request identifier
+                        initiateWithClcwCheckId.emplace(directiveRequestSignal.requestIdentifier); // store request identifier
                         directiveNotificationSignalQueue.push(
                                 DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier, ACCEPT_RESPONSE_TO_DIRECTIVE));
                         initialize();
@@ -562,7 +547,8 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                             directiveNotificationSignalQueue.push(
                                     DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier, ACCEPT_RESPONSE_TO_DIRECTIVE));
                             initialize();
-                            transmitBcFrame(directiveRequestSignal);
+                            fopNotification = transmitBcFrame(directiveRequestSignal);
+                            initiateWithBcFrameId.emplace(directiveRequestSignal.requestIdentifier);
                             state = INITIALIZING_WITH_BC_FRAME;
                             break;
                         default:
@@ -591,7 +577,8 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                     DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier, ACCEPT_RESPONSE_TO_DIRECTIVE));
                             transmitterFrameSeqNumber = static_cast<uint8_t>(directiveRequestSignal.directiveQualifier.value());
                             expectedAcknowledgementSeqNumber = static_cast<uint8_t>(directiveRequestSignal.directiveQualifier.value());
-                            transmitBcFrame(directiveRequestSignal);
+                            fopNotification = transmitBcFrame(directiveRequestSignal);
+                            initiateWithBcFrameId.emplace(directiveRequestSignal.requestIdentifier);
                             state = INITIALIZING_WITH_BC_FRAME;
                             break;
                         default:
@@ -618,7 +605,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                     default:
                         directiveNotificationSignalQueue.push(
                                 DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier, ACCEPT_RESPONSE_TO_DIRECTIVE));
-                        asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_TERM));
+                        alert(ALRT_TERM);
                         directiveNotificationSignalQueue.push(
                                 DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier, POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                         state = INITIAL;
@@ -631,7 +618,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                     directiveNotificationSignalQueue.push(
                             DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier, REJECT_RESPONSE_TO_DIRECTIVE));
                 } else {
-                    eventCode = 30 + static_cast<uint8_t >(suspendState);
+                    eventCode = 30 + static_cast<uint8_t>(suspendState);
                     switch (state) {
                         case INITIAL:
                             directiveNotificationSignalQueue.push(
@@ -751,7 +738,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
             case BD_REJECT:
                 // E46
                 eventCode = 46;
-                asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, ALRT_LLIF));
+                alert(ALRT_LLIF);
                 state = INITIAL;
                 break;
             case AD_ACCEPT:
@@ -773,16 +760,12 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 }
                 break;
             case BD_ACCEPT:
-                if (!bdFrameRequestIdentifier) {
-                    fopNotification = FOP_UNEXPECTED_VALUE;
-                    break;
-                }
-
                 // E45
                 eventCode = 45;
                 bdOut = READY;
-                transferNotificationSignalQueue.push(TransferNotificationSignal(bdFrameRequestIdentifier.value(), ACCEPT_RESPONSE_TO_TRANSFER_FDU));
-                bdFrameRequestIdentifier = etl::nullopt;
+                // An ACCEPT_RESPONSE_TO_TRANSFER_FDU is already sent at E21, there is no point
+                // sending a duplicate here (as the protocol suggests).
+                // transferNotificationSignalQueue.push(TransferNotificationSignal(ACCEPT_RESPONSE_TO_TRANSFER_FDU);
                 break;
         }
     }
