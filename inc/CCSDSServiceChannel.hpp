@@ -184,11 +184,14 @@ public:
      *
      * @see p. 4.3.5 from TC Space Data Link Protocol
      *
-     * @returns - A service channel Notification indicating whether an error occured within FOP,
+     * @returns - A service channel Notification indicating whether an error occurred within FOP,
      *          or an unexpected value was encountered.
      *          - A struct, which may or may not contain directive notifications, asynchronous notifications
      *            and the event code detected by fop. The last field is offered for diagnostic reasons.
      *          @see p. 4.2 & 4.3 from COP-1 CCSDS
+     *
+     * @note If an alert is contained within the asynchronous notification, an unrecoverable error occurred within FOP-1,
+     *       which demands action from a higher layer. Only Type-BD frame transmission remains undisrupted.
      */
     std::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vid);
 
@@ -198,6 +201,9 @@ public:
     ServiceChannelNotification pushDirectiveRequestSignal(uint8_t vid, const DirectiveRequestSignal& directiveRequestSignal);
 
 
+    /**
+     *  Push a CLCW for FOP-1 to inspect. The old CLCW (if it exists) is overwritten.
+     */
     ServiceChannelNotification pushCLCW(uint8_t vid, CLCW clcw);
 
     /**

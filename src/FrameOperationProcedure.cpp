@@ -23,7 +23,7 @@ FOPNotification FrameOperationProcedure::purgeSentQueue() {
         }
 
         // remove from sent queue
-        sentQueueFOP.erase(sent_queue_it++);
+        sent_queue_it = sentQueueFOP.erase(sent_queue_it);
 	}
 
     initiateWithBcFrameId = etl::nullopt;
@@ -358,8 +358,18 @@ void FrameOperationProcedure::alert(AlertEvent event) {
     timer.stopTimer();
     purgeSentQueue();
     purgeWaitQueue();
-    // TODO: Generate a ‘Negative Confirm Response to Directive’ for any ongoing 'Initiate AD Service' request
-    // TODO: should all signal queues be cleared here?
+
+    /** A NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE for
+     * 'initialize AD service with set V(R) or unlock' was sent in purgeSentQueue
+     * Here, the same signal should also be sent for the 'initialize AD service with CLCW check' directive
+     * @see p. 5.2.15 of COP-1 CCSDS
+     */
+    if (initiateWithClcwCheckId) {
+       directiveNotificationSignalQueue.push(DirectiveNotificationSignal(initiateWithClcwCheckId.value(), NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+       initiateWithClcwCheckId = etl::nullopt;
+    }
+
+    // send an alert signal
     asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(ALERT, event));
 }
 
@@ -407,13 +417,10 @@ FOPNotification FrameOperationProcedure::pushDirectiveRequestSignal(const Direct
     return FOPNotification::NO_FOP_EVENT;
 }
 
-FOPNotification FrameOperationProcedure::pushClcw(CLCW clcw) {
+void FrameOperationProcedure::pushClcw(CLCW clcw) {
     if (clcwQueue.full()) {
-        ccsdsLogNotice(Tx, TypeFOPNotif, SIGNAL_QUEUE_FULL);
-        return FOPNotification::SIGNAL_QUEUE_FULL;
+        clcwQueue.clear();
     }
 
     clcwQueue.push(clcw);
-    ccsdsLogNotice(Tx, TypeFOPNotif, NO_FOP_EVENT);
-    return FOPNotification::NO_FOP_EVENT;
 }

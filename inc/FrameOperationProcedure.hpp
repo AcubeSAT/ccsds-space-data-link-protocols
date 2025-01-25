@@ -206,7 +206,7 @@ class VirtualChannel;
  *    method pushDirectiveRequestSignal()
  *
  * Furthermore, signals are returned to the user via vcGeneration, the data processing function where FOP-1 is executed.
- * These can indicate the successful reception of frames (can be collected for monitoring reasons) or alerts, which
+ * These can indicate the successful or unsuccessful execution of directives and alerts, which
  * indicate an unrecoverable problem with the data link, and demand action from higher level protocols.
  *
  */
@@ -304,10 +304,8 @@ private:
     etl::queue<DirectiveRequestSignal, DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
     etl::queue<FduTransferSignal, TransferfduSignalQueueSize> transferFduSignalQueue;
     etl::queue<LowerLayerResponseSignal, LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
-    etl::queue<CLCW, clcwQueueSize> clcwQueue;
-    /**
-     * Queues for storing output signals.
-     */
+    etl::queue<CLCW, 1> clcwQueue;
+
     etl::queue<DirectiveNotificationSignal, 1> directiveNotificationSignalQueue;
     etl::queue<TransferNotificationSignal, MaxReceivedTxTcInFOPSentQueue + 1> transferNotificationSignalQueue;
     etl::queue<AsynchronousNotificationSignal, 1> asynchronousNotificationSignalQueue;
@@ -328,7 +326,7 @@ private:
      * The first makes FOP wait for a CLCW, so that FOP is synchronized by farm.
      * The last 2 generate and transmit a type BC frame, so that FARM is synchronized by FOP.
      *
-     * Their identifier are stored in these variables.
+     * Their identifiers are stored in these variables.
      */
      etl::optional<uint8_t> initiateWithClcwCheckId;
      etl::optional<uint8_t> initiateWithBcFrameId;
@@ -423,12 +421,6 @@ private:
      *
      * @returns The event code detected. An event code of 0 means no event.
      *
-     * @TODO figure out a reasonable event processing order. one like this seems fine:
-     * 1. directive request event come first: the data link user must have priority
-     * 2. clcw requests: some of them require urgent actions, like stopping lower layer transmission
-     * 3. timer expiration events
-     * 4. transfer fdu and lower layer responses: essentially requests having to do with frame transfers
-     *
      */
     std::pair<FOPNotification, uint8_t> applyFopStateTable();
     /**
@@ -445,15 +437,6 @@ private:
      * Respond to FOP-1's request for passing a frame to lower layers.
      */
     FOPNotification pushLowerLayerResponseSignal(LowerLayerResponseSignal signal);
-
-    std::pair<FOPNotification, etl::optional<TransferNotificationSignal>> popTransferNotificationSignal();
-
-    std::pair<FOPNotification, etl::optional<FopToLowerLayerRequestSignal>> popFopToLowerLayerRequestSignal();
-
-    std::pair<FOPNotification, etl::optional<DirectiveNotificationSignal>> popDirectiveNotificationSignal();
-
-    std::pair<FOPNotification, etl::optional<AsynchronousNotificationSignal>> popAsynchronousNotificationSignal();
-
 
     /** Implementation specific FOP-1 methods (for the the TC Data Link User). Wrapper functions are provided
      * in ServiceChannel.
@@ -475,9 +458,10 @@ private:
      */
     FOPNotification pushDirectiveRequestSignal(const DirectiveRequestSignal& signal);
     /**
-     * Push CLCWs for FOP-1 to inspect.
+     * Push a CLCW for FOP-1 to inspect. Since only the most recent CLCW is of interest, the old one (if it exists)
+     * is overwritten.
      */
-    FOPNotification pushClcw(CLCW clcw);
+    void pushClcw(CLCW clcw);
 
 public:
     FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer, MemoryPool& memoryPool)

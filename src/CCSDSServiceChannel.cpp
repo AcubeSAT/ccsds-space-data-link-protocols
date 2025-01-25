@@ -630,49 +630,47 @@ std::pair<ServiceChannelNotification, FopSignals> ServiceChannel::vcGenerationRe
    /** directive notification signal handling
     * - ACCEPT_RESPONSE_TO_DIRECTIVE: FOP accepted the request. Initiate directives with set V(R) or unlock will also
     *   generate a type BC frame.
-    * - REJECT_RESPONSE_TO_DIRECTIVE: FOP rejected the request.
-    * - POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE: Initiate directives with set V(R) or unlock successfully received by farm.
-    *   Delete type BC frame master copy.
-    * - NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE: Initiate directives with set V(R) or unlock were not received by farm or
-    *   an error occurred. Delete type BC frame master copy. Delete the lower layer buffer pointer, if it exists.
+    * - REJECT_RESPONSE_TO_DIRECTIVE: FOP rejected the request. No other action needs to be taken.
+    * - POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE: Can be received for 3 possible directives:
+    *   -- Initiate directives with set V(R) or unlock successfully received by farm. Delete type BC frame master copy.
+    *   -- Initiate with clcw check. No other action needs to be taken.
+    * - NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE: Can be received for 3 possible directives:
+    *   -- Initiate directives with set V(R) or unlock were not received by farm or
+    *      an error occurred. Delete type BC frame master copy. Delete the lower layer buffer pointer, if it exists.
+    *   -- Initiate with clcw check. No other action needs to be taken.
     *
-    *   In any case, the user must also informed and receive the corresponding request ID.
+    *   In any case, the user must also be informed and receive the corresponding request ID.
     */
     DirectiveNotificationSignal *directiveNotificationSignal;
     if (!vchan->fop.directiveNotificationSignalQueue.empty()) {
         directiveNotificationSignal = &vchan->fop.directiveNotificationSignalQueue.front();
 
-        if ((directiveNotificationSignal->directiveNotificationType == NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE ||
-             directiveNotificationSignal->directiveNotificationType == POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE) &&
-             !directiveNotificationSignal->frame) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_ERROR);
-            return std::make_pair(UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
-        }
-
-        switch (directiveNotificationSignal->directiveNotificationType) {
-            case NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE:
-
-                while (low_layer_buffer_it != masterChannel.outFramesBeforeAllFramesGenerationListTxTC.end()) {
-                    if (*low_layer_buffer_it == directiveNotificationSignal->frame.value()) {
-                        masterChannel.outFramesBeforeAllFramesGenerationListTxTC.erase(low_layer_buffer_it);
-                        break;
+        // received a response for an initiate directive with set V(R) or unlock
+        if (directiveNotificationSignal->frame) {
+            switch (directiveNotificationSignal->directiveNotificationType) {
+                case NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE:
+                    while (low_layer_buffer_it != masterChannel.outFramesBeforeAllFramesGenerationListTxTC.end()) {
+                        if (*low_layer_buffer_it == directiveNotificationSignal->frame.value()) {
+                            masterChannel.outFramesBeforeAllFramesGenerationListTxTC.erase(low_layer_buffer_it);
+                            break;
+                        }
+                        ++low_layer_buffer_it;
                     }
-                    ++low_layer_buffer_it;
-                }
-                // fallthrough
-            case POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE:
+                    // fallthrough
+                case POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE:
+                    masterChannel.masterChannelPoolTC.deletePacket(
+                            directiveNotificationSignal->frame.value()->getFrameData(),
+                            directiveNotificationSignal->frame.value()->getFrameLength());
 
-                masterChannel.masterChannelPoolTC.deletePacket(directiveNotificationSignal->frame.value()->getFrameData(),
-                                                               directiveNotificationSignal->frame.value()->getFrameLength());
-
-                master_copy_buffer_it = masterChannel.masterCopyTxTC.begin();
-                while (master_copy_buffer_it != masterChannel.masterCopyTxTC.end()) {
-                    if (&(*master_copy_buffer_it) == directiveNotificationSignal->frame.value()) {
-                        masterChannel.masterCopyTxTC.erase(master_copy_buffer_it);
-                        break;
+                    master_copy_buffer_it = masterChannel.masterCopyTxTC.begin();
+                    while (master_copy_buffer_it != masterChannel.masterCopyTxTC.end()) {
+                        if (&(*master_copy_buffer_it) == directiveNotificationSignal->frame.value()) {
+                            masterChannel.masterCopyTxTC.erase(master_copy_buffer_it);
+                            break;
+                        }
+                        ++master_copy_buffer_it;
                     }
-                    ++master_copy_buffer_it;
-                }
+            }
         }
     }
 
@@ -692,7 +690,7 @@ std::pair<ServiceChannelNotification, FopSignals> ServiceChannel::vcGenerationRe
     */
     TransferFrameTC* tcFrame;
     high_layer_buffer_it = vchan->unprocessedFrameListBufferTxTC.begin();
-    while (high_layer_buffer_it != vchan->unprocessedFrameListBufferTxTC.end()) {
+    while (high_layer_buffer_it != vchan->unprocessedFrameListBufferTxTC.end() && !vchan->fop.transferFduSignalQueue.full()) {
         vchan->fop.transferFduSignalQueue.push(FduTransferSignal((*high_layer_buffer_it)->getServiceType(), *high_layer_buffer_it));
         ++high_layer_buffer_it;
     }
@@ -728,12 +726,7 @@ ServiceChannelNotification ServiceChannel::pushCLCW(uint8_t vid, CLCW clcw) {
 
     VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
 
-    FOPNotification fopNotification = vchan->fop.pushClcw(clcw);
-    if (fopNotification == SIGNAL_QUEUE_FULL) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, FOP_BUFFER_FULL);
-        return ServiceChannelNotification::FOP_BUFFER_FULL;
-    }
-
+    vchan->fop.pushClcw(clcw);
     ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
