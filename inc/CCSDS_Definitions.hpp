@@ -116,6 +116,10 @@ inline constexpr uint8_t clcwQueueSize = 5;
 inline constexpr uint8_t DirectiveNotificationSignalQueueSize = 10;
 inline constexpr uint8_t AsynchronousNotificationSignalQueueSize = 3;
 
+inline constexpr uint8_t FarmSlidingWinLength = 50;
+inline constexpr uint8_t FarmPositiveWinLength = 25;
+inline constexpr uint8_t FarmNegativeWinLength = 25;
+
 /// @see p. 4.1.3.3 of TC Data Link protocol
 inline constexpr uint8_t UnlockCommandSize = 1;  // in octets
 inline constexpr uint8_t UnlockCommand = 0;      // all zeroes

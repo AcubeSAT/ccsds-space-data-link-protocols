@@ -12,3 +12,4 @@ std::ostream& operator<<(std::ostream& out, const VirtualChannelAlert value);
 std::ostream& operator<<(std::ostream& out, const MasterChannelAlert value);
 std::ostream& operator<<(std::ostream& out, const SDLSVerificationStatusCode value);
 std::ostream& operator<<(std::ostream& out, const FOPNotification value);
+std::ostream& operator<<(std::ostream& out, const FARMNotification value);

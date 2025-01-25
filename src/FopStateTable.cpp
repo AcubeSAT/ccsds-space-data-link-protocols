@@ -8,7 +8,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
     asynchronousNotificationSignalQueue.clear();
     fopToLowerLayerRequestSignalQueue.clear();
 
-    // The returned FopNotification will be: NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT, if somehow an
+    // The returned FopNotification will be: FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT, if somehow an
     // impossible combination of event and state are reached.
 
     /** clcw arrival events **/
@@ -107,7 +107,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
                                 case INITIALIZING_WITH_BC_FRAME:
-                                    fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                    fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                             }
                         }
 
@@ -150,7 +150,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
                                 case INITIALIZING_WITH_BC_FRAME:
-                                    fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                    fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                     break;
                             }
                         } else {
@@ -165,7 +165,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
                                 case INITIALIZING_WITH_BC_FRAME:
-                                    fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                    fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                             }
                         }
                     } else {  // wait flag = 1
@@ -180,7 +180,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                 break;
                             case INITIALIZING_WITHOUT_BC_FRAME:
                             case INITIALIZING_WITH_BC_FRAME:
-                                fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                 break;
                         }
                     }
@@ -199,7 +199,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
                                 case INITIALIZING_WITH_BC_FRAME:
-                                    fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                    fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                     break;
                             }
                         } else {
@@ -214,7 +214,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                     break;
                                 case INITIALIZING_WITHOUT_BC_FRAME:
                                 case INITIALIZING_WITH_BC_FRAME:
-                                    fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                    fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                     break;
                             }
                         }
@@ -234,7 +234,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                             break;
                                         case INITIALIZING_WITHOUT_BC_FRAME:
                                         case INITIALIZING_WITH_BC_FRAME:
-                                            fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                            fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                     }
                                 } else { // wait flag = 1
                                     // E11
@@ -246,7 +246,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                             break;
                                         case INITIALIZING_WITHOUT_BC_FRAME:
                                         case INITIALIZING_WITH_BC_FRAME:
-                                            fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                            fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                     }
                                 }
                             } else { // transmission count >= transmission limit
@@ -260,7 +260,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                             break;
                                         case INITIALIZING_WITHOUT_BC_FRAME:
                                         case INITIALIZING_WITH_BC_FRAME:
-                                            fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                            fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                     }
                                 } else { // wait flag = 1
                                     // E103
@@ -272,7 +272,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                             break;
                                         case INITIALIZING_WITHOUT_BC_FRAME:
                                         case INITIALIZING_WITH_BC_FRAME:
-                                            fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                            fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                     }
                                 }
                             }
@@ -291,7 +291,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                         break;
                                     case INITIALIZING_WITHOUT_BC_FRAME:
                                     case INITIALIZING_WITH_BC_FRAME:
-                                        fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                        fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                 }
                             } else {  // wait flag = 1
                                 // E9
@@ -305,7 +305,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                                         break;
                                     case INITIALIZING_WITHOUT_BC_FRAME:
                                     case INITIALIZING_WITH_BC_FRAME:
-                                        fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                                        fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                                 }
                             }
                         }
@@ -365,7 +365,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         fopNotification = lookForDirective();
                         break;
                     case INITIAL:
-                        fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                        fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                 }
             } else { // TT = 1
                 // E104
@@ -386,7 +386,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         fopNotification = lookForDirective();
                         break;
                     case INITIAL:
-                        fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                        fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                 }
             }
         } else { // transmission count >= transmission limit
@@ -395,7 +395,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                 eventCode = 17;
                 switch (state) {
                     case INITIAL:
-                        fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                        fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                         break;
                     default:
                         alert(ALRT_T1);
@@ -421,7 +421,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                         state = INITIAL;
                         break;
                     case INITIAL:
-                        fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                        fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                 }
             }
         }
@@ -629,7 +629,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
                             state = static_cast<FOPState>(suspendState);
                             break;
                         default:
-                            fopNotification = NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
+                            fopNotification = FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                     }
                 }
                 break;

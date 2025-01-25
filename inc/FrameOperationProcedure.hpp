@@ -193,10 +193,10 @@ enum SuspendVariableState {
 class VirtualChannel;
 
 /**
- * The frame operation procedure (FOP-1) is a sub-segment of COP-1, a process responsible
- * for TC frame acknowledgment and assurance of their arrival with the correct order. Frames
- * that this service will be applied to are called 'TYPE-AD frames'. It is also possible to bypass
- * it, by transmitting 'TYPE-BD frames'. For communication with COP-1's reception side
+ * The frame operation procedure (FOP-1) is the ground segment of COP-1, a process responsible
+ * for TC frame acknowledgment and and keeping the frame sequence order intact. Frames
+ * that this service will be applied to are called 'TYPE-AD frames' (sequence controlled service). It is also possible to bypass
+ * it, by transmitting 'TYPE-BD frames' (expedited service). For communication with COP-1's reception side
  * subsegment (FARM-1), 'TYPE-BC frames' are generated within FOP-1. FOP-1 (and FARM-1) are state machines.
  *
  * For proper operation, the TC Data Link user must provide FOP-1 with:
@@ -213,9 +213,6 @@ class VirtualChannel;
 class FrameOperationProcedure {
     friend class ServiceChannel;
     friend class MasterChannel;
-
-public:
-    VirtualChannel* vchan;
 
 private:
     /** FOP-1 VARIABLES **/
@@ -464,6 +461,8 @@ private:
     void pushClcw(CLCW clcw);
 
 public:
+    VirtualChannel* vchan;
+
     FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer, MemoryPool& memoryPool)
             : vchan(vchan), state(FOPState::INITIAL),
               suspendState(NOT_SUSPENDED), transmitterFrameSeqNumber(0), adOut(FlagState::READY),

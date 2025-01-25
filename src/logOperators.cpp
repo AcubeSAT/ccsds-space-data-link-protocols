@@ -81,11 +81,23 @@ std::ostream& operator<<(std::ostream& out, const FOPNotification value) {
         INSERT_ELEMENT(SIGNAL_QUEUE_EMPTY);
         INSERT_ELEMENT(FOP_MEMORY_POOL_FULL);
         INSERT_ELEMENT(FOP_MASTER_COPY_BUFFER_FULL);
-        INSERT_ELEMENT(NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
+        INSERT_ELEMENT(FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
         INSERT_ELEMENT(FOP_UNEXPECTED_VALUE);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];
+}
+
+std::ostream& operator<<(std::ostream& out, const FARMNotification value) {
+    static std::map<FARMNotification, std::string> strings;
+    if (strings.empty()) {
+#define INSERT_ELEMENT(p) strings[p] = #p
+        INSERT_ELEMENT(NO_FARM_EVENT);
+        INSERT_ELEMENT(FARM_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
+        INSERT_ELEMENT(FARM_UNEXPECTED_VALUE);
+#undef INSERT_ELEMENT
+    }
+    return out << strings[value];
 }
 
 std::ostream& operator<<(std::ostream& out, const MasterChannelAlert value) {
