@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <TransferFrameTC.hpp>
+#include <CCSDSChannel.hpp>
 #include <etl/list.h>
 #include <etl/queue.h>
 #include <Alert.hpp>
@@ -294,7 +295,7 @@ private:
 
     /** Implementation Specific variables **/
 
-    CountdownTimer timer;
+    CountdownTimer timer = CountdownTimer();
     /**
      * Queues for storing incoming signals and clcws
      */

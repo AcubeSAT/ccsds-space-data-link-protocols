@@ -131,7 +131,7 @@ FOPNotification FrameOperationProcedure::transmitBcFrame(const DirectiveRequestS
     static uint8_t tmpData[TcPrimaryHeaderSize + SetVrCommandSize + ErrorControlFieldSize];
 
     if (directiveSignal.directiveType == INITIATE_AD_SERVICE_WITH_UNLOCK) {
-        tmpData[TcPrimaryHeaderSize] = UnlockCommand;
+        tmpData[TcPrimaryHeaderSize] = UnlockCommandOctet;
     }
     else {
         tmpData[TcPrimaryHeaderSize] = SetVrCommandOctet1;
@@ -204,7 +204,7 @@ FOPNotification FrameOperationProcedure::initiateRetransmission(ServiceType serv
     }
 
 	fopToLowerLayerRequestSignalQueue.push(FopToLowerLayerRequestSignal(LOW_LAYER_ABORT, serviceType));
-	transmissionCount = (transmissionCount == 255) ? 0 : transmissionCount + 1;
+	transmissionCount = (transmissionCount == 255) ? 0 : (transmissionCount + 1);
     timer.startTimer(tiInitial);
 
 	for (TransferFrameTC* frame : sentQueueFOP) {
@@ -228,7 +228,8 @@ FOPNotification FrameOperationProcedure::removeAcknowledgedFramesFromSentQueue(u
     TransferFrameTC* adFrame;
     while (sent_queue_it != sentQueueFOP.end()) {
         adFrame = *sent_queue_it;
-        if ((adFrame->getServiceType() == ServiceType::TYPE_AD) && withinWindow(adFrame->getTransferFrameSequenceNumber(), expectedAcknowledgementSeqNumber, reportValue)) {
+        if ((adFrame->getServiceType() == ServiceType::TYPE_AD) &&
+            withinWindow(adFrame->getTransferFrameSequenceNumber(), expectedAcknowledgementSeqNumber, reportValue)) {
             // message higher layers about the successful reception
             if (!transferNotificationSignalQueue.full()) {
                 transferNotificationSignalQueue.push(TransferNotificationSignal(POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU, adFrame));
@@ -314,14 +315,7 @@ FOPNotification FrameOperationProcedure::lookForFdu() {
     }
 
     // calculate NN(R) + (K - 1)
-    uint8_t upperBound;
-    if (255 - expectedAcknowledgementSeqNumber >= fopSlidingWindowWidth - 1) {  // normal calculation
-        upperBound = expectedAcknowledgementSeqNumber + fopSlidingWindowWidth - 1;
-    } else {  // wraparound
-        // (val & 256) is equal to (val % 256), but faster
-        upperBound = static_cast<uint8_t>(
-                (static_cast<uint16_t>(fopSlidingWindowWidth - 1) + static_cast<uint16_t>(expectedAcknowledgementSeqNumber)) & 256);
-    }
+    uint8_t upperBound = static_cast<uint8_t >((static_cast<uint16_t>(expectedAcknowledgementSeqNumber) + fopSlidingWindowWidth - 1) & 0xFF);
 
     if ((waitQueueFOP.front()->getServiceType() == ServiceType::TYPE_AD) &&
     withinWindow(transmitterFrameSeqNumber, expectedAcknowledgementSeqNumber, upperBound)) {

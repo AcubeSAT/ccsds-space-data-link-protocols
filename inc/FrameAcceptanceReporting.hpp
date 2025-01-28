@@ -2,9 +2,15 @@
 
 #include <cstdint>
 #include <TransferFrameTC.hpp>
+#include <CCSDSChannel.hpp>
+#include <MemoryPool.hpp>
+#include <CountdownTimer.hpp>
+#include <CLCW.hpp>
 #include <etl/list.h>
 #include <Alert.hpp>
 #include <CCSDS_Definitions.hpp>
+#include <etl/optional.h>
+#include <etl/circular_buffer.h>
 
 /**
  * @see p. 6.1.2 from COP-1 CCSDS
@@ -13,6 +19,12 @@ enum FARMState {
 	OPEN = 1,
 	WAIT = 2,
 	LOCKOUT = 3,
+};
+
+enum Window {
+    POSITIVE_WINDOW = 1,
+    NEGATIVE_WINDOW = 2,
+    OUTSIDE_WINDOWS = 3
 };
 
 class VirtualChannel;
@@ -77,6 +89,17 @@ private:
 	const uint8_t farmPositiveWinWidth;
 	const uint8_t farmNegativeWidth;
 
+    /**
+     * The amount of time (in milliseconds) that must elapse before another CLCW report is
+     * pushed. It is not required by the protocol to have a exact CLCW data rate, therefore a
+     * simple countdown timer can be used (send a CLCW once it has elapsed).
+     *
+     * // TODO For now, the x86 countdown timer from fop is used.
+     *         Create a countdown timer implementation using freertos.
+     */
+    const uint16_t clcwReportInterval;
+    CountdownTimer timer = CountdownTimer();
+
     /** Implementation specific variables **/
 
     /**
@@ -87,7 +110,7 @@ private:
     /**
      * References to buffers FARM-1 will place the accepted frames to.
      */
-    etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeBD;
+    etl::circular_buffer<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeBD;
     etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeAD;
 
     /**
@@ -104,7 +127,7 @@ private:
     /**
      * A buffer of space 1, to store CLCW reports.
      */
-     etl::list<CLCW, 1> clcwBuffer;
+     etl::queue<CLCW, 1> clcwBuffer;
 
     /** FARM-1 actions **/
 
@@ -114,10 +137,10 @@ private:
      *
      * @see p. 6.2.2 of COP-1 CCSDS
      */
-    void accept(TransferFrameTC* frame, ServiceType serviceType);
+    FARMNotification accept(TransferFrameTC* frame, ServiceType serviceType);
 
     /**
-     * Deletes TYPE-AD frame master copy and octets.
+     * Deletes frame master copy and octets.
      *
      * @see p. 6.2.3 of COP-1 CCSDS
      */
@@ -135,32 +158,47 @@ private:
     /** Implementation specific methods **/
 
     /**
+     * Pops a CLCW from the clcwBuffer. This method is meant to be used by the TC Data Link
+     * user, therefore a wrapper function is provided in the service channel.
+     */
+    etl::optional<CLCW> popCLCW();
+
+    /**
+     * Returns whether the frame sequence number N(S) is within the positive-negative window or outside
+     * of those windows. This is used for events E3,E4,E5.
+     *
+     * @see figure 6-1 of COP-1 CCSDS
+     */
+     Window getWindow(uint8_t frameSeqNumber);
+
+    /**
      * Applies the FARM-1 state table.
      * @see table 6-1 from COP-1 CCSDS
      *
-     * @returns The event code detected. An event code of 0 means no event.
+     * @returns The occurred event code. An event code of 0 means no event was
+     *          detected.
      */
     std::pair<FARMNotification, uint8_t> applyFarmStateTable();
 
 public:
-
-	/**
-	 * The Virtual Channel in which FOP is initialized
-	 */
-	VirtualChannel* vchan;
+    /**
+     * The Virtual Channel in which FOP is initialized
+     */
+    VirtualChannel* vchan;
 
 	FrameAcceptanceReporting(VirtualChannel* vchan,
                              etl::list<TransferFrameTC*,MaxReceivedRxTcInFARMSentQueue>& lowerLayerBuffer,
-                             etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeBD,
+                             etl::circular_buffer<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeBD,
                              etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeAD,
                              etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer,
                              MemoryPool& memoryPool,
                              uint8_t farmSlidingWinWidth = FarmSlidingWinLength,
                              uint8_t farmPositiveWinWidth = FarmPositiveWinLength,
-                             uint8_t farmNegativeWinWidth = FarmNegativeWinLength)
+                             uint8_t farmNegativeWinWidth = FarmNegativeWinLength,
+                             uint16_t clcwReportInterval = ClcwReportInterval)
 	    : vchan(vchan), lowerLayerBuffer(lowerLayerBuffer), higherLayerBufferTypeBD(higherLayerBufferTypeBD),
         higherLayerBufferTypeAD(higherLayerBufferTypeAD), frameMasterCopyBuffer(frameMasterCopyBuffer), memoryPool(memoryPool),
         farmSlidingWinWidth(farmSlidingWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
         farmNegativeWidth(farmNegativeWinWidth), receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY),
-        wait(FlagState::NOT_READY), retransmit(FlagState::NOT_READY), state(FARMState::OPEN) {};
+        wait(FlagState::NOT_READY), retransmit(FlagState::NOT_READY), state(FARMState::OPEN), clcwReportInterval(clcwReportInterval) {};
 };

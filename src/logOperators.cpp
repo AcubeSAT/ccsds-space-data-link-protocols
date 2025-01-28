@@ -21,6 +21,7 @@ std::ostream& operator<<(std::ostream& out, const NotificationType value) {
 		INSERT_ELEMENT(TypeFDURequestType);
         INSERT_ELEMENT(TypeSDLSVerificationStatusCode);
         INSERT_ELEMENT(TypeFOPNotif);
+        INSERT_ELEMENT(TypeFARMNotif);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];
@@ -95,6 +96,7 @@ std::ostream& operator<<(std::ostream& out, const FARMNotification value) {
         INSERT_ELEMENT(NO_FARM_EVENT);
         INSERT_ELEMENT(FARM_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
         INSERT_ELEMENT(FARM_UNEXPECTED_VALUE);
+        INSERT_ELEMENT(FARM_HIGH_LAYER_AD_BUFFER_FULL);
 #undef INSERT_ELEMENT
     }
     return out << strings[value];

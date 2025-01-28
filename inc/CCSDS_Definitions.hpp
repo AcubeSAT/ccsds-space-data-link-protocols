@@ -107,7 +107,7 @@ inline constexpr uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
 /// Set to 0 if VC processing service isn't used
 
 inline constexpr uint8_t FopSlidingWindowInitial = 255;
-inline constexpr uint16_t FopTimerInitial = 60; // sec
+inline constexpr uint16_t FopTimerInitial = 2000; // milliseconds
 inline constexpr uint8_t TransmissionLimit = 5;
 inline constexpr uint8_t DirectiveRequestSignalQueueSize = 10;
 inline constexpr uint8_t TransferfduSignalQueueSize = 10;
@@ -119,13 +119,14 @@ inline constexpr uint8_t AsynchronousNotificationSignalQueueSize = 3;
 inline constexpr uint8_t FarmSlidingWinLength = 50;
 inline constexpr uint8_t FarmPositiveWinLength = 25;
 inline constexpr uint8_t FarmNegativeWinLength = 25;
+inline constexpr uint16_t ClcwReportInterval = 2000;
 
 /// @see p. 4.1.3.3 of TC Data Link protocol
-inline constexpr uint8_t UnlockCommandSize = 1;  // in octets
-inline constexpr uint8_t UnlockCommand = 0;      // all zeroes
-inline constexpr uint8_t SetVrCommandSize = 3;   // in octets
+inline constexpr uint8_t UnlockCommandSize = 1;       // in octets
+inline constexpr uint8_t UnlockCommandOctet = 0;      // all zeroes
+inline constexpr uint8_t SetVrCommandSize = 3;        // in octets
 inline constexpr uint8_t SetVrCommandOctet1 = 0x82;
-inline constexpr uint8_t SetVrCommandOctet2 = 0;
+inline constexpr uint8_t SetVrCommandOctet2 = 0;      // Octet 3 carries the new Vr
 
 /// CLCW fields @see p. 4.2 of TC Data Link Protocol
 inline constexpr uint8_t ControlWordType = 0x00;  // the value of 0 indicates that clcws are carried as a report word
@@ -134,7 +135,7 @@ inline constexpr uint8_t CopInEffect = 0x01;      // Indicates COP-1 is used
 
 /**
  * Due to the FOP-1 arithmetic being mod 256, it is possible in the inequality:
- * lowerBound < value < upperBound
+ * lowerBound <= value <= upperBound
  * for upperBound to be numerically smaller than lower bound (wraparound). In order to make this concept
  * more clear, diagrams exist in the wiki, under section: 'Circular arithmetic'.
  *

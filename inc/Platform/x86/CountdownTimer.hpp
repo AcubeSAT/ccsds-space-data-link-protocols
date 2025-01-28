@@ -1,11 +1,12 @@
-#include <cstdint>
+#pragma once
+
 #include <chrono>
 
 /**
  * A countdown timer (for x86) that has a running/not running state, with multiple instances being
  * able to run concurrently. Intended for use within FOP-1.
  */
-class __attribute__((weak)) CountdownTimer {
+class CountdownTimer {
 private:
     uint16_t initialTime; // Initial time in milliseconds
     std::chrono::steady_clock::time_point startTime; // Start time point

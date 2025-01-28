@@ -8,7 +8,8 @@ enum NotificationType : uint8_t {
     TypeServiceChannelNotif = 0x02,
     TypeFDURequestType = 0x05,
     TypeSDLSVerificationStatusCode = 0x06,
-    TypeFOPNotif = 0x07
+    TypeFOPNotif = 0x07,
+    TypeFARMNotif = 0x08,
 };
 
 enum ServiceChannelNotification : int {
@@ -92,4 +93,5 @@ enum FARMNotification {
     NO_FARM_EVENT = 0x01,
     FARM_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT = 0x02,
     FARM_UNEXPECTED_VALUE = 0x03,
+    FARM_HIGH_LAYER_AD_BUFFER_FULL = 0x04,
 };
