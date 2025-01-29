@@ -253,11 +253,6 @@ public:
 	 */
 	uint8_t frameCountTM;
 
-    /**
-     * Flag to indicate that a clcw was generated
-     */
-    bool clcwWaitingToBeTransmitted = false;
-
 	/**
 	 * Returns availableVCBufferTC space in the VC TC buffer
 	 */
@@ -347,13 +342,6 @@ public:
           secondaryHeaderTMLength(v.secondaryHeaderTMLength),
           frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
           operationalControlFieldTMPresent(v.operationalControlFieldTMPresent), mapChannels(v.mapChannels) {
-		fop.vchan = this;
-		fop.sentQueueFOP = &sentQueueTxTC;
-		fop.waitQueueFOP = &waitQueueTxTC;
-		fop.sentQueueFARM = &sentQueueRxTC;
-		fop.waitQueueFARM = &sentQueueRxTC;
-		farm.waitQueue = &waitQueueRxTC;
-		farm.sentQueue = &sentQueueRxTC;
 	}
 
 	VirtualChannelAlert storeVC(TransferFrameTC* transferFrameTc);
@@ -376,7 +364,7 @@ private:
 	/**
 	 * Buffer to store incoming transfer frames BEFORE being processed by COP
 	 */
-	etl::list<TransferFrameTC*, MaxReceivedTxTcInWaitQueue> waitQueueRxTC;
+	etl::list<TransferFrameTC*, MaxReceivedRxTcInWaitQueue> waitQueueRxTC;
 
 	/**
 	 * Buffer to storeOut outcoming transfer frames AFTER being processed by COP
@@ -459,7 +447,8 @@ private:
     etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
 
     /**
-     * Buffer to store the clcws waiting to be transmited
+     * Buffer for FARM to store the clcws. Afterwards, the TM Link (sending side) places those clcws to TM frames,
+     * if the operationalControlFieldTMPresent is true.
      */
     etl::list<CLCW, 1> generatedClcwBuffer;
 

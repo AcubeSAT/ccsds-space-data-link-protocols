@@ -73,14 +73,6 @@ void FrameAcceptanceReporting::report() {
 
 }
 
-etl::optional<CLCW> FrameAcceptanceReporting::popCLCW() {
-    if (clcwBuffer.empty()) {
-        return etl::nullopt;
-    }
-
-    return clcwBuffer.front();
-}
-
 Window FrameAcceptanceReporting::getWindow(uint8_t frameSeqNumber) {
     uint8_t positiveWindowBorder = static_cast<uint8_t>((static_cast<uint16_t>(receiverFrameSeqNumber) + farmPositiveWinWidth - 1) & 0xFF);
     // Note: the case V(R) = N(s) is included in the positive window area

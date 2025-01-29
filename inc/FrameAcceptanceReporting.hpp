@@ -127,7 +127,7 @@ private:
     /**
      * A buffer of space 1, to store CLCW reports.
      */
-     etl::queue<CLCW, 1> clcwBuffer;
+     etl::queue<CLCW, 1>& clcwBuffer;
 
     /** FARM-1 actions **/
 
@@ -158,12 +158,6 @@ private:
     /** Implementation specific methods **/
 
     /**
-     * Pops a CLCW from the clcwBuffer. This method is meant to be used by the TC Data Link
-     * user, therefore a wrapper function is provided in the service channel.
-     */
-    etl::optional<CLCW> popCLCW();
-
-    /**
      * Returns whether the frame sequence number N(S) is within the positive-negative window or outside
      * of those windows. This is used for events E3,E4,E5.
      *
@@ -192,13 +186,14 @@ public:
                              etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeAD,
                              etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer,
                              MemoryPool& memoryPool,
+                             etl::queue<CLCW, 1>& clcwBuffer,
                              uint8_t farmSlidingWinWidth = FarmSlidingWinLength,
                              uint8_t farmPositiveWinWidth = FarmPositiveWinLength,
                              uint8_t farmNegativeWinWidth = FarmNegativeWinLength,
                              uint16_t clcwReportInterval = ClcwReportInterval)
 	    : vchan(vchan), lowerLayerBuffer(lowerLayerBuffer), higherLayerBufferTypeBD(higherLayerBufferTypeBD),
         higherLayerBufferTypeAD(higherLayerBufferTypeAD), frameMasterCopyBuffer(frameMasterCopyBuffer), memoryPool(memoryPool),
-        farmSlidingWinWidth(farmSlidingWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
+        clcwBuffer(clcwBuffer), farmSlidingWinWidth(farmSlidingWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
         farmNegativeWidth(farmNegativeWinWidth), receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY),
         wait(FlagState::NOT_READY), retransmit(FlagState::NOT_READY), state(FARMState::OPEN), clcwReportInterval(clcwReportInterval) {};
 };

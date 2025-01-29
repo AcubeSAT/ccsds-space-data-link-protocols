@@ -935,11 +935,11 @@ ServiceChannelNotification ServiceChannel::vcReceptionRxTC(uint8_t vid) {
             CLCW(0, 0, 0, 1, vid, 0, 0, 1, virtChannel.farm.lockout, virtChannel.farm.wait, virtChannel.farm.retransmit,
                  virtChannel.farm.farmBCount, 0, virtChannel.farm.receiverFrameSeqNumber);
 
-    if (!virtChannel.generatedClcwBuffer.empty()) {
-        virtChannel.generatedClcwBuffer.pop_front();
-    }
-    virtChannel.generatedClcwBuffer.push_back(clcw);
-    virtChannel.clcwWaitingToBeTransmitted = true;
+//    if (!virtChannel.generatedClcwBuffer.empty()) {
+//        virtChannel.generatedClcwBuffer.pop_front();
+//    }
+//    virtChannel.generatedClcwBuffer.push_back(clcw);
+//    virtChannel.clcwWaitingToBeTransmitted = true;
     virtChannel.inFramesAfterVCReceptionRxTC.push_back(frame);
 
     return ServiceChannelNotification::NO_SERVICE_EVENT;
@@ -1254,10 +1254,9 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                                 TM);
 
         // add clcw to the operational control field
-        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+        if (!vchan.generatedClcwBuffer.empty() && vchan.operationalControlFieldTMPresent){
             transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
-            vchan.clcwWaitingToBeTransmitted = false;
         }
 
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
@@ -1340,10 +1339,9 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 TM);
 
         // add clcw to the operational control field
-        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+        if (!vchan.generatedClcwBuffer.empty() && vchan.operationalControlFieldTMPresent){
             transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
-            vchan.clcwWaitingToBeTransmitted = false;
         }
 
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
@@ -1491,10 +1489,9 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                                 TM);
 
         // add clcw to the operational control field
-        if (vchan.clcwWaitingToBeTransmitted && vchan.operationalControlFieldTMPresent){
+        if (!vchan.generatedClcwBuffer.empty() && vchan.operationalControlFieldTMPresent){
             frameOID.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
             vchan.generatedClcwBuffer.pop_front();
-            vchan.clcwWaitingToBeTransmitted = false;
         }
 
         masterChannel.masterCopyTxTM.push_back(frameOID);
