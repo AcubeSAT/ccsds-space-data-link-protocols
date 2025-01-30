@@ -448,9 +448,17 @@ private:
 
     /**
      * Buffer for FARM to store the clcws. Afterwards, the TM Link (sending side) places those clcws to TM frames,
-     * if the operationalControlFieldTMPresent is true.
+     * if the operationalControlFieldTMPresent flag is true.
      */
     etl::list<CLCW, 1> generatedClcwBuffer;
+
+    /**
+     * Buffer for segmentationTM, that holds frames created from segmentation but had no clcw to place in their
+     * operational control field. This applies only in the case the operationalControlFieldTMPresent flag is true.
+     * The buffer is circular to prototect from the scenario where frame generation rate is much faster than incoming
+     * clcws rate.
+     */
+    etl::circular_buffer<TransferFrameTM*, MaxWithheldFrames> withheldFramesTxTM;
 
 };
 

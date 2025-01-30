@@ -81,6 +81,8 @@ inline const uint8_t MaxReceivedTxTmInVCBuffer =
 
 inline constexpr uint8_t MaxReceivedTxTmOutInMasterBuffer =
     100; ///> Maximum received fully-processed TX TMs in the master buffer
+
+inline constexpr uint8_t MaxWithheldFrames = 10;
 inline constexpr uint8_t MaxReceivedRxTcInMasterBuffer = 100; ///> Maximum received unprocessed RX TCs in the master buffer
 inline constexpr uint8_t MaxReceivedRxTcInVirtualChannelBuffer = 100; ///> Maximum received RX TCs in virtual channel buffer
 inline constexpr uint8_t MaxReceivedRxTcInMAPBuffer = 100; ///> Maximum received RX TCs in MAP buffer

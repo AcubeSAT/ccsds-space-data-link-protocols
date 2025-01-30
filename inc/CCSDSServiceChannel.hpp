@@ -464,8 +464,10 @@ public:
      std::pair<ServiceChannelNotification, bool> generateIdleSpacePacket(uint8_t vid, TransferFrameTM* lastProcessedFrame, uint16_t transferFrameDataFieldLength, bool lastPacketPlacedIdle);
 
     /**
-     * Service that generates a transfer frame by combining the packets via blocking and segmentation and initializing
-     * the transfer frame primary header @see p. 4.2.2 and 4.2.3 of TM Space Data Link protocol
+     * Service that generates a transfer frame by combining packets via blocking and segmentation and initializing
+     * the transfer frame primary header @see p. 4.2.2 and 4.2.3 of TM Space Data Link protocol. If the virtual channel
+     * supports the presence of the operational control field in frames, it is filled with a clcw. In case there is no clcw
+     * to be placed to a newly generated frame, it is withheld until one becomes available.
      *
      * @param transferFrameDataFieldLength the transfer frame data field length
      * @param gvcid the global virtual channel id

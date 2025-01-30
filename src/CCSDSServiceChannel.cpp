@@ -1223,8 +1223,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
 
         if (prevFrame != nullptr && i == numberOfNewTransferFrames - 1){
             firstHeaderPointer = (packetLength == transferFrameDataFieldLength) ? TmNoPacketStartFirstHeaderPointer : packetLength;
-        }
-        else if (prevFrame == nullptr) {
+        } else if (prevFrame == nullptr) {
             if (i == 0) {
                 firstHeaderPointer = 0;
             } else if (i == numberOfNewTransferFrames - 1) {
@@ -1238,7 +1237,7 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
         if (transferFrameData == nullptr) {
             return MEMORY_POOL_FULL;
         }
-        vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
+        vchan.frameCountTM = (vchan.frameCountTM == 255) ? 0 : (vchan.frameCountTM + 1);
         TransferFrameTM transferFrameTm =
                 TransferFrameTM(transferFrameData,
                                 transferFrameDataFieldLength + TmPrimaryHeaderSize + trailerSize,
@@ -1253,20 +1252,27 @@ ServiceChannelNotification ServiceChannel::segmentationTM(TransferFrameTM* prevF
                                 currentTransferFrameDataFieldLength,
                                 TM);
 
-        // add clcw to the operational control field
-        if (!vchan.generatedClcwBuffer.empty() && vchan.operationalControlFieldTMPresent){
-            transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
-            vchan.generatedClcwBuffer.pop_front();
+        masterChannel.masterCopyTxTM.push_back(transferFrameTm);
+
+        if (vchan.operationalControlFieldTMPresent) {
+            // If a clcw is available place it inside the operational control field of the frame and transmit it.
+            // Otherwise, withhold it until another clcw becomes available.
+            if (!vchan.generatedClcwBuffer.empty()) {
+                transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
+                vchan.generatedClcwBuffer.pop_front();
+                masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
+            } else {
+                vchan.withheldFramesTxTM.push(&(masterChannel.masterCopyTxTM.back()));
+            }
+        } else {
+            masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         }
 
-        masterChannel.masterCopyTxTM.push_back(transferFrameTm);
-        masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         packetLength -= transferFrameDataFieldLength;
     }
     vchan.packetLengthBufferTxTM.pop_front();
     return NO_SERVICE_EVENT;
 }
-
 
 ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
                                                       uint8_t vid) {
@@ -1321,7 +1327,7 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
         if (transferFrameData == nullptr) {
             return MEMORY_POOL_FULL;
         }
-        vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
+        vchan.frameCountTM = (vchan.frameCountTM == 255) ? 0 : (vchan.frameCountTM + 1);
         uint16_t firstEmptyOctet = currentTransferFrameDataFieldLength;
         TransferFrameTM transferFrameTm =
                 TransferFrameTM(transferFrameData,
@@ -1338,16 +1344,22 @@ ServiceChannelNotification ServiceChannel::blockingTM(TransferFrameTM* prevFrame
                                 firstEmptyOctet,
                                 TM);
 
-        // add clcw to the operational control field
-        if (!vchan.generatedClcwBuffer.empty() && vchan.operationalControlFieldTMPresent){
-            transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
-            vchan.generatedClcwBuffer.pop_front();
-        }
-
         masterChannel.masterCopyTxTM.push_back(transferFrameTm);
-        masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
-    }
-    else {
+
+        if (vchan.operationalControlFieldTMPresent) {
+            // If a clcw is available place it inside the operational control field of the frame and transmit it.
+            // Otherwise, withhold it until another clcw becomes available.
+            if (!vchan.generatedClcwBuffer.empty()) {
+                transferFrameTm.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
+                vchan.generatedClcwBuffer.pop_front();
+                masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
+            } else {
+                vchan.withheldFramesTxTM.push(&(masterChannel.masterCopyTxTM.back()));
+            }
+        } else {
+            masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
+        }
+    } else {
         for (uint16_t i = 0; i< TmPrimaryHeaderSize + prevFrame->getFirstDataFieldEmptyOctet(); i++){
             tmpData[i] = prevFrame->getFrameData()[i];
         }
@@ -1448,6 +1460,25 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
     }
 
     VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
+
+    if (vchan.operationalControlFieldTMPresent) {
+        if (vchan.generatedClcwBuffer.empty()) {
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, CLCW_BUFFER_EMPTY);
+            return ServiceChannelNotification::CLCW_BUFFER_EMPTY;
+        }
+
+        // prioritize transmitting withheld frames first (applies for virtual channels with clcws)
+        if (!vchan.withheldFramesTxTM.empty()) {
+            TransferFrameTM* frameTm = vchan.withheldFramesTxTM.front();
+            frameTm->setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
+            vchan.generatedClcwBuffer.pop_front();
+            masterChannel.framesAfterVcGenerationServiceTxTM.push_back(frameTm);
+            vchan.withheldFramesTxTM.pop();
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+            return ServiceChannelNotification::NO_SERVICE_EVENT;
+        }
+    }
+
     ServiceChannelNotification notif = NO_SERVICE_EVENT;
 
     // generate OID frame
@@ -1470,7 +1501,7 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                 TmPrimaryHeaderSize + transferFrameDataFieldLength +
                 TmOperationalControlFieldSize * vchan.operationalControlFieldTMPresent +
                 ErrorControlFieldSize * vchan.frameErrorControlFieldPresent);
-        vchan.frameCountTM = (vchan.frameCountTM + 1) % 256;
+        vchan.frameCountTM = (vchan.frameCountTM == 255) ? (0) : (vchan.frameCountTM + 1);
         TransferFrameTM frameOID =
                 TransferFrameTM(transferFrameData,
                                 TmPrimaryHeaderSize + transferFrameDataFieldLength +
@@ -1488,14 +1519,22 @@ ServiceChannelNotification ServiceChannel::vcGenerationServiceTxTM(uint16_t tran
                                 transferFrameDataFieldLength,
                                 TM);
 
-        // add clcw to the operational control field
-        if (!vchan.generatedClcwBuffer.empty() && vchan.operationalControlFieldTMPresent){
-            frameOID.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
-            vchan.generatedClcwBuffer.pop_front();
+        masterChannel.masterCopyTxTM.push_back(frameOID);
+
+        if (vchan.operationalControlFieldTMPresent) {
+            // If a clcw is available place it inside the operational control field of the frame and transmit it.
+            // Otherwise, withhold it until another clcw becomes available.
+            if (!vchan.generatedClcwBuffer.empty()) {
+                frameOID.setOperationalControlField(vchan.generatedClcwBuffer.front().clcw);
+                vchan.generatedClcwBuffer.pop_front();
+                masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
+            } else {
+                vchan.withheldFramesTxTM.push(&(masterChannel.masterCopyTxTM.back()));
+            }
+        } else {
+            masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         }
 
-        masterChannel.masterCopyTxTM.push_back(frameOID);
-        masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
         return PACKET_BUFFER_EMPTY;
     }
 
@@ -1572,7 +1611,7 @@ ServiceChannelNotification ServiceChannel::mcGenerationRequestTxTM() {
     // TODO: Process secondary headers here (if implemented)
 
     // set master channel frame counter
-    masterChannel.currFrameCountTM = (masterChannel.currFrameCountTM + 1) % 256;
+    masterChannel.currFrameCountTM = (masterChannel.currFrameCountTM == 255) ? 0 : (masterChannel.currFrameCountTM + 1);
     frame->setMasterChannelFrameCount(masterChannel.currFrameCountTM);
 
     masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.push_back(frame);
