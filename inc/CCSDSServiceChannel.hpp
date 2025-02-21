@@ -60,13 +60,6 @@ public:
     TransferFrameTC getLastMasterCopyTcFrame();
 
     /**
-     * Available space in master channel buffer
-     */
-    uint16_t availableFramesAfterAllFramesGenerationTxTC() const {
-        return masterChannel.toBeTransmittedFramesAfterAllFramesGenerationListTxTC.available();
-    }
-
-    /**
      * Available space in TC virtual channel buffer
      */
     uint16_t availableFramesBeforeSDLSProcessing(const uint8_t vid) const {
@@ -267,34 +260,36 @@ public:
     std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutFrameTC(uint8_t vid, uint8_t mapid) const;
 
     /**
-	 * Available number of outcoming TC RX transfer frames in master channel buffer
-	 */
-    uint16_t availableFramesBeforeAllFramesReceptionRxTC() const {
-        // The commented out buffer is probably redundant
-        // return masterChannel.toBeTransmittedFramesAfterAllFramesReceptionListRxTC.available();
-        return masterChannel.inFramesBeforeAllFramesReceptionListRxTC.available();
-    }
-
-    /**
-     * Available space for TC transfer frames at waitQueueRxTC buffer
+     * Available space for TC transfer frames at inFramesBeforeVcReceptionRxTC buffer
      */
-    uint16_t getAvailableWaitQueueRxTC(uint8_t vid) const {
+    uint16_t getAvailableBeforeVcReceptionRxTC(uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
-        return masterChannel.virtualChannels.at(vid).waitQueueRxTC.available();
+        return masterChannel.virtualChannels.at(vid).inFramesBeforeVcReceptionRxTC.available();
     }
 
     /**
-     * Available space for TC transfer frames waiting to be processed from the VC Generation Service
+     * Available space for TC transfer frames waiting to be processed from the VC Generation Service (Type AD)
      */
-    uint16_t getAvailableInFramesAfterVCReceptionRxTC(uint8_t vid) const {
+    uint16_t getAvailableInFramesAfterVCReceptionTypeADRxTC(uint8_t vid) const {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
         }
-        return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionRxTC.available();
+        return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionTypeADRxTC.available();
+    }
+
+    /**
+     * Available space for TC transfer frames waiting to be processed from the VC Generation Service (Type BD)
+     */
+    uint16_t getAvailableInFramesAfterVCReceptionTypeBDRxTC(uint8_t vid) const {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
+        return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionTypeBDRxTC.available();
     }
 
     /**
@@ -320,20 +315,12 @@ public:
 
     //     - All Frames Reception
     /**
-     * This service is used for storing incoming TC transfer frames in the master channel.
-     *
-     * @param frameData Raw transfer frame data
-     * @param frameLength The length of the transfer frame
-     */
-    ServiceChannelNotification storeFrameRxTC(uint8_t* frameData, uint16_t frameLength);
-
-    /**
      * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
-     * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
-     * rate to the Channel Coding Sublayer.
+     * encoding defined by this Recommendation, along with other standard checks. Serves as an entry point
+     * for frames.
      * @see p. 4.2.7 from TC Space Data Link Protocol
      */
-    ServiceChannelNotification allFramesReceptionRequestRxTC();
+    ServiceChannelNotification allFramesReceptionRequestRxTC(uint8_t* frameData, uint16_t frameLength);
 
 
     //     - Master Channel Demultiplexing
@@ -358,7 +345,7 @@ public:
      * Processes TC frames that belong in a security association and discards them if they do not pass checks.
      * @param mapid Is ignored if no MAP channels exist for the given virtual channel
      */
-    ServiceChannelNotification processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid);
+    ServiceChannelNotification processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
     //     - Packet Extraction
     /**

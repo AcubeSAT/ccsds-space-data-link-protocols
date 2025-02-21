@@ -45,7 +45,6 @@ MasterChannelAlert MasterChannel::storeOut(TransferFrameTM* transferFrameTm) {
 
 MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
                                         const bool segmentationTM, const bool blockingTC,
-                                        const uint8_t repetitionTypeAFrame, const uint8_t repetitionTypeBFrame,
                                         const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
@@ -58,19 +57,22 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
-	virtualChannels.emplace(vcid, VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blockingTM, segmentationTM,
-                                                 blockingTC, repetitionTypeAFrame,
-	                                             repetitionTypeBFrame, secondaryHeaderTMPresent, secondaryHeaderTMLength,
-	                                             operationalControlFieldTMPresent, frameErrorControlFieldPresent,
-	                                             synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
-	                                             farmNegativeWinWidth, vcRepetitions, mapChan));
+    virtualChannelClcwQueues.emplace(vcid, etl::queue<CLCW, 1>());
+
+	virtualChannels.emplace(vcid, VirtualChannel(vcid, segmentHeaderPresent, maxFrameLength, blockingTM, segmentationTM,
+                                                 blockingTC, secondaryHeaderTMPresent, secondaryHeaderTMLength,
+                                                 operationalControlFieldTMPresent, frameErrorControlFieldPresent,
+                                                 synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
+                                                 farmNegativeWinWidth, vcRepetitions, mapChan, virtualChannelClcwQueues,
+                                                 masterCopyRxTC, masterCopyTxTC, masterChannelPoolTxTC, masterChannelPoolRxTC));
+
+
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 
-MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-                                        const bool segmentationTM, const bool blockingTC,
-                                        const uint8_t repetitionTypeAFrame, const uint8_t repetitionCopCtrl,
-                                        const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
+MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLengthTC, const bool blockingTM,
+                                        const bool segmentationTM, const bool blockingTC, const bool frameErrorControlFieldPresent,
+                                        const bool secondaryHeaderTMPresent,
                                         const uint8_t secondaryHeaderTMLength,
                                         const bool operationalControlFieldTMPresent,
                                         SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
@@ -80,13 +82,18 @@ MasterChannelAlert MasterChannel::addVC(const uint8_t vcid, const bool segmentHe
 		return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
 	}
 
+    virtualChannelClcwQueues.emplace(vcid, etl::queue<CLCW, 1>());
+
 	virtualChannels.emplace(vcid,
-	                        VirtualChannel(*this, vcid, segmentHeaderPresent, maxFrameLength, blockingTM,
-                                           segmentationTM, blockingTC, repetitionTypeAFrame,
-	                                       repetitionCopCtrl, secondaryHeaderTMPresent, secondaryHeaderTMLength,
-	                                       frameErrorControlFieldPresent, operationalControlFieldTMPresent,
-	                                       synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
-	                                       farmNegativeWinWidth, vcRepetitions, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels>()));
+	                        VirtualChannel(vcid, segmentHeaderPresent, maxFrameLengthTC, blockingTM,
+                                           segmentationTM, blockingTC, secondaryHeaderTMPresent,
+                                           secondaryHeaderTMLength,
+                                           frameErrorControlFieldPresent, operationalControlFieldTMPresent,
+                                           synchronization, farmSlidingWinWidth, farmPositiveWinWidth,
+                                           farmNegativeWinWidth, vcRepetitions, etl::flat_map<uint8_t, MAPChannel, MaxMapChannels>(),
+                                           virtualChannelClcwQueues, masterCopyRxTC, masterCopyTxTC, masterChannelPoolTxTC,
+                                           masterChannelPoolRxTC));
+
 	return MasterChannelAlert::NO_MC_ALERT;
 }
 

@@ -121,28 +121,28 @@ TEST_CASE("Service Channel") {
     serv_channel.storeFrameRxTC(frame2, 10);
 
 	// All frames reception
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	CHECK(serv_channel.getAvailableBeforeVcReceptionRxTC(0) == MaxReceivedTxTcInWaitQueue);
 	err = serv_channel.allFramesReceptionRequestRxTC();
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue - 1);
+	CHECK(serv_channel.getAvailableBeforeVcReceptionRxTC(0) == MaxReceivedTxTcInWaitQueue - 1);
 
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue);
+	CHECK(serv_channel.getAvailableBeforeVcReceptionRxTC(1) == MaxReceivedTxTcInWaitQueue);
 	err = serv_channel.allFramesReceptionRequestRxTC();
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue - 1);
+	CHECK(serv_channel.getAvailableBeforeVcReceptionRxTC(1) == MaxReceivedTxTcInWaitQueue - 1);
 
 	// VC reception
-	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(0) == MaxReceivedRxTcInMasterBuffer);
+	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionTypeADRxTC(0) == MaxReceivedRxTcInMasterBuffer);
 	err = serv_channel.vcReceptionRxTC(0);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(0) == MaxReceivedTxTcInWaitQueue);
-	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(0) == MaxReceivedRxTcInVirtualChannelBuffer-1);
+	CHECK(serv_channel.getAvailableBeforeVcReceptionRxTC(0) == MaxReceivedTxTcInWaitQueue);
+	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionTypeADRxTC(0) == MaxReceivedRxTcInVirtualChannelBuffer - 1);
 
-	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(1) == MaxReceivedRxTcInMasterBuffer);
+	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionTypeADRxTC(1) == MaxReceivedRxTcInMasterBuffer);
 	err = serv_channel.vcReceptionRxTC(1);
 	CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-	CHECK(serv_channel.getAvailableWaitQueueRxTC(1) == MaxReceivedTxTcInWaitQueue);
-	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(1) == MaxReceivedRxTcInVirtualChannelBuffer - 1);
+	CHECK(serv_channel.getAvailableBeforeVcReceptionRxTC(1) == MaxReceivedTxTcInWaitQueue);
+	CHECK(serv_channel.getAvailableInFramesAfterVCReceptionTypeADRxTC(1) == MaxReceivedRxTcInVirtualChannelBuffer - 1);
 
     // SDLS Processing
     serv_channel.processSDLSSecurityRxTC(0, 0);

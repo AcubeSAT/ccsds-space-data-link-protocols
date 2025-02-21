@@ -91,7 +91,7 @@ private:
 
     /**
      * The amount of time (in milliseconds) that must elapse before another CLCW report is
-     * pushed. It is not required by the protocol to have a exact CLCW data rate, therefore a
+     * pushed. It is not required by the protocol to have a constant CLCW data rate, therefore a
      * simple countdown timer can be used (send a CLCW once it has elapsed).
      *
      * // TODO For now, the x86 countdown timer from fop is used.

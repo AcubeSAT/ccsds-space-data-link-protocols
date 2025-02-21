@@ -249,7 +249,7 @@ TEST_CASE("Security Association (40 bit HMAC authentication)") {
         CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
         err = serv_channel.vcReceptionRxTC(0);
         CHECK(err == ServiceChannelNotification::NO_SERVICE_EVENT);
-        CHECK(serv_channel.getAvailableInFramesAfterVCReceptionRxTC(0) == MaxReceivedRxTcInVirtualChannelBuffer - 2);
+        CHECK(serv_channel.getAvailableInFramesAfterVCReceptionTypeADRxTC(0) == MaxReceivedRxTcInVirtualChannelBuffer - 2);
 
         // SDLS Processing
         err = serv_channel.processSDLSSecurityRxTC(0, 0); // frame 1 should pass

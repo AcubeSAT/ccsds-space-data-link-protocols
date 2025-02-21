@@ -81,8 +81,12 @@ public:
         return transferFrameData;
     }
 
-    void setFrameData(uint8_t* dataSource, uint16_t dataLength) {
+    void copyNewFrameData(uint8_t* dataSource, uint16_t dataLength) {
         std::memcpy(transferFrameData, dataSource, dataLength * sizeof(uint8_t));
+    }
+
+    void setNewFrameDataPointer(uint8_t* newFrameDataPointer) {
+        transferFrameData = newFrameDataPointer;
     }
 
     /**

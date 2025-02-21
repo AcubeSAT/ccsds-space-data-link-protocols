@@ -60,8 +60,8 @@ flowchart TB
 
             A1s2 --> A2s1
             A2s1-.-x vc16
-            A2s1 -.-x master12
-            A2s1 -.-x master16
+            A2s1 -.-x|deletion of AD, BD frames upon MAC computation error| master12
+            A2s1 -.-x|deletion of AD, BD frames upon MAC computation error| master16
             A2s1 -.-> vc7
         end
 
@@ -70,9 +70,9 @@ flowchart TB
             A3s2[["frontFrameBeforeAllFramesGenerationTxTC()"]]
 
             A2s1 --> A3s1
-            A3s1 -..-x|"From fop (after reception confirmation)"| master12
-            A3s1 -..-x|"From fop (after reception confirmation)"| master16
-            A3s1 -.-> vc7
+            A3s1 -..->|"From fop (BC frame generation)"| master12
+            A3s1 -..-x|"From fop (after reception confirmation, AD and BC)"| master16
+            A3s1 -.-x vc7
             A3s1 -.-> master1
             A3s2 -.-|"front reference"| master1
         end
@@ -90,36 +90,35 @@ flowchart TB
 
     subgraph B ["TC Rx Services"]
         subgraph B1["All Frames Reception"]
-            B1s1[["storeFrameRxTC(frameData, frameLength)"]]
+
             B1s2[["allFramesReceptionRequestRxTC()"]]
             B1s4[["txAvailableTc(const uint8_t vid, const uint8_t mapid)"]]
             B1s5[["txOutFrameTC(uint8_t vid,uint8_t mapid)"]]
-            B1s6[["availableFramesBeforeAllFramesReceptionRxTC()"]]
-            B1s7[["getAvailableWaitQueueRxTC(vid)"]]
+            B1s7[["getAvailableBeforeVcReceptionRxTC(vid)"]]
 
-            B1s1 -->B1s2
-            B1s1 -.->master14 & master9
-            B1s2 -..-x|"discard TC frame if invalid"| master14
-            B1s2 -.-xmaster9
+            B1s2 -..-> master14
+            B1s2 -..-> master20
             B1s2 -.->vc3
             B1s4 -.remaining space.-map1
             B1s5 -.front reference.-map1
-            B1s6 -.remaining space.-master9
-            B1s2 -.checks if full.-master10
             B1s7 -..-|"remaining space"| vc3
         end
 
         subgraph B2["Virtual Channel Reception"]
             B2s1[["vcReceptionRxTC(vid)<br>calls internally:<br>frameArrives<br>(FARM)"]]
-            B2s3[["getAvailableinFramesAfterVCReceptionRxTC(vid)"]]
+            B2s3[["getAvailableinFramesAfterVCReceptionTybeADRxTC(vid)"]]
+            B2s4[["getAvailableinFramesAfterVCReceptionTybeBDRxTC(vid)"]]
 
             B1s2 --> B2s1
-            B2s1 --->|"frameArrives insertion"| vc5
-            B2s1 --->|"push report TM frame (clcw frame)"| service1
-            B2s1 -..-> vc6
+            B2s1 --->|"push CLCW to corresponding queue"| master18
+            B2s1 -..->|farm insertion| vc6
+            B2s1 -..->|farm insertion| vc21
 
-            B2s1 -..-x|"frameArrives deletion"| vc3
+            B2s1 -..-x|"farm deletion"| vc3
+            B2s1 -..-x|"farm deletion (lockout state)"| master14
+            B2s1 -..-x|"farm deletion (lockout state)"| master20
             B2s3 -.-|"remaining space"| vc6
+            B2s4 -.-|"remaining space"| vc21
         end
 
         subgraph B3["SDLS Processing"]
@@ -127,28 +126,28 @@ flowchart TB
 
             B2s1 --> B3s1
             B3s1 -.-x vc6
+            B3s1 -.-x vc21
             B3s1 -.-x master14
+            B3s1 -.-x master20
 
             B3s1 -.-> map8
             B3s1 -.-> map9
             B3s1 -.-> vc17
-            B3s1 -.-> vc18
             B3s1 -.-> vc19
             
         end
 
         subgraph B4["Virtual Channel Extraction"]
-            B4s1[["packetExtractionRxTC(vid, mapid, packetTarget)"]]
+            B4s1[["packetExtractionRxTC(vid, mapid, serviceType, packetTarget)"]]
 
             B3s1 --> B4s1
 
             B4s1 -.-x map8
             B4s1 -.-x map9
             B4s1 -.-x vc17
-            B4s1 -.-x vc18
             B4s1 -.-x vc19
             B4s1 -.-x master14
-
+            B4s1 -...............-x master20
             
         end
     end
@@ -169,6 +168,8 @@ flowchart TB
             C2s2[["availableFramesAfterVcGenerationTxTM()"]]
             C2s3[["backFrameAfterVcGenerationTxTM()"]]
             C2s4[["frontFrameAfterVcGenerationTxTM()"]]
+
+
             C1s1 --> C2s1
             C2s1 -.-x|"(from segmentation,blocking)"| vc8 & vc9
             C2s1 -.->|"(from segmentation,blocking)"| master13 & master11 & master17
@@ -183,6 +184,7 @@ flowchart TB
             C2s1 --> C3s1
             C3s1 -.-> master4
             C3s1 -.-x master11
+            C3s1 -.-x|"Pop CLCWs from buffers<br>(if ocf field exists)"| master19
         end
 
         subgraph C4["All Frames Generation"]
@@ -243,9 +245,9 @@ map9[("framesAfterSDLSProcessingTypeBDRxTC (frameTC*)")]
 
 
 vc1[("framesAfterMCReceptionRxTM (frameTM*)")]
-vc3[("waitQueueRxTC (frameTC*)")]
-vc5[("sentQueueRxTC (frameTC*)")]
-vc6[("inFramesAfterVCReceptionRxTC (frameTC*)")]
+vc3[("inFramesBeforeVcReceptionRxTC (frameTC*)")]
+vc6[("inFramesAfterVCReceptionTypeADRxTC (frameTC*)")]
+vc21[("inFramesAfterVCReceptionTypeBDRxTC (frameTC*)")]
 vc7[("unprocessedFrameListBufferTxTC (frameTC*)")]
 vc8[("packetLengthBufferTxTM (uint16_t)")]
 vc9[("packetBufferTxTM (uint8_t)")]
@@ -255,9 +257,7 @@ vc12[("packetLengthBufferTxTcTypeBD (uint16_t)")]
 vc13[("packetBufferTxTcTypeBD (uint8_t)")]
 vc16[("framesBeforeSDLSProcessingTxTC (frameTC*)")]
 vc17[("framesAfterSDLSProcessingTypeADRxTC (frameTC*)")]
-vc18[("framesAfterSDLSProcessingTypeBCRxTC (frameTC*)")]
 vc19[("framesAfterSDLSProcessingTypeBDRxTC (frameTC*)")]
-
 
 master1[("outFramesBeforeAllFramesGenerationListTxTC (frameTC*)")]
 master3[("txOutFramesBeforeMCGenerationListTM<br>Note: Seems unused")]
@@ -266,17 +266,16 @@ master5[("txOutFramesBeforeMCReceptionListTM<br>Note:seems unused")]
 master6[("txToBeTransmittedFramesAfterMCReceptionListTM<br>Note:seems unused")]
 master7[("txOutFramesBeforeAllFramesGenerationListTM<br>Note:seems redundant")]
 master8[("toBeTransmittedFramesAfterAllFramesGenerationListTxTM (frameTM*)")]
-master9[("inFramesBeforeAllFramesReceptionListRxTC (frameTC*)")]
-master10[("toBeTransmittedFramesAfterAllFramesReceptionListRxTC (frameTC*)")]
 master11[("framesAfterVcGenerationServiceTxTM (frameTM*)")]
 master12[("masterCopyTxTC (frame TC)")]
 master13[("masterCopyTxTM (frameTM)")]
 master14[("masterCopyRxTC (frame TC)")]
 master15[("masterCopyRxTM (frameTM)")]
-master16[("masterChannelPoolTC (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTC frames")]
-master17[("masterChannelPoolTM (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTM frames")]
-
-service1[("generatedClcwBuffer (CLCW) <br> Single capacity")]
+master16[("masterChannelPoolTxTC (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTC frames")]
+master17[("masterChannelPoolTxTM (uint8_t)<br>Note: Stores transfer frame data of masterCopyTxTM frames")]
+master18[("virtualChannelCLCWQueues (CLCW)<br>(map of clcw queues for each virtual channel)")]
+master19[("virtualChannelCLCWQueues (CLCW)<br>(map of clcw queues for each virtual channel)")]
+master20[("masterChannelPoolRxTC (uint8_t)<br>Note: Stores transfer frame data of masterCopyRxTC frames")]
 
 classDef map_channel_buffer fill:#3d8215;
 classDef virtual_channel_buffer fill:#a6161f;
@@ -285,7 +284,7 @@ classDef main_services fill:#B06F2A;
 classDef utility_services fill:#648D98;
 
 class map1,map2,map4,map5,map6,map7,map8,map9,E3 map_channel_buffer;
-class vc1,vc2,vc3,vc4,vc5,vc6,vc7,vc8,vc9,vc10,vc11,vc12,vc13,vc16,vc17,vc18,vc19,E4 virtual_channel_buffer;
-class master1,master3,master4,master5,master6,master7,master8,master9,master10,master11,master12,master13,master14,master15,master16,master17,E5 master_channel_buffer
+class vc1,vc2,vc3,vc4,vc6,vc21,vc7,vc8,vc9,vc10,vc11,vc12,vc13,vc16,vc17,vc19,E4 virtual_channel_buffer;
+class master1,master3,master4,master5,master6,master7,master8,master11,master12,master13,master14,master15,master16,master17,master18,master19,master20,E5 master_channel_buffer
 class A1s1,A1s2,A2s1,A3s1,A4s1,A4s2,B1s1,B1s2,B2s1,B3s1,B4s1,C1s1,C2s1,C3s1,C4s1,D1s1,D2s1,E1 main_services;
-class A1s3,A1s4,A1s5,A1s6,A1s7,A3s2,A4s3,A4s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;
+class A1s3,A1s4,A1s5,A1s6,A1s7,A3s2,A4s3,A4s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,B2s4,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;
