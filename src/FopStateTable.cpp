@@ -1,6 +1,5 @@
 #include <FrameOperationProcedure.hpp>
 
-
 std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable() {
     // clear output signal queues
     directiveNotificationSignalQueue.clear();
@@ -23,7 +22,7 @@ std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(
         if ((clcw.getControlWordType() != ControlWordType) ||
             (clcw.getClcwVersion() != ClcwVersionNumber) ||
             (clcw.getCopInEffect() != CopInEffect) ||
-            (clcw.getVcId() != vchan->VCID)) {
+            (clcw.getVcId() != vid)) {
             // E15
             eventCode = 15;
             validClcw = false;

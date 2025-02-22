@@ -68,6 +68,7 @@ std::ostream& operator<<(std::ostream& out, const ServiceChannelNotification val
         INSERT_ELEMENT(PROCESSING_SEGMENTED_PACKET);
         INSERT_ELEMENT(INVALID_SEQUENCE_FLAG);
         INSERT_ELEMENT(UNKNOWN_ERROR);
+        INSERT_ELEMENT(FARM_ERROR);
 #undef INSERT_ELEMENT
 	}
 	return out << strings[value];

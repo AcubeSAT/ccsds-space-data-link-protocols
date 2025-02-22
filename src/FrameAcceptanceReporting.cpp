@@ -60,7 +60,7 @@ void FrameAcceptanceReporting::report() {
                          ClcwVersionNumber,
                          0,
                          CopInEffect,
-                         vchan->VCID,
+                         vid,
                          0,
                          FlagState::NOT_READY,
                          FlagState::NOT_READY,
@@ -176,7 +176,7 @@ std::pair<FARMNotification, uint8_t> FrameAcceptanceReporting::applyFarmStateTab
             accept(frameTc, ServiceType::TYPE_BD);
             farmBCount = (farmBCount == 3) ? 0 : (farmBCount + 1);
         } else if (frameTc->getServiceType() == ServiceType::TYPE_BC) {
-            uint16_t expectedLenWithoutDataField = TcPrimaryHeaderSize + vchan->frameErrorControlFieldPresent * ErrorControlFieldSize;
+            uint16_t expectedLenWithoutDataField = TcPrimaryHeaderSize + errorControlFieldPresent * ErrorControlFieldSize;
             uint16_t frameLength = frameTc->getFrameLength();
             uint8_t* frameData = frameTc->getFrameData();
             if ((frameLength == expectedLenWithoutDataField + UnlockCommandSize) &&

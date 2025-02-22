@@ -2,11 +2,11 @@
 
 #include <cstdint>
 #include <TransferFrameTC.hpp>
-#include <CCSDSChannel.hpp>
 #include <MemoryPool.hpp>
 #include <CountdownTimer.hpp>
 #include <CLCW.hpp>
 #include <etl/list.h>
+#include <etl/queue.h>
 #include <Alert.hpp>
 #include <CCSDS_Definitions.hpp>
 #include <etl/optional.h>
@@ -103,6 +103,12 @@ private:
     /** Implementation specific variables **/
 
     /**
+     * virtual channel parameters passed upon construction
+     */
+    uint8_t vid;
+    bool errorControlFieldPresent;
+
+    /**
      * FARM-1 examines frames from this buffer
      */
     etl::list<TransferFrameTC*, MaxReceivedRxTcInFARMSentQueue>& lowerLayerBuffer;
@@ -175,12 +181,8 @@ private:
     std::pair<FARMNotification, uint8_t> applyFarmStateTable();
 
 public:
-    /**
-     * The Virtual Channel in which FOP is initialized
-     */
-    VirtualChannel* vchan;
-
-	FrameAcceptanceReporting(VirtualChannel* vchan,
+	FrameAcceptanceReporting(uint8_t vid,
+                             bool errorControlFieldPresent,
                              etl::list<TransferFrameTC*,MaxReceivedRxTcInFARMSentQueue>& lowerLayerBuffer,
                              etl::circular_buffer<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeBD,
                              etl::list<TransferFrameTC*, MaxReceivedRxTcInVirtualChannelBuffer>& higherLayerBufferTypeAD,
@@ -191,7 +193,7 @@ public:
                              uint8_t farmPositiveWinWidth = FarmPositiveWinLength,
                              uint8_t farmNegativeWinWidth = FarmNegativeWinLength,
                              uint16_t clcwReportInterval = ClcwReportInterval)
-	    : vchan(vchan), lowerLayerBuffer(lowerLayerBuffer), higherLayerBufferTypeBD(higherLayerBufferTypeBD),
+	    : vid(vid), errorControlFieldPresent(errorControlFieldPresent), lowerLayerBuffer(lowerLayerBuffer), higherLayerBufferTypeBD(higherLayerBufferTypeBD),
         higherLayerBufferTypeAD(higherLayerBufferTypeAD), frameMasterCopyBuffer(frameMasterCopyBuffer), memoryPool(memoryPool),
         clcwBuffer(clcwBuffer), farmSlidingWinWidth(farmSlidingWinWidth), farmPositiveWinWidth(farmPositiveWinWidth),
         farmNegativeWidth(farmNegativeWinWidth), receiverFrameSeqNumber(0), farmBCount(0), lockout(FlagState::NOT_READY),

@@ -795,7 +795,7 @@ std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::tx
     const etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel>* mc =
             &(masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).unprocessedFrameListBufferTC);
     if (mc->empty()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
         return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
     }
 
@@ -841,7 +841,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC(uint8_t
     // Check if Virtual Channel Id does not exist in the relevant Virtual Channels map
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         // If it doesn't, abort operation
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
     }
 
@@ -850,7 +850,7 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC(uint8_t
     // If Segment Header present, check if MAP channel Id does not exist in the relevant MAP Channels map
     if (vchan->segmentHeaderTCPresent && (vchan->mapChannels.find(mapid) == vchan->mapChannels.end())) {
         // If it doesn't, abort the operation
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_MAP_ID);
         return ServiceChannelNotification::INVALID_MAP_ID;
     }
 
@@ -886,47 +886,33 @@ ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC(uint8_t
 }
 
 //     - Virtual Channel Reception
-ServiceChannelNotification ServiceChannel::vcReceptionRxTC(uint8_t vid) {
-    VirtualChannel& virtChannel = masterChannel.virtualChannels.at(vid);
-
-    if (virtChannel.waitQueueRxTC.empty()) {
-        ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM);
-        return ServiceChannelNotification::NO_PACKETS_TO_PROCESS_IN_VC_RECEPTION_BEFORE_FARM;
+std::pair<ServiceChannelNotification, uint8_t> ServiceChannel::vcReceptionRxTC(uint8_t vid) {
+    if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
+        return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, 0);
     }
 
-    if (virtChannel.inFramesAfterVCReceptionTypeADRxTC.full()) {
-        ccsdsLogNotice(Rx, TypeServiceChannelNotif, VC_RECEPTION_BUFFER_AFTER_FARM_FULL);
-        return ServiceChannelNotification::VC_RECEPTION_BUFFER_AFTER_FARM_FULL;
+    VirtualChannel& vchan = masterChannel.virtualChannels.at(vid);
+
+    std::pair<FARMNotification, uint8_t> farmOutput = vchan.farm.applyFarmStateTable();
+
+    if (farmOutput.first != NO_FARM_EVENT) {
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, FARM_ERROR);
+        return std::make_pair(ServiceChannelNotification::FARM_ERROR, farmOutput.second);
+    } else {
+        return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, farmOutput.second);
     }
-
-    TransferFrameTC* frame = virtChannel.waitQueueRxTC.front();
-
-    // FARM procedures
-    virtChannel.farm.frameArrives();
-
-    CLCW clcw =
-            CLCW(0, 0, 0, 1, vid, 0, 0, 1, virtChannel.farm.lockout, virtChannel.farm.wait, virtChannel.farm.retransmit,
-                 virtChannel.farm.farmBCount, 0, virtChannel.farm.receiverFrameSeqNumber);
-
-//    if (!virtChannel.generatedClcwBuffer.empty()) {
-//        virtChannel.generatedClcwBuffer.pop_front();
-//    }
-//    virtChannel.generatedClcwBuffer.push_back(clcw);
-//    virtChannel.clcwWaitingToBeTransmitted = true;
-    virtChannel.inFramesAfterVCReceptionTypeADRxTC.push_back(frame);
-
-    return ServiceChannelNotification::NO_SERVICE_EVENT;
 }
 
 //     - SDLS Processing
 ServiceChannelNotification ServiceChannel::processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType) {
     if ((serviceType != ServiceType::TYPE_AD) && (serviceType != ServiceType::TYPE_BD)) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_SERVICE_TYPE);
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_SERVICE_TYPE);
         return ServiceChannelNotification::INVALID_SERVICE_TYPE;
     }
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
     }
 
@@ -975,7 +961,7 @@ ServiceChannelNotification ServiceChannel::processSDLSSecurityRxTC(uint8_t vid, 
 
 
     uint16_t transferFrameDataFieldLength = frameTc->getFrameLength() - TcPrimaryHeaderSize
-                                            - senderSA.getSecurityHeaderLength() - senderSA.getSecurityTrailerLength() -
+                                            - receiverSA.getSecurityHeaderLength() - receiverSA.getSecurityTrailerLength() -
                                             vchan->frameErrorControlFieldPresent * ErrorControlFieldSize;
     SDLSVerificationStatusCode sldsNotification = receiverSA.processSecurityTC(frameTc, transferFrameDataFieldLength, vid, mapid);
 
@@ -1055,13 +1041,11 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
 
     uint8_t segmentHeaderLength = (vchan->segmentHeaderTCPresent) ? TcSegmentHeaderSize : 0;
 
-    uint8_t securityHeaderLength;
-    uint8_t securityTrailerLength;
     bool saAssociated = vchan->segmentHeaderTCPresent ? senderSA.isAssociated(vid, mapid): senderSA.isAssociated(vid);
-    securityHeaderLength = saAssociated ? senderSA.getSecurityHeaderLength():0;
-    securityTrailerLength = saAssociated ? senderSA.getSecurityTrailerLength():0;
+    uint8_t securityHeaderLength = saAssociated ? senderSA.getSecurityHeaderLength() : 0;
+    uint8_t securityTrailerLength = saAssociated ? senderSA.getSecurityTrailerLength() : 0;
 
-    uint8_t prePayloadSegmentLength = TcPrimaryHeaderSize + segmentHeaderLength + securityHeaderLength; // Segment header is not present
+    uint8_t prePayloadSegmentLength = TcPrimaryHeaderSize + segmentHeaderLength + securityHeaderLength;
     uint8_t afterPayloadSegmentLength = securityTrailerLength + ErrorControlFieldSize * vchan->frameErrorControlFieldPresent;
 
     // Return next packet of waiting frame with multiple packets (blocking frame)
@@ -1096,6 +1080,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
         }
     }
 
+    // No "blocking frame" is stored. Get a new frame from the higher layer buffer.
     TransferFrameTC* frameTc;
     if (inFrameBuf->empty()) {
         ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
@@ -1106,11 +1091,12 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
     }
 
     bool blockingAllowed = vchan->segmentHeaderTCPresent ? mapChannel->blockingTC : vchan->blockingTC;
-    SequenceFlags sequenceFlag = static_cast<SequenceFlags>(frameTc->getSegmentationHeader() >> 6); // valid only if the segmentation header is present
+    SequenceFlags sequenceFlag = static_cast<SequenceFlags>(frameTc->getSegmentationHeader() >> 6); // valid (and used) only if the segmentation header is present
     if ((!vchan->segmentHeaderTCPresent) ||
-        (vchan->segmentHeaderTCPresent &&  segmentationFramesBuf->empty())) {
-        // arrival of virtual channel frame (where only blocking can occur)
-        // OR a map channel frame (where blocking can occur only if there is no segmentation in process)
+        (vchan->segmentHeaderTCPresent && segmentationFramesBuf->empty())) {
+        // Blocking scenario. Arrival of 2 possible frames:
+        // - virtual channel frame, where only blocking could occur
+        // - map channel frame, where the segment header does not exist and hence only blocking could occur
         uint8_t* frameData = frameTc->getFrameData();
         uint16_t frameLen = frameTc->getFrameLength();
         uint16_t dataFieldLen = frameLen  - prePayloadSegmentLength - afterPayloadSegmentLength;  // defined as the length of the space captured by packets
@@ -1136,22 +1122,25 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                 blockingFrame->emplace(frameTc);
                 *nextPacketPosition += firstPacketLen;
             }
-
             return ServiceChannelNotification::NO_SERVICE_EVENT;
         }
     } else {
-        // arrival of map channel frame with partial packet
+        // Segmentation scenario. Arrival of map channel frame witch could contain a partial packet.
         while (true) {
             if (segmentationFramesBuf->empty() && (sequenceFlag == SegmentationStart)) {
                 // arrival of first part of segmented packet
                 segmentationFramesBuf->push(frameTc);
                 *previousFrameSequenceFlag = SegmentationStart;
+                ccsdsLogNotice(Rx, TypeServiceChannelNotif, PROCESSING_SEGMENTED_PACKET);
+                return PROCESSING_SEGMENTED_PACKET;
             } else if (!segmentationFramesBuf->empty() && !segmentationFramesBuf->full() &&
                       ((*previousFrameSequenceFlag == SegmentationStart) || (*previousFrameSequenceFlag == SegmentationMiddle)) &&
                       sequenceFlag == SegmentationMiddle) {
                 // arrival of middle part of segmented packet
                 segmentationFramesBuf->push(frameTc);
                 *previousFrameSequenceFlag = SegmentationMiddle;
+                ccsdsLogNotice(Rx, TypeServiceChannelNotif, PROCESSING_SEGMENTED_PACKET);
+                return PROCESSING_SEGMENTED_PACKET;
             } else if ((!segmentationFramesBuf->empty()) && !segmentationFramesBuf->full() &&
                        (*previousFrameSequenceFlag == SegmentationMiddle) &&
                        sequenceFlag == SegmentationEnd) {
@@ -1165,7 +1154,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                     uint16_t numOctets = toBeRemovedFrame->getFrameLength()
                                          - prePayloadSegmentLength - afterPayloadSegmentLength;;
 
-                    // copying will not be complete the maximum packet length is reached (it is assumed that the user's buffer
+                    // copying will not be complete if the maximum packet length is reached (it is assumed that the user's buffer
                     // is MaxPacketSize long)
                     if (nextCopyPosition + numOctets <= MaxPacketSize - 1) {
                         std::memcpy(toBeRemovedFrame->getFrameData() + nextCopyPosition, toBeRemovedFrame->getFrameData(), numOctets);

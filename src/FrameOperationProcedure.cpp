@@ -116,7 +116,7 @@ FOPNotification FrameOperationProcedure::transmitBcFrame(const DirectiveRequestS
 
     // bc frames do not have a segmentation header, security header or security trailer
     uint8_t dataFieldSize = (directiveSignal.directiveType == INITIATE_AD_SERVICE_WITH_UNLOCK) ? UnlockCommandSize : SetVrCommandSize;
-    uint8_t bcFrameLen = TcPrimaryHeaderSize + dataFieldSize + vchan->frameErrorControlFieldPresent * ErrorControlFieldSize;
+    uint8_t bcFrameLen = TcPrimaryHeaderSize + dataFieldSize + errorControlFieldPresent * ErrorControlFieldSize;
 
     if (memoryPool.findFit(bcFrameLen).second != NO_MC_ALERT) {
         ccsdsLogNotice(Tx, TypeFOPNotif, FOP_MEMORY_POOL_FULL);
@@ -144,7 +144,7 @@ FOPNotification FrameOperationProcedure::transmitBcFrame(const DirectiveRequestS
 
     TransferFrameTC bcFrame = TransferFrameTC(data,
                                               ServiceType::TYPE_BC,
-                                              vchan->VCID,
+                                              vid,
                                               bcFrameLen,
                                               false);
     bcFrame.setToBeRetransmitted(false);

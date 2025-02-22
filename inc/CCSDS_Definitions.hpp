@@ -26,7 +26,7 @@ inline constexpr uint8_t ErrorControlFieldSize = 2;
 /**
  * Space packet constants (for more details, see Space Packet Protocol)
  */
-static constexpr uint8_t MaxPacketSize = 2000;
+static constexpr uint16_t MaxPacketSize = 2000;
 static constexpr uint8_t PacketPrimaryHeaderLength = 6;
 static constexpr uint8_t PacketVersionNumber = 0x0;  // Defines this packet as a 'Version 1' space packet
 static constexpr uint8_t PacketDataLengthFieldPosition = 5;  // 5th and 6th bytes constitute the data field length

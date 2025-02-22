@@ -9,6 +9,7 @@
 #include <etl/list.h>
 #include <etl/queue.h>
 #include <etl/deque.h>
+#include <etl/circular_buffer.h>
 
 #include <CCSDS_Definitions.hpp>
 #include <FrameOperationProcedure.hpp>
@@ -190,7 +191,12 @@ protected:
      */
     etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeADRxTC;
     etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeBDRxTC;
-    uint8_t nextPacketPositionTypeAD; // position 0 is the first octet of the frame
+
+    /**
+     * Indicate the position of the next packet to deliver to the user, inside frameWithMultiplePacketsType*DRxTC
+     * Position 0 is the start of the frame.
+     */
+    uint8_t nextPacketPositionTypeAD;
     uint8_t nextPacketPositionTypeBD;
 
     /**
@@ -199,6 +205,9 @@ protected:
     etl::queue<TransferFrameTC*, MaxFramesWithSegmentedPackets> framesWithSegmentedPacketsTypeADRxTC;
     etl::queue<TransferFrameTC*, MaxFramesWithSegmentedPackets> framesWithSegmentedPacketsTypeBDRxTC;
 
+    /**
+     * Holds the sequence flag of the last frame placed inside framesWithSegmentedPacketsType*DRxTC.
+     */
     SequenceFlags previousFrameSequenceFlagTypeAD = SequenceFlags::NoSegmentation;
     SequenceFlags previousFrameSequenceFlagTypeBD = SequenceFlags::NoSegmentation;
 };
@@ -302,8 +311,8 @@ public:
           frameErrorControlFieldPresent(frameErrorControlFieldPresent),
           operationalControlFieldTMPresent(operationalControlFieldTMPresent), synchronization(synchronization),
           frameCountTM(0), mapChannels(mapChan), virtualChannelClcwQueues(virtualChannelClcwQueues),
-          fop(FrameOperationProcedure(this, masterCopyTxTC, memoryPoolTxTC)),
-          farm(FrameAcceptanceReporting(this, inFramesBeforeVcReceptionRxTC, inFramesAfterVCReceptionTypeBDRxTC,
+          fop(FrameOperationProcedure(VCID, frameErrorControlFieldPresent, masterCopyTxTC, memoryPoolTxTC)),
+          farm(FrameAcceptanceReporting(VCID, frameErrorControlFieldPresent, inFramesBeforeVcReceptionRxTC, inFramesAfterVCReceptionTypeBDRxTC,
                                         inFramesAfterVCReceptionTypeADRxTC, masterCopyRxTC, memoryPoolRxTC,
                                         virtualChannelClcwQueues.at(vcid), farmSlidingWinWidth, farmPositiveWinWidth,
                                         farmNegativeWinWidth)) {
@@ -453,7 +462,12 @@ private:
      */
     etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeADRxTC;
     etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeBDRxTC;
-    uint8_t nextPacketPositionTypeAD; // position 0 is the first octet of the frame
+
+    /**
+     * Indicate the position of the next packet to deliver to the user, inside frameWithMultiplePacketsType*DRxTC
+     * Position 0 is the start of the frame.
+     */
+    uint8_t nextPacketPositionTypeAD;
     uint8_t nextPacketPositionTypeBD;
 };
 

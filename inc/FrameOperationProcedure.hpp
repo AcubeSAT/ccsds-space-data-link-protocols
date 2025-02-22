@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <TransferFrameTC.hpp>
-#include <CCSDSChannel.hpp>
 #include <etl/list.h>
 #include <etl/queue.h>
 #include <Alert.hpp>
@@ -191,8 +190,6 @@ enum SuspendVariableState {
     SUSPENDED_PREV_STATE_INITIALIZING_WITHOUT_BC_FRAME = 4
 };
 
-class VirtualChannel;
-
 /**
  * The frame operation procedure (FOP-1) is the ground segment of COP-1, a process responsible
  * for TC frame acknowledgment and and keeping the frame sequence order intact. Frames
@@ -294,6 +291,12 @@ private:
 
 
     /** Implementation Specific variables **/
+
+    /**
+     * virtual channel parameters passed upon construction
+     */
+    uint8_t vid;
+    bool errorControlFieldPresent;
 
     CountdownTimer timer = CountdownTimer();
     /**
@@ -462,10 +465,8 @@ private:
     void pushClcw(CLCW clcw);
 
 public:
-    VirtualChannel* vchan;
-
-    FrameOperationProcedure(VirtualChannel* vchan, etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer, MemoryPool& memoryPool)
-            : vchan(vchan), state(FOPState::INITIAL),
+    FrameOperationProcedure(uint8_t vid, bool errorControlFieldPresent, etl::list<TransferFrameTC, MaxTxInMasterChannel>& frameMasterCopyBuffer, MemoryPool& memoryPool)
+            : vid(vid), errorControlFieldPresent(errorControlFieldPresent), state(FOPState::INITIAL),
               suspendState(NOT_SUSPENDED), transmitterFrameSeqNumber(0), adOut(FlagState::READY),
               bdOut(FlagState::READY), bcOut(FlagState::READY), expectedAcknowledgementSeqNumber(0),
               tiInitial(FopTimerInitial), transmissionLimit(TransmissionLimit), transmissionCount(1),

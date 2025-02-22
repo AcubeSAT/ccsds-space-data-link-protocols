@@ -49,7 +49,8 @@ enum ServiceChannelNotification : int {
     CLCW_BUFFER_EMPTY = 0x27,
     PROCESSING_SEGMENTED_PACKET = 0x28,
     INVALID_SEQUENCE_FLAG = 0x29,
-    UNKNOWN_ERROR = 0x2A
+    UNKNOWN_ERROR = 0x2A,
+    FARM_ERROR = 0x2B
 };
 
 enum VirtualChannelAlert : uint8_t {

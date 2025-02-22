@@ -342,13 +342,7 @@ public:
      * Procedure (COP).
      * @see  p. 4.4.5 from TC Space Data Link Protocol
      */
-    ServiceChannelNotification vcReceptionRxTC(uint8_t vid);
-
-    //         -- Farm Directives
-    /**
-     * @brief A function that generates a CLCW and stores it to a clcw buffer.
-     */
-    ServiceChannelNotification clcwReportTime(uint8_t vid);
+    std::pair<ServiceChannelNotification, uint8_t > vcReceptionRxTC(uint8_t vid);
 
     //    - SDLS Processing
     /**
@@ -369,9 +363,13 @@ public:
      * @param serviceType The frames type packets will be extracted from
      * @param packetDest Provided packetDest data destination
      *
-     * @warning This function assumes that the user's destination buffer is at least as large as MaxPacketSize. Should an
-     *          unexpected packet with size larger than MaxPacketSize arrive, the packet copy will be partial (up to
-     *          MaxPacketSize).
+     * @returns A service channel notification. A 'NO_SERVICE_EVENT' indicates that a packet was successfully copied to the
+     *          destination buffer, while 'PROCESSING_SEGMENTED_PACKET' means construction of a segmented packet (between multiple
+     *          frames) is in process. Every other notification is an error.
+     *
+     * @note This function assumes that the user's destination buffer is at least as large as MaxPacketSize. Should an
+     *       unexpected packet with size larger than MaxPacketSize arrive, the packet copy will be partial (up to
+     *       MaxPacketSize), but the user will not be alerted (a 'NO_SERVICE_EVENT' is returned).
      */
     ServiceChannelNotification packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetDest);
 
