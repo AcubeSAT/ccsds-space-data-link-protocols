@@ -165,7 +165,7 @@ public:
      * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
      */
     // TODO: Use std::optional
-    uint8_t segmentationHeader() const {
+    uint8_t getSegmentationHeader() const {
         return transferFrameData[5];
     }
 

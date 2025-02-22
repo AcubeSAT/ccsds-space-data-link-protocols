@@ -250,6 +250,7 @@ ServiceChannelNotification ServiceChannel::blockingTC(uint16_t maxTransferFrameD
         tmpData[i] = 0;
     }
 
+    bool blockingAllowed = vchan->segmentHeaderTCPresent ? mapChannel->blockingTC : vchan->blockingTC;
     while (currentTransferFrameDataFieldLength + packetLength <= maxTransferFrameDataFieldLength &&
            !packetLengthBufferTcTx->empty()) {
         for (uint16_t i = 0; i < packetLength; i++) {
@@ -260,7 +261,7 @@ ServiceChannelNotification ServiceChannel::blockingTC(uint16_t maxTransferFrameD
         packetLengthBufferTcTx->pop();
         packetLength = packetLengthBufferTcTx->front();
         // If blocking is disabled, stop the operation on the first packet
-        if (!vchan->blockingTC) {
+        if (blockingAllowed) {
             break;
         }
     }
@@ -996,14 +997,14 @@ ServiceChannelNotification ServiceChannel::processSDLSSecurityRxTC(uint8_t vid, 
 }
 
 //     - Virtual Channel Extraction
-ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetTarget) {
+ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetDest) {
     if ((serviceType != ServiceType::TYPE_AD) && (serviceType != ServiceType::TYPE_BD)) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_SERVICE_TYPE);
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_SERVICE_TYPE);
         return ServiceChannelNotification::INVALID_SERVICE_TYPE;
     }
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
         return ServiceChannelNotification::INVALID_VC_ID;
     }
 
@@ -1012,39 +1013,46 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
     MAPChannel *mapChannel;
     if (vchan->segmentHeaderTCPresent) {
         if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
+            ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_MAP_ID);
             return ServiceChannelNotification::INVALID_MAP_ID;
         }
         mapChannel = &(vchan->mapChannels.at(mapid));
     }
 
-    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>* frameBuf;
+    etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer>* inFrameBuf;
+    etl::optional<TransferFrameTC*>* blockingFrame;
+    uint8_t* nextPacketPosition;
+    etl::queue<TransferFrameTC*, MaxFramesWithSegmentedPackets>* segmentationFramesBuf;
+    SequenceFlags *previousFrameSequenceFlag;
     if (vchan->segmentHeaderTCPresent) {
         if (serviceType == ServiceType::TYPE_AD){
-            frameBuf = &mapChannel->framesAfterSDLSProcessingTypeADRxTC;
+            inFrameBuf = &mapChannel->framesAfterSDLSProcessingTypeADRxTC;
+            blockingFrame = &mapChannel->frameWithMultiplePacketsTypeADRxTC;
+            nextPacketPosition = &mapChannel->nextPacketPositionTypeAD;
+            segmentationFramesBuf = &mapChannel->framesWithSegmentedPacketsTypeADRxTC;
+            previousFrameSequenceFlag = &mapChannel->previousFrameSequenceFlagTypeAD;
         }
         else { // TYPE_BD
-            frameBuf = &mapChannel->framesAfterSDLSProcessingTypeBDRxTC;
+            inFrameBuf = &mapChannel->framesAfterSDLSProcessingTypeBDRxTC;
+            blockingFrame = &mapChannel->frameWithMultiplePacketsTypeBDRxTC;
+            nextPacketPosition = &mapChannel->nextPacketPositionTypeBD;
+            segmentationFramesBuf = &mapChannel->framesWithSegmentedPacketsTypeBDRxTC;
+            previousFrameSequenceFlag = &mapChannel->previousFrameSequenceFlagTypeBD;
         }
     }
     else {
         if (serviceType == ServiceType::TYPE_AD){
-            frameBuf = &vchan->framesAfterSDLSProcessingTypeADRxTC;
+            inFrameBuf = &vchan->framesAfterSDLSProcessingTypeADRxTC;
+            blockingFrame = &vchan->frameWithMultiplePacketsTypeADRxTC;
+            nextPacketPosition = &vchan->nextPacketPositionTypeAD;
         }
         else { // TYPE_BD
-            frameBuf = &vchan->framesAfterSDLSProcessingTypeBDRxTC;
+            inFrameBuf = &vchan->framesAfterSDLSProcessingTypeBDRxTC;
+            blockingFrame = &vchan->frameWithMultiplePacketsTypeBDRxTC;
+            nextPacketPosition = &vchan->nextPacketPositionTypeBD;
         }
     }
 
-    TransferFrameTC* frameTc;
-    if (frameBuf->empty()){
-        return NO_RX_PACKETS_TO_PROCESS;
-    }
-    else {
-        frameTc = frameBuf->front();
-    }
-
-    uint16_t frameSize = frameTc->getFrameLength();
     uint8_t segmentHeaderLength = (vchan->segmentHeaderTCPresent) ? TcSegmentHeaderSize : 0;
 
     uint8_t securityHeaderLength;
@@ -1056,13 +1064,137 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
     uint8_t prePayloadSegmentLength = TcPrimaryHeaderSize + segmentHeaderLength + securityHeaderLength; // Segment header is not present
     uint8_t afterPayloadSegmentLength = securityTrailerLength + ErrorControlFieldSize * vchan->frameErrorControlFieldPresent;
 
-    memcpy(packetTarget, frameTc->getFrameData() + prePayloadSegmentLength, frameSize - prePayloadSegmentLength - afterPayloadSegmentLength);
+    // Return next packet of waiting frame with multiple packets (blocking frame)
+    if (blockingFrame->has_value()) {
+        uint8_t* frameData = blockingFrame->value()->getFrameData();
+        uint8_t packetLen = getSpacePacketLength( frameData + *nextPacketPosition);
+        uint8_t frameLen = blockingFrame->value()->getFrameLength();
 
-    frameBuf->pop_front();
-    masterChannel.masterChannelPoolRxTC.deletePacket(frameTc->getFrameData(), frameTc->getFrameLength());
-    masterChannel.removeMasterRx(frameTc);
+        if ((packetLen < PacketPrimaryHeaderLength + 1) ||
+           (*nextPacketPosition + packetLen > frameLen - afterPayloadSegmentLength)) {
+            // packet has an invalid length -> discard the frame
+            masterChannel.masterChannelPoolRxTC.deletePacket(blockingFrame->value()->getFrameData(), frameLen);
+            masterChannel.removeMasterRx(blockingFrame->value());
+            blockingFrame = etl::nullopt;
+            ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
+            return ServiceChannelNotification::RX_INVALID_LENGTH;
+        } else {
+            std::memcpy(packetDest, frameData + *nextPacketPosition, packetLen <= MaxPacketSize ? packetLen : MaxPacketSize);
 
-    return ServiceChannelNotification::NO_SERVICE_EVENT;
+            if (*nextPacketPosition + packetLen == frameLen - afterPayloadSegmentLength) {
+                // reached last packet -> discard the frame
+                masterChannel.masterChannelPoolRxTC.deletePacket(blockingFrame->value()->getFrameData(), frameLen);
+                masterChannel.removeMasterRx(blockingFrame->value());
+                blockingFrame = etl::nullopt;
+            } else {
+                // update the next packet position
+                *nextPacketPosition += packetLen;
+            }
+
+            ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+            return ServiceChannelNotification::NO_SERVICE_EVENT;
+        }
+    }
+
+    TransferFrameTC* frameTc;
+    if (inFrameBuf->empty()) {
+        ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
+        return NO_RX_PACKETS_TO_PROCESS;
+    } else {
+        frameTc = inFrameBuf->front();
+        inFrameBuf->pop_front();
+    }
+
+    bool blockingAllowed = vchan->segmentHeaderTCPresent ? mapChannel->blockingTC : vchan->blockingTC;
+    SequenceFlags sequenceFlag = static_cast<SequenceFlags>(frameTc->getSegmentationHeader() >> 6); // valid only if the segmentation header is present
+    if ((!vchan->segmentHeaderTCPresent) ||
+        (vchan->segmentHeaderTCPresent &&  segmentationFramesBuf->empty())) {
+        // arrival of virtual channel frame (where only blocking can occur)
+        // OR a map channel frame (where blocking can occur only if there is no segmentation in process)
+        uint8_t* frameData = frameTc->getFrameData();
+        uint16_t frameLen = frameTc->getFrameLength();
+        uint16_t dataFieldLen = frameLen  - prePayloadSegmentLength - afterPayloadSegmentLength;  // defined as the length of the space captured by packets
+        *nextPacketPosition = prePayloadSegmentLength;
+        uint16_t firstPacketLen = getSpacePacketLength(frameData + *nextPacketPosition);
+
+        if ((firstPacketLen < PacketPrimaryHeaderLength + 1) || (firstPacketLen > dataFieldLen)) {
+            // packet has an invalid length -> discard the frame
+            masterChannel.masterChannelPoolRxTC.deletePacket(frameData, frameLen);
+            masterChannel.removeMasterRx(frameTc);
+            ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
+            return ServiceChannelNotification::RX_INVALID_LENGTH;
+        } else {
+            // copy the first packet
+            std::memcpy(packetDest, frameData + *nextPacketPosition, firstPacketLen <= MaxPacketSize ? firstPacketLen : MaxPacketSize);
+
+            if (firstPacketLen == dataFieldLen) {
+                // The entire data field is a single packet. Delete the frame
+                masterChannel.masterChannelPoolRxTC.deletePacket(frameData, frameLen);
+                masterChannel.removeMasterRx(frameTc);
+            } else {
+                // More packets remaining
+                blockingFrame->emplace(frameTc);
+                *nextPacketPosition += firstPacketLen;
+            }
+
+            return ServiceChannelNotification::NO_SERVICE_EVENT;
+        }
+    } else {
+        // arrival of map channel frame with partial packet
+        while (true) {
+            if (segmentationFramesBuf->empty() && (sequenceFlag == SegmentationStart)) {
+                // arrival of first part of segmented packet
+                segmentationFramesBuf->push(frameTc);
+                *previousFrameSequenceFlag = SegmentationStart;
+            } else if (!segmentationFramesBuf->empty() && !segmentationFramesBuf->full() &&
+                      ((*previousFrameSequenceFlag == SegmentationStart) || (*previousFrameSequenceFlag == SegmentationMiddle)) &&
+                      sequenceFlag == SegmentationMiddle) {
+                // arrival of middle part of segmented packet
+                segmentationFramesBuf->push(frameTc);
+                *previousFrameSequenceFlag = SegmentationMiddle;
+            } else if ((!segmentationFramesBuf->empty()) && !segmentationFramesBuf->full() &&
+                       (*previousFrameSequenceFlag == SegmentationMiddle) &&
+                       sequenceFlag == SegmentationEnd) {
+                // arrival of last part of segmented packet
+                segmentationFramesBuf->push(frameTc);
+
+                // copy the complete packet to the destination and delete stored frames
+                uint8_t nextCopyPosition = 0;  // position 0 corresponds to packetDest
+                while (!segmentationFramesBuf->empty()) {
+                    TransferFrameTC* toBeRemovedFrame = segmentationFramesBuf->front();
+                    uint16_t numOctets = toBeRemovedFrame->getFrameLength()
+                                         - prePayloadSegmentLength - afterPayloadSegmentLength;;
+
+                    // copying will not be complete the maximum packet length is reached (it is assumed that the user's buffer
+                    // is MaxPacketSize long)
+                    if (nextCopyPosition + numOctets <= MaxPacketSize - 1) {
+                        std::memcpy(toBeRemovedFrame->getFrameData() + nextCopyPosition, toBeRemovedFrame->getFrameData(), numOctets);
+                    }
+                    nextCopyPosition += numOctets;
+
+                    masterChannel.masterChannelPoolRxTC.deletePacket(toBeRemovedFrame->getFrameData(), toBeRemovedFrame->getFrameLength());
+                    masterChannel.removeMasterRx(toBeRemovedFrame);
+                    segmentationFramesBuf->pop();
+                }
+
+                return NO_SERVICE_EVENT;
+            } else {
+                // Unexpected sequence flag or segmented frames buffer full. Discard current and all previous frames
+                masterChannel.masterChannelPoolRxTC.deletePacket(frameTc->getFrameData(), frameTc->getFrameLength());
+                masterChannel.removeMasterRx(frameTc);
+
+                while (!segmentationFramesBuf->empty()) {
+                    TransferFrameTC* toBeRemovedFrame = segmentationFramesBuf->front();
+                    masterChannel.masterChannelPoolRxTC.deletePacket(toBeRemovedFrame->getFrameData(), toBeRemovedFrame->getFrameLength());
+                    masterChannel.removeMasterRx(toBeRemovedFrame);
+                    segmentationFramesBuf->pop();
+                }
+
+                ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_SEQUENCE_FLAG);
+                return INVALID_SEQUENCE_FLAG;
+            }
+        }
+    }
 }
 
 // TM TransferFrame - Sending End (TM Tx)
@@ -1338,18 +1470,18 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
     uint16_t idlePacketDataLength;
     uint16_t remainingSpace = transferFrameDataFieldLength - firstDataFieldEmptyOctet;
     if (vchan.packetLengthBufferTxTM.empty()) {
-        if (remainingSpace >= packetPrimaryHeaderLength + 1){
-            // The idle packet can fit in the transfer frame (packetPrimaryHeaderLength + 1 is the minimum size).
-            idlePacketDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
+        if (remainingSpace >= PacketPrimaryHeaderLength + 1){
+            // The idle packet can fit in the transfer frame (PacketPrimaryHeaderLength + 1 is the minimum size).
+            idlePacketDataLength = remainingSpace - PacketPrimaryHeaderLength - 1;
         }
         else {
             // The idle packet cannot fit (will be segmented).
             // It must be large enough to fully cover the second frame (since packet buffer is empty).
-            idlePacketDataLength = (remainingSpace + transferFrameDataFieldLength) - packetPrimaryHeaderLength - 1;
+            idlePacketDataLength = (remainingSpace + transferFrameDataFieldLength) - PacketPrimaryHeaderLength - 1;
         }
 
-        for (uint8_t i = 0; i < packetPrimaryHeaderLength - 2; i++){
-            vchan.packetBufferTxTM.push_back(packetPrimaryHeader[i]);
+        for (uint8_t i = 0; i < PacketPrimaryHeaderLength - 2; i++){
+            vchan.packetBufferTxTM.push_back(PacketPrimaryHeader[i]);
 
         }
 
@@ -1360,7 +1492,7 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
             vchan.packetBufferTxTM.push_back(idle_data[i]);
         }
 
-        vchan.packetLengthBufferTxTM.push_back(packetPrimaryHeaderLength + idlePacketDataLength + 1);
+        vchan.packetLengthBufferTxTM.push_back(PacketPrimaryHeaderLength + idlePacketDataLength + 1);
     }
     else {
         // Packets do exist, but due to blocking/segmentation permissions they may not be able to be placed.In this case, an idle packet
@@ -1371,9 +1503,9 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
             return std::make_pair(NO_SERVICE_EVENT, false);
         }
 
-        if (remainingSpace >= packetPrimaryHeaderLength + 1){
-            // The idle packet can fit in the transfer frame (packetPrimaryHeaderLength + 1 is the minimum size).
-            idlePacketDataLength = remainingSpace - packetPrimaryHeaderLength - 1;
+        if (remainingSpace >= PacketPrimaryHeaderLength + 1){
+            // The idle packet can fit in the transfer frame (PacketPrimaryHeaderLength + 1 is the minimum size).
+            idlePacketDataLength = remainingSpace - PacketPrimaryHeaderLength - 1;
         }
         else {
             // The idle packet cannot fit (will be segmented).
@@ -1390,11 +1522,11 @@ std::pair<ServiceChannelNotification, bool> ServiceChannel::generateIdleSpacePac
         vchan.packetBufferTxTM.push_front((static_cast<uint8_t>(idlePacketDataLength) >> 8));
 
 
-        for (int8_t i = packetPrimaryHeaderLength - 3; i >= 0; i--){
-            vchan.packetBufferTxTM.push_front(packetPrimaryHeader[i]);
+        for (int8_t i = PacketPrimaryHeaderLength - 3; i >= 0; i--){
+            vchan.packetBufferTxTM.push_front(PacketPrimaryHeader[i]);
         }
 
-        vchan.packetLengthBufferTxTM.push_front(packetPrimaryHeaderLength + idlePacketDataLength + 1);
+        vchan.packetLengthBufferTxTM.push_front(PacketPrimaryHeaderLength + idlePacketDataLength + 1);
     }
 
     return std::make_pair(NO_SERVICE_EVENT, true);

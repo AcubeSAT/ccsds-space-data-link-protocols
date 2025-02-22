@@ -254,6 +254,16 @@ public:
     // TC TransferFrame - Receiving End (TC Rx)
 
     //     - Utility and Debugging
+
+    /**
+     * Returns the total length of space packet (as defined in CCSDS Space Packet Protocol)
+     */
+    static uint16_t getSpacePacketLength(const uint8_t* packetSource) {
+        // plus one is added because the field actually returns the data field length, reduced by one
+        return (static_cast<uint16_t>(packetSource[PacketDataLengthFieldPosition - 1]) << 8) |
+               (static_cast<uint16_t>(packetSource[PacketDataLengthFieldPosition])) + PacketPrimaryHeaderLength + 1;
+    }
+
     /**
      * Read first TC transfer frame of the TC MAP channel buffer (unprocessedFrameListBufferTC)
      */
@@ -357,11 +367,13 @@ public:
      * @param mapid MAP channel ID. This parameter is ignored if a segmentation header does not exist for the given virtual channel
      *              or TYPE_BC packets are asked to be extracted (serviceType = TYPE_BC)
      * @param serviceType The frames type packets will be extracted from
-     * @param packetTarget Provided packetTarget data destination
+     * @param packetDest Provided packetDest data destination
      *
-     * @warning This function assumes that the transfer frame data size is checked and correct
+     * @warning This function assumes that the user's destination buffer is at least as large as MaxPacketSize. Should an
+     *          unexpected packet with size larger than MaxPacketSize arrive, the packet copy will be partial (up to
+     *          MaxPacketSize).
      */
-    ServiceChannelNotification packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetTarget);
+    ServiceChannelNotification packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetDest);
 
     // TM TransferFrame - Sending End (TM Tx)
 

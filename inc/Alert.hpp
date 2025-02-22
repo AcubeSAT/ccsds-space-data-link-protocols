@@ -46,7 +46,10 @@ enum ServiceChannelNotification : int {
     INVALID_SERVICE_TYPE = 0x24,
     FOP_ERROR = 0x25,
     UNEXPECTED_FOP_RETURN_SIGNAL = 0x26,
-    CLCW_BUFFER_EMPTY = 0x27
+    CLCW_BUFFER_EMPTY = 0x27,
+    PROCESSING_SEGMENTED_PACKET = 0x28,
+    INVALID_SEQUENCE_FLAG = 0x29,
+    UNKNOWN_ERROR = 0x2A
 };
 
 enum VirtualChannelAlert : uint8_t {

@@ -366,9 +366,9 @@ TEST_CASE("VC Generation Service") {
 		}
 
         // check idle packet data field length
-        uint16_t upperHalf = static_cast<uint16_t >(transferFrame->getFrameData()[TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + packetPrimaryHeaderLength - 2]);
-        uint16_t lowerHalf = static_cast<uint16_t >(transferFrame->getFrameData()[TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + packetPrimaryHeaderLength - 1]);
-        CHECK(((upperHalf << 8) | lowerHalf) == 11 - packetPrimaryHeaderLength - 1);
+        uint16_t upperHalf = static_cast<uint16_t >(transferFrame->getFrameData()[TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + PacketPrimaryHeaderLength - 2]);
+        uint16_t lowerHalf = static_cast<uint16_t >(transferFrame->getFrameData()[TmPrimaryHeaderSize + sizeof(packet1) + sizeof(packet2) + sizeof(packet3) + PacketPrimaryHeaderLength - 1]);
+        CHECK(((upperHalf << 8) | lowerHalf) == 11 - PacketPrimaryHeaderLength - 1);
 	}
 	SECTION("Segmentation") {
 		uint8_t packet5[] = {47, 31, 65, 81, 25, 44, 76, 99, 13, 43, 78};
@@ -405,10 +405,10 @@ TEST_CASE("VC Generation Service") {
         CHECK(frame2->getFirstHeaderPointer() == TmNoPacketStartFirstHeaderPointer);
 
         CHECK(frame3->getFrameData()[6] == 78);
-        CHECK(frame3->getFrameData()[7] == packetPrimaryHeader[0]);
-        CHECK(frame3->getFrameData()[8] == packetPrimaryHeader[1]);
-        CHECK(frame3->getFrameData()[9] == packetPrimaryHeader[2]);
-        CHECK(frame3->getFrameData()[10] == packetPrimaryHeader[3]);
+        CHECK(frame3->getFrameData()[7] == PacketPrimaryHeader[0]);
+        CHECK(frame3->getFrameData()[8] == PacketPrimaryHeader[1]);
+        CHECK(frame3->getFrameData()[9] == PacketPrimaryHeader[2]);
+        CHECK(frame3->getFrameData()[10] == PacketPrimaryHeader[3]);
         CHECK(frame3->getFirstHeaderPointer() == 1);
 
         CHECK(frame4->getFrameData()[6] == 0);
@@ -547,7 +547,7 @@ TEST_CASE("VC Generation Service") {
         CHECK(frame4->getFirstHeaderPointer() == 0);
 
         CHECK(frame5->getFirstHeaderPointer() == 1);
-        CHECK(frame5->getFrameData()[TmPrimaryHeaderSize + 1] == packetPrimaryHeader[0]);
+        CHECK(frame5->getFrameData()[TmPrimaryHeaderSize + 1] == PacketPrimaryHeader[0]);
 
         for (uint8_t i = 0; i < sizeof(packet14); i++){
             CHECK(frame6->getFrameData()[TmPrimaryHeaderSize + i] == packet14[i]);
@@ -728,21 +728,21 @@ TEST_CASE("MAP Request Service") {
         uint16_t  offset = TcPrimaryHeaderSize + TcSegmentHeaderSize;
 
         CHECK(frame1->getFrameLength() == offset + 4 + ErrorControlFieldSize);
-        CHECK(((frame1->segmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationStart);
+        CHECK(((frame1->getSegmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationStart);
         CHECK(frame1->getFrameData()[offset + 0] == 47);
         CHECK(frame1->getFrameData()[offset + 1] == 31);
         CHECK(frame1->getFrameData()[offset + 2] == 65);
         CHECK(frame1->getFrameData()[offset + 3] == 81);
 
         CHECK(frame2->getFrameLength() == offset + 4 + ErrorControlFieldSize);
-        CHECK(((frame2->segmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationMiddle);
+        CHECK(((frame2->getSegmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationMiddle);
         CHECK(frame2->getFrameData()[offset + 0] == 25);
         CHECK(frame2->getFrameData()[offset + 1] == 44);
         CHECK(frame2->getFrameData()[offset + 2] == 76);
         CHECK(frame2->getFrameData()[offset + 3] == 99);
 
         CHECK(frame3->getFrameLength() == offset + 2 + ErrorControlFieldSize);
-        CHECK(((frame3->segmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationEnd);
+        CHECK(((frame3->getSegmentationHeader() & 0xC0) >> 6) == SequenceFlags::SegmentationEnd);
         CHECK(frame3->getFrameData()[offset + 0] == 13);
         CHECK(frame3->getFrameData()[offset + 1] == 43);
     }

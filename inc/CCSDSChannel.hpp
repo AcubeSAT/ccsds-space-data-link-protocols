@@ -134,7 +134,7 @@ public:
 protected:
     /**
      * Determines whether smaller data units can be combined into a single TC transfer frame
-     * (applies for Type AD, BD packets)
+     * (applies for Type AD, BD frames). Supersedes blockingTC flag of virtual channel.
      */
     const bool blockingTC;
 
@@ -183,6 +183,24 @@ protected:
      */
     etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeADRxTC;
     etl::list<TransferFrameTC*, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeBDRxTC;
+
+    /**
+     * Used by the packet extraction function to temporarily hold TC frame with multiple packets (only one packet may
+     * be returned at a time by the packet extraction function).
+     */
+    etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeADRxTC;
+    etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeBDRxTC;
+    uint8_t nextPacketPositionTypeAD; // position 0 is the first octet of the frame
+    uint8_t nextPacketPositionTypeBD;
+
+    /**
+     * Used by the packet extraction function to temporarily hold frames that contain partial (segmented) packets.
+     */
+    etl::queue<TransferFrameTC*, MaxFramesWithSegmentedPackets> framesWithSegmentedPacketsTypeADRxTC;
+    etl::queue<TransferFrameTC*, MaxFramesWithSegmentedPackets> framesWithSegmentedPacketsTypeBDRxTC;
+
+    SequenceFlags previousFrameSequenceFlagTypeAD = SequenceFlags::NoSegmentation;
+    SequenceFlags previousFrameSequenceFlagTypeBD = SequenceFlags::NoSegmentation;
 };
 
 /**
@@ -225,7 +243,7 @@ public:
 
     /**
      * Determines whether smaller data units can be combined into a single TC transfer frame.
-     * (applies for Type BC packets, and for Type AD, BD packets if a segmentHeader is not present)
+     * (applies for Type AD, BD frames if a segmentHeader is not present)
      */
     const bool blockingTC;
 
@@ -428,6 +446,15 @@ private:
      * Applicable to Type-BD Frames
      */
     etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
+
+    /**
+     * Used by the packet extraction function to temporarily hold TC frame with multiple packets (only one packet may
+     * be returned at a time by the packet extraction function).
+     */
+    etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeADRxTC;
+    etl::optional<TransferFrameTC*> frameWithMultiplePacketsTypeBDRxTC;
+    uint8_t nextPacketPositionTypeAD; // position 0 is the first octet of the frame
+    uint8_t nextPacketPositionTypeBD;
 };
 
 struct MasterChannel {

@@ -24,20 +24,26 @@ inline constexpr uint8_t TcSegmentHeaderSize = 1;
 inline constexpr uint8_t ErrorControlFieldSize = 2;
 
 /**
- * Idle space packet constants (for more details, see Space Packet Protocol)
+ * Space packet constants (for more details, see Space Packet Protocol)
  */
-static constexpr uint8_t packetPrimaryHeaderLength = 6;
-static constexpr uint8_t packetVersionNumber = 0x0;  // Defines this packet as a 'Version 1' space packet
-static constexpr bool packetType = false;            // Telemetry Packet
-static constexpr bool secondaryHeaderFlag = false;   // Must always be false for idle packets
+static constexpr uint8_t MaxPacketSize = 2000;
+static constexpr uint8_t PacketPrimaryHeaderLength = 6;
+static constexpr uint8_t PacketVersionNumber = 0x0;  // Defines this packet as a 'Version 1' space packet
+static constexpr uint8_t PacketDataLengthFieldPosition = 5;  // 5th and 6th bytes constitute the data field length
+
+/**
+ * Idle space packet specific constants (for more details, see Space Packet Protocol)
+ */
+static constexpr bool PacketType = false;            // Telemetry Packet
+static constexpr bool SecondaryHeaderFlag = false;   // Must always be false for idle packets
 static constexpr uint16_t APID = 0x7FF;              // Reserved value for idle packets
-static constexpr uint8_t sequenceFlags = 0x3;        // Unsegmented data
-static constexpr uint16_t packetSequenceCount = 0x0; // @TODO This should NOT be constant. After the ECSS integration with the comms repo, ensure that it takes correct values
-static constexpr uint8_t packetPrimaryHeader[packetPrimaryHeaderLength] = {
-        (packetVersionNumber << 5) | (packetType << 4) | (secondaryHeaderFlag << 3) | (APID >> 8),
+static constexpr uint8_t SeqFlags = 0x3;        // Unsegmented data
+static constexpr uint16_t PacketSequenceCount = 0x0; // @TODO This should NOT be constant. After the ECSS integration with the comms repo, ensure that it takes correct values
+static constexpr uint8_t PacketPrimaryHeader[PacketPrimaryHeaderLength] = {
+        (PacketVersionNumber << 5) | (PacketType << 4) | (SecondaryHeaderFlag << 3) | (APID >> 8),
         static_cast<uint8_t>(APID),
-        (sequenceFlags << 6) | (packetSequenceCount >> 8),
-        static_cast<uint8_t>(packetSequenceCount)
+        (SeqFlags << 6) | (PacketSequenceCount >> 8),
+        static_cast<uint8_t>(PacketSequenceCount)
 };
 
 inline constexpr uint16_t MCID = SpacecraftIdentifier;
@@ -107,6 +113,12 @@ inline constexpr uint8_t MaxReceivedUnprocessedTxTcInVirtBuffer =
 inline constexpr uint8_t MaxReceivedUnprocessedTxTmInVirtBuffer =
     6; ///> Raw TX TM transfer frames stored directly in the virtual channel buffer.
 /// Set to 0 if VC processing service isn't used
+
+/**
+ * Maximum number of frames with partial packets waiting for packet reconstruction. Used by the
+ * packet extraction service (TC).
+ */
+inline constexpr uint8_t MaxFramesWithSegmentedPackets = 5;
 
 inline constexpr uint8_t FopSlidingWindowInitial = 255;
 inline constexpr uint16_t FopTimerInitial = 2000; // milliseconds
