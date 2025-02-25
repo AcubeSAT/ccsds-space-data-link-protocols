@@ -789,19 +789,6 @@ std::pair<ServiceChannelNotification, uint16_t > ServiceChannel::allFramesGenera
 
 // TC TransferFrame - Receiving End (TC Rx)
 
-// Utility and debugging
-std::pair<ServiceChannelNotification, const TransferFrameTC*> ServiceChannel::txOutFrameTC(uint8_t vid,
-                                                                                           uint8_t mapid) const {
-    const etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel>* mc =
-            &(masterChannel.virtualChannels.at(vid).mapChannels.at(mapid).unprocessedFrameListBufferTC);
-    if (mc->empty()) {
-        ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
-        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
-    }
-
-    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, mc->front());
-}
-
 //     - All Frames Reception
 ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC(uint8_t* frameData, uint16_t frameLength) {
     if (masterChannel.masterCopyRxTC.full()) {
@@ -975,23 +962,28 @@ ServiceChannelNotification ServiceChannel::processSDLSSecurityRxTC(uint8_t vid, 
         masterChannel.masterChannelPoolRxTC.deletePacket(frameTc->getFrameData(), frameTc->getFrameLength());
         masterChannel.masterCopyRxTC.remove(*frameTc);
 
-        ccsdsLogNotice(Rx, TypeSDLSVerificationStatusCode, sldsNotification);
-        return SDLS_ERROR;
+        if ((sldsNotification == ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE) || (sldsNotification == MAC_VERIFICATION_FAILURE)) {
+            ccsdsLogNotice(Rx, TypeServiceChannelNotif, GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER);
+            return GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER;
+        } else {
+            ccsdsLogNotice(Rx, TypeServiceChannelNotif, SDLS_ERROR);
+            return SDLS_ERROR;
+        }
     }
 
     return NO_SERVICE_EVENT;
 }
 
 //     - Virtual Channel Extraction
-ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetDest) {
+std::pair<ServiceChannelNotification, uint16_t> ServiceChannel::packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetDest) {
     if ((serviceType != ServiceType::TYPE_AD) && (serviceType != ServiceType::TYPE_BD)) {
         ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_SERVICE_TYPE);
-        return ServiceChannelNotification::INVALID_SERVICE_TYPE;
+        return std::make_pair(ServiceChannelNotification::INVALID_SERVICE_TYPE, 0);
     }
 
     if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
         ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_VC_ID);
-        return ServiceChannelNotification::INVALID_VC_ID;
+        return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, 0);
     }
 
     VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -1000,7 +992,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
     if (vchan->segmentHeaderTCPresent) {
         if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
             ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_MAP_ID);
-            return ServiceChannelNotification::INVALID_MAP_ID;
+            return std::make_pair(ServiceChannelNotification::INVALID_MAP_ID, 0);
         }
         mapChannel = &(vchan->mapChannels.at(mapid));
     }
@@ -1061,7 +1053,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
             masterChannel.removeMasterRx(blockingFrame->value());
             blockingFrame = etl::nullopt;
             ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
-            return ServiceChannelNotification::RX_INVALID_LENGTH;
+            return std::make_pair(ServiceChannelNotification::RX_INVALID_LENGTH, 0);
         } else {
             std::memcpy(packetDest, frameData + *nextPacketPosition, packetLen <= MaxPacketSize ? packetLen : MaxPacketSize);
 
@@ -1076,7 +1068,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
             }
 
             ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-            return ServiceChannelNotification::NO_SERVICE_EVENT;
+            return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, packetLen);
         }
     }
 
@@ -1084,7 +1076,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
     TransferFrameTC* frameTc;
     if (inFrameBuf->empty()) {
         ccsdsLogNotice(Rx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-        return NO_RX_PACKETS_TO_PROCESS;
+        return std::make_pair(NO_RX_PACKETS_TO_PROCESS, 0);
     } else {
         frameTc = inFrameBuf->front();
         inFrameBuf->pop_front();
@@ -1108,7 +1100,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
             masterChannel.masterChannelPoolRxTC.deletePacket(frameData, frameLen);
             masterChannel.removeMasterRx(frameTc);
             ccsdsLogNotice(Rx, TypeServiceChannelNotif, RX_INVALID_LENGTH);
-            return ServiceChannelNotification::RX_INVALID_LENGTH;
+            return std::make_pair(ServiceChannelNotification::RX_INVALID_LENGTH, 0);
         } else {
             // copy the first packet
             std::memcpy(packetDest, frameData + *nextPacketPosition, firstPacketLen <= MaxPacketSize ? firstPacketLen : MaxPacketSize);
@@ -1122,7 +1114,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                 blockingFrame->emplace(frameTc);
                 *nextPacketPosition += firstPacketLen;
             }
-            return ServiceChannelNotification::NO_SERVICE_EVENT;
+            return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, firstPacketLen);
         }
     } else {
         // Segmentation scenario. Arrival of map channel frame witch could contain a partial packet.
@@ -1132,7 +1124,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                 segmentationFramesBuf->push(frameTc);
                 *previousFrameSequenceFlag = SegmentationStart;
                 ccsdsLogNotice(Rx, TypeServiceChannelNotif, PROCESSING_SEGMENTED_PACKET);
-                return PROCESSING_SEGMENTED_PACKET;
+                return std::make_pair(PROCESSING_SEGMENTED_PACKET, 0);
             } else if (!segmentationFramesBuf->empty() && !segmentationFramesBuf->full() &&
                       ((*previousFrameSequenceFlag == SegmentationStart) || (*previousFrameSequenceFlag == SegmentationMiddle)) &&
                       sequenceFlag == SegmentationMiddle) {
@@ -1140,7 +1132,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                 segmentationFramesBuf->push(frameTc);
                 *previousFrameSequenceFlag = SegmentationMiddle;
                 ccsdsLogNotice(Rx, TypeServiceChannelNotif, PROCESSING_SEGMENTED_PACKET);
-                return PROCESSING_SEGMENTED_PACKET;
+                return std::make_pair(PROCESSING_SEGMENTED_PACKET, 0);
             } else if ((!segmentationFramesBuf->empty()) && !segmentationFramesBuf->full() &&
                        (*previousFrameSequenceFlag == SegmentationMiddle) &&
                        sequenceFlag == SegmentationEnd) {
@@ -1152,7 +1144,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                 while (!segmentationFramesBuf->empty()) {
                     TransferFrameTC* toBeRemovedFrame = segmentationFramesBuf->front();
                     uint16_t numOctets = toBeRemovedFrame->getFrameLength()
-                                         - prePayloadSegmentLength - afterPayloadSegmentLength;;
+                                         - prePayloadSegmentLength - afterPayloadSegmentLength;
 
                     // copying will not be complete if the maximum packet length is reached (it is assumed that the user's buffer
                     // is MaxPacketSize long)
@@ -1166,7 +1158,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                     segmentationFramesBuf->pop();
                 }
 
-                return NO_SERVICE_EVENT;
+                return std::make_pair(NO_SERVICE_EVENT, nextCopyPosition);
             } else {
                 // Unexpected sequence flag or segmented frames buffer full. Discard current and all previous frames
                 masterChannel.masterChannelPoolRxTC.deletePacket(frameTc->getFrameData(), frameTc->getFrameLength());
@@ -1180,7 +1172,7 @@ ServiceChannelNotification ServiceChannel::packetExtractionRxTC(uint8_t vid, uin
                 }
 
                 ccsdsLogNotice(Rx, TypeServiceChannelNotif, INVALID_SEQUENCE_FLAG);
-                return INVALID_SEQUENCE_FLAG;
+                return std::make_pair(INVALID_SEQUENCE_FLAG, 0);
             }
         }
     }
@@ -1210,16 +1202,6 @@ std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::ba
     }
     ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
     return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT, masterChannel.framesAfterVcGenerationServiceTxTM.back());
-}
-
-std::pair<ServiceChannelNotification, const TransferFrameTM*> ServiceChannel::frontFrameAfterAllFramesGenerationTxTM() const {
-    if (masterChannel.toBeTransmittedFramesAfterAllFramesGenerationListTxTM.empty()) {
-        ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_TX_PACKETS_TO_PROCESS);
-        return std::pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, nullptr);
-    }
-    ccsdsLogNotice(Tx, TypeServiceChannelNotif, NO_SERVICE_EVENT);
-    return std::pair(ServiceChannelNotification::NO_SERVICE_EVENT,
-                     masterChannel.toBeTransmittedFramesAfterAllFramesGenerationListTxTM.front());
 }
 
 //     - Packet Processing

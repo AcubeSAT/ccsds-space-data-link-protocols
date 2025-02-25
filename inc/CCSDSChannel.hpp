@@ -112,24 +112,8 @@ public:
 	template <class TransferFrameType>
 	void storeMAPChannel(TransferFrameType packet);
 
-	/**
-	 * Returns availableBufferTC space in the MAP Channel buffer
-	 */
-	uint16_t availableBufferTC() const {
-		return unprocessedFrameListBufferTC.available();
-	}
-
-	/**
-	 * Returns availableBufferTM space in the MAP Channel buffer
-	 */
-	uint16_t availableBufferTM() const {
-		return unprocessedFrameListBufferTM.available();
-	}
-
 	MAPChannel(const uint8_t mapid, bool blockingTC, bool segmentationTC)
 	    : MAPID(mapid), blockingTC(blockingTC), segmentationTC(segmentationTC) {
-		uint8_t d = unprocessedFrameListBufferTC.size();
-		unprocessedFrameListBufferTC.full();
 	};
 
 protected:
@@ -144,17 +128,6 @@ protected:
      * (applies for Type AD, BD)
      */
      const bool segmentationTC;
-
-	/**
-	 * Store unprocessed received TCs
-	 * TODO seems unused
-	 */
-	etl::list<TransferFrameTC*, MaxReceivedTcInMapChannel> unprocessedFrameListBufferTC;
-	/**
-	 * Store unprocessed received TMs
-	 * TODO i don't think that this should exist,since MAP channels exist for TC Frames only
-	 */
-	etl::list<TransferFrameTM*, MaxReceivedTmInMapChannel> unprocessedFrameListBufferTM;
 
 	/**
 	 * @brief Queue that stores the pointers of the packets that will eventually be concatenated to transfer frame data.
@@ -573,25 +546,8 @@ private:
 	// TC transfer frames stored in frames list, before being processed by the all frames generation service
 	etl::list<TransferFrameTC*, MaxReceivedTxTcInMasterBuffer> outFramesBeforeAllFramesGenerationListTxTC;
 
-	// TM transfer frames stored in frames list, before being processed by the vc generation service
-	etl::list<TransferFrameTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCGenerationListTM;
 	// TM transfer frames ready to be transmitted having passed through the vc generation service
 	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInVCBuffer> toBeTransmittedFramesAfterMCGenerationListTxTM;
-
-	// TM transfer frames stored in frames list, before being processed by the vc reception service
-	etl::list<TransferFrameTM*, MaxReceivedTxTmInVCBuffer> txOutFramesBeforeMCReceptionListTM;
-	// TM transfer frames ready to be transmitted having passed through the vc reception service
-    // TODO seems unused
-	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInVCBuffer> txToBeTransmittedFramesAfterMCReceptionListTM;
-
-	// TM transfer frames stored in frames list, before being processed by the all frames generation service
-    // TODO seems redundant
-	etl::list<TransferFrameTM*, MaxReceivedTxTmInMasterBuffer> txOutFramesBeforeAllFramesGenerationListTM;
-	// TM transfer frames ready to be transmitted having passed through the all frames generation service
-    // TODO Just like the other chains, TM TX ends by assigning the frame to a pointer
-    // TODO and the frame is deleted from the master Copy buffer (look allFramesGenerationRequestTxTM).
-    // TODO Therefore, this buffer is not needed.
-	etl::list<TransferFrameTM*, MaxReceivedTxTmOutInMasterBuffer> toBeTransmittedFramesAfterAllFramesGenerationListTxTM;
 
 	// Buffer to store TM transfer frames that are processed by VC Generation services
 	etl::list<TransferFrameTM*, MaxReceivedUnprocessedTxTmInVirtBuffer> framesAfterVcGenerationServiceTxTM;

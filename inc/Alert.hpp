@@ -50,7 +50,8 @@ enum ServiceChannelNotification : int {
     PROCESSING_SEGMENTED_PACKET = 0x28,
     INVALID_SEQUENCE_FLAG = 0x29,
     UNKNOWN_ERROR = 0x2A,
-    FARM_ERROR = 0x2B
+    FARM_ERROR = 0x2B,
+    GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER = 0x2C
 };
 
 enum VirtualChannelAlert : uint8_t {

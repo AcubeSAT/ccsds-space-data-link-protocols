@@ -265,11 +265,6 @@ public:
     }
 
     /**
-     * Read first TC transfer frame of the TC MAP channel buffer (unprocessedFrameListBufferTC)
-     */
-    std::pair<ServiceChannelNotification, const TransferFrameTC*> txOutFrameTC(uint8_t vid, uint8_t mapid) const;
-
-    /**
      * Available space for TC transfer frames at inFramesBeforeVcReceptionRxTC buffer
      */
     uint16_t getAvailableBeforeVcReceptionRxTC(uint8_t vid) const {
@@ -301,27 +296,6 @@ public:
         }
         return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionTypeBDRxTC.available();
     }
-
-    /**
-     * Available space in TC MAP channel buffer
-     */
-    uint16_t txAvailableTC(const uint8_t vid, const uint8_t mapid) const {
-        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
-        }
-        const VirtualChannel& virtualChannel = masterChannel.virtualChannels.at(vid);
-        if (!virtualChannel.segmentHeaderTCPresent) {
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
-        if (virtualChannel.segmentHeaderTCPresent &&
-            (virtualChannel.mapChannels.find(mapid) == virtualChannel.mapChannels.end())) {
-            ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_MAP_ID);
-            return ServiceChannelNotification::INVALID_MAP_ID;
-        }
-        return virtualChannel.mapChannels.at(mapid).availableBufferTC();
-    }
-
 
     //     - All Frames Reception
     /**
@@ -363,15 +337,16 @@ public:
      * @param serviceType The frames type packets will be extracted from
      * @param packetDest Provided packetDest data destination
      *
-     * @returns A service channel notification. A 'NO_SERVICE_EVENT' indicates that a packet was successfully copied to the
-     *          destination buffer, while 'PROCESSING_SEGMENTED_PACKET' means construction of a segmented packet (between multiple
-     *          frames) is in process. Every other notification is an error.
+     * @returns A service channel notification and the packet's length. A 'NO_SERVICE_EVENT' indicates that a packet
+     *          was successfully copied to the destination buffer, while 'PROCESSING_SEGMENTED_PACKET' means construction
+     *          of a segmented packet (between multiple frames) is in process. Every other notification is an error. The
+     *          returned packet's length should be considered valid only in case of a 'NO_SERVICE_EVENT'.
      *
      * @note This function assumes that the user's destination buffer is at least as large as MaxPacketSize. Should an
      *       unexpected packet with size larger than MaxPacketSize arrive, the packet copy will be partial (up to
      *       MaxPacketSize), but the user will not be alerted (a 'NO_SERVICE_EVENT' is returned).
      */
-    ServiceChannelNotification packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetDest);
+    std::pair<ServiceChannelNotification, uint16_t> packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t* packetDest);
 
     // TM TransferFrame - Sending End (TM Tx)
 
@@ -393,11 +368,6 @@ public:
      * Return the last stored TM transfer frame from framesAfterVcGenerationServiceTxTM buffer
      */
     std::pair<ServiceChannelNotification, const TransferFrameTM*> backFrameAfterVcGenerationTxTM() const;
-
-    /**
-	 * Return the last processed transfer frame from all frames generation
-	 */
-    std::pair<ServiceChannelNotification, const TransferFrameTM*> frontFrameAfterAllFramesGenerationTxTM() const;
 
     /**
      * Fetch packet in the top of the MC buffer
