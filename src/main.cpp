@@ -2,9 +2,10 @@
 #include "CCSDSChannel.hpp"
 #include "CCSDSLogger.h"
 
-int main() {
+namespace CCSDSDataLinkLayer {
+    int main() {
 
 
-
-	return 0;
-}
+        return 0;
+    }
+} // namespace CCSDSDataLinkLayer

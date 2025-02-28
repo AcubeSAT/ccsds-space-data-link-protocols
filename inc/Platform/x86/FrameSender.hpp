@@ -10,16 +10,19 @@
 #include "unistd.h"
 #include "Logger.hpp"
 
-class FrameSender{
-private:
-    const uint16_t port = 10014;
-    struct sockaddr_in destination;
-    int socket;
-    int clientSocket;
+namespace CCSDSDataLinkLayer {
+    class FrameSender {
+    private:
+        const uint16_t port = 10014;
+        struct sockaddr_in destination;
+        int socket;
+        int clientSocket;
 
-public:
-    FrameSender();
-    ~FrameSender();
+    public:
+        FrameSender();
 
-    void sendFrameToYamcs(uint8_t* frame, uint16_t frameLength);
-};
+        ~FrameSender();
+
+        void sendFrameToYamcs(uint8_t *frame, uint16_t frameLength);
+    };
+} // namespace CCSDSDataLinkLayer

@@ -4,6 +4,8 @@
 #include <etl/String.hpp>
 #include <etl/to_string.h>
 #include "CCSDS_Definitions.hpp"
+
+namespace CCSDSDataLinkLayer {
 #define LOGLEVEL_TRACE
 #if defined LOGLEVEL_TRACE
 #define LOGLEVEL Logger::trace // Ignore-MISRA
@@ -38,105 +40,106 @@
  * @note Always use the \ref LOG function and its associated utility macros to log. Do not directly use the Logger
  * class.
  */
-class Logger {
-public:
-	/**
-	 * No need to instantiate a Logger object for now.
-	 */
-	Logger() = delete;
+    class Logger {
+    public:
+        /**
+         * No need to instantiate a Logger object for now.
+         */
+        Logger() = delete;
 
-	/**
-	 * The underlying type to be used for values of Logger::LogLevel.
-	 */
-	typedef uint8_t LogLevelType;
+        /**
+         * The underlying type to be used for values of Logger::LogLevel.
+         */
+        typedef uint8_t LogLevelType;
 
-	/**
-	 * ETL's string format specification, to be used for all logged messages
-	 */
-	static etl::format_spec format;
+        /**
+         * ETL's string format specification, to be used for all logged messages
+         */
+        static etl::format_spec format;
 
-	/**
-	 * Log levels supported by the logger. Each level represents a different severity of the logged Message,
-	 * and messages of lower severities can be filtered on top of more significant ones.
-	 *
-	 * Each severity is tied to a number. The higher the number, the higher the severity.
-	 */
-	enum LogLevel : LogLevelType {
-		trace = 32, ///< Very detailed information, useful for tracking the individual steps of an operation
-		debug = 64, ///< General debugging information
-		info = 96, ///< Noteworthy or periodical events
-		notice = 128, ///< Uncommon but expected events
-		warning = 160, ///< Unexpected events that do not compromise the operability of a function
-		error = 192, ///< Unexpected failure of an operation
-		emergency = 254, ///< Unexpected failure that renders the entire system unusable
-		disabled = 255, ///< Use this log level to disable logging entirely. No message should be logged as disabled.
-	};
+        /**
+         * Log levels supported by the logger. Each level represents a different severity of the logged Message,
+         * and messages of lower severities can be filtered on top of more significant ones.
+         *
+         * Each severity is tied to a number. The higher the number, the higher the severity.
+         */
+        enum LogLevel : LogLevelType {
+            trace = 32, ///< Very detailed information, useful for tracking the individual steps of an operation
+            debug = 64, ///< General debugging information
+            info = 96, ///< Noteworthy or periodical events
+            notice = 128, ///< Uncommon but expected events
+            warning = 160, ///< Unexpected events that do not compromise the operability of a function
+            error = 192, ///< Unexpected failure of an operation
+            emergency = 254, ///< Unexpected failure that renders the entire system unusable
+            disabled = 255, ///< Use this log level to disable logging entirely. No message should be logged as disabled.
+        };
 
-	/**
-	 * An empty enum representing a dummy log entry that will not be logged due to an insufficient level.
-	 *
-	 * @internal
-	 */
-	enum class NoLogEntry {};
+        /**
+         * An empty enum representing a dummy log entry that will not be logged due to an insufficient level.
+         *
+         * @internal
+         */
+        enum class NoLogEntry {
+        };
 
-	/**
-	 * A class that defines a log message.
-	 *
-	 * Instead of using this class, prefer one of the above macros.
-	 * @see LOG
-	 * @internal
-	 */
-	struct LogEntry {
-		String<LoggerMaxMessageSize> message; ///< The current log message itself, starting from a blank slate
-		LogLevel level; ///< The log level of this message
+        /**
+         * A class that defines a log message.
+         *
+         * Instead of using this class, prefer one of the above macros.
+         * @see LOG
+         * @internal
+         */
+        struct LogEntry {
+            String <LoggerMaxMessageSize> message; ///< The current log message itself, starting from a blank slate
+            LogLevel level; ///< The log level of this message
 
-		explicit LogEntry(LogLevel level); ///< Create a new LogEntry
+            explicit LogEntry(LogLevel level); ///< Create a new LogEntry
 
-		/**
-		 * The LogEntry destructor gets called whenever a log message is finalized, and ready to be shown to the
-		 * user. This function is responsible for calling the Logger::log function.
-		 *
-		 * According to the C++ standard, a variable used only within an expression will be immediately destroyed once
-		 * the processing of this expression is over. This allows a syntax such as `LogEntry(...) << "some" << "text"`,
-		 * where the destructor will be called strictly **after** all the `<<` operations have been completed. This
-		 * allows the destructor to send the finalized log entry for further processing.
-		 */
-		~LogEntry();
+            /**
+             * The LogEntry destructor gets called whenever a log message is finalized, and ready to be shown to the
+             * user. This function is responsible for calling the Logger::log function.
+             *
+             * According to the C++ standard, a variable used only within an expression will be immediately destroyed once
+             * the processing of this expression is over. This allows a syntax such as `LogEntry(...) << "some" << "text"`,
+             * where the destructor will be called strictly **after** all the `<<` operations have been completed. This
+             * allows the destructor to send the finalized log entry for further processing.
+             */
+            ~LogEntry();
 
-		LogEntry(LogEntry const&) = delete; ///< Unimplemented copy constructor
+            LogEntry(LogEntry const &) = delete; ///< Unimplemented copy constructor
 
-		/**
-		 * Stream operator to append new values to a log record
-		 *
-		 * @tparam T The type of value to append
-		 * @param value The new value to add
-		 * @todo See if noexcept can be added here without triggering warnings
-		 * @return The current Logger::LogEntry where the value has been appended
-		 */
-		template <class T>
-		Logger::LogEntry& operator<<(const T value) {
-			etl::to_string(value, message, format, true);
+            /**
+             * Stream operator to append new values to a log record
+             *
+             * @tparam T The type of value to append
+             * @param value The new value to add
+             * @todo See if noexcept can be added here without triggering warnings
+             * @return The current Logger::LogEntry where the value has been appended
+             */
+            template<class T>
+            Logger::LogEntry &operator<<(const T value) {
+                etl::to_string(value, message, format, true);
 
-			return *this;
-		}
+                return *this;
+            }
 
-		Logger::LogEntry& operator<<(const std::string& value);
-	};
+            Logger::LogEntry &operator<<(const std::string &value);
+        };
 
-	/**
-	 * Returns whether a log entry of level \p level is logged, based on the compilation constants
-	 * @param level The level of the log entry
-	 * @return True if the logging is enabled for \p level, false if not
-	 */
-	static constexpr bool isLogged(LogLevelType level) {
-		return static_cast<LogLevelType>(LOGLEVEL) <= level;
-	}
+        /**
+         * Returns whether a log entry of level \p level is logged, based on the compilation constants
+         * @param level The level of the log entry
+         * @return True if the logging is enabled for \p level, false if not
+         */
+        static constexpr bool isLogged(LogLevelType level) {
+            return static_cast<LogLevelType>(LOGLEVEL) <= level;
+        }
 
-	/**
-	 * Store a new log message
-	 */
-	static void log(LogLevel level, etl::istring& message);
-};
+        /**
+         * Store a new log message
+         */
+        static void log(LogLevel level, etl::istring &message);
+    };
 
 /**
  * Create a stream to log a Message
@@ -193,14 +196,14 @@ public:
  * @return Returns \ref Logger::LogEntry if the level is sufficient to be logged, or \ref Logger::NoLogEntry if the
  * message will not be logged. This is determined at compile-time.
  */
-template <Logger::LogLevel level>
-constexpr __attribute__((always_inline)) inline auto LOG() {
-	if constexpr (Logger::isLogged(level)) {
-		return Logger::LogEntry(level);
-	} else {
-		return Logger::NoLogEntry();
-	}
-};
+    template<Logger::LogLevel level>
+    constexpr __attribute__((always_inline)) inline auto LOG() {
+        if constexpr (Logger::isLogged(level)) {
+            return Logger::LogEntry(level);
+        } else {
+            return Logger::NoLogEntry();
+        }
+    };
 
 /**
  * A no-op function that considers an empty log entry that will not be displayed, processed or stored.
@@ -215,7 +218,8 @@ constexpr __attribute__((always_inline)) inline auto LOG() {
  * @see Logger::LogEntry::operator<<(const T value)
  * @relates Logger::LogEntry
  */
-template <typename T>
-[[maybe_unused]] constexpr Logger::NoLogEntry operator<<(const Logger::NoLogEntry noLogEntry, T value) {
-	return noLogEntry;
-}
+    template<typename T>
+    [[maybe_unused]] constexpr Logger::NoLogEntry operator<<(const Logger::NoLogEntry noLogEntry, T value) {
+        return noLogEntry;
+    }
+} // namespace CCSDSDataLinkLayer

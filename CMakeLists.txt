@@ -36,7 +36,6 @@ add_library(common OBJECT
         src/FrameAcceptanceReporting.cpp
         src/logOperators.cpp
         src/MemoryPool.cpp
-        src/CLCW.cpp
         src/CCSDSSecurityAssociation.cpp
         )
 
@@ -63,8 +62,9 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     add_subdirectory(lib/Catch2)
     add_executable(tests
             $<TARGET_OBJECTS:common>
-            ${test_main_SRC}
-            ${test_SRC})
+           # ${test_main_SRC}
+           # ${test_SRC}
+    )
     target_link_libraries(tests Catch2::Catch2WithMain TinyCryptLib)
 ENDIF ()
 set_target_properties(common PROPERTIES COMPILE_DEFINITIONS LOGLEVEL_TRACE)

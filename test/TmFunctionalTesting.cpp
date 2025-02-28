@@ -4,6 +4,7 @@
 #include "CLCW.hpp"
 #include "stdlib.h"
 
+//namespace CCSDSDataLinkLayer {
 // End-to-end testing, confirming that TM Tx, TM Rx can work concurrently. TM Rx is no longer maintained, since it will
 // be handled by yamcs. Furthermore, the tests do not account for idle packets, so they do not work anymore.
 
@@ -224,3 +225,4 @@
 //	}
 //	CHECK(numberOfErrors == 0);
 //}
+//} // namespace CCSDSDataLinkLayer
