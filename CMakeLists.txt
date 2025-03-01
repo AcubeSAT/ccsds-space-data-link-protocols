@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.30.5)
 project(ccsds_tm_packets)
 
 # Set C++ version to c++17
@@ -19,11 +19,11 @@ add_custom_target(check
         COMMAND ./cppcheck-misra.sh
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/ci")
 
-# Define TinyCrypt as an imported static library
-add_library(TinyCryptLib STATIC IMPORTED)
-set_target_properties(TinyCryptLib PROPERTIES
-        IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a
-        INTERFACE_INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include)
+add_custom_target(
+        TinyCryptLib ALL
+        COMMAND make ENABLE_TESTS='false' OBJS='hmac.o hmac_prng.o sha256.o utils.o'
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib/tinycrypt
+)
 
 # Specify the .cpp files common across all targets
 add_library(common OBJECT
@@ -44,7 +44,8 @@ add_executable(ccsds_tm_packets_default
         $<TARGET_OBJECTS:common>
         src/main.cpp
         )
-target_link_libraries(ccsds_tm_packets_default PRIVATE TinyCryptLib)
+add_dependencies(ccsds_tm_packets_default TinyCryptLib) # ensure "TinyCryptLib" target is built first
+target_link_libraries(ccsds_tm_packets_default PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 
 add_executable(ccsds_tm_packets_yamcs_connection
         $<TARGET_OBJECTS:common>
@@ -52,7 +53,8 @@ add_executable(ccsds_tm_packets_yamcs_connection
         src/Platform/x86/FrameSender.cpp
         src/Platform/x86/main.cpp
         )
-target_link_libraries(ccsds_tm_packets_yamcs_connection PRIVATE TinyCryptLib)
+add_dependencies(ccsds_tm_packets_yamcs_connection TinyCryptLib) # ensure "TinyCryptLib" target is built first
+target_link_libraries(ccsds_tm_packets_yamcs_connection PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     # Gather all the .cpp files corresponding to tests
@@ -65,7 +67,8 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
            # ${test_main_SRC}
            # ${test_SRC}
     )
-    target_link_libraries(tests Catch2::Catch2WithMain TinyCryptLib)
+    add_dependencies(tests TinyCryptLib) # ensure "TinyCryptLib" target is built first
+    target_link_libraries(tests Catch2::Catch2WithMain  ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 ENDIF ()
 set_target_properties(common PROPERTIES COMPILE_DEFINITIONS LOGLEVEL_TRACE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")

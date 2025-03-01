@@ -42,6 +42,7 @@ __pycache__
 *.lai
 *.la
 *.lib
+*.a
 
 # Executables
 *.exe
