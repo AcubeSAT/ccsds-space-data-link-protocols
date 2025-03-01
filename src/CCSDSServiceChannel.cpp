@@ -746,7 +746,7 @@ namespace CCSDSDataLinkLayer {
         return ServiceChannelNotification::NO_SERVICE_EVENT;
     }
 
-    ServiceChannelNotification ServiceChannel::pushCLCW(uint8_t vid, CLCW clcw) {
+    ServiceChannelNotification ServiceChannel::pushClcwToFop(uint8_t vid, CLCW clcw) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
             return ServiceChannelNotification::INVALID_VC_ID;
@@ -920,7 +920,21 @@ namespace CCSDSDataLinkLayer {
         }
     }
 
-//     - SDLS Processing
+    //     - FARM-1 utility and debugging functions
+    ServiceChannelNotification ServiceChannel::injectClcw(uint32_t clcw, uint8_t vid) {
+        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
+            ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
+            return ServiceChannelNotification::INVALID_VC_ID;
+        }
+
+        if (!masterChannel.virtualChannelClcwQueues.at(vid).empty()) {
+            masterChannel.virtualChannelClcwQueues.at(vid).pop();
+        }
+        masterChannel.virtualChannelClcwQueues.at(vid).push(CLCW(clcw));
+        return ServiceChannelNotification::NO_SERVICE_EVENT;
+    }
+
+    //     - SDLS Processing
     ServiceChannelNotification
     ServiceChannel::processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType) {
         if ((serviceType != ServiceType::TYPE_AD) && (serviceType != ServiceType::TYPE_BD)) {

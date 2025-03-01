@@ -429,10 +429,32 @@ namespace CCSDSDataLinkLayer {
                 : virtualChannels(m.virtualChannels), frameCount(m.frameCount),
                   outFramesBeforeAllFramesGenerationListTxTC(m.outFramesBeforeAllFramesGenerationListTxTC),
                   masterCopyRxTC(m.masterCopyRxTC), masterCopyRxTM(m.masterCopyRxTM),
-                  currFrameCountTM(m.currFrameCountTM) {
+                  currFrameCountTM(m.currFrameCountTM), virtualChannelClcwQueues(m.virtualChannelClcwQueues) {
         }
 
+        /**
+         * Add virtual channel to master channel
+         */
+        MasterChannelAlert
+        addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
+              const bool segmentationTM, const bool blockingTC,
+              const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
+              const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
+              SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+              const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
+              const uint8_t vcRepetitions, const etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
 
+        /**
+         * Add virtual channel to master channel
+         */
+        MasterChannelAlert
+        addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
+              const bool segmentationTM, const bool blockingTC,
+              const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
+              const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
+              SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
+              const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
+              const uint8_t vcRepetitions);
     private:
         /**
          * Virtual channels of the master channel
@@ -492,29 +514,6 @@ namespace CCSDSDataLinkLayer {
          */
         TransferFrameTC geFirstTxMasterCopyTcFrame();
 
-        /**
-         * Add virtual channel to master channel
-         */
-        MasterChannelAlert
-        addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-              const bool segmentationTM, const bool blockingTC,
-              const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
-              const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
-              SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-              const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-              const uint8_t vcRepetitions, const etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> mapChan);
-
-        /**
-         * Add virtual channel to master channel
-         */
-        MasterChannelAlert
-        addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength, const bool blockingTM,
-              const bool segmentationTM, const bool blockingTC,
-              const bool frameErrorControlFieldPresent, const bool secondaryHeaderTMPresent,
-              const uint8_t secondaryHeaderTMLength, const bool operationalControlFieldTMPresent,
-              SynchronizationFlag synchronization, const uint8_t farmSlidingWinWidth,
-              const uint8_t farmPositiveWinWidth, const uint8_t farmNegativeWinWidth,
-              const uint8_t vcRepetitions);
 
         // TC transfer frames stored in frames list, before being processed by the all frames generation service
         etl::list<TransferFrameTC *, MaxReceivedTxTcInMasterBuffer> outFramesBeforeAllFramesGenerationListTxTC;

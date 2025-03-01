@@ -26,7 +26,6 @@ namespace CCSDSDataLinkLayer {
             frameQueue.push(frameArray);
         }
 
-
         return ser;
     }
 

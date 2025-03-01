@@ -70,55 +70,73 @@ namespace CCSDSDataLinkLayer {
 
     void automatic(FrameMaker frameMaker) {
     }
+} // namespace CCSDSDataLinkLayer
 
-    int main() {
 
-        // Create Virtual, Master and Service Channels
-        PhysicalChannel phy_channel_fop = PhysicalChannel(1024, 12, 1024, 220000, 20);
+int main() {
 
-        etl::flat_map<uint8_t, MAPChannel, MaxMapChannels> map_channels = {
-                {0, MAPChannel(0, true, true)},
-                {1, MAPChannel(1, false, false)},
-                {2, MAPChannel(2, true, false)},
+    // Create Virtual, Master and Service Channels
+    CCSDSDataLinkLayer::PhysicalChannel phy_channel_fop =
+            CCSDSDataLinkLayer::PhysicalChannel(1024, 12, 1024, 220000, 20);
+
+    etl::flat_map<uint8_t, CCSDSDataLinkLayer::MAPChannel, CCSDSDataLinkLayer::MaxMapChannels> map_channels = {
+                {0, CCSDSDataLinkLayer::MAPChannel(0, true, true)},
+                {1, CCSDSDataLinkLayer::MAPChannel(1, false, false)},
+                {2, CCSDSDataLinkLayer::MAPChannel(2, true, false)},
         };
 
-        MasterChannel master_channel = MasterChannel();
-        bool segmentationV1 = true;
-        bool blockingV1 = true;
-        bool operationalControlFieldPresentV1 = false;
-        bool errorControlFieldV1 = false;
+    CCSDSDataLinkLayer::MasterChannel master_channel = CCSDSDataLinkLayer::MasterChannel();
+    uint8_t vcid1 = 0;
+    bool segmentationV1 = true;
+    bool blockingV1 = true;
+    bool operationalControlFieldPresentV1 = false;
+    bool errorControlFieldV1 = false;
 
-        bool segmentationV2 = false;
-        bool blockingV2 = false;
-        bool operationalControlFieldPresentV2 = false;
-        bool errorControlFieldV2 = false;
+    uint8_t vcid2 = 1;
+    bool segmentationV2 = false;
+    bool blockingV2 = false;
+    bool operationalControlFieldPresentV2 = false;
+    bool errorControlFieldV2 = false;
 
-        bool segmentationV3 = false;
-        bool blockingV3 = false;
-        bool operationalControlFieldPresentV3 = false;
-        bool errorControlFieldV3 = false;
+    uint8_t vcid3 = 2;
+    bool segmentationV3 = false;
+    bool blockingV3 = false;
+    bool operationalControlFieldPresentV3 = false;
+    bool errorControlFieldV3 = false;
 
-        master_channel.addVC(0, true, 128, blockingV1, segmentationV1, true, 2, 2, errorControlFieldV1, false, 8,
-                             operationalControlFieldPresentV1, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
-                             255, 10, 10, 3,
-                             map_channels);
-        master_channel.addVC(1, true, 128, blockingV2, segmentationV2, true, 2, 2, errorControlFieldV2, false, 8,
-                             operationalControlFieldPresentV2, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
-                             255, 10, 10, 3,
-                             map_channels);
-        master_channel.addVC(2, true, 128, blockingV3, segmentationV3, true, 2, 2, errorControlFieldV3, false, 8,
-                             operationalControlFieldPresentV3, SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
-                             255, 10, 10, 3,
-                             map_channels);
 
-        ServiceChannel serv_channel = ServiceChannel(master_channel, phy_channel_fop, SecurityAssociation(),
-                                                     SecurityAssociation());
+    master_channel.addVC(vcid1, false, 128, blockingV1,
+                         segmentationV1, false, errorControlFieldV1,
+                         false, 0,
+                         operationalControlFieldPresentV1,
+                         CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 0,
+                         0, 0, 1);
+    master_channel.addVC(vcid2, false, 128, blockingV2,
+                         segmentationV2, false, errorControlFieldV2,
+                         false, 0,
+                         operationalControlFieldPresentV2,
+                         CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 0,
+                         0, 0, 1);
+    master_channel.addVC(vcid3, false, 128, blockingV3,
+                         segmentationV3, false, errorControlFieldV3,
+                         false, 0,
+                         operationalControlFieldPresentV3,
+                         CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 0,
+                         0, 0, 1);
 
-        // Create Frame Maker class instance, set frame data field length
-        uint16_t transferFrameDataFieldLength = 17 + 7;   // ensure corresponding length in yamcs matches
-        FrameMaker frameMaker = FrameMaker(&serv_channel, transferFrameDataFieldLength);
 
-        // Call manual or automatic frame sending here
-        manual(frameMaker);
-    }
-} // namespace CCSDSDataLinkLayer
+    CCSDSDataLinkLayer::ServiceChannel serv_channel =
+            CCSDSDataLinkLayer::ServiceChannel(master_channel,
+                                               phy_channel_fop,
+                                               CCSDSDataLinkLayer::SecurityAssociation(),
+                                               CCSDSDataLinkLayer::SecurityAssociation());
+
+    // Create Frame Maker class instance, set frame data field length
+    uint16_t transferFrameDataFieldLength = 17 + 7;   // ensure corresponding length in yamcs matches
+    CCSDSDataLinkLayer::FrameMaker frameMaker = CCSDSDataLinkLayer::FrameMaker(&serv_channel, transferFrameDataFieldLength);
+
+    // Call manual or automatic frame sending here
+    manual(frameMaker);
+    return 0;
+}
+

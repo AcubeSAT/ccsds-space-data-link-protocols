@@ -200,9 +200,9 @@ namespace CCSDSDataLinkLayer {
 
 
         /**
-         *  Push a CLCW for FOP-1 to inspect. The old CLCW (if it exists) is overwritten.
+         *  Push a CLCW to FOP-1's single capacity queue for inspection. The old CLCW (if it exists) is overwritten.
          */
-        ServiceChannelNotification pushCLCW(uint8_t vid, CLCW clcw);
+        ServiceChannelNotification pushClcwToFop(uint8_t vid, CLCW clcw);
 
         /**
          * Get FOP State of the virtual channel
@@ -322,6 +322,13 @@ namespace CCSDSDataLinkLayer {
          * @see  p. 4.4.5 from TC Space Data Link Protocol
          */
         std::pair<ServiceChannelNotification, uint8_t> vcReceptionRxTC(uint8_t vid);
+
+        //     - FARM-1 utility and debugging functions
+        /**
+         * Directly inject a clcw to the corresponding master channel data structure (this process is normally handled
+         * inside FARM-1). Offered for situations where the TM-Tx chain needs to be tested, but the TC-Rx chain is not available.
+         */
+        ServiceChannelNotification injectClcw(uint32_t clcw, uint8_t vid);
 
         //    - SDLS Processing
         /**
