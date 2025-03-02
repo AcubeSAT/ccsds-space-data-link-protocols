@@ -4,6 +4,6 @@
 [submodule "lib/etl"]
 	path = lib/etl
 	url = https://github.com/ETLCPP/etl.git
-[submodule "lib/lib/tinycrypt"]
-	path = lib/lib/tinycrypt
+[submodule "lib/tinycrypt"]
+	path = lib/tinycrypt
 	url = https://github.com/intel/tinycrypt.git
