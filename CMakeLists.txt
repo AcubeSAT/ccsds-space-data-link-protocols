@@ -67,6 +67,7 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
            # ${test_main_SRC}
            # ${test_SRC}
     )
+    target_compile_definitions(tests PRIVATE ENABLE_BUFFER_ACCESS)
     add_dependencies(tests TinyCryptLib) # ensure "TinyCryptLib" target is built first
     target_link_libraries(tests Catch2::Catch2WithMain  ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 ENDIF ()

@@ -1,3 +1,10 @@
+/**
+ * @file CCSDSServiceChannel.hpp
+ * @details  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
+ *           bidirectional interface between the receiving and transmitting parties.
+ *
+ */
+
 #pragma once
 
 #include <utility>
@@ -9,27 +16,22 @@
 #include "CCSDSSecurityAssociation.hpp"
 
 namespace CCSDSDataLinkLayer {
-/**
- *  This provides a way to interconnect all different CCSDS Space Data Protocol Services and provides a
- *  bidirectional interface between the receiving and transmitting parties
- */
-
     class ServiceChannel {
     private:
         /**
-         * The Master Channel essentially stores the configuration of your channel. It partitions the physical
-         * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic
+         * @brief The Master Channel essentially stores the configuration of your channel. It partitions the physical
+         * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic.
          */
         MasterChannel masterChannel;
         /**
-         * PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame
-         * length
+         * @brief PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame
+         * length.
          * TODO: Replace defines for maxFrameLength
          */
         PhysicalChannel physicalChannel;
 
         /**
-         * The security association is used for TC frame authentication
+         * @brief The security association is used for providing authentication and enryption services.
          * TODO: use std optional
          */
         SecurityAssociation senderSA;
@@ -37,7 +39,7 @@ namespace CCSDSDataLinkLayer {
 
     public:
         /**
-         * Get a reference to the master channel
+         * @brief Get a reference to the master channel.
          */
         MasterChannel &getMasterChannel() {
             return masterChannel;
@@ -47,101 +49,49 @@ namespace CCSDSDataLinkLayer {
 
         // TC TransferFrame - Sending End (TC Tx)
 
-        //     - Utility and Debugging
-
-        /**
-         * Returns the first frame in the unprocessedFrameListBufferMcCopyTxTC buffer
-         */
-        TransferFrameTC frontUnprocessedFrameMcCopyTxTC();
-
-        /**
-         * Returns the last frame in the unprocessedFrameListBufferMcCopyTxTC buffer
-         */
-        // TODO This is probably not needed, we already have backUnprocessedFrameMcCopyTxTC
-        TransferFrameTC getLastMasterCopyTcFrame();
-
-        /**
-         * Available space in TC virtual channel buffer
-         */
-//        uint16_t availableFramesBeforeSDLSProcessing(const uint8_t vid) const {
-//            if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-//                ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-//                return ServiceChannelNotification::INVALID_VC_ID;
-//            }
-//            return masterChannel.virtualChannels.at(vid).availableBufferTC();
-//        }
-
-        /**
-         * Read first TC transfer frame of the virtual channel buffer (framesBeforeSDLSProcessingTxTC)
-         */
-        std::pair<ServiceChannelNotification, const TransferFrameTC *>
-        frontFrameBeforeSDLSProcessing(uint8_t vid) const;
-
-        /**
-         * Return the last stored transfer frame from masterCopyTxTC
-         */
-        std::pair<ServiceChannelNotification, const TransferFrameTC *> backUnprocessedFrameMcCopyTxTC() const;
-
-        /**
-         * @return The front TC TransferFrame from outFramesBeforeAllFramesGenerationListTxTC
-         */
-        etl::optional<TransferFrameTC> frontFrameBeforeAllFramesGenerationTxTC();
-
-        /**
-         * @return The buffer framesBeforeSDLSProcessingTxTC
-         */
-        const etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> &
-        getFramesBeforeSDLSProcessing(uint16_t vid);
-
         //     - MAP/VC Packet Processing and Frame Initialization
         /**
-         * Auxiliary function to implement the segmentation of packets stored in
-         * the packet buffer
-         * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-         *                                          (segment header is included, if it exists). Note: Should a segment header
-         *                                           exist, it's 1 octet length is included in this parameter.
-         * @param packetLength                   The length of the next transfer frame data in the packetBufferTxTM
-         * @param vid                            Virtual Channel ID
-         * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
-         *                                      (segmentHeaderTCPresent = false) or if the service type is BC
-         * @param serviceType                    Type AD, BC, BD frames
-         * @return A Service Channel Notification
+         * @brief Auxiliary function to implement the segmentation of packets stored in the packet buffer.
+         * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to
+         *                                           take (the segment header is included in this length, if it exists).
+         * @param packetLength                   The length of the next packet in the packetBufferTxTM.
+         * @param vid                            Virtual Channel ID.
+         * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain
+         *                                       MAP channels (segmentHeaderTCPresent == false) or if the service type
+         *                                       is BC.
+         * @param serviceType                    Whether the service is of type AD or BC.
+         * @return A Service Channel Notification indicating whether an error has occurred.
          */
         ServiceChannelNotification segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                                   uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
         /**
-         * Auxiliary function for blocking of packets stored in the stored packet buffer
-         *
-         * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
-         *                                       not exist or is full)
-         * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-         *                                          (segment header is included, if it exists). Note: Should a segment header exist,
-         *                                           it's 1 octet length is included in this parameter.
-         * @param packetLength                   The length of the next packet in the stored TC packet buffer
-         * @param vcid                           Virtual Channel ID
-         * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
-         *                                        (segmentHeaderTCPresent = false) or if the service type is BC
-         * @param serviceType                    Type AD, BC, BD frames
-         * @return                               A Service Channel Notification
+         * @brief Auxiliary function to implement the blocking of packets stored in the packet buffer.
+         * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to
+         *                                           take (the segment header is included in this length, if it exists).
+         * @param packetLength                   The length of the next packet in the packetBufferTxTM.
+         * @param vid                            Virtual Channel ID.
+         * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain
+         *                                       MAP channels (segmentHeaderTCPresent == false) or if the service type
+         *                                       is BC.
+         * @param serviceType                    Whether the service is of type AD or BC.
+         * @return A Service Channel Notification indicating whether an error has occurred.
          */
         ServiceChannelNotification blockingTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                               uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
-
         /**
-         * Method that stores a packet pointer and the packet to the relevant buffers. Serves as an entry point for upper layers.
-         * queues
+         * @brief Stores a packet's bytes and it's length in the appropriate buffers.
          *
-         * @param packet        Pointer to the packet
-         * @param packetLength  Length of the packet
-         * @param vid           Virtual channel id
-         * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
-         *                      (segmentHeaderTCPresent = false) or if the service type is BC
+         * @param packet        Pointer to the packet source.
+         * @param packetLength  Length of the packet.
+         * @param vid           Virtual Channel ID.
+         * @param mapid         MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
+         *                      (segmentHeaderTCPresent == false) or if the service type is BC.
          * @param serviceType  Type AD, BD frames
          */
-        ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid, uint8_t mapid,
-                                                   ServiceType serviceType);
+        ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid,
+                                                   ServiceType serviceType, etl::optional<uint8_t> mapid = etl::nullopt);
 
         /**
          * Requests to process the last packet stored in the buffer of the specific MAP/VC channel
@@ -198,7 +148,6 @@ namespace CCSDSDataLinkLayer {
         ServiceChannelNotification
         pushDirectiveRequestSignal(uint8_t vid, const DirectiveRequestSignal &directiveRequestSignal);
 
-
         /**
          *  Push a CLCW to FOP-1's single capacity queue for inspection. The old CLCW (if it exists) is overwritten.
          */
@@ -207,25 +156,25 @@ namespace CCSDSDataLinkLayer {
         /**
          * Get FOP State of the virtual channel
          */
-        FOPState getFopState(uint8_t vid) const;
+        [[nodiscard]] FOPState getFopState(uint8_t vid) const;
 
         /**
          * Returns the value of the timer that is used to determine the time frame for acknowledging transferred
          * frames
          */
-        uint16_t getT1Timer(uint8_t vid) const;
+        [[nodiscard]] uint16_t getT1Timer(uint8_t vid) const;
 
         /**
          * Indicates the width of the sliding window which is used to proceed to the lockout state in case the
          * transfer frame number of the received packet deviates too much from the expected one.
          */
-        uint8_t getFopSlidingWindowWidth(uint8_t vid) const;
+        [[nodiscard]] uint8_t getFopSlidingWindowWidth(uint8_t vid) const;
 
         /**
          * Returns the timeout action which is to be performed once the maximum transmission limit is reached and
          * the timer has expired.
          */
-        bool getTimeoutType(uint8_t vid) const;
+        [[nodiscard]] bool getTimeoutType(uint8_t vid) const;
 
         /**
          * Returns the last frame sequence number, V(S), that will be placed in the header of the next transferred
@@ -233,7 +182,7 @@ namespace CCSDSDataLinkLayer {
          *
          * @param vid Virtual Channel ID
          */
-        uint8_t getTransmitterFrameSeqNumber(uint8_t vid) const;
+        [[nodiscard]] uint8_t getTransmitterFrameSeqNumber(uint8_t vid) const;
 
         /**
          * Returns the expected acknowledgement frame sequence number, NN(R). This is essentially the frame sequence
@@ -241,7 +190,7 @@ namespace CCSDSDataLinkLayer {
          *
          * @param vid Virtual Channel ID
          */
-        uint8_t getExpectedFrameSeqNumber(uint8_t vid) const;
+        [[nodiscard]] uint8_t getExpectedFrameSeqNumber(uint8_t vid) const;
 
         //     - All frames generation
         /**
@@ -261,46 +210,13 @@ namespace CCSDSDataLinkLayer {
         //     - Utility and Debugging
 
         /**
-         * Returns the total length of space packet (as defined in CCSDS Space Packet Protocol)
+         * Returns the total length of a space packet (as defined in CCSDS Space Packet Protocol)
          */
         static uint16_t getSpacePacketLength(const uint8_t *packetSource) {
-            // plus one is added because the field actually returns the data field length, reduced by one
+            // plus one is added because the field actually contains the data field length, reduced by one
             return (static_cast<uint16_t>(packetSource[PacketDataLengthFieldPosition - 1]) << 8) |
                    (static_cast<uint16_t>(packetSource[PacketDataLengthFieldPosition])) + PacketPrimaryHeaderLength + 1;
         }
-
-        /**
-         * Available space for TC transfer frames at inFramesBeforeVcReceptionRxTC buffer
-         */
-//        uint16_t getAvailableBeforeVcReceptionRxTC(uint8_t vid) const {
-//            if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-//                ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-//                return ServiceChannelNotification::INVALID_VC_ID;
-//            }
-//            return masterChannel.virtualChannels.at(vid).inFramesBeforeVcReceptionRxTC.available();
-//        }
-
-        /**
-         * Available space for TC transfer frames waiting to be processed from the VC Generation Service (Type AD)
-         */
-//        uint16_t getAvailableInFramesAfterVCReceptionTypeADRxTC(uint8_t vid) const {
-//            if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-//                ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-//                return ServiceChannelNotification::INVALID_VC_ID;
-//            }
-//            return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionTypeADRxTC.available();
-//        }
-
-        /**
-         * Available space for TC transfer frames waiting to be processed from the VC Generation Service (Type BD)
-         */
-//        uint16_t getAvailableInFramesAfterVCReceptionTypeBDRxTC(uint8_t vid) const {
-//            if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-//                ccsdsLogNotice(Tx, TypeServiceChannelNotif, INVALID_VC_ID);
-//                return ServiceChannelNotification::INVALID_VC_ID;
-//            }
-//            return masterChannel.virtualChannels.at(vid).inFramesAfterVCReceptionTypeBDRxTC.available();
-//        }
 
         //     - All Frames Reception
         /**
@@ -310,7 +226,6 @@ namespace CCSDSDataLinkLayer {
          * @see p. 4.2.7 from TC Space Data Link Protocol
          */
         ServiceChannelNotification allFramesReceptionRequestRxTC(uint8_t *frameData, uint16_t frameLength);
-
 
         //     - Master Channel Demultiplexing
 
@@ -362,33 +277,6 @@ namespace CCSDSDataLinkLayer {
         packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t *packetDest);
 
         // TM TransferFrame - Sending End (TM Tx)
-
-        //     - Utility and Debugging
-        uint16_t availableFramesAfterVcGenerationTxTM() const {
-            return masterChannel.framesAfterVcGenerationServiceTxTM.available();
-        }
-
-        /**
-         * Returns the available space in the packetLengthBufferTxTM buffer
-         */
-        uint16_t availablePacketLengthBufferTxTM(uint8_t gvcid);
-
-        /**
-         * Returns the available space in the packetBufferTxTM buffer
-         */
-        uint16_t availablePacketBufferTxTM(uint8_t gvcid);
-
-        /**
-         * Return the last stored TM transfer frame from framesAfterVcGenerationServiceTxTM buffer
-         */
-        std::pair<ServiceChannelNotification, const TransferFrameTM *> backFrameAfterVcGenerationTxTM() const;
-
-        /**
-         * Fetch packet in the top of the MC buffer
-         */
-        const TransferFrameTM *frontFrameAfterVcGenerationTxTM() const {
-            return masterChannel.framesAfterVcGenerationServiceTxTM.front();
-        }
 
         //     - Packet Processing and Virtual Channel Generation
 
@@ -481,46 +369,32 @@ namespace CCSDSDataLinkLayer {
 
 
         // TM TransferFrame - Receiving End (TM Rx)
-
-        //     - Utility and Debugging
-        /**
-         * Available number of incoming TM transfer frames in virtual channel buffer
-         */
-//        uint16_t availableFramesVcCopyRxTM(uint8_t vid) const {
-//            if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-//                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-//                return ServiceChannelNotification::INVALID_VC_ID;
-//            }
-//            return masterChannel.virtualChannels.at(vid).availableFramesVcCopyRxTM();
-//        }
-
-        uint16_t availableFramesMcCopyRxTM() const {
-            return masterChannel.masterCopyRxTM.available();
-        }
-
-        uint8_t getFrameCountTM(uint8_t vid);
-
-        uint8_t getFrameCountTM() const;
-
-        //     - All Frames Reception
-        /**
-         * The  All  Frames  Reception  Function  shall  be  used  to  perform  error  control
-         * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
-         * rate to the Channel Coding Sublayer. Also writes the received transfer frame data to the provided pointer.
-         * @see p. 4.3.7 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
-         */
-        ServiceChannelNotification allFramesReceptionRequestRxTM(uint8_t *frameData, uint16_t frameLength);
-
-        //     - Virtual Channel Reception
-
-        //     - Packet Extraction
-        /**
-         * This service is used for extracting RX TM packets. It signals the end of the TM Rx chain
-         *
-         * @param vid           Virtual Channel ID that determines from which vid buffer the frame is processed
-         * @param packetTarget A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
-         */
-        ServiceChannelNotification packetExtractionRxTM(uint8_t vid, uint8_t *packetTarget);
+//
+//        //     - Utility and Debugging
+//
+//        [[nodiscard]] uint8_t getVirtualChannelFrameCountTM(uint8_t vid);
+//
+//        [[nodiscard]] uint8_t getMasterChannelFrameCountTM() const;
+//
+//        //     - All Frames Reception
+//        /**
+//         * The  All  Frames  Reception  Function  shall  be  used  to  perform  error  control
+//         * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
+//         * rate to the Channel Coding Sublayer. Also writes the received transfer frame data to the provided pointer.
+//         * @see p. 4.3.7 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
+//         */
+//        ServiceChannelNotification allFramesReceptionRequestRxTM(uint8_t *frameData, uint16_t frameLength);
+//
+//        //     - Virtual Channel Reception
+//
+//        //     - Packet Extraction
+//        /**
+//         * This service is used for extracting RX TM packets. It signals the end of the TM Rx chain
+//         *
+//         * @param vid           Virtual Channel ID that determines from which vid buffer the frame is processed
+//         * @param packetTarget A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
+//         */
+//        ServiceChannelNotification packetExtractionRxTM(uint8_t vid, uint8_t *packetTarget);
 
         // Not sure about the purpose of that one
         /**
@@ -563,9 +437,9 @@ namespace CCSDSDataLinkLayer {
         }
 
         // This is honestly a bit confusing
-        ServiceChannel(const MasterChannel &masterChannel, const PhysicalChannel &physicalChannel,
-                       const SecurityAssociation &senderSA, const SecurityAssociation &receiverSA)
-                : masterChannel(masterChannel), physicalChannel(physicalChannel), senderSA(senderSA),
+        ServiceChannel(const MasterChannel& masterChannel, const PhysicalChannel &physicalChannel,
+                       SecurityAssociation& senderSA, const SecurityAssociation& receiverSA)
+                : masterChannel(masterChannel), physicalChannel(physicalChannel), senderSA(std::move(senderSA)),
                   receiverSA(receiverSA) {}
 
         //Default constructor

@@ -5,23 +5,6 @@
 
 namespace CCSDSDataLinkLayer {
 
-// Master Channel
-// Technically not a transfer frame, but it has identical information
-// @todo consider another data structure
-
-    MasterChannelAlert MasterChannel::storeOut(TransferFrameTC *transferFrameTc) {
-        if (outFramesBeforeAllFramesGenerationListTxTC.full()) {
-            // Log that buffer is full
-            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMasterChannelAlert, MasterChannelAlert::OUT_FRAMES_LIST_FULL);
-            return MasterChannelAlert::OUT_FRAMES_LIST_FULL;
-        }
-        outFramesBeforeAllFramesGenerationListTxTC.push_back(transferFrameTc);
-        uint8_t vid = transferFrameTc->getVirtualChannelId();
-        // virtChannels.at(0).fop.
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMasterChannelAlert, MasterChannelAlert::NO_MC_ALERT);
-        return MasterChannelAlert::NO_MC_ALERT;
-    }
-
     MasterChannelAlert
     MasterChannel::addVC(const uint8_t vcid, const bool segmentHeaderPresent, const uint16_t maxFrameLength,
                          const bool blockingTM,
@@ -86,7 +69,7 @@ namespace CCSDSDataLinkLayer {
         return MasterChannelAlert::NO_MC_ALERT;
     }
 
-    void MasterChannel::removeMasterTx(TransferFrameTC *frame_ptr) {
+    void MasterChannel::removeMasterTxTC(TransferFrameTC *frame_ptr) {
         etl::list<TransferFrameTC, MaxTxInMasterChannel>::iterator it;
         for (it = masterCopyTxTC.begin(); it != masterCopyTxTC.end(); ++it) {
             if (&it == frame_ptr) {
@@ -96,7 +79,7 @@ namespace CCSDSDataLinkLayer {
         }
     }
 
-    void MasterChannel::removeMasterTx(TransferFrameTM *frame_ptr) {
+    void MasterChannel::removeMasterTxTM(TransferFrameTM *frame_ptr) {
         etl::list<TransferFrameTM, MaxTxInMasterChannel>::iterator it;
         for (it = masterCopyTxTM.begin(); it != masterCopyTxTM.end(); ++it) {
             if (&it == frame_ptr) {
@@ -106,7 +89,7 @@ namespace CCSDSDataLinkLayer {
         }
     }
 
-    void MasterChannel::removeMasterRx(TransferFrameTC *frame_ptr) {
+    void MasterChannel::removeMasterRxTC(TransferFrameTC *frame_ptr) {
         etl::list<TransferFrameTC, MaxRxInMasterChannel>::iterator it;
         for (it = masterCopyRxTC.begin(); it != masterCopyRxTC.end(); ++it) {
             if (&it == frame_ptr) {
@@ -116,21 +99,14 @@ namespace CCSDSDataLinkLayer {
         }
     }
 
-    void MasterChannel::removeMasterRx(TransferFrameTM *frame_ptr) {
-        etl::list<TransferFrameTM, MaxRxInMasterChannel>::iterator it;
-        for (it = masterCopyRxTM.begin(); it != masterCopyRxTM.end(); ++it) {
-            if (&it == frame_ptr) {
-                masterCopyRxTM.erase(it);
-                return;
-            }
-        }
-    }
-
-    TransferFrameTC MasterChannel::getLastTxMasterCopyTcFrame() {
-        return masterCopyTxTC.back();
-    }
-
-    TransferFrameTC MasterChannel::geFirstTxMasterCopyTcFrame() {
-        return masterCopyTxTC.front();
-    }
+// RxTM chain
+//    void MasterChannel::removeMasterRxTM(TransferFrameTM *frame_ptr) {
+//        etl::list<TransferFrameTM, MaxRxInMasterChannel>::iterator it;
+//        for (it = masterCopyRxTM.begin(); it != masterCopyRxTM.end(); ++it) {
+//            if (&it == frame_ptr) {
+//                masterCopyRxTM.erase(it);
+//                return;
+//            }
+//        }
+//    }
 } // namespace CCSDSDataLinkLayer

@@ -3,11 +3,6 @@ flowchart TB
         subgraph A1 ["Packet Processing"]
             A1s1[["storePacketTxTc(packet, packetLength, vid, mapid, serviceType)"]]
             A1s2[["packetProcessingRequestTxTC(vid, mapid, transferFrameDataLength, serviceType)<br>calls internally:<br>-segmentationTC<br>-blockingTC"]]
-            A1s3[["frontUnprocessedFrameMcCopyTxTC()"]]
-            A1s4[["getLastMasterCopyTcFrame()"]]
-            A1s5[["backUnprocessedFrameMcCopyTxTC()"]]
-            A1s6[["frontFrameBeforeSDLSProcessing(vid)"]]
-            A1s7[["getFramesBeforeSDLSProcessing(vid)"]]
 
             subgraph MAP_AD ["MAP Type AD Buffers"]
                 map4
@@ -44,15 +39,7 @@ flowchart TB
             A1s1 --> A1s2
             A1s2 -.->|"(from segmentation,blocking)"| master16
             A1s2 -.->|"(from segmentation,blocking)"| master12
-            A1s3 -.front reference.-master12
-                        A1s4 -.back reference.-master12
-            A1s5 -.back reference.-master12
-
             A1s2 -.-> |"(from segmentation,blocking)"|vc16
-
-            A1s6 -.front reference.-vc16
-            A1s7 -.get queue reference.-vc16
-
         end
 
         subgraph A2 ["SDLS Processing"]
@@ -67,14 +54,16 @@ flowchart TB
 
         subgraph A3 ["Virtual Channel Generation"]
             A3s1[["vcGenerationRequestTxTC(vid)<br>Calls internally:<br>-transferFdu (fop service)"]]
-            A3s2[["frontFrameBeforeAllFramesGenerationTxTC()"]]
+            A3s3[["pushDirectiveRequestSignal(vid, directiveRequestSignal)"]]
+            A3s4[["pushClcwToFop(vid, clcw);"]]
 
+            A3s3 --> |"Push directive to FOP's queue"| A3s1
+            A3s4 --> |"Push clcw to FOP's queue"| A3s1
             A2s1 --> A3s1
             A3s1 -..->|"From fop (BC frame generation)"| master12
             A3s1 -..-x|"From fop (after reception confirmation, AD and BC)"| master16
             A3s1 -.-x vc7
             A3s1 -.-> master1
-            A3s2 -.-|"front reference"| master1
         end
 
         
@@ -90,31 +79,25 @@ flowchart TB
 
     subgraph B ["TC Rx Services"]
         subgraph B1["All Frames Reception"]
-
             B1s2[["allFramesReceptionRequestRxTC()"]]
-            B1s7[["getAvailableBeforeVcReceptionRxTC(vid)"]]
-
             B1s2 -..-> master14
             B1s2 -..-> master20
             B1s2 -.->vc3
-            B1s7 -..-|"remaining space"| vc3
         end
 
         subgraph B2["Virtual Channel Reception"]
             B2s1[["vcReceptionRxTC(vid)<br>calls internally:<br>frameArrives<br>(FARM)"]]
-            B2s3[["getAvailableinFramesAfterVCReceptionTybeADRxTC(vid)"]]
-            B2s4[["getAvailableinFramesAfterVCReceptionTybeBDRxTC(vid)"]]
+            B2s5[["injectClcw(clcw, vid)"]]
 
             B1s2 --> B2s1
             B2s1 --->|"push CLCW to corresponding queue"| master18
+            B2s5 --->|"manually insert clcw's to queues (debugging)"| master18
             B2s1 -..->|farm insertion| vc6
             B2s1 -..->|farm insertion| vc21
 
             B2s1 -..-x|"farm deletion"| vc3
             B2s1 -..-x|"farm deletion (lockout state)"| master14
             B2s1 -..-x|"farm deletion (lockout state)"| master20
-            B2s3 -.-|"remaining space"| vc6
-            B2s4 -.-|"remaining space"| vc21
         end
 
         subgraph B3["SDLS Processing"]
@@ -151,27 +134,14 @@ flowchart TB
     subgraph C ["TM Tx Services"]
         subgraph C1["Packet Processing"]
             C1s1[["storePacketTxTM(packet, packetLength, vid)"]]
-            C1s2[["availablePacketLengthBufferTxTM(gvcid)"]]
-            C1s3[["availablePacketBufferTxTM(gvcid)"]]
-
             C1s1 -.-> vc8 & vc9
-            C1s2 -.-|"available space"| vc8
-            C1s3 -.-|"available space"| vc9
         end
 
         subgraph C2["Virtual Channel Generation"]
             C2s1[["vcGenerationServiceTxTM(transferFrameDataFieldLength, vid) <br> calls internally:<br>-segmentationTM<br>-blockingTM<br>-generateacket"]]
-            C2s2[["availableFramesAfterVcGenerationTxTM()"]]
-            C2s3[["backFrameAfterVcGenerationTxTM()"]]
-            C2s4[["frontFrameAfterVcGenerationTxTM()"]]
-
-
             C1s1 --> C2s1
             C2s1 -.-x|"(from segmentation,blocking)"| vc8 & vc9
             C2s1 -.->|"(from segmentation,blocking)"| master13 & master11 & master17
-            C2s2 -.-|"remaining space"| master11
-            C2s3 -.-|"back reference"| master11
-            C2s4 -.-|"front reference"| master11
             end
 
         subgraph C3["Master Channel Generation"]
@@ -194,12 +164,8 @@ flowchart TB
     subgraph D["TM Rx Services"]
         subgraph D1["All Frames Reception"]
             D1s1[["allFramesReceptionRequestRxTM(frameData, frameLength)"]]
-            D1s2[["availableFramesVcCopyRxTM(vid)"]]
-            D1s3[["availableFramesMcCopyRxTM()"]]
 
             D1s1 -.-> master15 & vc1
-            D1s2 -.-|remaining space| vc1
-            D1s3 -.-|remaining space| master15
         end
 
         subgraph D2["Packet Extraction"]
@@ -210,8 +176,8 @@ flowchart TB
     end
 
     subgraph E["Legend"]
-        E1[[Necessary Service]]
-        E2[[Service for Debugging/Utility]]
+        E1[[Main Data Processing Function]]
+        E2[[Secondary/Utility Function]]
         E3[(MAP Channel Buffer)]
         E4[(Virtual Channel Buffer)]
         E5[(Master Channel Buffer)]
@@ -274,4 +240,4 @@ class map4,map5,map6,map7,map8,map9,E3 map_channel_buffer;
 class vc1,vc2,vc3,vc4,vc6,vc21,vc7,vc8,vc9,vc10,vc11,vc12,vc13,vc16,vc17,vc19,E4 virtual_channel_buffer;
 class master1,master4,master11,master12,master13,master14,master15,master16,master17,master18,master19,master20,E5 master_channel_buffer
 class A1s1,A1s2,A2s1,A3s1,A4s1,A4s2,B1s1,B1s2,B2s1,B3s1,B4s1,C1s1,C2s1,C3s1,C4s1,D1s1,D2s1,E1 main_services;
-class A1s3,A1s4,A1s5,A1s6,A1s7,A3s2,A4s3,A4s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,B2s4,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;
+class A1s3,A1s4,A1s5,A1s6,A1s7,A3s2,A3s3,A3s4,A4s3,A4s4,B1s4,B1s5,B1s6,B1s7,B2s2,B2s3,B2s4,B2s5,C1s2,C1s3,C2s2,C2s3,C2s4,C4s2,D1s2,D1s3,E2 utility_services;

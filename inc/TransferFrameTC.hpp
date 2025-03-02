@@ -1,3 +1,8 @@
+/**
+ * @file TransferFrameTC.hpp
+ * @brief Defines a specialized transfer frame for carrying telecommand packets.
+ */
+
 #pragma once
 
 #include "etl/optional.h"
@@ -5,10 +10,10 @@
 #include "TransferFrame.hpp"
 
 namespace CCSDSDataLinkLayer {
-/**
- *  The transferFrameData's service type
- *  @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
- */
+   /**
+    *  @brief The frame's service type.
+    *  @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
+    */
     enum class ServiceType : uint8_t {
         TYPE_AD = 0x0,
         TYPE_RESERVED = 0x1,
@@ -16,6 +21,9 @@ namespace CCSDSDataLinkLayer {
         TYPE_BC = 0x3,
     };
 
+    /**
+     * @brief Indicates whether a frame carries a segmented packet.
+     */
     enum class SequenceFlags : uint8_t {
         SegmentationMiddle = 0x0,
         SegmentationStart = 0x1,
@@ -26,7 +34,7 @@ namespace CCSDSDataLinkLayer {
     class TransferFrameTC : public TransferFrame {
     public:
         /**
-         * Constructor for frame creation within the data link
+         * @brief Constructor for frame creation within the data link.
          */
         TransferFrameTC(uint8_t *frameData, ServiceType serviceType, uint8_t vid, uint16_t frameLength,
                         bool segHdrPresent,
@@ -50,13 +58,13 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Constructor for frame creation from received octets
+         * @brief Constructor for frame creation from received octets.
          */
         TransferFrameTC(uint8_t *frameData, uint16_t frameLength, uint16_t firstEmptyOctet = 0)
                 : TransferFrame(FrameType::TC, frameLength, frameData, firstEmptyOctet) {};
 
         /**
-         * Compares two frames
+         * @brief Compares two frames.
          */
         friend bool operator==(const TransferFrameTC &frame1, const TransferFrameTC &frame2) {
             if (frame1.transferFrameLength != frame2.transferFrameLength) {
@@ -73,7 +81,7 @@ namespace CCSDSDataLinkLayer {
         /** === PRIMARY HEADER === **/
 
         /**
-         *  Transfer frame version number
+         *  @brief Transfer frame version number.
          * @details Bits 0-1 of the Transfer Frame Primary Header
          * @see p. 4.1.2.2 from TC SPACE DATA LINK PROTOCOL
          */
@@ -82,7 +90,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * The bypass Flag determines whether the transferFrameData will bypass FARM checks
+         * @brief The bypass Flag determines whether the transferFrameData will bypass FARM checks.
          * @details Bit 2 of the Transfer Frame Primary Header
          * @see p. 4.1.2.3.1 from TC SPACE DATA LINK PROTOCOL
          */
@@ -91,8 +99,8 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * The control and command Flag determines whether the transferFrameData carries control commands (Type-C) or
-         * data (Type-D)
+         * @brief The control and command Flag determines whether the transferFrameData carries control commands (Type-C) or
+         * data (Type-D).
          * @details Bit 3 of the Transfer Frame Primary Header
          * @see p. 4.1.2.3.2 from TC SPACE DATA LINK PROTOCOL
          */
@@ -101,7 +109,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * The ID of the spacecraft
+         * @brief The ID of the spacecraft.
          * @details Bits  6–15 of  the  Transfer  Frame  Primary  Header
          * @see p. 4.1.2.5 from TC SPACE DATA LINK PROTOCOL
          */
@@ -111,7 +119,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * The virtual channel ID this frame is transferred in
+         * @brief The virtual channel ID this frame is transferred in.
          * @details Bits 16–21 of the Transfer Frame Primary Header
          * @see p. 4.1.2.6 from TC SPACE DATA LINK PROTOCOL
          */
@@ -120,7 +128,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * The length of the transfer frame
+         * @brief The length of the transfer frame.
          * @details Bits 22–31 of the Transfer Frame Primary Header
          * @see p. 4.1.2.7 from TC SPACE DATA LINK PROTOCOL
          */
@@ -130,7 +138,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * The sequence number of the frame. It is used by COP-1 to determine if a frame did not
+         * @brief The sequence number of the frame. It is used by COP-1 to determine if a frame did not
          * arrive to the sending end.
          * @details Bits 32-39 of the Transfer Frame Primary Header
          * @see p. 4.1.2.8 from TC SPACE DATA LINK PROTOCOL
@@ -144,7 +152,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Determined by the sequence and control&command flags.
+         * @brief Determined by the sequence and control&command flags.
          * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] ServiceType getServiceType() const {
@@ -171,7 +179,7 @@ namespace CCSDSDataLinkLayer {
 
         /** === SEGMENTATION HEADER === **/
 
-        /** The segmentation header stores
+        /** @brief The segmentation header stores.
          * @see p. 4.1.3.2.2 from TC SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] etl::optional<uint8_t> getSegmentationHeader() const {
@@ -213,7 +221,10 @@ namespace CCSDSDataLinkLayer {
         }
 
     private:
-        etl::optional<bool> toBeRetransmitted; // Used by FOP-1 (sending side) to determine if the frame should be retransmitted
+        /**
+         * @brief Used by FOP-1 (sending side) to determine if a Type-AD transfer frame should be retransmitted.
+         */
+        etl::optional<bool> toBeRetransmitted;
         bool segmentationHeaderPresent;
     };
 } // namespace CCSDSDataLinkLayer

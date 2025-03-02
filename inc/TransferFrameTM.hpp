@@ -1,3 +1,8 @@
+/**
+ * @file TransferFrameTM.hpp
+ * @brief Defines a specialized transfer frame for carrying telemetry packets.
+ */
+
 #pragma once
 
 #include "etl/optional.h"
@@ -5,6 +10,14 @@
 #include "CCSDS_Definitions.hpp"
 
 namespace CCSDSDataLinkLayer {
+    /**
+     * @brief Indicates the type of data carried by the TM transfer frame.
+     *
+     * @details OCTET_SYNCHRONIZED_FORWARD_ORDERED packets are of known structure to the data link ("Space Packets"
+     * as defined in the CCSDS Space Packet Protocol). VCA_SDU is for packets of unknown structure.
+     * 
+     * @see p. 4.1.2.7.3 from TM Space Data Link Protocol
+     */
     enum class SynchronizationFlag : bool {
         OCTET_SYNCHRONIZED_FORWARD_ORDERED = false,
         VCA_SDU = true
@@ -13,7 +26,7 @@ namespace CCSDSDataLinkLayer {
     class TransferFrameTM : public TransferFrame {
     public:
         /**
-         * Constructor for frame creation within the data link (operational control field remains uninitialized)
+         * @brief Constructor for frame creation within the data link (operational control field remains uninitialized).
          */
         TransferFrameTM(uint8_t *frameData, uint16_t frameLength, uint8_t vcid, bool operationalControlFieldPresent,
                         uint8_t virtualChannelFrameCount, bool transferFrameSecondaryHeaderPresent,
@@ -38,7 +51,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Constructor for frame creation within the data link (operational control field is initialized)
+         * @brief Constructor for frame creation within the data link (operational control field is initialized).
          */
         TransferFrameTM(uint8_t *frameData, uint16_t frameLength, uint16_t vcid, uint32_t operationalControlField,
                         uint8_t virtualChannelFrameCount, bool transferFrameSecondaryHeaderPresent,
@@ -67,25 +80,25 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Constructor for frame creation from received octets
+         * @brief Constructor for frame creation from received octets.
          */
         TransferFrameTM(uint8_t *frameData, uint16_t frameLength, bool eccFieldExists, uint16_t firstEmptyOctet = 0)
                 : TransferFrame(FrameType::TM, frameLength, frameData, firstEmptyOctet),
                 eccFieldPresent(eccFieldExists) {}
 
         /**
-         * Transfer frame version number
+         * @brief Transfer frame version number.
          * @details Bits 0-1 of the Transfer Frame Primary Header
-         * @see p. 4.1.2.2.2 from TC SPACE DATA LINK PROTOCOL
+         * @see p. 4.1.2.2.2 from TM SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] uint8_t getTransferFrameVersionNumber() const {
             return (transferFrameData[0] & 0xC0) >> 6U;
         }
 
         /**
-         * The ID of the spacecraft
+         * @brief The ID of the spacecraft.
          * @details Bits  2–11  of  the  Transfer  Frame  Primary  Header
-         * @see p. 4.1.2.2.3 from TC SPACE DATA LINK PROTOCOL
+         * @see p. 4.1.2.2.3 from TM SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] uint16_t getSpacecraftId() const {
             return (static_cast<uint16_t>(transferFrameData[0] & 0x3F) << 4U) |
@@ -93,16 +106,16 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * The virtual channel ID this frame is transferred in
+         * @brief The virtual channel ID this frame is transferred in
          * @details Bits 12–14 of the Transfer Frame Primary Header
-         * @see p. 4.1.2.3 from TC SPACE DATA LINK PROTOCOL
+         * @see p. 4.1.2.3 from TM SPACE DATA LINK PROTOCOL
         */
         [[nodiscard]] uint8_t getVirtualChannelId() const {
             return ((transferFrameData[1] & 0x0E)) >> 1U;
         }
 
         /**
-         * The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
+         * @brief The Operational Control Field Flag indicates the presence or absence of the Operational Control Field
          * @details Bit  15  of  the  Transfer  Frame  Primary  Header
          * @see p. 4.1.2.4 from TM SPACE DATA LINK PROTOCOL
          */
@@ -111,7 +124,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Provides  a  running  count  of  the  Transfer  Frames  which  have  been  transmitted  through  the
+         * @brief Provides  a  running  count  of  the  Transfer  Frames  which  have  been  transmitted  through  the
          * same  Master  Channel.
          * @details Bits  16–23  of  the  Transfer  Frame  Primary  Header
          * @see p. 4.1.2.5 from TM SPACE DATA LINK PROTOCOL
@@ -125,7 +138,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * contain  a  sequential  binary  count (modulo-256) of each Transfer Frame transmitted within a
+         * @brief contain  a  sequential  binary  count (modulo-256) of each Transfer Frame transmitted within a
          * specific Virtual Channel.
          * @details Bits  24–31  of  the  Transfer  Frame  Primary  Header
          * @see p. 4.1.2.6 from TM SPACE DATA LINK PROTOCOL
@@ -135,7 +148,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Indicates the presence of the secondary header.
+         * @brief Indicates the presence of the secondary header.
          * @details Bit  32  of  the Transfer  Frame  Primary  Header
          * @see p. 4.1.2.7.2 from TM SPACE DATA LINK PROTOCOL
          */
@@ -145,7 +158,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Signals the type of data which are inserted into the Transfer Frame Data Field (VCA_SDU or Packets).
+         * @brief Signals the type of data which are inserted into the Transfer Frame Data Field (VCA_SDU or Packets).
          * @details Bit 33 of the Transfer Frame Primary Header
          * @see p. 4.1.2.7.3 from TM SPACE DATA LINK PROTOCOL
          */
@@ -155,10 +168,11 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * If the Synchronization Flag is set to ‘0’,t he TransferFrame Order Flag is reserved for
-                    future use by the CCSDS and shall be set to ‘0’. If the Synchronization Flag is
-                    set to ‘1’, the use of the TransferFrame Order Flag is undefined.
-         * @details Bit 34 of the Transfer Frame Primary Header
+         * @brief Reserved value for future protocol versions.
+         * @details If the Synchronization Flag is set to ‘0’,t he TransferFrame Order Flag is reserved for
+         * future use by the CCSDS and shall be set to ‘0’. If the Synchronization Flag is
+         * set to ‘1’, the use of the TransferFrame Order Flag is undefined.
+         * Bit 34 of the Transfer Frame Primary Header
          * @see p. 4.1.2.7.4 from TM SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] bool getPacketOrderFlag() const {
@@ -166,7 +180,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Segment Length Id indicates the order of the segmented packets
+         * @brief Segment Length Id indicates the order of the segmented packets
          * @details Bits 35 and 36 of the Transfer Frame Primary Header.
          * @see p. 4.1.2.7.5 from TM SPACE DATA LINK PROTOCOL
          */
@@ -175,7 +189,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * If the Synchronization Flag is set to ‘0’, the First Header Pointer shall contain
+         * @brief If the Synchronization Flag is set to ‘0’, the First Header Pointer shall contain
          *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field.
          *		Otherwise it is undefined.
          * @details Bits 37–47 of the Transfer Frame Primary Header
@@ -187,12 +201,12 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
+         * @details Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
          *							b) Synchronization Flag (1 bit)
          *							c) TransferFrame Order Flag (1 bit)
          *							d) Segment Length Identifier (2 bits)
          *							e) First Header Pointer (11 bits)
-         * @details Bits  32–47  of  the  Transfer  Frame  Primary  Header.
+         * Bits  32–47  of  the  Transfer  Frame  Primary  Header.
          * @see p. 4.1.2.7 from TM SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] uint16_t getTransferFrameDataFieldStatus() const {
@@ -201,6 +215,11 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
+         * @brief Carry a report for the receiver.
+         *
+         * @details In this implementation, the operational control field is occupied by the CLCW,
+         * which is defined in the TC SPACE DATA LINK PROTOCOL.
+         *
          * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] etl::optional<uint32_t> getOperationalControlField() const {
@@ -226,6 +245,12 @@ namespace CCSDSDataLinkLayer {
         }
 
     private:
+        /**
+         * @brief Indicates the presence of the error control field.
+         *
+         * @details This parameter is used in combination with the transfer frame length to determine the position of
+         * the operational control field.
+         */
         bool eccFieldPresent;
     };
 } // namespace CCSDSDataLinkLayer
