@@ -2,6 +2,7 @@
 
 #include "CCSDSServiceChannel.hpp"
 #include "TransferFrameTM.hpp"
+#include "etl/expected.h"
 #include <queue>
 #include <array>
 
@@ -36,7 +37,7 @@ namespace CCSDSDataLinkLayer {
             serviceChannel->storePacketTxTM(packet, packetLength, vid);
         }
 
-        ServiceChannelNotification transmitChain(uint8_t vid);
+        etl::expected<void, ServiceChannelNotification> transmitChain(uint8_t vid);
 
 
         void popWaitingFrame(uint8_t *frameDest);

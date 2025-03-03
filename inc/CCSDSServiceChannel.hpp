@@ -9,6 +9,8 @@
 
 #include <utility>
 #include "etl/optional.h"
+#include "etl/expected.h"
+#include "etl/utility.h"
 #include "CCSDSChannel.hpp"
 #include "Alert.hpp"
 #include "TransferFrameTC.hpp"
@@ -38,12 +40,12 @@ namespace CCSDSDataLinkLayer {
         SecurityAssociation receiverSA;
 
     public:
-        /**
-         * @brief Get a reference to the master channel.
-         */
-        MasterChannel &getMasterChannel() {
+
+#ifdef ENABLE_BUFFER_ACCESS
+        MasterChannel& getMasterChannel() {
             return masterChannel;
         }
+#endif
 
         // Public methods that are called by the scheduler
 
@@ -62,7 +64,7 @@ namespace CCSDSDataLinkLayer {
          * @param serviceType                    Whether the service is of type AD or BC.
          * @return A Service Channel Notification indicating whether an error has occurred.
          */
-        ServiceChannelNotification segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+        etl::expected<void, ServiceChannelNotification> segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                                   uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
         /**
@@ -77,7 +79,7 @@ namespace CCSDSDataLinkLayer {
          * @param serviceType                    Whether the service is of type AD or BC.
          * @return A Service Channel Notification indicating whether an error has occurred.
          */
-        ServiceChannelNotification blockingTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+        etl::expected<void, ServiceChannelNotification> blockingTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                               uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
         /**
@@ -90,7 +92,7 @@ namespace CCSDSDataLinkLayer {
          *                      (segmentHeaderTCPresent == false) or if the service type is BC.
          * @param serviceType  Type AD, BD frames
          */
-        ServiceChannelNotification storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid,
+        etl::expected<void, ServiceChannelNotification> storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid,
                                                    ServiceType serviceType, etl::optional<uint8_t> mapid = etl::nullopt);
 
         /**
@@ -111,7 +113,7 @@ namespace CCSDSDataLinkLayer {
          * @param serviceType               Service type of resulting frame. Only packets from the respective service will
          *                                  be grouped together
          */
-        ServiceChannelNotification
+        etl::expected<void, ServiceChannelNotification>
         packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
                                     ServiceType serviceType);
 
@@ -120,7 +122,7 @@ namespace CCSDSDataLinkLayer {
          * Apply security services for TC frames
          * @param mapid Is ignored if no MAP channels exist for the given virtual channel
          */
-        ServiceChannelNotification applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid);
+        etl::expected<void, ServiceChannelNotification> applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid);
 
         //     - Virtual Channel Generation
         /**
@@ -140,18 +142,18 @@ namespace CCSDSDataLinkLayer {
          * @note If an alert is contained within the asynchronous notification, an unrecoverable error occurred within FOP-1,
          *       which demands action from a higher layer. Only Type-BD frame transmission remains undisrupted.
          */
-        std::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vid);
+        etl::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vid);
 
 
         //         -- FOP-1 User services and debugging methods
 
-        ServiceChannelNotification
+        etl::expected<void, ServiceChannelNotification>
         pushDirectiveRequestSignal(uint8_t vid, const DirectiveRequestSignal &directiveRequestSignal);
 
         /**
          *  Push a CLCW to FOP-1's single capacity queue for inspection. The old CLCW (if it exists) is overwritten.
          */
-        ServiceChannelNotification pushClcwToFop(uint8_t vid, CLCW clcw);
+        etl::expected<void, ServiceChannelNotification> pushClcwToFop(uint8_t vid, CLCW clcw);
 
         /**
          * Get FOP State of the virtual channel
@@ -203,7 +205,7 @@ namespace CCSDSDataLinkLayer {
          *
          * @returns The number of octets copied (since TC transfer frames have variable length)
          */
-        std::pair<ServiceChannelNotification, uint16_t> allFramesGenerationRequestTxTC(uint8_t *frameTarget);
+        etl::expected<uint16_t, ServiceChannelNotification> allFramesGenerationRequestTxTC(uint8_t *frameTarget);
 
         // TC TransferFrame - Receiving End (TC Rx)
 
@@ -225,7 +227,7 @@ namespace CCSDSDataLinkLayer {
          * for frames.
          * @see p. 4.2.7 from TC Space Data Link Protocol
          */
-        ServiceChannelNotification allFramesReceptionRequestRxTC(uint8_t *frameData, uint16_t frameLength);
+        etl::expected<void, ServiceChannelNotification> allFramesReceptionRequestRxTC(uint8_t *frameData, uint16_t frameLength);
 
         //     - Master Channel Demultiplexing
 
@@ -236,21 +238,21 @@ namespace CCSDSDataLinkLayer {
          * Procedure (COP).
          * @see  p. 4.4.5 from TC Space Data Link Protocol
          */
-        std::pair<ServiceChannelNotification, uint8_t> vcReceptionRxTC(uint8_t vid);
+        etl::pair<ServiceChannelNotification, uint8_t> vcReceptionRxTC(uint8_t vid);
 
         //     - FARM-1 utility and debugging functions
         /**
          * Directly inject a clcw to the corresponding master channel data structure (this process is normally handled
          * inside FARM-1). Offered for situations where the TM-Tx chain needs to be tested, but the TC-Rx chain is not available.
          */
-        ServiceChannelNotification injectClcw(uint32_t clcw, uint8_t vid);
+        etl::expected<void, ServiceChannelNotification> injectClcw(uint32_t clcw, uint8_t vid);
 
         //    - SDLS Processing
         /**
          * Processes TC frames that belong in a security association and discards them if they do not pass checks.
          * @param mapid Is ignored if no MAP channels exist for the given virtual channel
          */
-        ServiceChannelNotification processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType);
+        etl::expected<void, ServiceChannelNotification> processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
         //     - Packet Extraction
         /**
@@ -273,7 +275,7 @@ namespace CCSDSDataLinkLayer {
          *       unexpected packet with size larger than MaxPacketSize arrive, the packet copy will be partial (up to
          *       MaxPacketSize), but the user will not be alerted (a 'NO_SERVICE_EVENT' is returned).
          */
-        std::pair<ServiceChannelNotification, uint16_t>
+        etl::expected<uint16_t , ServiceChannelNotification>
         packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t *packetDest);
 
         // TM TransferFrame - Sending End (TM Tx)
@@ -289,7 +291,7 @@ namespace CCSDSDataLinkLayer {
          * @param packetLength length of the packet
          * @param vid the virtual channel id
          */
-        ServiceChannelNotification storePacketTxTM(uint8_t *packet, uint16_t packetLength, uint8_t vid);
+        etl::expected<void, ServiceChannelNotification> storePacketTxTM(uint8_t *packet, uint16_t packetLength, uint8_t vid);
 
         /**
          * Function used by the vcGenerationServiceTxTM function to implement the segmentation of packets stored in
@@ -303,7 +305,7 @@ namespace CCSDSDataLinkLayer {
          * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
          * @return                             A Service Channel Notification as it is the case with vcGenerationServiceTxTM
          */
-        ServiceChannelNotification segmentationTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength,
+        etl::expected<void, ServiceChannelNotification> segmentationTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength,
                                                   uint16_t packetLength, uint8_t vid);
 
         /**
@@ -318,7 +320,7 @@ namespace CCSDSDataLinkLayer {
          * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
          * @return                               A Service Channel Notification
          */
-        ServiceChannelNotification blockingTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength,
+        etl::expected<void, ServiceChannelNotification> blockingTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength,
                                               uint16_t packetLength, uint8_t vid);
 
         /**
@@ -330,7 +332,7 @@ namespace CCSDSDataLinkLayer {
          * @param lastPacketPlacedIdle  An indicator on whether the last packet placed in a frame was idle.
          * @return                      A service channel notification and an indication on whether an idle packet was generated or not
          */
-        std::pair<ServiceChannelNotification, bool>
+        etl::expected<bool, ServiceChannelNotification>
         generateIdleSpacePacket(uint8_t vid, TransferFrameTM *lastProcessedFrame, uint16_t transferFrameDataFieldLength,
                                 bool lastPacketPlacedIdle);
 
@@ -346,7 +348,7 @@ namespace CCSDSDataLinkLayer {
          * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
          * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
          */
-        ServiceChannelNotification vcGenerationServiceTxTM(uint16_t transferFrameDataFieldLength, uint8_t vid);
+        etl::expected<void, ServiceChannelNotification> vcGenerationServiceTxTM(uint16_t transferFrameDataFieldLength, uint8_t vid);
 
         //     - Master Channel Generation
         /**
@@ -355,7 +357,7 @@ namespace CCSDSDataLinkLayer {
          * of a Master Channel.
          * @see p. 4.2.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
          */
-        ServiceChannelNotification mcGenerationRequestTxTM();
+        etl::expected<void, ServiceChannelNotification> mcGenerationRequestTxTM();
 
         //     - All Frames Generation
         /**
@@ -365,7 +367,7 @@ namespace CCSDSDataLinkLayer {
          * @see p. 4.2.7 from TM Space Data Link Protocol
          * @TODO do not forget to have a mechanism for sending frames at an appropriate rate (unless lower layers can handle it by transmitting empty codewords)
          */
-        ServiceChannelNotification allFramesGenerationRequestTxTM(uint8_t *frameDataTarget);
+        etl::expected<void, ServiceChannelNotification> allFramesGenerationRequestTxTM(uint8_t *frameDataTarget);
 
 
         // TM TransferFrame - Receiving End (TM Rx)
@@ -437,10 +439,10 @@ namespace CCSDSDataLinkLayer {
         }
 
         // This is honestly a bit confusing
-        ServiceChannel(const MasterChannel& masterChannel, const PhysicalChannel &physicalChannel,
-                       SecurityAssociation& senderSA, const SecurityAssociation& receiverSA)
+        ServiceChannel(const MasterChannel& masterChannel, const PhysicalChannel& physicalChannel,
+                       SecurityAssociation senderSA, SecurityAssociation  receiverSA)
                 : masterChannel(masterChannel), physicalChannel(physicalChannel), senderSA(std::move(senderSA)),
-                  receiverSA(receiverSA) {}
+                  receiverSA(std::move(receiverSA)) {}
 
         //Default constructor
         ServiceChannel() : masterChannel(), physicalChannel(), senderSA(), receiverSA() {};

@@ -53,6 +53,7 @@ add_executable(ccsds_tm_packets_yamcs_connection
         src/Platform/x86/FrameSender.cpp
         src/Platform/x86/main.cpp
         )
+target_compile_definitions(ccsds_tm_packets_yamcs_connection PRIVATE ENABLE_BUFFER_ACCESS)
 add_dependencies(ccsds_tm_packets_yamcs_connection TinyCryptLib) # ensure "TinyCryptLib" target is built first
 target_link_libraries(ccsds_tm_packets_yamcs_connection PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 

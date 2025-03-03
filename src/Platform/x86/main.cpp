@@ -27,7 +27,6 @@ namespace CCSDSDataLinkLayer {
         frameMaker.clcwFeeder(clcw, vid);
 
         // Transmit through certain virtual channels
-        ServiceChannelNotification err;
         frameMaker.transmitChain(vid);
 
         printf("Frame Length: %d", frameMaker.getFrameLength());

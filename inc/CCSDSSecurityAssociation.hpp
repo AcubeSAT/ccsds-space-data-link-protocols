@@ -139,6 +139,7 @@ namespace CCSDSDataLinkLayer {
 
 
     public:
+        // default constructor
         SecurityAssociation() {
             saConfig = NO_SECURITY;
         }

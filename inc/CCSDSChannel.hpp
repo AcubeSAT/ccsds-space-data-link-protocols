@@ -515,9 +515,9 @@ namespace CCSDSDataLinkLayer {
 // Allow access to internal buffers when unit testing
 #ifdef ENABLE_BUFFER_ACCESS
     public:
-        etl::list<TransferFrameTM *, MaxReceivedRxTmInVirtBuffer>& getfFramesAfterMcReceptionRxTM() {
-            return framesAfterMcReceptionRxTM;
-        }
+        etl::flat_map<uint8_t, MAPChannel, MaxMapChannels>& getMapChannels() {
+            return mapChannels;
+        };
 
         etl::list<TransferFrameTC *, MaxReceivedRxTcInWaitQueue>& getInFramesBeforeVcReceptionRxTC() {
             return inFramesBeforeVcReceptionRxTC;
@@ -702,6 +702,10 @@ namespace CCSDSDataLinkLayer {
 
 // Allow access to internal buffers when unit testing
 #ifdef ENABLE_BUFFER_ACCESS
+    public:
+        etl::flat_map<uint8_t, VirtualChannel, MaxVirtualChannels>& getVirtualChannels() {
+            return virtualChannels;
+        }
         etl::list<TransferFrameTC *, MaxReceivedTxTcInMasterBuffer>& getOutFramesBeforeAllFramesGenerationListTxTC() {
             return outFramesBeforeAllFramesGenerationListTxTC;
         }

@@ -6,7 +6,6 @@ namespace CCSDSDataLinkLayer {
 /** FOP-1 actions **/
     FOPNotification FrameOperationProcedure::purgeSentQueue() {
         etl::ilist<TransferFrameTC *>::iterator sent_queue_it = sentQueueFOP.begin();
-        etl::ilist<TransferFrameTC>::iterator master_copy_it;
 
         if (sent_queue_it == sentQueueFOP.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::SENT_QUEUE_EMPTY);

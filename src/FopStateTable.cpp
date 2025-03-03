@@ -475,11 +475,14 @@ namespace CCSDSDataLinkLayer {
                     eventCode = 18;
                     switch (state) {
                         case FOPState::ACTIVE:
-                            suspendState = SuspendVariableState::SUSPENDED_PREV_STATE_ACTIVE; // fallthrough
+                            suspendState = SuspendVariableState::SUSPENDED_PREV_STATE_ACTIVE;
+                            [[fallthrough]];
                         case FOPState::RETRANSMIT_WITHOUT_WAIT:
-                            suspendState = SuspendVariableState::SUSPENDED_PREV_STATE_RETRANSMIT_WITHOUT_WAIT; // fallthrough
+                            suspendState = SuspendVariableState::SUSPENDED_PREV_STATE_RETRANSMIT_WITHOUT_WAIT;
+                            [[fallthrough]];
                         case FOPState::RETRANSMIT_WITH_WAIT:
-                            suspendState = SuspendVariableState::SUSPENDED_PREV_STATE_RETRANSMIT_WITH_WAIT; // fallthrough
+                            suspendState = SuspendVariableState::SUSPENDED_PREV_STATE_RETRANSMIT_WITH_WAIT;
+                            [[fallthrough]];
                         case FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                             suspendState = SuspendVariableState::SUSPENDED_PREV_STATE_INITIALIZING_WITHOUT_BC_FRAME;
                             asynchronousNotificationSignalQueue.push(AsynchronousNotificationSignal(AsynchronousNotificationType::SUSPEND));

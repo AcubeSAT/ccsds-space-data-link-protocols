@@ -8,12 +8,13 @@ namespace CCSDSDataLinkLayer {
 // TC TransferFrame - Sending End (TC Tx)
 
 //     - Packet Processing
-    ServiceChannelNotification
-    ServiceChannel::segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
+
+    etl::expected<void, ServiceChannelNotification>
+            ServiceChannel::segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                    uint8_t vid, uint8_t mapid, ServiceType serviceType) {
 
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -21,7 +22,7 @@ namespace CCSDSDataLinkLayer {
         MAPChannel *mapChannel;
         if (vchan->segmentHeaderTCPresent) {
             if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
-                return ServiceChannelNotification::INVALID_MAP_ID;
+                return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
             }
             mapChannel = &(vchan->mapChannels.at(mapid));
         }
@@ -47,7 +48,7 @@ namespace CCSDSDataLinkLayer {
             }
         } else {
             // TYPE_BC or TYPE_RESERVED are invalid
-            return ServiceChannelNotification::INVALID_INPUT;
+            return etl::unexpected(ServiceChannelNotification::INVALID_INPUT);
         }
 
         uint8_t securityHeaderLength;
@@ -70,16 +71,16 @@ namespace CCSDSDataLinkLayer {
 
         // ensure there is enough space for the new frames
         if (masterChannel.masterCopyTxTC.available() < numberOfNewTransferFrames) {
-            return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
         }
         if (vchan->framesBeforeSDLSProcessingTxTC.available() < numberOfNewTransferFrames) {
-            return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL);
         }
         if (masterChannel.masterChannelPoolTxTC.findFit(numberOfNewTransferFrames *
                                                         (TcPrimaryHeaderSize + segmentHeaderLength +
                                                          securityHeaderLength + trailerSize) + packetLength).second !=
             MasterChannelAlert::NO_MC_ALERT) {
-            return ServiceChannelNotification::MEMORY_POOL_FULL;
+            return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
         }
 
         // new frames creation
@@ -112,7 +113,7 @@ namespace CCSDSDataLinkLayer {
                     TcPrimaryHeaderSize + securityHeaderLength + currentTransferFrameDataFieldLength + trailerSize);
 
             if (transferFrameData == nullptr) {
-                return ServiceChannelNotification::MEMORY_POOL_FULL;
+                return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
             }
 
             TransferFrameTC transferFrameTc =
@@ -130,16 +131,16 @@ namespace CCSDSDataLinkLayer {
             packetLength -= maxTransferFrameDataFieldLength - segmentHeaderLength;
         }
         packetLengthBufferTcTx->pop();
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::blockingTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
                                uint8_t vid, uint8_t mapid, ServiceType serviceType) {
 
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -148,7 +149,7 @@ namespace CCSDSDataLinkLayer {
         if (vchan->segmentHeaderTCPresent) {
             if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_MAP_ID);
-                return ServiceChannelNotification::INVALID_MAP_ID;
+                return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
             }
             mapChannel = &(vchan->mapChannels.at(mapid));
         }
@@ -175,7 +176,7 @@ namespace CCSDSDataLinkLayer {
         } else {
             // TYPE_BC or TYPE_RESERVED are invalid
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_INPUT);
-            return ServiceChannelNotification::INVALID_INPUT;
+            return etl::unexpected(ServiceChannelNotification::INVALID_INPUT);
         }
 
         uint8_t securityHeaderLength;
@@ -191,15 +192,15 @@ namespace CCSDSDataLinkLayer {
 
         // ensure there is enough space for a new frame
         if (masterChannel.masterCopyTxTC.available() == 0) {
-            return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
         }
         if (vchan->framesBeforeSDLSProcessingTxTC.available() == 0) {
-            return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL);
         }
         if (masterChannel.masterChannelPoolTxTC.findFit(
                 TcPrimaryHeaderSize + segmentHeaderLength + securityHeaderLength + packetLength + trailerSize).second !=
             MasterChannelAlert::NO_MC_ALERT) {
-            return ServiceChannelNotification::MEMORY_POOL_FULL;
+            return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
         }
 
 
@@ -232,7 +233,7 @@ namespace CCSDSDataLinkLayer {
                 TcPrimaryHeaderSize + securityHeaderLength + currentTransferFrameDataFieldLength + trailerSize);
 
         if (transferFrameData == nullptr) {
-            return ServiceChannelNotification::MEMORY_POOL_FULL;
+            return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
         }
 
         SequenceFlags segmentLengthId = SequenceFlags::NoSegmentation;
@@ -252,15 +253,15 @@ namespace CCSDSDataLinkLayer {
         masterChannel.masterCopyTxTC.push_back(transferFrameTc);
         vchan->framesBeforeSDLSProcessingTxTC.push_back(&(masterChannel.masterCopyTxTC.back()));
 
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid,
                                     ServiceType serviceType, etl::optional<uint8_t> mapid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -269,12 +270,12 @@ namespace CCSDSDataLinkLayer {
         if (vchan->segmentHeaderTCPresent) {
             if (!mapid.has_value()) {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_INPUT);
-                return ServiceChannelNotification::INVALID_INPUT;
+                return etl::unexpected(ServiceChannelNotification::INVALID_INPUT);
             }
 
             if (vchan->mapChannels.find(mapid.value()) == vchan->mapChannels.end()) {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_MAP_ID);
-                return ServiceChannelNotification::INVALID_MAP_ID;
+                return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
             }
             mapChannel = &(vchan->mapChannels.at(mapid.value()));
         }
@@ -301,7 +302,7 @@ namespace CCSDSDataLinkLayer {
         } else {
             // TYPE_BC or TYPE_RESERVED are invalid
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_SERVICE_TYPE);
-            return ServiceChannelNotification::INVALID_SERVICE_TYPE;
+            return etl::unexpected(ServiceChannelNotification::INVALID_SERVICE_TYPE);
         }
 
         if (packetLength <= packetBufferTcTx->available()) {
@@ -309,25 +310,25 @@ namespace CCSDSDataLinkLayer {
             for (uint16_t i = 0; i < packetLength; i++) {
                 packetBufferTcTx->push(packet[i]);
             }
-            return ServiceChannelNotification::NO_SERVICE_EVENT;
+            return {};
         }
 
-        return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
+        return etl::unexpected(ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL);
     }
 
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
                                                 ServiceType serviceType) {
 
         if (serviceType == ServiceType::TYPE_BC || serviceType == ServiceType::TYPE_RESERVED) {
             // TYPE_BC or TYPE_RESERVED are invalid
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_SERVICE_TYPE);
-            return ServiceChannelNotification::INVALID_SERVICE_TYPE;
+            return etl::unexpected(ServiceChannelNotification::INVALID_SERVICE_TYPE);
         }
 
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -337,7 +338,7 @@ namespace CCSDSDataLinkLayer {
         if (vchan->segmentHeaderTCPresent) {
             if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_MAP_ID);
-                return ServiceChannelNotification::INVALID_MAP_ID;
+                return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
             }
             mapChannel = &(vchan->mapChannels.at(mapid));
             segmentationAllowed = mapChannel->segmentationTC;
@@ -354,7 +355,7 @@ namespace CCSDSDataLinkLayer {
         if (maxTransferFrameDataFieldLength >
             MaxTcTransferFrameSize - TcPrimaryHeaderSize - securityHeaderLength - securityTrailerLength -
             vchan->frameErrorControlFieldPresent * ErrorControlFieldSize) {
-            return ServiceChannelNotification::INVALID_INPUT;
+            return etl::unexpected(ServiceChannelNotification::INVALID_INPUT);
         }
 
         etl::queue<uint16_t, PacketBufferTcSize> *packetLengthBufferTcTx;
@@ -378,11 +379,11 @@ namespace CCSDSDataLinkLayer {
             }
         }
 
-        ServiceChannelNotification notif = ServiceChannelNotification::NO_SERVICE_EVENT;
-
         if (packetLengthBufferTcTx->empty()) {
-            return ServiceChannelNotification::PACKET_BUFFER_EMPTY;
+            return etl::unexpected(ServiceChannelNotification::PACKET_BUFFER_EMPTY);
         }
+
+        etl::expected<void, ServiceChannelNotification> notif;
 
         while (!packetLengthBufferTcTx->empty()) {
             uint16_t packetLength = packetLengthBufferTcTx->front();
@@ -397,10 +398,10 @@ namespace CCSDSDataLinkLayer {
                     packetBufferTcTx->pop();
                 }
                 packetLengthBufferTcTx->pop();
-                notif = ServiceChannelNotification::PACKET_EXCEEDS_MAX_SIZE;
+                notif = etl::unexpected(ServiceChannelNotification::PACKET_EXCEEDS_MAX_SIZE);
             }
 
-            if (notif != ServiceChannelNotification::NO_SERVICE_EVENT) {
+            if (!notif.has_value()) {
                 break;
             }
         }
@@ -408,10 +409,10 @@ namespace CCSDSDataLinkLayer {
     }
 
 //     - SDLS Processing
-    ServiceChannelNotification ServiceChannel::applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid) {
+    etl::expected<void, ServiceChannelNotification> ServiceChannel::applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -419,19 +420,19 @@ namespace CCSDSDataLinkLayer {
         if (vchan->segmentHeaderTCPresent) {
             if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_MAP_ID);
-                return ServiceChannelNotification::INVALID_MAP_ID;
+                return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
             }
         }
 
         TransferFrameTC *frameTc;
         if (vchan->framesBeforeSDLSProcessingTxTC.empty()) {
-            return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
+            return etl::unexpected(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
         } else {
             frameTc = vchan->framesBeforeSDLSProcessingTxTC.front();
         }
 
         if (vchan->unprocessedFrameListBufferTxTC.full()) {
-            return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL);
         }
 
 
@@ -448,19 +449,19 @@ namespace CCSDSDataLinkLayer {
 
             masterChannel.masterChannelPoolTxTC.deletePacket(frameTc->getFrameData(), frameTc->getFrameLength());
             masterChannel.masterCopyTxTC.remove(*frameTc);
-            return ServiceChannelNotification::SDLS_ERROR;
+            return etl::unexpected(ServiceChannelNotification::SDLS_ERROR);
         } else {
             vchan->unprocessedFrameListBufferTxTC.push_back(frameTc);
         }
 
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
 //     - Virtual Channel Generation
-    std::pair<ServiceChannelNotification, FopSignals> ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) {
+    etl::pair<ServiceChannelNotification, FopSignals> ServiceChannel::vcGenerationRequestTxTC(uint8_t vid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, FopSignals(0));
+            return etl::make_pair(ServiceChannelNotification::INVALID_VC_ID, FopSignals(0));
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -474,7 +475,7 @@ namespace CCSDSDataLinkLayer {
 
         if (event.first != FOPNotification::NO_FOP_EVENT) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::FOP_ERROR);
-            return std::make_pair(ServiceChannelNotification::FOP_ERROR, FopSignals(event.second));
+            return etl::make_pair(ServiceChannelNotification::FOP_ERROR, FopSignals(event.second));
         }
 
         // create FopSignals return struct
@@ -498,7 +499,7 @@ namespace CCSDSDataLinkLayer {
 
             if (!transferNotificationSignal->frame) {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::FOP_ERROR);
-                return std::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
+                return etl::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL, FopSignals(event.second));
             }
 
             switch (transferNotificationSignal->transferNotificationType) {
@@ -519,7 +520,7 @@ namespace CCSDSDataLinkLayer {
                         }
                         ++low_layer_buffer_it;
                     }
-                    // fallthrough
+                    [[fallthrough]];
                 case TransferNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU:
                     masterChannel.masterChannelPoolTxTC.deletePacket(
                             transferNotificationSignal->frame.value()->getFrameData(),
@@ -533,6 +534,8 @@ namespace CCSDSDataLinkLayer {
                         }
                         ++master_copy_buffer_it;
                     }
+                    break;
+                case TransferNotificationType::REJECT_RESPONSE_TO_TRANSFER_FDU:
                     break;
             }
             vchan->fop.transferNotificationSignalQueue.pop();
@@ -554,7 +557,7 @@ namespace CCSDSDataLinkLayer {
                 if (!fopToLowerLayerRequestSignal->frame) {
                     ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif,
                                    ServiceChannelNotification::FOP_ERROR);
-                    return std::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL,
+                    return etl::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL,
                                           FopSignals(event.second));
                 }
 
@@ -575,7 +578,7 @@ namespace CCSDSDataLinkLayer {
                         case ServiceType::TYPE_RESERVED:
                             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif,
                                            ServiceChannelNotification::FOP_ERROR);
-                            return std::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL,
+                            return etl::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL,
                                                   FopSignals(event.second));
                     }
                 } else {
@@ -595,7 +598,7 @@ namespace CCSDSDataLinkLayer {
                         case ServiceType::TYPE_RESERVED:
                             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif,
                                            ServiceChannelNotification::FOP_ERROR);
-                            return std::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL,
+                            return etl::make_pair(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL,
                                                   FopSignals(event.second));
                     }
 
@@ -637,7 +640,7 @@ namespace CCSDSDataLinkLayer {
                             }
                             ++low_layer_buffer_it;
                         }
-                        // fallthrough
+                        [[fallthrough]];
                     case DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE:
                         masterChannel.masterChannelPoolTxTC.deletePacket(
                                 directiveNotificationSignal->frame.value()->getFrameData(),
@@ -651,6 +654,11 @@ namespace CCSDSDataLinkLayer {
                             }
                             ++master_copy_buffer_it;
                         }
+                        break;
+                    case DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE:
+                        [[fallthrough]];
+                    case DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE:
+                        break;
                 }
             }
 
@@ -681,16 +689,16 @@ namespace CCSDSDataLinkLayer {
             ++high_layer_buffer_it;
         }
 
-        return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT,fopSignals);
+        return etl::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT,fopSignals);
     }
 
 
 //         -- FOP Directives
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::pushDirectiveRequestSignal(uint8_t vid, const DirectiveRequestSignal &directiveRequestSignal) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -698,24 +706,22 @@ namespace CCSDSDataLinkLayer {
         FOPNotification fopNotification = vchan->fop.pushDirectiveRequestSignal(directiveRequestSignal);
         if (fopNotification == FOPNotification::SIGNAL_QUEUE_FULL) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::FOP_BUFFER_FULL);
-            return ServiceChannelNotification::FOP_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::FOP_BUFFER_FULL);
         }
 
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_SERVICE_EVENT);
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
-    ServiceChannelNotification ServiceChannel::pushClcwToFop(uint8_t vid, CLCW clcw) {
+    etl::expected<void, ServiceChannelNotification> ServiceChannel::pushClcwToFop(uint8_t vid, CLCW clcw) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
 
         vchan->fop.pushClcw(clcw);
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_SERVICE_EVENT);
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
     FOPState ServiceChannel::getFopState(uint8_t vid) const {
@@ -743,11 +749,11 @@ namespace CCSDSDataLinkLayer {
     }
 
 //     - All frames generation
-    std::pair<ServiceChannelNotification, uint16_t>
+    etl::expected<uint16_t, ServiceChannelNotification>
     ServiceChannel::allFramesGenerationRequestTxTC(uint8_t *frameTarget) {
         if (masterChannel.outFramesBeforeAllFramesGenerationListTxTC.empty()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
-            return std::make_pair(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS, 0);
+            return etl::unexpected(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
         }
 
         TransferFrameTC *frame = masterChannel.outFramesBeforeAllFramesGenerationListTxTC.front();
@@ -770,22 +776,21 @@ namespace CCSDSDataLinkLayer {
             masterChannel.removeMasterTxTC(frame);
         }
 
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_SERVICE_EVENT);
-        return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, frameLength);
+        return frameLength;
     }
 
 // TC TransferFrame - Receiving End (TC Rx)
 
 //     - All Frames Reception
-    ServiceChannelNotification ServiceChannel::allFramesReceptionRequestRxTC(uint8_t *frameData, uint16_t frameLength) {
+    etl::expected<void, ServiceChannelNotification> ServiceChannel::allFramesReceptionRequestRxTC(uint8_t *frameData, uint16_t frameLength) {
         if (masterChannel.masterCopyRxTC.full()) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_IN_MC_FULL);
-            return ServiceChannelNotification::RX_IN_MC_FULL;
+            return etl::unexpected(ServiceChannelNotification::RX_IN_MC_FULL);
         }
 
         if (masterChannel.masterChannelPoolRxTC.findFit(frameLength).second != MasterChannelAlert::NO_MC_ALERT) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MEMORY_POOL_FULL);
-            return ServiceChannelNotification::MEMORY_POOL_FULL;
+            return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
         }
 
         // Create a new TC frame object. The frameData pointer will be used temporarily, to avoid needless memory pool
@@ -795,18 +800,18 @@ namespace CCSDSDataLinkLayer {
         // Check for valid TFVN
         if (transferFrameTc.getTransferFrameVersionNumber() != 0) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_INVALID_TFVN);
-            return ServiceChannelNotification::RX_INVALID_TFVN;
+            return etl::unexpected(ServiceChannelNotification::RX_INVALID_TFVN);
         }
 
         // Check for valid SCID
         if (transferFrameTc.getSpacecraftId() != SpacecraftIdentifier) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_INVALID_SCID);
-            return ServiceChannelNotification::RX_INVALID_SCID;
+            return etl::unexpected(ServiceChannelNotification::RX_INVALID_SCID);
         }
 
         if (transferFrameTc.getFrameLength() != frameLength) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_INVALID_LENGTH);
-            return ServiceChannelNotification::RX_INVALID_LENGTH;
+            return etl::unexpected(ServiceChannelNotification::RX_INVALID_LENGTH);
         }
 
         uint8_t vid = transferFrameTc.getVirtualChannelId();
@@ -816,7 +821,7 @@ namespace CCSDSDataLinkLayer {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             // If it doesn't, abort operation
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -825,12 +830,12 @@ namespace CCSDSDataLinkLayer {
         if (vchan->segmentHeaderTCPresent && (vchan->mapChannels.find(mapid.value()) == vchan->mapChannels.end())) {
             // If it doesn't, abort the operation
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_MAP_ID);
-            return ServiceChannelNotification::INVALID_MAP_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
         }
 
         if (vchan->inFramesBeforeVcReceptionRxTC.full()) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL);
-            return ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL;
+            return etl::unexpected(ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL);
         }
 
         // Frame Delimiting and Fill Removal supposedly aren't implemented here
@@ -844,7 +849,7 @@ namespace CCSDSDataLinkLayer {
                                   transferFrameTc.getFrameData()[len + 1];
             if (crc != packet_crc) {
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_INVALID_CRC);
-                return ServiceChannelNotification::RX_INVALID_CRC;
+                return etl::unexpected(ServiceChannelNotification::RX_INVALID_CRC);
             }
         }
         transferFrameTc.setSegmentationHeaderPresentFlag(vchan->segmentHeaderTCPresent);
@@ -857,53 +862,53 @@ namespace CCSDSDataLinkLayer {
         TransferFrameTC *pTransferFrameTc = &(masterChannel.masterCopyRxTC.back());
 
         vchan->inFramesBeforeVcReceptionRxTC.push_back(pTransferFrameTc);
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
 //     - Virtual Channel Reception
-    std::pair<ServiceChannelNotification, uint8_t> ServiceChannel::vcReceptionRxTC(uint8_t vid) {
+    etl::pair<ServiceChannelNotification, uint8_t> ServiceChannel::vcReceptionRxTC(uint8_t vid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, 0);
+            return etl::make_pair(ServiceChannelNotification::INVALID_VC_ID, 0);
         }
 
         VirtualChannel &vchan = masterChannel.virtualChannels.at(vid);
 
-        std::pair<FARMNotification, uint8_t> farmOutput = vchan.farm.applyFarmStateTable();
+        etl::pair<FARMNotification, uint8_t> farmOutput = vchan.farm.applyFarmStateTable();
 
         if (farmOutput.first != FARMNotification::NO_FARM_EVENT) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::FARM_ERROR);
-            return std::make_pair(ServiceChannelNotification::FARM_ERROR, farmOutput.second);
+            return etl::make_pair(ServiceChannelNotification::FARM_ERROR, farmOutput.second);
         } else {
-            return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, farmOutput.second);
+            return etl::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, farmOutput.second);
         }
     }
 
     //     - FARM-1 utility and debugging functions
-    ServiceChannelNotification ServiceChannel::injectClcw(uint32_t clcw, uint8_t vid) {
+    etl::expected<void, ServiceChannelNotification> ServiceChannel::injectClcw(uint32_t clcw, uint8_t vid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         if (!masterChannel.virtualChannelClcwQueues.at(vid).empty()) {
             masterChannel.virtualChannelClcwQueues.at(vid).pop();
         }
         masterChannel.virtualChannelClcwQueues.at(vid).push(CLCW(clcw));
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
     //     - SDLS Processing
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType) {
         if ((serviceType != ServiceType::TYPE_AD) && (serviceType != ServiceType::TYPE_BD)) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_SERVICE_TYPE);
-            return ServiceChannelNotification::INVALID_SERVICE_TYPE;
+            return etl::unexpected(ServiceChannelNotification::INVALID_SERVICE_TYPE);
         }
 
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -912,7 +917,7 @@ namespace CCSDSDataLinkLayer {
         if (vchan->segmentHeaderTCPresent) {
             if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_MAP_ID);
-                return ServiceChannelNotification::INVALID_MAP_ID;
+                return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
             }
             mapChannel = &(vchan->mapChannels.at(mapid));
         }
@@ -930,7 +935,7 @@ namespace CCSDSDataLinkLayer {
 
         if (frameOutBuf->full()) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_OUT_BUFFER_FULL);
-            return ServiceChannelNotification::RX_OUT_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::RX_OUT_BUFFER_FULL);
         }
 
         TransferFrameTC *frameTc;
@@ -943,7 +948,7 @@ namespace CCSDSDataLinkLayer {
             vchan->inFramesAfterVCReceptionTypeBDRxTC.pop();
         } else {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
-            return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+            return etl::unexpected(ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
         }
 
 
@@ -967,27 +972,27 @@ namespace CCSDSDataLinkLayer {
             if ((sldsNotification == SDLSVerificationStatusCode::ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE) ||
                 (sldsNotification == SDLSVerificationStatusCode::MAC_VERIFICATION_FAILURE)) {
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER);
-                return ServiceChannelNotification::GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER;
+                return etl::unexpected(ServiceChannelNotification::GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER);
             } else {
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::SDLS_ERROR);
-                return ServiceChannelNotification::SDLS_ERROR;
+                return etl::unexpected(ServiceChannelNotification::SDLS_ERROR);
             }
         }
 
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
 //     - Virtual Channel Extraction
-    std::pair<ServiceChannelNotification, uint16_t>
+    etl::expected<uint16_t, ServiceChannelNotification>
     ServiceChannel::packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t *packetDest) {
         if ((serviceType != ServiceType::TYPE_AD) && (serviceType != ServiceType::TYPE_BD)) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_SERVICE_TYPE);
-            return std::make_pair(ServiceChannelNotification::INVALID_SERVICE_TYPE, 0);
+            return etl::unexpected(ServiceChannelNotification::INVALID_SERVICE_TYPE);
         }
 
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, 0);
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -996,7 +1001,7 @@ namespace CCSDSDataLinkLayer {
         if (vchan->segmentHeaderTCPresent) {
             if (vchan->mapChannels.find(mapid) == vchan->mapChannels.end()) {
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_MAP_ID);
-                return std::make_pair(ServiceChannelNotification::INVALID_MAP_ID, 0);
+                return etl::unexpected(ServiceChannelNotification::INVALID_MAP_ID);
             }
             mapChannel = &(vchan->mapChannels.at(mapid));
         }
@@ -1056,7 +1061,7 @@ namespace CCSDSDataLinkLayer {
                 masterChannel.removeMasterRxTC(blockingFrame->value());
                 blockingFrame = etl::nullopt;
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_INVALID_LENGTH);
-                return std::make_pair(ServiceChannelNotification::RX_INVALID_LENGTH, 0);
+                return etl::unexpected(ServiceChannelNotification::RX_INVALID_LENGTH);
             } else {
                 std::memcpy(packetDest, frameData + *nextPacketPosition,
                             packetLen <= MaxPacketSize ? packetLen : MaxPacketSize);
@@ -1071,16 +1076,15 @@ namespace CCSDSDataLinkLayer {
                     *nextPacketPosition += packetLen;
                 }
 
-                ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_SERVICE_EVENT);
-                return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, packetLen);
+                return packetLen;
             }
         }
 
         // No "blocking frame" is stored. Get a new frame from the higher layer buffer.
         TransferFrameTC *frameTc;
         if (inFrameBuf->empty()) {
-            ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_SERVICE_EVENT);
-            return std::make_pair(ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS, 0);
+            ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
+            return etl::unexpected(ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
         } else {
             frameTc = inFrameBuf->front();
             inFrameBuf->pop_front();
@@ -1104,7 +1108,7 @@ namespace CCSDSDataLinkLayer {
                 masterChannel.masterChannelPoolRxTC.deletePacket(frameData, frameLen);
                 masterChannel.removeMasterRxTC(frameTc);
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::RX_INVALID_LENGTH);
-                return std::make_pair(ServiceChannelNotification::RX_INVALID_LENGTH, 0);
+                return etl::unexpected(ServiceChannelNotification::RX_INVALID_LENGTH);
             } else {
                 // copy the first packet
                 std::memcpy(packetDest, frameData + *nextPacketPosition,
@@ -1119,7 +1123,7 @@ namespace CCSDSDataLinkLayer {
                     blockingFrame->emplace(frameTc);
                     *nextPacketPosition += firstPacketLen;
                 }
-                return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, firstPacketLen);
+                return firstPacketLen;
             }
         } else {
             // TODO rework this...
@@ -1132,7 +1136,7 @@ namespace CCSDSDataLinkLayer {
                     segmentationFramesBuf->push(frameTc);
                     *previousFrameSequenceFlag = SequenceFlags::SegmentationStart;
                     ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
-                    return std::make_pair(ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET, 0);
+                    return etl::unexpected(ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
                 } else if (!segmentationFramesBuf->empty() && !segmentationFramesBuf->full() &&
                            ((*previousFrameSequenceFlag == SequenceFlags::SegmentationStart) ||
                             (*previousFrameSequenceFlag == SequenceFlags::SegmentationMiddle)) &&
@@ -1141,7 +1145,7 @@ namespace CCSDSDataLinkLayer {
                     segmentationFramesBuf->push(frameTc);
                     *previousFrameSequenceFlag = SequenceFlags::SegmentationMiddle;
                     ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
-                    return std::make_pair(ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET, 0);
+                    return etl::unexpected(ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
                 } else if ((!segmentationFramesBuf->empty()) && !segmentationFramesBuf->full() &&
                            (*previousFrameSequenceFlag == SequenceFlags::SegmentationMiddle) &&
                            sequenceFlag == SequenceFlags::SegmentationEnd) {
@@ -1169,7 +1173,7 @@ namespace CCSDSDataLinkLayer {
                         segmentationFramesBuf->pop();
                     }
 
-                    return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, nextCopyPosition);
+                    return nextCopyPosition;
                 } else {
                     // Unexpected sequence flag or segmented frames buffer full. Discard current and all previous frames
                     masterChannel.masterChannelPoolRxTC.deletePacket(frameTc->getFrameData(),
@@ -1185,7 +1189,7 @@ namespace CCSDSDataLinkLayer {
                     }
 
                     ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_SEQUENCE_FLAG);
-                    return std::make_pair(ServiceChannelNotification::INVALID_SEQUENCE_FLAG, 0);
+                    return etl::unexpected(ServiceChannelNotification::INVALID_SEQUENCE_FLAG);
                 }
             }
         }
@@ -1194,10 +1198,10 @@ namespace CCSDSDataLinkLayer {
 // TM TransferFrame - Sending End (TM Tx)
 
 //     - Packet Processing
-    ServiceChannelNotification ServiceChannel::storePacketTxTM(uint8_t *packet, uint16_t packetLength, uint8_t vid) {
+    etl::expected<void, ServiceChannelNotification> ServiceChannel::storePacketTxTM(uint8_t *packet, uint16_t packetLength, uint8_t vid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel *vchan = &(masterChannel.virtualChannels.at(vid));
@@ -1207,19 +1211,19 @@ namespace CCSDSDataLinkLayer {
             for (uint16_t i = 0; i < packetLength; i++) {
                 vchan->packetBufferTxTM.push_back(packet[i]);
             }
-            return ServiceChannelNotification::NO_SERVICE_EVENT;
+            return {};
         }
         ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL);
-        return ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL;
+        return etl::unexpected(ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL);
     }
 
 //     - Virtual Channel Generation
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::segmentationTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength,
                                    uint16_t packetLength, uint8_t vid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel &vchan = masterChannel.virtualChannels.at(vid);
@@ -1241,17 +1245,18 @@ namespace CCSDSDataLinkLayer {
 
         // ensure there is enough space for the new frames
         if (masterChannel.masterCopyTxTM.available() < numberOfNewTransferFrames) {
-            return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
         }
         if (masterChannel.framesAfterVcGenerationServiceTxTM.available() < numberOfNewTransferFrames) {
-            return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL);
         }
         if (masterChannel.masterChannelPoolTxTM.findFit(
                 numberOfNewTransferFrames * (TmPrimaryHeaderSize + transferFrameDataFieldLength +
                                              vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize +
                                              vchan.frameErrorControlFieldPresent * ErrorControlFieldSize)).second !=
             MasterChannelAlert::NO_MC_ALERT) {
-            return ServiceChannelNotification::MEMORY_POOL_FULL;
+            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MEMORY_POOL_FULL);
+            return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
         }
 
         uint8_t trailerSize = vchan.frameErrorControlFieldPresent * ErrorControlFieldSize +
@@ -1309,7 +1314,8 @@ namespace CCSDSDataLinkLayer {
                     tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + trailerSize);
 
             if (transferFrameData == nullptr) {
-                return ServiceChannelNotification::MEMORY_POOL_FULL;
+                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MEMORY_POOL_FULL);
+                return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
             }
             vchan.frameCountTM = (vchan.frameCountTM == 255) ? 0 : (vchan.frameCountTM + 1);
             TransferFrameTM transferFrameTm =
@@ -1332,15 +1338,15 @@ namespace CCSDSDataLinkLayer {
             packetLength -= transferFrameDataFieldLength;
         }
         vchan.packetLengthBufferTxTM.pop_front();
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::blockingTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength, uint16_t packetLength,
                                uint8_t vid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel &vchan = masterChannel.virtualChannels.at(vid);
@@ -1348,17 +1354,20 @@ namespace CCSDSDataLinkLayer {
         if (prevFrame == nullptr) {
             // ensure there is enough space for a new frame
             if (masterChannel.masterCopyTxTM.full()) {
-                return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
+                return etl::unexpected(ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
             }
             if (masterChannel.framesAfterVcGenerationServiceTxTM.full()) {
-                return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
+                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL);
+                return etl::unexpected(ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL);
             }
             if (masterChannel.masterChannelPoolTxTM.findFit(TmPrimaryHeaderSize + transferFrameDataFieldLength +
                                                             vchan.operationalControlFieldTMPresent *
                                                             TmOperationalControlFieldSize +
                                                             vchan.frameErrorControlFieldPresent *
                                                             ErrorControlFieldSize).second != MasterChannelAlert::NO_MC_ALERT) {
-                return ServiceChannelNotification::MEMORY_POOL_FULL;
+                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MEMORY_POOL_FULL);
+                return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
             }
         }
 
@@ -1390,7 +1399,8 @@ namespace CCSDSDataLinkLayer {
             uint8_t *transferFrameData = masterChannel.masterChannelPoolTxTM.allocatePacket(
                     tmpData, TmPrimaryHeaderSize + transferFrameDataFieldLength + trailerSize);
             if (transferFrameData == nullptr) {
-                return ServiceChannelNotification::MEMORY_POOL_FULL;
+                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MEMORY_POOL_FULL);
+                return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
             }
             vchan.frameCountTM = (vchan.frameCountTM == 255) ? 0 : (vchan.frameCountTM + 1);
             uint16_t firstEmptyOctet = currentTransferFrameDataFieldLength;
@@ -1417,27 +1427,27 @@ namespace CCSDSDataLinkLayer {
             prevFrame->setFirstDataFieldEmptyOctet(currentTransferFrameDataFieldLength);
             prevFrame->setNewFrameData(tmpData, TmPrimaryHeaderSize + prevFrame->getFirstDataFieldEmptyOctet());
         }
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
-    std::pair<ServiceChannelNotification, bool>
+    etl::expected<bool, ServiceChannelNotification>
     ServiceChannel::generateIdleSpacePacket(uint8_t vid, TransferFrameTM *lastProcessedFrame,
                                             uint16_t transferFrameDataFieldLength, bool lastPacketPlacedIdle) {
 
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return std::make_pair(ServiceChannelNotification::INVALID_VC_ID, false);
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel &vchan = masterChannel.virtualChannels.at(vid);
 
         if (lastProcessedFrame == nullptr) {
-            return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, false);
+            return false;
         }
 
         uint16_t firstDataFieldEmptyOctet = lastProcessedFrame->getFirstDataFieldEmptyOctet();
         if (firstDataFieldEmptyOctet == transferFrameDataFieldLength) {
-            return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, false);
+            return false;
         }
 
         // The idle packet data length field, reduced by 1 (see p. 4.1.3.5 of space packet protocol)
@@ -1474,7 +1484,7 @@ namespace CCSDSDataLinkLayer {
             if ((nonIdleCanFit && lastPacketPlacedIdle) ||
                 (nonIdleCanFit && !lastPacketPlacedIdle && vchan.blockingTM) ||
                 (!nonIdleCanFit && vchan.segmentationTM)) {
-                return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, false);
+                return false;
             }
 
             if (remainingSpace >= PacketPrimaryHeaderLength + 1) {
@@ -1502,30 +1512,31 @@ namespace CCSDSDataLinkLayer {
             vchan.packetLengthBufferTxTM.push_front(PacketPrimaryHeaderLength + idlePacketDataLength + 1);
         }
 
-        return std::make_pair(ServiceChannelNotification::NO_SERVICE_EVENT, true);
+        return true;
     }
 
-    ServiceChannelNotification
+    etl::expected<void, ServiceChannelNotification>
     ServiceChannel::vcGenerationServiceTxTM(uint16_t transferFrameDataFieldLength, uint8_t vid) {
         if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::INVALID_VC_ID);
-            return ServiceChannelNotification::INVALID_VC_ID;
+            return etl::unexpected(ServiceChannelNotification::INVALID_VC_ID);
         }
 
         VirtualChannel &vchan = masterChannel.virtualChannels.at(vid);
-        ServiceChannelNotification notif = ServiceChannelNotification::NO_SERVICE_EVENT;
 
         // generate OID frame
         if (vchan.packetLengthBufferTxTM.empty()) {
             if (masterChannel.masterCopyTxTM.full()) {
-                return ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL;
+                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
+                return etl::unexpected(ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
             }
             if (masterChannel.masterChannelPoolTxTM.findFit(TmPrimaryHeaderSize + transferFrameDataFieldLength +
                                                             vchan.operationalControlFieldTMPresent *
                                                             TmOperationalControlFieldSize +
                                                             vchan.frameErrorControlFieldPresent *
                                                             ErrorControlFieldSize).second != MasterChannelAlert::NO_MC_ALERT) {
-                return ServiceChannelNotification::MEMORY_POOL_FULL;
+                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::MEMORY_POOL_FULL);
+                return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
             }
 
             static uint8_t tmpData[TmTransferFrameSize] = {0};
@@ -1559,9 +1570,12 @@ namespace CCSDSDataLinkLayer {
 
             masterChannel.masterCopyTxTM.push_back(frameOID);
             masterChannel.framesAfterVcGenerationServiceTxTM.push_back(&(masterChannel.masterCopyTxTM.back()));
-            return ServiceChannelNotification::PACKET_BUFFER_EMPTY;
+            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::PACKET_BUFFER_EMPTY);
+            return etl::unexpected(ServiceChannelNotification::PACKET_BUFFER_EMPTY);
         }
 
+        etl::expected<void, ServiceChannelNotification> notif;
+        etl::expected<bool, ServiceChannelNotification> idleSpacePacketFuncNotif;
         bool idlePacketQueued = false; // Flag indicating if the first packet in the queue is an idle space packet
         bool lastPacketPlacedIdle = false; // Flag indicating if the last placed packet in a frame is an idle space packet
         while (!vchan.packetLengthBufferTxTM.empty()) {
@@ -1593,7 +1607,7 @@ namespace CCSDSDataLinkLayer {
                         vchan.packetBufferTxTM.pop_front();
                     }
                     vchan.packetLengthBufferTxTM.pop_front();
-                    notif = ServiceChannelNotification::PACKET_EXCEEDS_MAX_SIZE;
+                    notif = etl::unexpected(ServiceChannelNotification::PACKET_EXCEEDS_MAX_SIZE);
                 }
             } else {
                 if (packetLength <= transferFrameDataFieldLength - prevFrame->getFirstDataFieldEmptyOctet()) {
@@ -1607,26 +1621,32 @@ namespace CCSDSDataLinkLayer {
                 }
             }
 
-            // generate idle space packets if needed
-            idlePacketQueued = generateIdleSpacePacket(vid, masterChannel.framesAfterVcGenerationServiceTxTM.back(),
-                                                       transferFrameDataFieldLength, lastPacketPlacedIdle).second;
-
-            if (notif != ServiceChannelNotification::NO_SERVICE_EVENT) {
+            if (!notif.has_value()) {
                 break;
             }
+
+            // generate idle space packets if needed
+            idleSpacePacketFuncNotif = generateIdleSpacePacket(vid, masterChannel.framesAfterVcGenerationServiceTxTM.back(),
+                                                               transferFrameDataFieldLength, lastPacketPlacedIdle);
+            if (!idleSpacePacketFuncNotif.has_value()) {
+                notif = etl::unexpected(ServiceChannelNotification::INVALID_INPUT);
+                break;
+            }
+            idlePacketQueued = idleSpacePacketFuncNotif.value();
+
         }
         return notif;
     }
 
 //     - Master Channel Generation
-    ServiceChannelNotification ServiceChannel::mcGenerationRequestTxTM() {
+    etl::expected<void, ServiceChannelNotification> ServiceChannel::mcGenerationRequestTxTM() {
         if (masterChannel.framesAfterVcGenerationServiceTxTM.empty()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
-            return ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS;
+            return etl::unexpected(ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
         }
         if (masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.full()) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL);
-            return ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL;
+            return etl::unexpected(ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL);
         }
         TransferFrameTM *frame = masterChannel.framesAfterVcGenerationServiceTxTM.front();
 
@@ -1641,7 +1661,7 @@ namespace CCSDSDataLinkLayer {
 
             if (it == masterChannel.virtualChannelClcwQueues.end()) {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::CLCW_BUFFER_EMPTY);
-                return ServiceChannelNotification::CLCW_BUFFER_EMPTY;
+                return etl::unexpected(ServiceChannelNotification::CLCW_BUFFER_EMPTY);
             } else {
                 frame->setOperationalControlField(it->second.front().clcw);
                 it->second.pop();
@@ -1656,15 +1676,15 @@ namespace CCSDSDataLinkLayer {
         masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.push_back(frame);
         masterChannel.framesAfterVcGenerationServiceTxTM.pop_front();
 
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_SERVICE_EVENT);
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
 
 //     - All Frames Generation
-    ServiceChannelNotification ServiceChannel::allFramesGenerationRequestTxTM(uint8_t *frameDataTarget) {
+    etl::expected<void, ServiceChannelNotification> ServiceChannel::allFramesGenerationRequestTxTM(uint8_t *frameDataTarget) {
         if (masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.empty()) {
-            return ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS;
+            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
+            return etl::unexpected(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
         }
 
         TransferFrameTM *frame = masterChannel.toBeTransmittedFramesAfterMCGenerationListTxTM.front();
@@ -1683,7 +1703,7 @@ namespace CCSDSDataLinkLayer {
         masterChannel.masterChannelPoolTxTM.deletePacket(frame->getFrameData(), frame->getFrameLength());
         masterChannel.removeMasterTxTM(frame);
 
-        return ServiceChannelNotification::NO_SERVICE_EVENT;
+        return {};
     }
 
 // TM TransferFrame - Receiving End (TM Rx)

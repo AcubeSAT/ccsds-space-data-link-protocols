@@ -37,8 +37,8 @@ namespace CCSDSDataLinkLayer {
         }
 
         bool found = false;
-        for (auto it = associatedChannels.at(vid).begin(); it != associatedChannels.at(vid).end(); ++it) {
-            if (*it == mapid) {
+        for (unsigned char & it : associatedChannels.at(vid)) {
+            if (it == mapid) {
                 found = true;
             }
             break;
@@ -87,6 +87,8 @@ namespace CCSDSDataLinkLayer {
 
         uint8_t *frameData = frameTc->getFrameData();
         switch (saConfig) {
+            case (NO_SECURITY):
+                return SDLSVerificationStatusCode::NO_FAILURE;
             case (HMAC_40_BIT):
                 // increase sequence number
                 // @TODO handle sequence number overflow (look D3 reference for suggestions)
@@ -110,7 +112,7 @@ namespace CCSDSDataLinkLayer {
                 }
 
                 // compute MAC
-                uint8_t err = 1; // According to tiny crypt documentation, successful operation returns 1
+                uint8_t err; // According to tiny crypt documentation, successful operation returns 1
                 static tc_hmac_state_struct hmacStruct;
                 err = tc_hmac_set_key(&hmacStruct, authenticationKey, authenticationKeyLength);
                 if (err != 1) { return SDLSVerificationStatusCode::MAC_CALCULATION_ERROR; }
@@ -129,8 +131,8 @@ namespace CCSDSDataLinkLayer {
                 }
 
                 return SDLSVerificationStatusCode::NO_FAILURE;
-                break;
-                // add config specific applySecurity code here
+
+            // add config specific applySecurity code here
         }
     }
 
@@ -173,6 +175,8 @@ namespace CCSDSDataLinkLayer {
 
         uint8_t *frameData = frameTc->getFrameData();
         switch (saConfig) {
+            case (NO_SECURITY):
+                return SDLSVerificationStatusCode::NO_FAILURE;
             case (HMAC_40_BIT):
                 // check security parameter index
                 uint16_t receivedSecurityParameterIndex =
@@ -233,7 +237,6 @@ namespace CCSDSDataLinkLayer {
                 sequenceNumber = receivedSeqNumber;
 
                 return SDLSVerificationStatusCode::NO_FAILURE;
-                break;
                 // add config specific processSecurity code here
         }
     }
