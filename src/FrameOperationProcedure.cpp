@@ -3,6 +3,7 @@
 #include "CCSDSLoggerImpl.h"
 
 namespace CCSDSDataLinkLayer {
+#ifdef GROUND_SEGMENT
 /** FOP-1 actions **/
     FOPNotification FrameOperationProcedure::purgeSentQueue() {
         etl::ilist<TransferFrameTC *>::iterator sent_queue_it = sentQueueFOP.begin();
@@ -419,4 +420,5 @@ namespace CCSDSDataLinkLayer {
 
         clcwQueue.push(clcw);
     }
+#endif // GROUND_SEGMENT
 } // namespace CCSDSDataLinkLayer

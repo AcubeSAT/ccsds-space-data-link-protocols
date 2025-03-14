@@ -12,6 +12,7 @@
 #include "CountdownTimer.hpp"
 
 namespace CCSDSDataLinkLayer {
+#ifdef GROUND_SEGMENT
 /**
  * Directive request signal
  * @see p. 3.2.2.2.2 & 4.1 from COP-1 CCSDS
@@ -217,9 +218,10 @@ namespace CCSDSDataLinkLayer {
  *
  */
     class FrameOperationProcedure {
-        friend class ServiceChannel;
+	    friend class BaseServiceChannel;
+	    friend class ServiceChannelGroundSegment;
 
-        friend class MasterChannel;
+        friend class MasterChannelGroundSegment;
 
     private:
         /** FOP-1 VARIABLES **/
@@ -307,7 +309,7 @@ namespace CCSDSDataLinkLayer {
         uint8_t vid;
         bool errorControlFieldPresent;
 
-        CountdownTimer timer = CountdownTimer();
+        CountdownTimer timer;
         /**
          * Queues for storing incoming signals and clcws
          */
@@ -510,6 +512,7 @@ namespace CCSDSDataLinkLayer {
                   tiInitial(FopTimerInitial), transmissionLimit(TransmissionLimit), transmissionCount(1),
                   fopSlidingWindowWidth(FopSlidingWindowInitial), timeoutType(false),
                   frameMasterCopyBuffer(frameMasterCopyBuffer),
-                  memoryPool(memoryPool) {};
+                  memoryPool(memoryPool), timer(CountdownTimer()) {};
     };
+#endif // GROUND_SEGMENT
 } // namespace CCSDSDataLinkLayer

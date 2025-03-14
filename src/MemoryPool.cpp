@@ -18,7 +18,7 @@ namespace CCSDSDataLinkLayer {
         return memory + start;
     }
 
-    bool MemoryPool::deletePacket(uint8_t *packet, uint16_t packetLength) {
+    bool MemoryPool::deletePacket(const uint8_t *packet, uint16_t packetLength) {
         int32_t indexInMemory = packet - &memory[0];
         if (indexInMemory >= 0 && indexInMemory + packetLength < memorySize) {
             usedMemory.erase(indexInMemory);

@@ -1,9 +1,8 @@
-#include <Logger.hpp>
-#include <etl/String.hpp>
 #include <iostream>
-
 #include <chrono>
 #include <iomanip>
+#include "etl/String.hpp"
+#include "Logger.hpp"
 
 namespace CCSDSDataLinkLayer {
 // The implementation of this function appends ANSI codes that should add colours to a compatible terminal

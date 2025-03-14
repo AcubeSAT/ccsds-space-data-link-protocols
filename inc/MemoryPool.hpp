@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <bitset>
 #include "etl/map.h"
-
 #include "Alert.hpp"
 #include "CCSDS_Definitions.hpp"
 
@@ -62,7 +61,7 @@ namespace CCSDSDataLinkLayer {
          * @param packetLength length of the data.
          * @return true if the delete was successful and false if the packet was not found.
          */
-        bool deletePacket(uint8_t *packet, uint16_t packetLength);
+        bool deletePacket(const uint8_t *packet, uint16_t packetLength);
 
         /**
          * @return pointer to the array that stores the data.

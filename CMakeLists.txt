@@ -11,6 +11,9 @@ include_directories("${PROJECT_SOURCE_DIR}/inc"
                     "${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include")
 
 add_compile_options(-Wvla)
+add_compile_definitions(LOGLEVEL_TRACE) # Lowest possible log level for Logger.hpp (logs every message)
+add_compile_definitions(SPACE_SEGMENT)  # Include code mean for both ground and space segments (for now)
+add_compile_definitions(GROUND_SEGMENT)
 
 add_custom_target(check
         COMMAND ./cppcheck.sh

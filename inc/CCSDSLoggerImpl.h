@@ -2,9 +2,8 @@
 
 #include <iostream>
 #include <iomanip>
-#include <logOperators.h>
-
 #include "etl/basic_string.h"
+#include "logOperators.h"
 #include "Logger.hpp"
 
 namespace CCSDSDataLinkLayer {

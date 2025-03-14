@@ -1,6 +1,7 @@
 #include "FrameOperationProcedure.hpp"
 
 namespace CCSDSDataLinkLayer {
+#ifdef GROUND_SEGMENT
     std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable() {
         // clear output signal queues
         directiveNotificationSignalQueue.clear();
@@ -883,4 +884,5 @@ namespace CCSDSDataLinkLayer {
 
         return std::make_pair(fopNotification, eventCode);
     }
+#endif // GROUND_SEGMENT
 } // namespace CCSDSDataLinkLayer

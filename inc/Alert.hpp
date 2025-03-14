@@ -65,6 +65,7 @@ namespace CCSDSDataLinkLayer {
         UNPROCESSED_PACKET_LIST_FULL = 0x02,
         TX_WAIT_QUEUE_FULL = 0x03,
         RX_WAIT_QUEUE_FULL = 0x04,
+	    MAX_AMOUNT_OF_MAP_CHANNELS = 0x05,
     };
 
     enum class MasterChannelAlert : uint8_t {

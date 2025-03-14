@@ -1,8 +1,8 @@
-#include <catch2/catch_test_macros.hpp>
+#include <stdlib.h>
+#include "catch2/catch_test_macros.hpp"
 #include "CCSDSChannel.hpp"
 #include "CCSDSServiceChannel.hpp"
 #include "CLCW.hpp"
-#include "stdlib.h"
 
 //namespace CCSDSDataLinkLayer {
 // End-to-end testing, confirming that TM Tx, TM Rx can work concurrently. TM Rx is no longer maintained, since it will

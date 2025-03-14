@@ -1,6 +1,6 @@
 //#include <catch2/catch.hpp>
-#include <catch2/catch_test_macros.hpp>
-#include <MemoryPool.hpp>
+#include "catch2/catch_test_macros.hpp"
+#include "MemoryPool.hpp"
 
 namespace CCSDSDataLinkLayer {
     TEST_CASE("Packet Insertions") {

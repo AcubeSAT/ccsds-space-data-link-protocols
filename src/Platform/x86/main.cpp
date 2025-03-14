@@ -1,9 +1,11 @@
 #include "FrameSender.hpp"
 #include "CCSDSServiceChannel.hpp"
 #include "FrameMaker.hpp"
+#include "CCSDS_Definitions.hpp"
+#include "CCSDSChannel.hpp"
 
 namespace CCSDSDataLinkLayer {
-    void manual(FrameMaker frameMaker) {
+    void manual(FrameMaker& frameMaker) {
         // Choose virtual channel
         uint8_t vid = 0;
 
@@ -78,13 +80,8 @@ int main() {
     CCSDSDataLinkLayer::PhysicalChannel phy_channel_fop =
             CCSDSDataLinkLayer::PhysicalChannel(1024, 12, 1024, 220000, 20);
 
-    etl::flat_map<uint8_t, CCSDSDataLinkLayer::MAPChannel, CCSDSDataLinkLayer::MaxMapChannels> map_channels = {
-                {0, CCSDSDataLinkLayer::MAPChannel(0, true, true)},
-                {1, CCSDSDataLinkLayer::MAPChannel(1, false, false)},
-                {2, CCSDSDataLinkLayer::MAPChannel(2, true, false)},
-        };
-
-    CCSDSDataLinkLayer::MasterChannel master_channel = CCSDSDataLinkLayer::MasterChannel();
+    CCSDSDataLinkLayer::MasterChannelSpaceSegment master_channel =
+	    CCSDSDataLinkLayer::MasterChannelSpaceSegment(CCSDSDataLinkLayer::SpacecraftIdentifier);
     uint8_t vcid1 = 0;
     bool segmentationV1 = true;
     bool blockingV1 = true;
@@ -103,32 +100,40 @@ int main() {
     bool operationalControlFieldPresentV3 = false;
     bool errorControlFieldV3 = false;
 
+	master_channel.addVirtualChannel(
+	    CCSDSDataLinkLayer::VirtualChannelSpaceSegment(
+	    vcid1, 1, errorControlFieldV1, 128, false, false, blockingV1, segmentationV1,
+	    operationalControlFieldPresentV1, false, 0,
+	    CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
+	    master_channel.getVirtualChannelClcwQueues(),
+	    master_channel.getMasterCopyRxTC(),
+	    master_channel.getMasterChannelPoolRxTC(),
+	    0,0,0));
 
-    master_channel.addVC(vcid1, false, 128, blockingV1,
-                         segmentationV1, false, errorControlFieldV1,
-                         false, 0,
-                         operationalControlFieldPresentV1,
-                         CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 0,
-                         0, 0, 1);
-    master_channel.addVC(vcid2, false, 128, blockingV2,
-                         segmentationV2, false, errorControlFieldV2,
-                         false, 0,
-                         operationalControlFieldPresentV2,
-                         CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 0,
-                         0, 0, 1);
-    master_channel.addVC(vcid3, false, 128, blockingV3,
-                         segmentationV3, false, errorControlFieldV3,
-                         false, 0,
-                         operationalControlFieldPresentV3,
-                         CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 0,
-                         0, 0, 1);
+	master_channel.addVirtualChannel(
+	    CCSDSDataLinkLayer::VirtualChannelSpaceSegment(
+	        vcid2, 1, errorControlFieldV2, 128, false, false, blockingV2, segmentationV2,
+	        operationalControlFieldPresentV2, false, 0,
+	        CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
+	        master_channel.getVirtualChannelClcwQueues(),
+	        master_channel.getMasterCopyRxTC(),
+	        master_channel.getMasterChannelPoolRxTC(),
+	        0,0,0));
+
+	master_channel.addVirtualChannel(
+	    CCSDSDataLinkLayer::VirtualChannelSpaceSegment(
+	        vcid3, 1, errorControlFieldV3, 128, false, false, blockingV3, segmentationV3,
+	        operationalControlFieldPresentV3, false, 0,
+	        CCSDSDataLinkLayer::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED,
+	        master_channel.getVirtualChannelClcwQueues(),
+	        master_channel.getMasterCopyRxTC(),
+	        master_channel.getMasterChannelPoolRxTC(),
+	        0,0,0));
 
 
-    CCSDSDataLinkLayer::ServiceChannel serv_channel =
-            CCSDSDataLinkLayer::ServiceChannel(master_channel,
-                                               phy_channel_fop,
-                                               CCSDSDataLinkLayer::SecurityAssociation(),
-                                               CCSDSDataLinkLayer::SecurityAssociation());
+    CCSDSDataLinkLayer::ServiceChannelSpaceSegment serv_channel =
+            CCSDSDataLinkLayer::ServiceChannelSpaceSegment(phy_channel_fop, master_channel,
+	                                                   CCSDSDataLinkLayer::SecurityAssociation());
 
     // Create Frame Maker class instance, set frame data field length
     uint16_t transferFrameDataFieldLength = 17 + 7;   // ensure corresponding length in yamcs matches

@@ -13,6 +13,7 @@
 #include "CCSDS_Definitions.hpp"
 
 namespace CCSDSDataLinkLayer {
+#ifdef SPACE_SEGMENT
 /**
  * @see p. 6.1.2 from COP-1 CCSDS
  */
@@ -28,9 +29,9 @@ namespace CCSDSDataLinkLayer {
         OUTSIDE_WINDOWS = 3
     };
 
-    class VirtualChannel;
+    class BaseVirtualChannel;
 
-    class MAPChannel;
+    class BaseMAPChannel;
 
 /**
  * The frame acceptance reporting mechanism (FARM-1) is the spacecraft segment of COP-1, a process responsible
@@ -44,9 +45,21 @@ namespace CCSDSDataLinkLayer {
  * FARM-1 is implemented as a state machine.
  */
     class FrameAcceptanceReporting {
-        friend class ServiceChannel;
+	    friend class BaseServiceChannel;
+	    friend class ServiceChannelSpaceSegment;
 
-        friend class MasterChannel;
+        friend class MasterChannelSpaceSegment;
+	    friend class VirtualChannelSpaceSegment;
+
+//	public:
+//	    FrameAcceptanceReporting(const FrameAcceptanceReporting& f)
+//		   : state(f.state), lockout(f.lockout), wait(f.wait), retransmit(f.retransmit), farmBCount(f.farmBCount),
+//	         receiverFrameSeqNumber(f.receiverFrameSeqNumber), farmSlidingWinWidth(f.farmSlidingWinWidth),
+//	         farmPositiveWinWidth(f.farmPositiveWinWidth), farmNegativeWidth(f.farmNegativeWidth),
+//	         clcwReportInterval(f.clcwReportInterval), timer(f.timer), vid(f.vid),
+//	         errorControlFieldPresent(f.errorControlFieldPresent), lowerLayerBuffer(f.lowerLayerBuffer),
+//	         higherLayerBufferTypeAD(f.higherLayerBufferTypeAD), higherLayerBufferTypeBD(f.higherLayerBufferTypeBD),
+//	         frameMasterCopyBuffer(f.frameMasterCopyBuffer), memoryPool(f.memoryPool), clcwBuffer(f.clcwBuffer) {}
 
     private:
         /** FARM-1 Variables **/
@@ -100,7 +113,7 @@ namespace CCSDSDataLinkLayer {
          *         Create a countdown timer implementation using freertos.
          */
         const uint16_t clcwReportInterval;
-        CountdownTimer timer = CountdownTimer();
+        CountdownTimer timer;
 
         /** Implementation specific variables **/
 
@@ -135,7 +148,10 @@ namespace CCSDSDataLinkLayer {
         /**
          * A buffer of space 1, to store CLCW reports.
          */
-        etl::queue<CLCW, 1> &clcwBuffer;
+        etl::queue<CLCW, 1>* clcwBuffer;
+	    void registerClcwOutputBuffer(etl::queue<CLCW, 1>* buf) {
+		    clcwBuffer = buf;
+	    }
 
         /** FARM-1 actions **/
 
@@ -207,7 +223,6 @@ namespace CCSDSDataLinkLayer {
                                  etl::list<TransferFrameTC *, MaxReceivedRxTcInVirtualChannelBuffer> &higherLayerBufferTypeAD,
                                  etl::list<TransferFrameTC, MaxTxInMasterChannel> &frameMasterCopyBuffer,
                                  MemoryPool &memoryPool,
-                                 etl::queue<CLCW, 1> &clcwBuffer,
                                  uint8_t farmSlidingWinWidth = FarmSlidingWinLength,
                                  uint8_t farmPositiveWinWidth = FarmPositiveWinLength,
                                  uint8_t farmNegativeWinWidth = FarmNegativeWinLength,
@@ -216,11 +231,12 @@ namespace CCSDSDataLinkLayer {
                   higherLayerBufferTypeBD(higherLayerBufferTypeBD),
                   higherLayerBufferTypeAD(higherLayerBufferTypeAD), frameMasterCopyBuffer(frameMasterCopyBuffer),
                   memoryPool(memoryPool),
-                  clcwBuffer(clcwBuffer), farmSlidingWinWidth(farmSlidingWinWidth),
+                  farmSlidingWinWidth(farmSlidingWinWidth),
                   farmPositiveWinWidth(farmPositiveWinWidth),
                   farmNegativeWidth(farmNegativeWinWidth), receiverFrameSeqNumber(0), farmBCount(0),
                   lockout(false),
-                  wait(false), retransmit(false), state(FARMState::OPEN),
+                  wait(false), retransmit(false), state(FARMState::OPEN), timer(CountdownTimer()),
                   clcwReportInterval(clcwReportInterval) {};
     };
+#endif // SPACE_SEGMENT
 } // namespace CCSDSDataLinkLayer

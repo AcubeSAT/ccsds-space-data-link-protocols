@@ -1,7 +1,8 @@
-#include <FrameAcceptanceReporting.hpp>
+#include "FrameAcceptanceReporting.hpp"
 #include "CCSDSLoggerImpl.h"
 
 namespace CCSDSDataLinkLayer {
+#ifdef SPACE_SEGMENT
     FARMNotification FrameAcceptanceReporting::accept(TransferFrameTC *frame, ServiceType serviceType) {
         if (serviceType == ServiceType::TYPE_AD) {
             if (higherLayerBufferTypeAD.full()) {
@@ -51,13 +52,13 @@ namespace CCSDSDataLinkLayer {
     }
 
     void FrameAcceptanceReporting::report() {
-        if (clcwBuffer.full()) {
-            clcwBuffer.clear();
+        if (clcwBuffer->full()) {
+            clcwBuffer->clear();
         }
         // TODO: See if there is any use for the optional fields and report them here (not part of COP-1):
         //       statusField, noRfAvailable, noBitLock and farmBCount (the last one is updated, but
         //       not used by COP-1)
-        clcwBuffer.push(CLCW(ControlWordType,
+        clcwBuffer->push(CLCW(ControlWordType,
                              ClcwVersionNumber,
                              0,
                              CopInEffect,
@@ -221,4 +222,5 @@ namespace CCSDSDataLinkLayer {
         ccsdsLogNotice(TxRx::Rx, NotificationType::TypeFARMNotif, farmNotification);
         return std::make_pair(farmNotification, eventCode);
     }
+#endif // SPACE_SEGMENT
 } // namespace CCSDSDataLinkLayer

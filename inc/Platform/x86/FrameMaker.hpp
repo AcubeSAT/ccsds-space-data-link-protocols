@@ -1,10 +1,10 @@
 #pragma once
 
+#include <array>
+#include <queue>
+#include "etl/expected.h"
 #include "CCSDSServiceChannel.hpp"
 #include "TransferFrameTM.hpp"
-#include "etl/expected.h"
-#include <queue>
-#include <array>
 
 namespace CCSDSDataLinkLayer {
 /**
@@ -18,7 +18,7 @@ namespace CCSDSDataLinkLayer {
 
         // Configuration members, initialized upon class construction
         uint16_t transferFrameDataFieldLength;
-        ServiceChannel *serviceChannel;
+        ServiceChannelSpaceSegment *serviceChannel;
 
         // Output and statistics members (accessed via methods)
         std::queue<std::array<uint8_t, TmTransferFrameSize>> frameQueue;
@@ -26,7 +26,7 @@ namespace CCSDSDataLinkLayer {
         uint8_t numberOfFramesSent = 0;
 
     public:
-        FrameMaker(ServiceChannel *serviceChannel, uint16_t transferFrameDataFieldLength) :
+        FrameMaker(ServiceChannelSpaceSegment *serviceChannel, uint16_t transferFrameDataFieldLength) :
                 serviceChannel(serviceChannel), transferFrameDataFieldLength(transferFrameDataFieldLength) {};
 
         void clcwFeeder(uint32_t clcw, uint8_t vid) {

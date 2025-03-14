@@ -1,12 +1,11 @@
 #pragma once
 
 #include <cstdint>
-#include <etl/String.hpp>
-#include <etl/to_string.h>
+#include "etl/String.hpp"
+#include "etl/to_string.h"
 #include "CCSDS_Definitions.hpp"
 
 namespace CCSDSDataLinkLayer {
-#define LOGLEVEL_TRACE
 #if defined LOGLEVEL_TRACE
 #define LOGLEVEL Logger::trace // Ignore-MISRA
 #elif defined LOGLEVEL_DEBUG

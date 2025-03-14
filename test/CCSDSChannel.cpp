@@ -5,7 +5,7 @@
 #include "CCSDSServiceChannel.hpp"
 #include "CLCW.hpp"
 
-nnamespace CCSDSDataLinkLayer{
+namespace CCSDSDataLinkLayer{
         TEST_CASE("CCSDS TC Channel Model") {
             // @todo add more and better test cases :)
 

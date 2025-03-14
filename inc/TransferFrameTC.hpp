@@ -6,7 +6,7 @@
 #pragma once
 
 #include "etl/optional.h"
-#include <CCSDS_Definitions.hpp>
+#include "CCSDS_Definitions.hpp"
 #include "TransferFrame.hpp"
 
 namespace CCSDSDataLinkLayer {

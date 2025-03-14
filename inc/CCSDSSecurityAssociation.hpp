@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
-#include <etl/flat_map.h>
-#include <etl/array.h>
+#include "etl/flat_map.h"
+#include "etl/array.h"
 #include "CCSDS_Definitions.hpp"
 #include "TransferFrameTC.hpp"
 #include "TransferFrameTM.hpp"

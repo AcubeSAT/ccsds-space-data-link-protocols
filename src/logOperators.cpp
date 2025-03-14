@@ -1,4 +1,4 @@
-#include <logOperators.h>
+#include "logOperators.h"
 #include "Alert.hpp"
 
 namespace CCSDSDataLinkLayer {
@@ -132,6 +132,7 @@ namespace CCSDSDataLinkLayer {
             INSERT_ELEMENT(VirtualChannelAlert::UNPROCESSED_PACKET_LIST_FULL);
             INSERT_ELEMENT(VirtualChannelAlert::TX_WAIT_QUEUE_FULL);
             INSERT_ELEMENT(VirtualChannelAlert::RX_WAIT_QUEUE_FULL);
+		    INSERT_ELEMENT(VirtualChannelAlert::MAX_AMOUNT_OF_MAP_CHANNELS);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
