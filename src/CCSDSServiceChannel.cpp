@@ -6,293 +6,282 @@
 
 namespace CCSDSDataLinkLayer {
 // Helper services
-//    void BaseServiceChannel::printTransferFrameTM(TransferFrameTM &TransferFrameTM, bool verbosePrimaryHeader,
-//                                                      bool verboseOCF, uint8_t vid,
-//                                                      uint16_t transferFrameDataFieldLength) {
-//        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-//            LOG_DEBUG << "\nInvalid virtual channel Id";
-//            return;
-//        }
-//
-//	    BaseVirtualChannel&vchan = masterChannel.virtualChannels.at(vid);
-//
-//        static etl::string<TmHelperFuncMaxMessageSize> debugOutput;
-//        debugOutput.clear();
-//        uint8_t *dataPtr = TransferFrameTM.getFrameData();
-//
-//        // Primary Header fields
-//        debugOutput.append("\nTM FRAME\n- Primary Header -");
-//        if (verbosePrimaryHeader) {
-//            debugOutput.append("\nTFVN: ");
-//            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
-//            debugOutput.append("\nSCID: ");
-//            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x3F) << 4U) |
-//                                              (static_cast<uint16_t>(dataPtr[1] & 0xF0) >> 4U)).c_str());
-//            debugOutput.append("\nVCID: ");
-//            debugOutput.append(std::to_string(((dataPtr[1] & 0x0E)) >> 1U).c_str());
-//            debugOutput.append("\nOCF flag: ");
-//            debugOutput.append(std::to_string((dataPtr[1]) & 0x01).c_str());
-//            debugOutput.append("\nMC Frame Count: ");
-//            debugOutput.append(std::to_string(dataPtr[2]).c_str());
-//            debugOutput.append("\nVC Frame Count: ");
-//            debugOutput.append(std::to_string(dataPtr[3]).c_str());
-//            debugOutput.append("\nSecondary Header Flag: ");
-//            debugOutput.append(std::to_string((dataPtr[4] & 0x80) >> 7U).c_str());
-//            debugOutput.append("\nSync Flag: ");
-//            debugOutput.append(std::to_string((dataPtr[4] & 0x40) >> 6U).c_str());
-//            debugOutput.append("\nPacket Order Flag: ");
-//            debugOutput.append(std::to_string((dataPtr[4] & 0x20) >> 5U).c_str());
-//            debugOutput.append("\nSegment Length Id: ");
-//            debugOutput.append(std::to_string((dataPtr[4] >> 3) & 0x3).c_str());
-//            debugOutput.append("\nFirst Header Pointer: ");
-//            debugOutput.append(std::to_string(((static_cast<uint16_t>(((dataPtr[4]) & 0x07)) << 8U) |
-//                                               (static_cast<uint16_t>((dataPtr[5]))))).c_str());
-//        } else {
-//            debugOutput.append("\n| ");
-//            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x3F) << 4U) |
-//                                              (static_cast<uint16_t>(dataPtr[1] & 0xF0) >> 4U)).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string(((dataPtr[1] & 0x0E)) >> 1U).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[1]) & 0x01).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string(dataPtr[2]).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string(dataPtr[3]).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[4] & 0x80) >> 7U).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[4] & 0x40) >> 6U).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[4] & 0x20) >> 5U).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[4] >> 3) & 0x3).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string(((static_cast<uint16_t>(((dataPtr[4]) & 0x07)) << 8U) |
-//                                               (static_cast<uint16_t>((dataPtr[5]))))).c_str());
-//            debugOutput.append(" | ");
-//        }
-//
-//        // Secondary Header (currently unimplemented)
-//        // @TODO Modify service accordingly if the secondary header is implemented
-//
-//        // Data Field
-//        debugOutput.append("\n- Data Field -\n| ");
-//        for (uint16_t i = 0; i < transferFrameDataFieldLength - 1; i++) {
-//            debugOutput.append(std::to_string(dataPtr[TmPrimaryHeaderSize + i]).c_str());
-//            debugOutput.append(" | ");
-//        }
-//        debugOutput.append(std::to_string(dataPtr[TmPrimaryHeaderSize + transferFrameDataFieldLength]).c_str());
-//        debugOutput.append(" | ");
-//
-//        // Operational Control field (It is assumed that the ocf field carries a "CLCW", as defined in the TC Data Link
-//        // Protocol)
-//        debugOutput.append("\n- Operational Control Field -");
-//        if (vchan.operationalControlFieldTMPresent) {
-//            uint16_t offset = TmPrimaryHeaderSize + transferFrameDataFieldLength;
-//            if (verboseOCF) {
-//                debugOutput.append("\nControl Word Type: ");
-//                debugOutput.append(std::to_string((dataPtr[offset] & 0x80) >> 7).c_str());
-//                debugOutput.append("\nCLCW Version Number: ");
-//                debugOutput.append(std::to_string((dataPtr[offset] & 0x60) >> 5).c_str());
-//                debugOutput.append("\nStatus Field: ");
-//                debugOutput.append(std::to_string((dataPtr[offset] & 0x1C) >> 2).c_str());
-//                debugOutput.append("\nCOP In Effect: ");
-//                debugOutput.append(std::to_string(dataPtr[offset] & 0x04).c_str());
-//                debugOutput.append("\nVCID: ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 1] & 0xFC) >> 2).c_str());
-//                debugOutput.append("\nReserved Spare: ");
-//                debugOutput.append(std::to_string(dataPtr[offset + 1] & 0x04).c_str());
-//                debugOutput.append("\nNo RF Avail: ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x80) >> 7).c_str());
-//                debugOutput.append("\nNo Bit Lock: ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x40) >> 6).c_str());
-//                debugOutput.append("\nLockout: ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x20) >> 5).c_str());
-//                debugOutput.append("\nWait: ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x10) >> 4).c_str());
-//                debugOutput.append("\nRetransmit: ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x08) >> 3).c_str());
-//                debugOutput.append("\nFarm-B Counter: ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x02) >> 1).c_str());
-//                debugOutput.append("\nReserved Spare:");
-//                debugOutput.append(std::to_string(dataPtr[offset + 2] & 0x01).c_str());
-//                debugOutput.append("\nReport Value: ");
-//                debugOutput.append(std::to_string(dataPtr[offset + 3]).c_str());
-//            } else {
-//                debugOutput.append("\n| ");
-//                debugOutput.append(std::to_string((dataPtr[offset] & 0x80) >> 7).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset] & 0x60) >> 5).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset] & 0x1C) >> 2).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string(dataPtr[offset] & 0x04).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 1] & 0xFC) >> 2).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string(dataPtr[offset + 1] & 0x04).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x80) >> 7).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x40) >> 6).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x20) >> 5).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x10) >> 4).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x08) >> 3).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x02) >> 1).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string(dataPtr[offset + 2] & 0x01).c_str());
-//                debugOutput.append(" | ");
-//                debugOutput.append(std::to_string(dataPtr[offset + 3]).c_str());
-//                debugOutput.append(" | ");
-//            }
-//        }
-//
-//        // Error Control Field
-//        debugOutput.append("\n- Error Control Field -\n");
-//        if (vchan.frameErrorControlFieldPresent) {
-//            uint16_t offset = TmPrimaryHeaderSize + transferFrameDataFieldLength
-//                              + vchan.operationalControlFieldTMPresent * TmOperationalControlFieldSize;
-//            debugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[offset]) << 8) |
-//                                              static_cast<uint16_t>(dataPtr[offset + 1])).c_str());
-//        }
-//        debugOutput.append("\n");
-//
-//        LOG_DEBUG << debugOutput.c_str();
-//    }
-//
-//    void BaseServiceChannel::printTransferFrameTC(TransferFrameTC &TransferFrameTC, bool verbosePrimaryHeader,
-//                                                      uint8_t vid, uint8_t mapid,
-//                                                      uint16_t transferFrameDataFieldLength) {
-//        // TODO also print the security header and trailer
-//        if (masterChannel.virtualChannels.find(vid) == masterChannel.virtualChannels.end()) {
-//            LOG_DEBUG << "\nInvalid virtual channel Id";
-//            return;
-//        }
-//	    BaseVirtualChannel&vchan = masterChannel.virtualChannels.at(vid);
-//
-//        if (vchan.segmentHeaderTCPresent && (vchan.mapChannels.find(mapid) == vchan.mapChannels.end())) {
-//            LOG_DEBUG << "\nInvalid map channel Id";
-//            return;
-//        }
-//
-//        static etl::string<TcHelperFuncMaxMessageSize> debugOutput;
-//        debugOutput.clear();
-//        uint8_t *dataPtr = TransferFrameTC.getFrameData();
-//
-//        // Primary Header fields
-//        debugOutput.append("\nTC FRAME\n- Primary Header -");
-//        if (verbosePrimaryHeader) {
-//            debugOutput.append("\nTFVN: ");
-//            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
-//
-//            bool byPassFlag = (dataPtr[0] >> 5) & 0x01;
-//            bool ctrlCommandFlag = (dataPtr[0] >> 4) & 0x01;
-//            debugOutput.append("\nBypass Flag: ");
-//            debugOutput.append(std::to_string(byPassFlag).c_str());
-//            debugOutput.append("\nCtrl and Command Flag: ");
-//            debugOutput.append(std::to_string(ctrlCommandFlag).c_str());
-//            if (!byPassFlag && !ctrlCommandFlag) {
-//                debugOutput.append(" (Type-AD)");
-//            } else if (!byPassFlag && ctrlCommandFlag) {
-//                debugOutput.append(" (Reserved Type)");
-//            } else if (byPassFlag && !ctrlCommandFlag) {
-//                debugOutput.append(" (Type-BD)");
-//            } else {
-//                debugOutput.append(" (Type-BC)");
-//            }
-//
-//            debugOutput.append("\nReserved Spare: ");
-//            debugOutput.append(std::to_string((dataPtr[0] & 0x0C) >> 2).c_str());
-//            debugOutput.append("\nSCID: ");
-//            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x03) << 8U) |
-//                                              (static_cast<uint16_t>(dataPtr[1]))).c_str());
-//            debugOutput.append("\nVCID: ");
-//            debugOutput.append(std::to_string((dataPtr[2] >> 2U) & 0x3F).c_str());
-//            debugOutput.append("\nFrame Length: ");
-//            debugOutput.append(std::to_string(
-//                    (static_cast<uint16_t>(dataPtr[2] & 0x03) << 8U) | (static_cast<uint16_t>(dataPtr[3]))).c_str());
-//            debugOutput.append("\nFrame sequence number: ");
-//            debugOutput.append(std::to_string(dataPtr[4]).c_str());
-//        } else {
-//            debugOutput.append("\n| ");
-//            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[0] >> 5U) & 0x01).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[0] >> 4U) & 0x01).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[0] & 0x0C) >> 2).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x03) << 8U) |
-//                                              (static_cast<uint16_t>(dataPtr[1]))).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string((dataPtr[2] >> 2U) & 0x3F).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string(
-//                    (static_cast<uint16_t>(dataPtr[2] & 0x03) << 8U) | (static_cast<uint16_t>(dataPtr[3]))).c_str());
-//            debugOutput.append(" | ");
-//            debugOutput.append(std::to_string(dataPtr[4]).c_str());
-//            debugOutput.append(" | ");
-//        }
-//
-//        // Segment Header
-//        debugOutput.append("\n- Segment Header -");
-//        if (vchan.segmentHeaderTCPresent) {
-//            bool firstFlag = (dataPtr[TcPrimaryHeaderSize] & 0x80) >> 7;
-//            bool secondFlag = (dataPtr[TcPrimaryHeaderSize] & 0x40) >> 6;
-//            debugOutput.append("\nSequence Flags: ");
-//            debugOutput.append(std::to_string(firstFlag).c_str());
-//            debugOutput.append(" ");
-//            debugOutput.append(std::to_string(secondFlag).c_str());
-//            if (!firstFlag && secondFlag) {
-//                debugOutput.append(" (first portion)");
-//            } else if (!firstFlag && !secondFlag) {
-//                debugOutput.append(" (continuing portion)");
-//            } else if (firstFlag && !secondFlag) {
-//                debugOutput.append(" (last portion)");
-//            } else {
-//                debugOutput.append(" (no segmentation)");
-//            }
-//
-//            debugOutput.append("\nMAP ID: ");
-//            debugOutput.append(std::to_string(dataPtr[5] & 0x3F).c_str());
-//        }
-//
-//        // Data Field
-//        debugOutput.append("\n- Data Field -\n| ");
-//        // Technically speaking, the segment header is the first byte of the dataField, if it exists
-//        for (uint16_t i = vchan.segmentHeaderTCPresent * TcSegmentHeaderSize + securityAssociation.getSecurityHeaderLength();
-//             i < transferFrameDataFieldLength - 1; i++) {
-//            debugOutput.append(std::to_string(dataPtr[TcPrimaryHeaderSize + i]).c_str());
-//            debugOutput.append(" | ");
-//        }
-//        debugOutput.append(std::to_string(dataPtr[TcPrimaryHeaderSize + transferFrameDataFieldLength]).c_str());
-//        debugOutput.append(" | ");
-//
-//        // Error Control Field
-//        debugOutput.append("\n- Error Control Field -\n");
-//        if (vchan.frameErrorControlFieldPresent) {
-//            debugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[TcPrimaryHeaderSize +
-//                                                                              transferFrameDataFieldLength +
-//                                                                              securityAssociation.getSecurityHeaderLength() +
-//                                                                              securityAssociation.getSecurityTrailerLength()]) << 8) |
-//                                              static_cast<uint16_t>(dataPtr[TcPrimaryHeaderSize +
-//                                                                            transferFrameDataFieldLength +
-//                                                                            securityAssociation.getSecurityHeaderLength() +
-//                                                                            securityAssociation.getSecurityTrailerLength() +
-//                                                                            1])).c_str());
-//        }
-//        debugOutput.append("\n");
-//
-//        LOG_DEBUG << debugOutput.c_str();
-//    }
+    void BaseServiceChannel::printTransferFrameTM(TransferFrameTM &TransferFrameTM,
+                                              bool ocfPresent,
+                                              bool eccPresent,
+                                              bool verbosePrimaryHeader,
+                                              bool verboseOCF,
+                                              uint16_t transferFrameDataFieldLength) {
+
+        static etl::string<TmHelperFuncMaxMessageSize> debugOutput;
+        debugOutput.clear();
+        uint8_t *dataPtr = TransferFrameTM.getFrameData();
+
+        // Primary Header fields
+        debugOutput.append("\nTM FRAME\n- Primary Header -");
+        if (verbosePrimaryHeader) {
+            debugOutput.append("\nTFVN: ");
+            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
+            debugOutput.append("\nSCID: ");
+            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x3F) << 4U) |
+                                              (static_cast<uint16_t>(dataPtr[1] & 0xF0) >> 4U)).c_str());
+            debugOutput.append("\nVCID: ");
+            debugOutput.append(std::to_string(((dataPtr[1] & 0x0E)) >> 1U).c_str());
+            debugOutput.append("\nOCF flag: ");
+            debugOutput.append(std::to_string((dataPtr[1]) & 0x01).c_str());
+            debugOutput.append("\nMC Frame Count: ");
+            debugOutput.append(std::to_string(dataPtr[2]).c_str());
+            debugOutput.append("\nVC Frame Count: ");
+            debugOutput.append(std::to_string(dataPtr[3]).c_str());
+            debugOutput.append("\nSecondary Header Flag: ");
+            debugOutput.append(std::to_string((dataPtr[4] & 0x80) >> 7U).c_str());
+            debugOutput.append("\nSync Flag: ");
+            debugOutput.append(std::to_string((dataPtr[4] & 0x40) >> 6U).c_str());
+            debugOutput.append("\nPacket Order Flag: ");
+            debugOutput.append(std::to_string((dataPtr[4] & 0x20) >> 5U).c_str());
+            debugOutput.append("\nSegment Length Id: ");
+            debugOutput.append(std::to_string((dataPtr[4] >> 3) & 0x3).c_str());
+            debugOutput.append("\nFirst Header Pointer: ");
+            debugOutput.append(std::to_string(((static_cast<uint16_t>(((dataPtr[4]) & 0x07)) << 8U) |
+                                               (static_cast<uint16_t>((dataPtr[5]))))).c_str());
+        } else {
+            debugOutput.append("\n| ");
+            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x3F) << 4U) |
+                                              (static_cast<uint16_t>(dataPtr[1] & 0xF0) >> 4U)).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string(((dataPtr[1] & 0x0E)) >> 1U).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[1]) & 0x01).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string(dataPtr[2]).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string(dataPtr[3]).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[4] & 0x80) >> 7U).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[4] & 0x40) >> 6U).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[4] & 0x20) >> 5U).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[4] >> 3) & 0x3).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string(((static_cast<uint16_t>(((dataPtr[4]) & 0x07)) << 8U) |
+                                               (static_cast<uint16_t>((dataPtr[5]))))).c_str());
+            debugOutput.append(" | ");
+        }
+
+        // Secondary Header (currently unimplemented)
+        // @TODO Modify service accordingly if the secondary header is implemented
+
+        // Data Field
+        debugOutput.append("\n- Data Field -\n| ");
+        for (uint16_t i = 0; i < transferFrameDataFieldLength - 1; i++) {
+            debugOutput.append(std::to_string(dataPtr[TmPrimaryHeaderSize + i]).c_str());
+            debugOutput.append(" | ");
+        }
+        debugOutput.append(std::to_string(dataPtr[TmPrimaryHeaderSize + transferFrameDataFieldLength]).c_str());
+        debugOutput.append(" | ");
+
+        // Operational Control field (It is assumed that the ocf field carries a "CLCW", as defined in the TC Data Link
+        // Protocol)
+        debugOutput.append("\n- Operational Control Field -");
+        if (ocfPresent) {
+            uint16_t offset = TmPrimaryHeaderSize + transferFrameDataFieldLength;
+            if (verboseOCF) {
+                debugOutput.append("\nControl Word Type: ");
+                debugOutput.append(std::to_string((dataPtr[offset] & 0x80) >> 7).c_str());
+                debugOutput.append("\nCLCW Version Number: ");
+                debugOutput.append(std::to_string((dataPtr[offset] & 0x60) >> 5).c_str());
+                debugOutput.append("\nStatus Field: ");
+                debugOutput.append(std::to_string((dataPtr[offset] & 0x1C) >> 2).c_str());
+                debugOutput.append("\nCOP In Effect: ");
+                debugOutput.append(std::to_string(dataPtr[offset] & 0x04).c_str());
+                debugOutput.append("\nVCID: ");
+                debugOutput.append(std::to_string((dataPtr[offset + 1] & 0xFC) >> 2).c_str());
+                debugOutput.append("\nReserved Spare: ");
+                debugOutput.append(std::to_string(dataPtr[offset + 1] & 0x04).c_str());
+                debugOutput.append("\nNo RF Avail: ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x80) >> 7).c_str());
+                debugOutput.append("\nNo Bit Lock: ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x40) >> 6).c_str());
+                debugOutput.append("\nLockout: ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x20) >> 5).c_str());
+                debugOutput.append("\nWait: ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x10) >> 4).c_str());
+                debugOutput.append("\nRetransmit: ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x08) >> 3).c_str());
+                debugOutput.append("\nFarm-B Counter: ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x02) >> 1).c_str());
+                debugOutput.append("\nReserved Spare:");
+                debugOutput.append(std::to_string(dataPtr[offset + 2] & 0x01).c_str());
+                debugOutput.append("\nReport Value: ");
+                debugOutput.append(std::to_string(dataPtr[offset + 3]).c_str());
+            } else {
+                debugOutput.append("\n| ");
+                debugOutput.append(std::to_string((dataPtr[offset] & 0x80) >> 7).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset] & 0x60) >> 5).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset] & 0x1C) >> 2).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string(dataPtr[offset] & 0x04).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset + 1] & 0xFC) >> 2).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string(dataPtr[offset + 1] & 0x04).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x80) >> 7).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x40) >> 6).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x20) >> 5).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x10) >> 4).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x08) >> 3).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string((dataPtr[offset + 2] & 0x02) >> 1).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string(dataPtr[offset + 2] & 0x01).c_str());
+                debugOutput.append(" | ");
+                debugOutput.append(std::to_string(dataPtr[offset + 3]).c_str());
+                debugOutput.append(" | ");
+            }
+        }
+
+        // Error Control Field
+        debugOutput.append("\n- Error Control Field -\n");
+        if (eccPresent) {
+            uint16_t offset = TmPrimaryHeaderSize + transferFrameDataFieldLength
+                              + ocfPresent * TmOperationalControlFieldSize;
+            debugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[offset]) << 8) |
+                                              static_cast<uint16_t>(dataPtr[offset + 1])).c_str());
+        }
+        debugOutput.append("\n");
+
+        LOG_DEBUG << debugOutput.c_str();
+    }
+
+    void BaseServiceChannel::printTransferFrameTC(TransferFrameTC &TransferFrameTC,
+                                                  bool segHeaderPresent,
+                                                  bool eccFieldPresent,
+                                                  bool verbosePrimaryHeader,
+                                                  uint16_t transferFrameDataFieldLength) {
+        // TODO also print the security header and trailer
+
+        static etl::string<TcHelperFuncMaxMessageSize> debugOutput;
+        debugOutput.clear();
+        uint8_t *dataPtr = TransferFrameTC.getFrameData();
+
+        // Primary Header fields
+        debugOutput.append("\nTC FRAME\n- Primary Header -");
+        if (verbosePrimaryHeader) {
+            debugOutput.append("\nTFVN: ");
+            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
+
+            bool byPassFlag = (dataPtr[0] >> 5) & 0x01;
+            bool ctrlCommandFlag = (dataPtr[0] >> 4) & 0x01;
+            debugOutput.append("\nBypass Flag: ");
+            debugOutput.append(std::to_string(byPassFlag).c_str());
+            debugOutput.append("\nCtrl and Command Flag: ");
+            debugOutput.append(std::to_string(ctrlCommandFlag).c_str());
+            if (!byPassFlag && !ctrlCommandFlag) {
+                debugOutput.append(" (Type-AD)");
+            } else if (!byPassFlag && ctrlCommandFlag) {
+                debugOutput.append(" (Reserved Type)");
+            } else if (byPassFlag && !ctrlCommandFlag) {
+                debugOutput.append(" (Type-BD)");
+            } else {
+                debugOutput.append(" (Type-BC)");
+            }
+
+            debugOutput.append("\nReserved Spare: ");
+            debugOutput.append(std::to_string((dataPtr[0] & 0x0C) >> 2).c_str());
+            debugOutput.append("\nSCID: ");
+            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x03) << 8U) |
+                                              (static_cast<uint16_t>(dataPtr[1]))).c_str());
+            debugOutput.append("\nVCID: ");
+            debugOutput.append(std::to_string((dataPtr[2] >> 2U) & 0x3F).c_str());
+            debugOutput.append("\nFrame Length: ");
+            debugOutput.append(std::to_string(
+                    (static_cast<uint16_t>(dataPtr[2] & 0x03) << 8U) | (static_cast<uint16_t>(dataPtr[3]))).c_str());
+            debugOutput.append("\nFrame sequence number: ");
+            debugOutput.append(std::to_string(dataPtr[4]).c_str());
+        } else {
+            debugOutput.append("\n| ");
+            debugOutput.append(std::to_string((dataPtr[0] & 0xC0) >> 6).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[0] >> 5U) & 0x01).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[0] >> 4U) & 0x01).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[0] & 0x0C) >> 2).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[0] & 0x03) << 8U) |
+                                              (static_cast<uint16_t>(dataPtr[1]))).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string((dataPtr[2] >> 2U) & 0x3F).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string(
+                    (static_cast<uint16_t>(dataPtr[2] & 0x03) << 8U) | (static_cast<uint16_t>(dataPtr[3]))).c_str());
+            debugOutput.append(" | ");
+            debugOutput.append(std::to_string(dataPtr[4]).c_str());
+            debugOutput.append(" | ");
+        }
+
+        // Segment Header
+        debugOutput.append("\n- Segment Header -");
+        if (segHeaderPresent) {
+            bool firstFlag = (dataPtr[TcPrimaryHeaderSize] & 0x80) >> 7;
+            bool secondFlag = (dataPtr[TcPrimaryHeaderSize] & 0x40) >> 6;
+            debugOutput.append("\nSequence Flags: ");
+            debugOutput.append(std::to_string(firstFlag).c_str());
+            debugOutput.append(" ");
+            debugOutput.append(std::to_string(secondFlag).c_str());
+            if (!firstFlag && secondFlag) {
+                debugOutput.append(" (first portion)");
+            } else if (!firstFlag && !secondFlag) {
+                debugOutput.append(" (continuing portion)");
+            } else if (firstFlag && !secondFlag) {
+                debugOutput.append(" (last portion)");
+            } else {
+                debugOutput.append(" (no segmentation)");
+            }
+
+            debugOutput.append("\nMAP ID: ");
+            debugOutput.append(std::to_string(dataPtr[5] & 0x3F).c_str());
+        }
+
+        // Data Field
+        debugOutput.append("\n- Data Field -\n| ");
+        // Technically speaking, the segment header is the first byte of the dataField, if it exists
+        for (uint16_t i = segHeaderPresent * TcSegmentHeaderSize + securityAssociation.getSecurityHeaderLength();
+             i < transferFrameDataFieldLength - 1; i++) {
+            debugOutput.append(std::to_string(dataPtr[TcPrimaryHeaderSize + i]).c_str());
+            debugOutput.append(" | ");
+        }
+        debugOutput.append(std::to_string(dataPtr[TcPrimaryHeaderSize + transferFrameDataFieldLength]).c_str());
+        debugOutput.append(" | ");
+
+        // Error Control Field
+        debugOutput.append("\n- Error Control Field -\n");
+        if (eccFieldPresent) {
+            debugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[TcPrimaryHeaderSize +
+                                                                              transferFrameDataFieldLength +
+                                                                              securityAssociation.getSecurityHeaderLength() +
+                                                                              securityAssociation.getSecurityTrailerLength()]) << 8) |
+                                              static_cast<uint16_t>(dataPtr[TcPrimaryHeaderSize +
+                                                                            transferFrameDataFieldLength +
+                                                                            securityAssociation.getSecurityHeaderLength() +
+                                                                            securityAssociation.getSecurityTrailerLength() +
+                                                                            1])).c_str());
+        }
+        debugOutput.append("\n");
+
+        LOG_DEBUG << debugOutput.c_str();
+    }
 
 #ifdef SPACE_SEGMENT
     // TC TransferFrame - Receiving End (TC Rx)

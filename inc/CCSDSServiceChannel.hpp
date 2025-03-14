@@ -24,22 +24,28 @@ namespace CCSDSDataLinkLayer {
 
 	    // Debugging services
 	    /**
-         * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging puproses
-         * @param verbosePrimaryHeader, verboseOCF     If true, subfield names will also appear for each field, but more space is taken
-         * @param vid                                 Used to detect the existence of certain fields, that depend on certain virtual/MAP channel flags
+         * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging purposes
+         * @param ocfPresent, eccPresent              Indicates to the function whether those fields exist.
+         * @param verbosePrimaryHeader, verboseOCF    If true, subfield names will also appear for each field, but more space is taken
 	     */
-	    void printTransferFrameTM(TransferFrameTM &TransferFrameTM, bool verbosePrimaryHeader, bool verboseOCF,
-	                                      uint8_t vid,
-	                                      uint16_t transferFrameDataFieldLength);
+	    void printTransferFrameTM(TransferFrameTM &TransferFrameTM,
+	                                     bool ocfPresent,
+	                                     bool eccPresent,
+	                                     bool verbosePrimaryHeader,
+	                                     bool verboseOCF,
+	                                     uint16_t transferFrameDataFieldLength);
 
 	    /**
-         * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging puproses
+         * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging purposes
          * @param verbose     If true, names will also be printed for each field
          * @param vid, mapid  Used to detect the existence of certain fields, that depend on certain virtual/MAP channel flags
          *                    mapid will be ignored if MAP channels do not exist in the given virtual channel
 	     */
-	    void printTransferFrameTC(TransferFrameTC &TransferFrameTC, bool verbosePrimaryHeader, uint8_t vid,
-	                                      uint8_t mapid, uint16_t transferFrameDataFieldLength);
+	    void printTransferFrameTC(TransferFrameTC &TransferFrameTC,
+	                              bool segHeaderPresent,
+	                              bool eccFieldPresent,
+	                              bool verbosePrimaryHeader,
+	                              uint16_t transferFrameDataFieldLength);
 
 
 	    // Other services
