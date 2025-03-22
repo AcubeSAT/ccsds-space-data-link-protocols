@@ -1,5 +1,6 @@
 #include "logOperators.h"
 #include "Alert.hpp"
+#include "CCSDSChannel.hpp"
 
 namespace CCSDSDataLinkLayer {
     std::ostream &operator<<(std::ostream &out, const TxRx value) {
@@ -17,6 +18,7 @@ namespace CCSDSDataLinkLayer {
         static std::map<NotificationType, std::string> strings;
         if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
+		    INSERT_ELEMENT(NotificationType::TypeMAPChannelAlert);
             INSERT_ELEMENT(NotificationType::TypeVirtualChannelAlert);
             INSERT_ELEMENT(NotificationType::TypeMasterChannelAlert);
             INSERT_ELEMENT(NotificationType::TypeServiceChannelNotif);
@@ -88,8 +90,7 @@ namespace CCSDSDataLinkLayer {
             INSERT_ELEMENT(FOPNotification::WAIT_QUEUE_EMPTY);
             INSERT_ELEMENT(FOPNotification::SIGNAL_QUEUE_FULL);
             INSERT_ELEMENT(FOPNotification::SIGNAL_QUEUE_EMPTY);
-            INSERT_ELEMENT(FOPNotification::FOP_MEMORY_POOL_FULL);
-            INSERT_ELEMENT(FOPNotification::FOP_MASTER_COPY_BUFFER_FULL);
+            INSERT_ELEMENT(FOPNotification::FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL);
             INSERT_ELEMENT(FOPNotification::FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
             INSERT_ELEMENT(FOPNotification::FOP_UNEXPECTED_VALUE);
 #undef INSERT_ELEMENT
@@ -136,6 +137,21 @@ namespace CCSDSDataLinkLayer {
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
+    }
+
+	std::ostream &operator<<(std::ostream &out, const MapChannelAlert value) {
+	    static std::map<MapChannelAlert, std::string> strings;
+	    if (strings.empty()) {
+#define INSERT_ELEMENT(p) strings[p] = #p
+		    INSERT_ELEMENT(MapChannelAlert::PROCESSING_LIST_FULL);
+	        INSERT_ELEMENT(MapChannelAlert::PROCESSING_LIST_EMPTY);
+		    INSERT_ELEMENT(MapChannelAlert::INVALID_SERVICE_TYPE);
+	        INSERT_ELEMENT(MapChannelAlert::REQUSTED_SERVICE_TYPE_FRAME_NOT_FOUND);
+	        INSERT_ELEMENT(MapChannelAlert::PACKET_QUEUE_FULL);
+	        INSERT_ELEMENT(MapChannelAlert::PACKET_QUEUE_EMPTY);
+#undef INSERT_ELEMENT
+	    }
+	    return out << strings[value];
     }
 
     std::ostream &operator<<(std::ostream &out, const SDLSVerificationStatusCode value) {

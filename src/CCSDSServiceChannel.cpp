@@ -515,7 +515,7 @@ namespace CCSDSDataLinkLayer {
 	    etl::optional<TransferFrameTC *> *blockingFrame;
 	    uint8_t *nextPacketPosition;
 	    etl::queue<TransferFrameTC *, MaxFramesWithSegmentedPackets> *segmentationFramesBuf;
-	    SequenceFlags *previousFrameSequenceFlag;
+	    SequenceFlag*previousFrameSequenceFlag;
 	    if (vchan->segmentHeaderTCPresent) {
 		    if (serviceType == ServiceType::TYPE_AD) {
 			    inFrameBuf = &mapChannel->framesAfterSDLSProcessingTypeADRxTC;
@@ -634,26 +634,26 @@ namespace CCSDSDataLinkLayer {
 		    // TODO rework this...
 		    // Segmentation scenario. Arrival of map channel frame which could contain a partial packet.
 		    while (true) {
-			    SequenceFlags sequenceFlag = static_cast<SequenceFlags>(static_cast<uint8_t>(frameTc->getSequenceFlag().value())
+			    SequenceFlag sequenceFlag = static_cast<SequenceFlag>(static_cast<uint8_t>(frameTc->getSequenceFlag().value())
 			                                                            >> 6U); // valid only if the segmentation header is present
-			    if (segmentationFramesBuf->empty() && (sequenceFlag == SequenceFlags::SegmentationStart)) {
+			    if (segmentationFramesBuf->empty() && (sequenceFlag == SequenceFlag::SegmentationStart)) {
 				    // arrival of first part of segmented packet
 				    segmentationFramesBuf->push(frameTc);
-				    *previousFrameSequenceFlag = SequenceFlags::SegmentationStart;
+				    *previousFrameSequenceFlag = SequenceFlag::SegmentationStart;
 				    ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
 				    return etl::unexpected(ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
 			    } else if (!segmentationFramesBuf->empty() && !segmentationFramesBuf->full() &&
-			               ((*previousFrameSequenceFlag == SequenceFlags::SegmentationStart) ||
-			                (*previousFrameSequenceFlag == SequenceFlags::SegmentationMiddle)) &&
-			               sequenceFlag == SequenceFlags::SegmentationMiddle) {
+			               ((*previousFrameSequenceFlag == SequenceFlag::SegmentationStart) ||
+			                (*previousFrameSequenceFlag == SequenceFlag::SegmentationMiddle)) &&
+			               sequenceFlag == SequenceFlag::SegmentationMiddle) {
 				    // arrival of middle part of segmented packet
 				    segmentationFramesBuf->push(frameTc);
-				    *previousFrameSequenceFlag = SequenceFlags::SegmentationMiddle;
+				    *previousFrameSequenceFlag = SequenceFlag::SegmentationMiddle;
 				    ccsdsLogNotice(TxRx::Rx, NotificationType::TypeServiceChannelNotif, ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
 				    return etl::unexpected(ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
 			    } else if ((!segmentationFramesBuf->empty()) && !segmentationFramesBuf->full() &&
-			               (*previousFrameSequenceFlag == SequenceFlags::SegmentationMiddle) &&
-			               sequenceFlag == SequenceFlags::SegmentationEnd) {
+			               (*previousFrameSequenceFlag == SequenceFlag::SegmentationMiddle) &&
+			               sequenceFlag == SequenceFlag::SegmentationEnd) {
 				    // arrival of last part of segmented packet
 				    segmentationFramesBuf->push(frameTc);
 
@@ -1309,12 +1309,12 @@ namespace CCSDSDataLinkLayer {
 			    packetBufferTcTx->pop();
 		    }
 
-		    SequenceFlags segmentLengthId = SequenceFlags::SegmentationMiddle;
+		    SequenceFlag segmentLengthId = SequenceFlag::SegmentationMiddle;
 
 		    if (i == numberOfNewTransferFrames - 1) {
-			    segmentLengthId = SequenceFlags::SegmentationEnd;
+			    segmentLengthId = SequenceFlag::SegmentationEnd;
 		    } else if (i == 0) {
-			    segmentLengthId = SequenceFlags::SegmentationStart;
+			    segmentLengthId = SequenceFlag::SegmentationStart;
 		    }
 
 		    uint8_t *transferFrameData = masterChannel.masterChannelPoolTxTC.allocatePacket(
@@ -1445,7 +1445,7 @@ namespace CCSDSDataLinkLayer {
 		    return etl::unexpected(ServiceChannelNotification::MEMORY_POOL_FULL);
 	    }
 
-	    SequenceFlags segmentLengthId = SequenceFlags::NoSegmentation;
+	    SequenceFlag segmentLengthId = SequenceFlag::NoSegmentation;
 	    uint16_t firstEmptyOctet = currentTransferFrameDataFieldLength;
 
 	    TransferFrameTC transferFrameTc =

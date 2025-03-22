@@ -7,20 +7,12 @@
 
 #include <cstdint>
 #include <cstring>
-#include "CCSDS_Definitions.hpp"
+#include "CCSDSDefinitionsAndUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
-    /**
-     * @brief Indicates whether a frame is of type TC (telecommand) or TM (telemetry)
-     */
-    enum class FrameType : bool {
-        TC = false,
-        TM = true
-    };
-
     class TransferFrame {
     public:
-        TransferFrame(FrameType t, uint16_t transferFrameLength, uint8_t *frameData, uint16_t firstEmptyOctet = 0)
+        TransferFrame(DefsAndUtils::FrameType t, uint16_t transferFrameLength, uint8_t *frameData, uint16_t firstEmptyOctet = 0)
                 : type(t), transferFrameLength(transferFrameLength), transferFrameData(frameData),
                   firstDataFieldEmptyOctet(firstEmptyOctet) {};
 
@@ -67,7 +59,7 @@ namespace CCSDSDataLinkLayer {
 
             // calculate remainder of binary polynomial division
             for (uint16_t i = 0; i < len; i++) {
-                crc = crc_16_ccitt_table[(data[i] ^ (crc >> 8U)) & 0xFF] ^ (crc << 8U);
+                crc = DefsAndUtils::crc_16_ccitt_table[(data[i] ^ (crc >> 8U)) & 0xFF] ^ (crc << 8U);
             }
 
             return crc;
@@ -79,7 +71,7 @@ namespace CCSDSDataLinkLayer {
          * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
          */
         void appendCRC() {
-            uint16_t len = transferFrameLength - ErrorControlFieldSize;
+            uint16_t len = transferFrameLength - DefsAndUtils::ErrorControlFieldSize;
             uint16_t crc = calculateCRC(transferFrameData, len);
 
             // append CRC
@@ -88,7 +80,7 @@ namespace CCSDSDataLinkLayer {
         }
 
     protected:
-        FrameType type;
+        DefsAndUtils::FrameType type;
 
         uint16_t transferFrameLength;
         uint8_t *transferFrameData;

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "etl/String.hpp"
 #include "etl/to_string.h"
-#include "CCSDS_Definitions.hpp"
+#include "CCSDSDefinitionsAndUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
 #if defined LOGLEVEL_TRACE

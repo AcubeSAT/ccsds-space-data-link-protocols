@@ -17,39 +17,38 @@
 
 #include <cstdint>
 #include <iostream>
-#include "etl/map.h"
-#include "etl/flat_map.h"
 #include "etl/list.h"
 #include "etl/queue.h"
 #include "etl/deque.h"
 #include "etl/circular_buffer.h"
-#include "CCSDS_Definitions.hpp"
+#include "CCSDSDefinitionsAndUtilities.hpp"
 #include "FrameOperationProcedure.hpp"
 #include "FrameAcceptanceReporting.hpp"
 #include "TransferFrameTC.hpp"
 #include "TransferFrameTM.hpp"
 #include "MemoryPool.hpp"
 #include "CLCW.hpp"
-#include "Alert.hpp"
-#include "CCSDSLoggerImpl.h"
 
 namespace CCSDSDataLinkLayer {
-
-/**
- * @see Table 5-1 from TC SPACE DATA LINK PROTOCOL
- */
-    struct PhysicalChannel {
+    class ChannelsInterface;
+    /**
+     * @see Table 5-1 from TC SPACE DATA LINK PROTOCOL
+     */
+    class PhysicalChannel {
+        friend class ChannelsInterface;
     public:
         PhysicalChannel(const uint16_t maxFrameLength, const uint16_t maxFramesPdu, const uint16_t maxPduLength,
                         const uint32_t bitrate, const uint16_t repetitions)
-                : maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength),
-                  bitrate(bitrate),
-                  repetitions(repetitions) {}
+            : maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength),
+              bitrate(bitrate),
+              repetitions(repetitions) {
+        }
 
         /**
          * @brief Empty default constructor.
          */
-        PhysicalChannel() : maxFrameLength(0), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0) {}
+        PhysicalChannel() : maxFrameLength(0), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0) {
+        }
 
         /**
          * @brief Get the maximum allowed frame length in this physical channel.
@@ -117,24 +116,33 @@ namespace CCSDSDataLinkLayer {
      * Base map channel class containing parameters common among space and ground segment code
      */
     class BaseMAPChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
-
+        friend class ChannelsInterface;
     public:
-	    BaseMAPChannel(const uint8_t mapid, bool blockingTC, bool segmentationTC)
-                : mapId(mapid & 0x3F), blockingTC(blockingTC), segmentationTC(segmentationTC) {
-        };
+        BaseMAPChannel(const uint32_t gmapid, bool blockingTC, bool segmentationTC)
+            : gmapid(gmapid & 0x00FFFFFFU), blockingTC(blockingTC), segmentationTC(segmentationTC) {
+        }
 
-	    [[nodiscard]] uint8_t getMAPID() const {
-		    return mapId;
-	    }
+        BaseMAPChannel(const BaseMAPChannel &m) = default;
+
+        [[nodiscard]] uint32_t getGmapid() const {
+            return gmapid;
+        }
+
+        [[nodiscard]] bool getBlockingTC() const {
+            return blockingTC;
+        }
+
+        [[nodiscard]] bool getSegmentationTC() const {
+            return segmentationTC;
+        }
 
     protected:
         /**
-         * @brief MAP Channel Identifier.
+         * @brief Global MAP channel identifier
+         * @details gmapid = | TFVN (2 bits) | SCID (10 bits) | VCID (6 bits) | MAP ID (6 bits) |
+         * @see p. 2.1.3 of CCSDS TC SPACE DATA LINK PROTOCOL
          */
-        const uint8_t mapId; // 6 bits
+        const uint32_t gmapid;
 
         /**
          * @brief Determines whether smaller data units can be combined into a single TC transfer frame
@@ -149,50 +157,88 @@ namespace CCSDSDataLinkLayer {
         const bool segmentationTC;
     };
 
-	/**
-	 * Base virtual channel class containing parameters common among space and ground segment code
-	 */
+    /**
+     * Base virtual channel class containing parameters common among space and ground segment code
+     */
     class BaseVirtualChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
-
+        friend class ChannelsInterface;
     public:
-	    BaseVirtualChannel(const uint8_t vcid, const uint8_t vcRepetitions,
-	                   bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
-	                   const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
-	                   const bool segmentationTM, const bool operationalControlFieldTMPresent,
-	                   const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-	                   const SynchronizationFlag synchronization)
-	            : vcid(vcid & 0x3FU), vcRepetitions(vcRepetitions), frameErrorControlFieldPresent(frameErrorControlFieldPresent),
-	              maxFrameLengthTC(maxFrameLengthTC), segmentHeaderTCPresent(segmentHeaderTCPresent),
-	              blockingTC(blockingTC), blockingTM(blockingTM), segmentationTM(segmentationTM),
-	              operationalControlFieldTMPresent(operationalControlFieldTMPresent),
-	              secondaryHeaderTMLength(secondaryHeaderTMLength), secondaryHeaderTMPresent(secondaryHeaderTMPresent),
-	              synchronizationTM(synchronization) {};
+        BaseVirtualChannel(const uint32_t gvcid, const uint8_t vcRepetitions,
+                           const bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
+                           const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
+                           const bool segmentationTM, const bool operationalControlFieldTMPresent,
+                           const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
+                           const DefsAndUtils::SynchronizationFlag synchronization)
+            : gvcid(gvcid & 0x0003FFFFU), vcRepetitions(vcRepetitions),
+              frameErrorControlFieldPresent(frameErrorControlFieldPresent),
+              maxFrameLengthTC(maxFrameLengthTC), segmentHeaderTCPresent(segmentHeaderTCPresent),
+              blockingTC(blockingTC), blockingTM(blockingTM), segmentationTM(segmentationTM),
+              operationalControlFieldTMPresent(operationalControlFieldTMPresent),
+              secondaryHeaderTMLength(secondaryHeaderTMLength), secondaryHeaderTMPresent(secondaryHeaderTMPresent),
+              synchronizationTM(synchronization) {
+        }
 
-	    BaseVirtualChannel(const BaseVirtualChannel&v)
-                : vcid(v.vcid), vcRepetitions(v.vcRepetitions),
-	              frameErrorControlFieldPresent(v.frameErrorControlFieldPresent),
-	              maxFrameLengthTC(v.maxFrameLengthTC), segmentHeaderTCPresent(v.segmentHeaderTCPresent),
-	              blockingTC(v.blockingTC), blockingTM(v.blockingTM), segmentationTM(v.segmentationTM),
-	              operationalControlFieldTMPresent(v.operationalControlFieldTMPresent),
-	              secondaryHeaderTMPresent(v.secondaryHeaderTMPresent),
-	              secondaryHeaderTMLength(v.secondaryHeaderTMLength), synchronizationTM(v.synchronizationTM) {};
+        BaseVirtualChannel(const BaseVirtualChannel &v) = default;
 
-	    [[nodiscard]] uint8_t getVCID() const {
-		    return vcid;
-	    }
+        [[nodiscard]] uint32_t getGvcid() const {
+            return gvcid;
+        }
 
-	protected:
+        [[nodiscard]] uint8_t getVcRepetitions() const {
+            return vcRepetitions;
+        }
+
+        [[nodiscard]] bool getFrameErrorControlFieldPresent() const {
+            return frameErrorControlFieldPresent;
+        }
+
+        [[nodiscard]] uint16_t getMaxFrameLengthTC() const {
+            return maxFrameLengthTC;
+        }
+
+        [[nodiscard]] bool getSegmentHeaderTCPresent() const {
+            return segmentHeaderTCPresent;
+        }
+
+        [[nodiscard]] bool getBlockingTC() const {
+            return blockingTC;
+        }
+
+        [[nodiscard]] bool getBlockingTM() const {
+            return blockingTM;
+        }
+
+        [[nodiscard]] bool getSegmentationTM() const {
+            return segmentationTM;
+        }
+
+        [[nodiscard]] bool getOperationalControlFieldTMPresent() const {
+            return operationalControlFieldTMPresent;
+        }
+
+        [[nodiscard]] bool getSecondaryHeaderTMPresent() const {
+            return secondaryHeaderTMPresent;
+        }
+
+        [[nodiscard]] uint8_t getSecondaryHeaderTMLength() const {
+            return secondaryHeaderTMLength;
+        }
+
+        [[nodiscard]] DefsAndUtils::SynchronizationFlag getSynchronization() const {
+            return synchronizationTM;
+        }
+
+    protected:
         /**
-         * @brief Virtual Channel Identifier.
+         * @brief Global Virtual Channel Identifier.
+         * @details gvcid = | TFVN (2 bits) | SCID (10 bits) | VCID (6 bits) |
+         * @see p. 2.1.3 of CCSDS TC SPACE DATA LINK PROTOCOL
          */
-        const uint8_t vcid; // 6 bits
+        const uint32_t gvcid; // 6 bits
 
         /**
          * @brief Determines the number of times a frame will be repeated in transmission in the Physical Layer.
-         * @TODO ??
+         * TODO ??
          */
         const uint8_t vcRepetitions;
 
@@ -247,677 +293,462 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Defines whether octet and forward-ordered synchronization is used for TM transfer frames.
          */
-        const SynchronizationFlag synchronizationTM;
+        const DefsAndUtils::SynchronizationFlag synchronizationTM;
     };
 
     /**
 	 * Base virtual channel class containing parameters common among space and ground segment code
      */
-	class BaseMasterChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
+    class BaseMasterChannel {
+        friend class ChannelsInterface;
+    public:
+        explicit BaseMasterChannel(const uint16_t mscid) : mscid(mscid) {
+        }
 
-	public:
-	    explicit BaseMasterChannel(uint16_t scid) : scid(scid & 0x03FF) {}
+        BaseMasterChannel(const BaseMasterChannel &) = default;
 
-	    [[nodiscard]] uint16_t getSCID() const {
-		    return scid;
-	    }
+        [[nodiscard]] uint16_t getMscid() const {
+            return mscid;
+        }
 
-	protected:
-	    const uint16_t scid; // 10 bits
-	};
+    protected:
+        /** @brief global master channel identifier
+         *  @details mscid = | TFVN (2 bits) | SCID (10 bits) |
+         *  @see p. 2.1.3 from CCSDS TC SPACE DATA LINK PROTOCOL
+         */
+        const uint16_t mscid;
+    };
 
 #ifdef SPACE_SEGMENT
+    template<std::size_t T>
     class MAPChannelSpaceSegment : public BaseMAPChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
-	public:
-	    MAPChannelSpaceSegment(const uint8_t mapid, bool blockingTC, bool segmentationTC) :
-	        BaseMAPChannel(mapid, blockingTC, segmentationTC), nextPacketPositionTypeAD(0), nextPacketPositionTypeBD(0),
-	        previousFrameSequenceFlagTypeAD(SequenceFlags::NoSegmentation),
-	        previousFrameSequenceFlagTypeBD(SequenceFlags::NoSegmentation) {}
+        friend class ChannelsInterface;
+    public:
+        MAPChannelSpaceSegment(const uint32_t gmapid, const bool blockingTC, const bool segmentationTC)
+            : BaseMAPChannel(gmapid, blockingTC, segmentationTC) {
+        }
 
-	    MAPChannelSpaceSegment(const MAPChannelSpaceSegment& m):
-	          BaseMAPChannel(m), framesAfterSDLSProcessingTypeADRxTC(m.framesAfterSDLSProcessingTypeADRxTC),
-	          framesAfterSDLSProcessingTypeBDRxTC(m.framesAfterSDLSProcessingTypeBDRxTC),
-	          frameWithMultiplePacketsTypeADRxTC(m.frameWithMultiplePacketsTypeADRxTC),
-	          frameWithMultiplePacketsTypeBDRxTC(m.frameWithMultiplePacketsTypeBDRxTC),
-	          nextPacketPositionTypeAD(m.nextPacketPositionTypeAD), nextPacketPositionTypeBD(m.nextPacketPositionTypeBD),
-	          framesWithSegmentedPacketsTypeADRxTC(m.framesWithSegmentedPacketsTypeADRxTC),
-	          framesWithSegmentedPacketsTypeBDRxTC(m.framesWithSegmentedPacketsTypeBDRxTC),
-	          previousFrameSequenceFlagTypeAD(m.previousFrameSequenceFlagTypeAD),
-	          previousFrameSequenceFlagTypeBD(m.previousFrameSequenceFlagTypeBD) {}
+        MAPChannelSpaceSegment(const MAPChannelSpaceSegment &m)
+            : BaseMAPChannel(m), framesUnderProcessing(m.framesUnderProcessing) {
+        }
 
-	private:
-	    /**
-         * @brief Buffer to hold pointers to Type-AD frames after they are processed by SDLS.
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeADRxTC;
+    private:
+        /**
+         * Stores pointers to TC frames after security processing.
+         */
+        etl::list<TransferFrameTC *, T> framesUnderProcessing;
 
-	    /**
-         * @brief Buffer to hold pointers to Type-BD frames after they are processed by SDLS.
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeBDRxTC;
-
-	    /**
-         * @brief Used by the packet extraction function to temporarily hold a pointer to a Type-AD frame with multiple packets
-         * (the packet extraction function should return only one packet per call).
-	     */
-	    etl::optional<TransferFrameTC *> frameWithMultiplePacketsTypeADRxTC;
-
-	    /**
-         * @brief Used by the packet extraction function to temporarily hold a pointer to a Type-BD frame with multiple packets
-         * (the packet extraction function shall return only one packet per call).
-	     */
-	    etl::optional<TransferFrameTC *> frameWithMultiplePacketsTypeBDRxTC;
-
-	    /**
-         * @brief Indicates the position of the next packet to deliver to the user, inside
-         * frameWithMultiplePacketsTypeADRxTC. Position 0 is the start of the frame.
-	     */
-	    uint8_t nextPacketPositionTypeAD;
-
-	    /**
-         * @brief Indicates the position of the next packet to deliver to the user, inside
-         * frameWithMultiplePacketsTypeBDRxTC. Position 0 is the start of the frame.
-	     */
-	    uint8_t nextPacketPositionTypeBD;
-
-	    /**
-         * @brief Queue used by the packet extraction function to temporarily hold pointers to Type-AD frames, that
-         * contain partial (segmented) packets (the packet extraction function shall return complete packets).
-	     */
-	    etl::queue<TransferFrameTC *, MaxFramesWithSegmentedPackets> framesWithSegmentedPacketsTypeADRxTC;
-
-	    /**
-         * @brief Queue used by the packet extraction function to temporarily hold pointers to Type-AD frames, that
-         * contain partial (segmented) packets (the packet extraction function shall return complete packets).
-	     */
-	    etl::queue<TransferFrameTC *, MaxFramesWithSegmentedPackets> framesWithSegmentedPacketsTypeBDRxTC;
-
-	    /**
-         * @brief Stores the sequence flag value of the last frame placed inside framesWithSegmentedPacketsTypeADRxTC.
-	     */
-	    SequenceFlags previousFrameSequenceFlagTypeAD;
-
-	    /**
-         * @brief Stores the sequence flag value of the last frame placed inside framesWithSegmentedPacketsTypeBDRxTC.
-	     */
-	    SequenceFlags previousFrameSequenceFlagTypeBD;
-
-// Allow access to internal buffers when unit testing
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer>& getFramesAfterSDLSProcessingTypeADRxTC() {
-		    return framesAfterSDLSProcessingTypeADRxTC;
-	    }
-
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer>& getFramesAfterSDLSProcessingTypeBDRxTC() {
-		    return framesAfterSDLSProcessingTypeBDRxTC;
-	    }
-
-	    etl::queue<TransferFrameTC *, MaxFramesWithSegmentedPackets>& getFramesWithSegmentedPacketsTypeADRxTC() {
-		    return framesWithSegmentedPacketsTypeADRxTC;
-	    }
-
-	    etl::queue<TransferFrameTC *, MaxFramesWithSegmentedPackets>& getFramesWithSegmentedPacketsTypeBDRxTC() {
-		    return framesWithSegmentedPacketsTypeBDRxTC;
-	    }
-#endif // ENABLE_BUFFER_ACCESS
+        // give the user access while debugging/testing
+#ifdef ENABLE_CHANNEL_ACCESS
+    public:
+        etl::list<TransferFrameTC *, T>& getFramesUnderProcessing()  {
+            return framesUnderProcessing;
+        }
+#endif // ENABLE_CHANNEL_ACCESS
     };
 
-class VirtualChannelSpaceSegment : public BaseVirtualChannel {
-	friend class BaseServiceChannel;
-	friend class ServiceChannelSpaceSegment;
-	friend class ServiceChannelGroundSegment;
-	public:
-	    VirtualChannelSpaceSegment(const uint8_t vcid, const uint8_t vcRepetitions,
-	                   bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
-	                   const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
-	                   const bool segmentationTM, const bool operationalControlFieldTMPresent,
-	                   const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-	                   const SynchronizationFlag synchronization,
-	                   etl::flat_map<uint8_t, etl::queue<CLCW, 1>, MaxVirtualChannels>& virtualChannelClcwQueues,
-	                   etl::list<TransferFrameTC, MaxRxInMasterChannel>& masterCopyRxTC,
-	                   MemoryPool& memoryPoolRxTC,
-	                   const uint8_t farmSlidingWinWidth,
-	                   const uint8_t farmPositiveWinWidth,
-	                   const uint8_t farmNegativeWinWidth)
-	        : BaseVirtualChannel(vcid, vcRepetitions, frameErrorControlFieldPresent,
-	          				 maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
-	          				 operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
-	                         synchronization),
-	          virtualChannelClcwQueues(virtualChannelClcwQueues),frameCountTM(0), nextPacketPositionTypeAD(0),
-	          nextPacketPositionTypeBD(0),
-	          farm(FrameAcceptanceReporting(vcid, frameErrorControlFieldPresent, inFramesBeforeVcReceptionRxTC,
-	                                        inFramesAfterVCReceptionTypeBDRxTC,
-	                                        inFramesAfterVCReceptionTypeADRxTC, masterCopyRxTC, memoryPoolRxTC,
-	                                        farmSlidingWinWidth,
-	                                        farmPositiveWinWidth,
-	                                        farmNegativeWinWidth)) {
-		    virtualChannelClcwQueues.emplace(vcid, etl::queue<CLCW, 1>());
-		    farm.registerClcwOutputBuffer(&virtualChannelClcwQueues.at(vcid));
-	    }
+    template<std::size_t T>
+    class VirtualChannelSpaceSegment : public BaseVirtualChannel {
+        friend class ChannelsInterface;
+    public:
+        VirtualChannelSpaceSegment(const uint32_t gvcid, const uint8_t vcRepetitions,
+                                   const bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
+                                   const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
+                                   const bool segmentationTM, const bool operationalControlFieldTMPresent,
+                                   const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
+                                   const DefsAndUtils::SynchronizationFlag synchronization,
+                                   const uint8_t farmSlidingWinWidth,
+                                   const uint8_t farmPositiveWinWidth,
+                                   const uint8_t farmNegativeWinWidth,
+                                   const uint16_t farmClcwReportInterval,
+                                   etl::optional<CLCW> &farmClcwOutputBuffer)
+            : BaseVirtualChannel(gvcid, vcRepetitions, frameErrorControlFieldPresent,
+                                 maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
+                                 operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
+                                 synchronization),
+              farm(FrameAcceptanceReporting(
+                  DefsAndUtils::extractVcidFromGvcid(gvcid),
+                  frameErrorControlFieldPresent,
+                  farmSlidingWinWidth,
+                  farmPositiveWinWidth,
+                  farmNegativeWinWidth,
+                  farmClcwReportInterval,
+                  farmClcwOutputBuffer)),
+              frameCountTM(0) {
+        }
 
-	    VirtualChannelSpaceSegment(const VirtualChannelSpaceSegment& v)
-	    : BaseVirtualChannel(v), virtualChannelClcwQueues(v.virtualChannelClcwQueues), frameCountTM(v.frameCountTM),
-	      farm(v.farm), inFramesBeforeVcReceptionRxTC(v.inFramesBeforeVcReceptionRxTC),
-	      inFramesAfterVCReceptionTypeADRxTC(v.inFramesAfterVCReceptionTypeADRxTC),
-	      inFramesAfterVCReceptionTypeBDRxTC(v.inFramesAfterVCReceptionTypeBDRxTC),
-	      framesAfterSDLSProcessingTypeADRxTC(v.framesAfterSDLSProcessingTypeADRxTC),
-	      framesAfterSDLSProcessingTypeBDRxTC(v.framesAfterSDLSProcessingTypeBDRxTC),
-	      frameWithMultiplePacketsTypeADRxTC(v.frameWithMultiplePacketsTypeADRxTC),
-	      frameWithMultiplePacketsTypeBDRxTC(v.frameWithMultiplePacketsTypeBDRxTC),
-	      nextPacketPositionTypeAD(v.nextPacketPositionTypeAD), nextPacketPositionTypeBD(v.nextPacketPositionTypeBD),
-	      packetLengthBufferTxTM(v.packetLengthBufferTxTM), packetBufferTxTM(v.packetBufferTxTM) {}
+        VirtualChannelSpaceSegment(const VirtualChannelSpaceSegment &v)
+            : BaseVirtualChannel(v), farm(v.farm), framesAfterAllFramesReceptionTC(v.framesAfterAllFramesReceptionTC),
+              framesAfterVCReceptionTCTypeAD(v.framesAfterVCReceptionTCTypeAD),
+              framesAfterVCReceptionTCTypeBD(v.framesAfterVCReceptionTCTypeBD),
+              frameCountTM(v.frameCountTM), framesUnderProcessingTM(v.framesUnderProcessingTM),
+              packetLengthBufferTM(v.packetLengthBufferTM),
+              packetBufferTM(v.packetBufferTM) {
+        }
 
-	    VirtualChannelAlert addMAPChannel(const MAPChannelSpaceSegment& m) {
-		    if (mapChannels.full()) {
-			    ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert,
-			                   VirtualChannelAlert::MAX_AMOUNT_OF_MAP_CHANNELS);
-			    return VirtualChannelAlert::MAX_AMOUNT_OF_MAP_CHANNELS;
-		    }
-
-		    mapChannels.emplace(m.getMAPID(), m);
-		    return VirtualChannelAlert::NO_VC_ALERT;
-	    }
-
-	private:
-	    etl::flat_map<uint8_t, MAPChannelSpaceSegment, MaxMapChannels> mapChannels;
-
-	    /**
-		 * @brief Reference to the master channel's map structure that stores FARM-1 generated CLCWs.
-	     */
-	    etl::flat_map<uint8_t, etl::queue<CLCW, 1>, MaxVirtualChannels>& virtualChannelClcwQueues;
-
-	    /**
-         * @brief Counter for the amount of TM transfer frames transmitted.
-	     */
-	    uint8_t frameCountTM;
-
-	    /**
+    private:
+        /**
          * @brief Object that stores and manages the FARM state of the virtual channel.
-	     */
-	    FrameAcceptanceReporting farm;
+         */
+        FrameAcceptanceReporting farm;
 
-	    /**
-         * @brief Buffer that stores pointers to transfer frames after allFramesReception and before vcReception (FARM
-         * processing).
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedRxTcInWaitQueue> inFramesBeforeVcReceptionRxTC;
+        /**
+         * @brief Stores pointers to TC frames (of all types) after being created by all frames reception.
+         */
+        etl::list<TransferFrameTC*, T> framesAfterAllFramesReceptionTC;
 
-	    /**
-         * @brief Buffer that stores pointers to Type-AD transfer frames after vcReception (FARM processing) and before
-         * SDLS processing.
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedRxTcInVirtualChannelBuffer> inFramesAfterVCReceptionTypeADRxTC;
+        /**
+         * @brief Stores pointers to type-AD TC frames after being processed by vc generation. If no MAP channels
+         *        exist for this virtual channel, the pointers remain in this buffer after security processing.
+         */
+        etl::list<TransferFrameTC*, T> framesAfterVCReceptionTCTypeAD;
 
-	    /**
-         * @brief Buffer that stores pointers to Type-BD transfer frames after vcReception (FARM processing) and before
-         * SDLS processing.
-	     */
-	    etl::circular_buffer<TransferFrameTC *, MaxReceivedRxTcInVirtualChannelBuffer> inFramesAfterVCReceptionTypeBDRxTC;
+        /**
+         * @brief Stores pointers to type-BD TC frames after being processed by vc generation. The separate buffer
+         *        exists for the purpose of overwriting old type-BD frames with new ones (expedited service),
+         *        without interrupting the type-AD service. If no MAP channels exist for this virtual channel,
+         *        the pointers remain in this buffer after security processing.
+         */
+        etl::circular_buffer<TransferFrameTC*, T> framesAfterVCReceptionTCTypeBD;
 
-	    /**
-         * @brief Buffer that stores pointers to Type-AD transfer after SDLS processing and before packet extraction.
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeADRxTC;
+        /**
+         * @brief Counter for the amount of TM transfer frames transmitted through this virtual channel.
+         */
+        uint8_t frameCountTM;
 
-	    /**
-         * @brief Buffer that stores pointers to Type-BD transfer after SDLS processing and before packet extraction.
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> framesAfterSDLSProcessingTypeBDRxTC;
+        /**
+         * @brief Stores pointers to created TM frames after vc generation.
+         */
+        etl::list<TransferFrameTM*, T> framesUnderProcessingTM;
 
-	    /**
-         * @brief This variable is used by the packet extraction function and temporarily stores a pointer to a Type-AD
-         * transfer frame that stores more than one packet.
-	     */
-	    etl::optional<TransferFrameTC *> frameWithMultiplePacketsTypeADRxTC;
+        /**
+         *  @brief Queue that stores the lengths of packets that will eventually be concatenated to TM transfer frame data.
+         */
+        etl::deque<uint16_t, 100 * T> packetLengthBufferTM;
 
-	    /**
-         * @brief This variable is used by the packet extraction function and temporarily stores a pointer to a Type-BD
-         * transfer frame that stores more than one packet.
-	     */
-	    etl::optional<TransferFrameTC *> frameWithMultiplePacketsTypeBDRxTC;
+        /**
+         *  @brief Queue that stores the packet data that will eventually be concatenated to TM transfer frame data.
+         */
+        etl::deque<uint8_t, 100 * T> packetBufferTM;
 
-	    /**
-         * @brief This variable indicates the position to the next packet, in frameWithMultiplePacketsTypeADRxTC.
-         * @details Position 0 is defined as the first octet of the frame.
-	     */
-	    uint8_t nextPacketPositionTypeAD;
+        // Give the user access while debugging, testing
+#ifdef ENABLE_CHANNEL_ACCESS
+    public:
+        etl::list<TransferFrameTC*, T>& getFramesAfterAllFramesReceptionTC() {
+            return framesAfterAllFramesReceptionTC;
+        }
 
-	    /**
-         * @brief This variable indicates the position to the next packet, in frameWithMultiplePacketsTypeBDRxTC.
-         * @details Position 0 is defined as the first octet of the frame.
-	     */
-	    uint8_t nextPacketPositionTypeBD;
+        etl::list<TransferFrameTC*, T>& getFramesAfterVCReceptionTCTypeAD() {
+            return framesAfterVCReceptionTCTypeAD;
+        }
 
-	    /**
-         *  @brief Queue that stores the pointers of the packets that will eventually be concatenated to TM transfer frame data.
-	     */
-	    etl::deque<uint16_t, PacketBufferTmSize> packetLengthBufferTxTM;
+        etl::circular_buffer<TransferFrameTC*, T>& getFramesAfterVCReceptionTCTypeBD() {
+            return framesAfterVCReceptionTCTypeBD;
+        }
 
-	    /**
-         *  @brief Queue that stores the packet data that will eventually be concatenated to TM transfer frame data
-	     */
-	    etl::deque<uint8_t, PacketBufferTmSize> packetBufferTxTM;
+        uint8_t getFrameCountTM() {
+            return frameCountTM;
+        }
 
-// Allow access to internal buffers when unit testing
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	etl::list<TransferFrameTC *, MaxReceivedRxTcInWaitQueue>& getInFramesBeforeVcReceptionRxTC() {
-		return inFramesBeforeVcReceptionRxTC;
-	}
+        etl::list<TransferFrameTM*, T>& getFramesUnderProcessingTM() {
+            return framesUnderProcessingTM;
+        }
 
-	etl::list<TransferFrameTC *, MaxReceivedRxTcInVirtualChannelBuffer>& getInFramesAfterVCReceptionTypeADRxTC() {
-		return inFramesAfterVCReceptionTypeADRxTC;
-	}
+        etl::deque<uint16_t, 100 * T>& getPacketLengthBufferTM() {
+            return packetLengthBufferTM;
+        }
 
-	etl::circular_buffer<TransferFrameTC *, MaxReceivedRxTcInVirtualChannelBuffer>& getInFramesAfterVCReceptionTypeBDRxTC() {
-		return inFramesAfterVCReceptionTypeBDRxTC;
-	}
-
-	etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer>& getFramesAfterSDLSProcessingTypeADRxTC() {
-		return framesAfterSDLSProcessingTypeADRxTC;
-	}
-
-	etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer>& getFramesAfterSDLSProcessingTypeBDRxTC() {
-		return framesAfterSDLSProcessingTypeBDRxTC;
-	}
-
-	etl::optional<TransferFrameTC *>& getFrameWithMultiplePacketsTypeADRxTC() {
-		return frameWithMultiplePacketsTypeADRxTC;
-	}
-
-	etl::optional<TransferFrameTC *>& getFrameWithMultiplePacketsTypeBDRxTC() {
-		return frameWithMultiplePacketsTypeBDRxTC;
-	}
-
-	uint8_t getNextPacketPositionTypeAD() {
-		return nextPacketPositionTypeAD;
-	}
-
-	uint8_t getNextPacketPositionTypeBD() {
-		return nextPacketPositionTypeBD;
-	}
-
-	etl::deque<uint16_t, PacketBufferTmSize>& getPacketLengthBufferTxTM() {
-		return packetLengthBufferTxTM;
-	}
-
-	etl::deque<uint8_t, PacketBufferTmSize>& getPacketBufferTxTM() {
-		return packetBufferTxTM;
-	}
-#endif // ENABLE_BUFFER_ACCESS
+        etl::deque<uint8_t, 100 * T>& getPacketBufferTM() {
+            return packetBufferTM;
+        }
+#endif // ENABLE_CHANNEL_ACCESS
     };
 
+    template<std::size_t T>
     class MasterChannelSpaceSegment : public BaseMasterChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
-	public:
-	    explicit MasterChannelSpaceSegment(uint16_t scid) : BaseMasterChannel(scid), masterChannelFrameCountTM(0),
-	          masterChannelPoolRxTC(MemoryPool()), masterChannelPoolTxTM(MemoryPool()) {}
+        friend class ChannelsInterface;
+    public:
+        explicit MasterChannelSpaceSegment(const uint16_t mscid) : BaseMasterChannel(mscid),
+                                                             masterChannelPoolRxTC(MemoryPool<1000 * T>()),
+                                                             masterChannelFrameCountTM(0),
+                                                             masterChannelPoolTxTM(MemoryPool<1000 * T>()) {
+        }
 
-	    MasterChannelSpaceSegment(const MasterChannelSpaceSegment& m)
-	        : BaseMasterChannel(m), virtualChannels(m.virtualChannels), virtualChannelClcwQueues(m.virtualChannelClcwQueues),
-	          masterCopyRxTC(m.masterCopyRxTC), masterChannelPoolRxTC(m.masterChannelPoolRxTC),
-	          masterChannelFrameCountTM(m.masterChannelFrameCountTM),
-	          framesAfterVcGenerationServiceTxTM(m.framesAfterVcGenerationServiceTxTM),
-	          toBeTransmittedFramesAfterMCGenerationListTxTM(m.toBeTransmittedFramesAfterMCGenerationListTxTM),
-	          masterCopyTxTM(m.masterCopyTxTM), masterChannelPoolTxTM(m.masterChannelPoolTxTM) {}
+        MasterChannelSpaceSegment(const MasterChannelSpaceSegment &m)
+            : BaseMasterChannel(m), framesUnderProcessingTM(m.framesUnderProcessingTM),
+              masterCopyRxTC(m.masterCopyRxTC), masterChannelPoolRxTC(m.masterChannelPoolRxTC),
+              masterChannelFrameCountTM(m.masterChannelFrameCountTM),
+              masterCopyTxTM(m.masterCopyTxTM), masterChannelPoolTxTM(m.masterChannelPoolTxTM) {
+        }
 
-		MasterChannelAlert addVirtualChannel(const VirtualChannelSpaceSegment& v) {
-			if (virtualChannels.full()) {
-			    ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMasterChannelAlert, MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS);
-			    return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
-		    }
+    private:
+        /**
+         * @brief Buffer that holds pointers to TM frames after mc generation and before all frames generation.
+         */
+        etl::list<TransferFrameTM *, T> framesUnderProcessingTM;
 
-		    virtualChannels.emplace(v.getVCID(), v);
-		    return MasterChannelAlert::NO_MC_ALERT;
-		}
+        /**
+         * @brief Buffer that stores the actual TC transfer frame objects for the RxTC chain.
+         */
+        etl::list<TransferFrameTC, T> masterCopyRxTC;
 
-	private:
-	    etl::flat_map<uint8_t, VirtualChannelSpaceSegment, MaxVirtualChannels> virtualChannels;
+        /**
+         * @brief An object that manages a statically allocated block of memory, storing the octets for TC frames in the
+         * RxTC chain.
+         */
+        MemoryPool<1000 * T> masterChannelPoolRxTC;
 
-	    /**
-		 * @brief A map of queues that hold generated CLCWs from every virtual channel's FARM. The TM Link
-		 * (TxTM chain) pops and places them inside the OCF field of TM frames.
-	     */
-	    etl::flat_map<uint8_t, etl::queue<CLCW, 1>, MaxVirtualChannels> virtualChannelClcwQueues;
+        /**
+         * @brief A counter that keeps track the number of TM transfer frames transmitted from this master channel. The
+         * master channel frame count is carried by TM transfer frames, hence the receiving side can deduce if frames
+         * were lost.
+         *
+         * @details The initial value of this counter should be zero.
+         */
+        uint8_t masterChannelFrameCountTM;
 
-	    /**
-		 * @brief Buffer that stores the actual TC transfer frame objects for the RxTC chain.
-	     */
-	    etl::list<TransferFrameTC, MaxRxInMasterChannel> masterCopyRxTC;
+        /**
+         * @brief Buffer that stores the actual TM transfer frame objects for the TxTM chain.
+         */
+        etl::list<TransferFrameTM, T> masterCopyTxTM;
 
-	    /**
-		 * @brief Remove TC a transfer frame object in the RxTC chain.
-	     */
-	    void removeMasterRxTC(TransferFrameTC *frame_ptr);
+        /**
+         * @brief An object that manages a statically allocated block of memory, storing the octets for TM frames in the
+         * TxTM chain.
+         */
+        MemoryPool<1000 * T> masterChannelPoolTxTM;
 
-	    /**
-		 * @brief An object that manages a statically allocated block of memory, storing the octets for TC frames in the
-		 * RxTC chain.
-	     */
-	    MemoryPool masterChannelPoolRxTC;
+        // Give the user access while debugging, testing
+#ifdef ENABLE_CHANNEL_ACCESS
+        public:
+        etl::list<TransferFrameTM *, T>& getFramesUnderProcessingTM() {
+            return framesUnderProcessingTM;
+        }
 
-	    /**
-		 * @brief A counter that keeps track the number of TM transfer frames transmitted from this master channel. The
-		 * master channel frame count is carried by TM transfer frames, hence the receiving side can deduce if frames
-		 * were lost.
-		 *
-		 * @details The initial value of this counter should be zero.
-	     */
-	    uint8_t masterChannelFrameCountTM;
+        etl::list<TransferFrameTC, T>& getMasterCopyRxTC() {
+            return masterCopyRxTC;
+        }
 
-	    /**
-		 * @brief Buffer that stores pointers to TM frames after vcGeneration and before mcGeneration.
-	     */
-	    etl::list<TransferFrameTM *, MaxReceivedUnprocessedTxTmInVirtBuffer> framesAfterVcGenerationServiceTxTM;
+        MemoryPool<1000 * T>& getMasterChannelPoolRxTC() {
+            return masterChannelPoolRxTC;
+        }
 
-	    /**
-		 * @brief Buffer that stores pointers to TM frames after mcGeneration and before allFramesGeneration.
-	     */
-	    etl::list<TransferFrameTM *, MaxReceivedTxTmOutInVCBuffer> toBeTransmittedFramesAfterMCGenerationListTxTM;
+        uint8_t getMasterChannelFrameCountTM() {
+            return masterChannelFrameCountTM;
+        }
 
-	    /**
-		 * @brief Buffer that stores the actual TM transfer frame objects for the TxTM chain.
-	     */
-	    etl::list<TransferFrameTM, MaxTxInMasterChannel> masterCopyTxTM;
+        etl::list<TransferFrameTM, T>& getMasterCopyTxTM() {
+            return masterCopyTxTM;
+        }
 
-	    /**
-		 * @brief Remove TM a transfer frame object in the TxTM chain.
-	     */
-	    void removeMasterTxTM(TransferFrameTM *frame_ptr);
-
-	    /**
-		 * @brief An object that manages a statically allocated block of memory, storing the octets for TM frames in the
-		 * TxTM chain.
-	     */
-	    MemoryPool masterChannelPoolTxTM;
-
-// Allow access to internal buffers when unit testing
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	    etl::flat_map<uint8_t, VirtualChannelSpaceSegment, MaxVirtualChannels>& getVirtualChannels() {
-	        return virtualChannels;
-	    };
-	    etl::flat_map<uint8_t, etl::queue<CLCW, 1>, MaxVirtualChannels>& getVirtualChannelClcwQueues() {
-		    return virtualChannelClcwQueues;
-	    };
-	    etl::list<TransferFrameTC, MaxRxInMasterChannel>& getMasterCopyRxTC() {
-		    return masterCopyRxTC;
-	    }
-	    MemoryPool& getMasterChannelPoolRxTC() {
-		    return masterChannelPoolRxTC;
-	    } 
-	    etl::list<TransferFrameTM *, MaxReceivedUnprocessedTxTmInVirtBuffer>& getFramesAfterVcGenerationServiceTxTM() {
-		    return framesAfterVcGenerationServiceTxTM;
-	    }
-	    etl::list<TransferFrameTM *, MaxReceivedTxTmOutInVCBuffer>& getToBeTransmittedFramesAfterMCGenerationListTxTM() {
-		    return toBeTransmittedFramesAfterMCGenerationListTxTM;
-	    }
-	    etl::list<TransferFrameTM, MaxTxInMasterChannel>& getMasterCopyTxTM() {
-		    return masterCopyTxTM;
-	    }
-	    MemoryPool& getMasterChannelPoolTxTM() {
-		    return masterChannelPoolTxTM;
-	    } 
-#endif // ENABLE_BUFFER_ACCESS
+        MemoryPool<1000 * T>& getMasterChannelPoolTxTM() {
+            return masterChannelPoolTxTM;
+        }
+#endif // ENABLE_CHANNEL_ACCESS
     };
 #endif // SPACE_SEGMENT
 
 #ifdef GROUND_SEGMENT
+    template<std::size_t T>
     class MAPChannelGroundSegment : public BaseMAPChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
-	public:
-	    MAPChannelGroundSegment(const uint8_t mapid, bool blockingTC, bool segmentationTC) :
-	          BaseMAPChannel(mapid, blockingTC, segmentationTC) {}
+        friend class ChannelsInterface;
+    public:
+        MAPChannelGroundSegment(const uint32_t gmapid, const bool blockingTC, const bool segmentationTC) : BaseMAPChannel(
+            gmapid, blockingTC, segmentationTC) {
+        }
 
-	    MAPChannelGroundSegment(const MAPChannelGroundSegment& m)
-	        : BaseMAPChannel(m), packetLengthBufferTxTcTypeAD(m.packetLengthBufferTxTcTypeAD),
-	          packetBufferTxTcTypeAD(m.packetBufferTxTcTypeAD),
-	          packetLengthBufferTxTcTypeBD(m.packetLengthBufferTxTcTypeBD),
-	          packetBufferTxTcTypeBD(m.packetBufferTxTcTypeBD) {}
+        MAPChannelGroundSegment(const MAPChannelGroundSegment &m)
+            : BaseMAPChannel(m), packetLengthBufferTypeAD(m.packetLengthBufferTypeAD),
+              packetBufferTypeAD(m.packetBufferTypeAD),
+              packetLengthBufferTypeBD(m.packetLengthBufferTypeBD),
+              packetBufferTypeBD(m.packetBufferTypeBD), framesUnderProcessing(m.framesUnderProcessing) {
+        }
 
-	private:
-	    /**
-         * @brief Queue that stores lengths of packets that will eventually be concatenated to Type-AD transfer frame data.
-	     */
-	    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeAD;
+    private:
+        /**
+         * @brief Queue that stores lengths of packets that will eventually be concatenated to Type-AD
+         * transfer frame data by packetProcessing.
+         */
+        etl::queue<uint16_t, 10 * T> packetLengthBufferTypeAD;
 
-	    /**
-         * @brief Queue that stores the bytes of packets that will eventually be concatenated to Type-AD transfer frame data.
-	     */
-	    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeAD;
+        /**
+         * @brief Queue that stores the bytes of packets that will eventually be concatenated to Type-AD
+         * transfer frame data by packetProcessing.
+         */
+        etl::queue<uint8_t, 100 * T> packetBufferTypeAD;
 
-	    /**
-         * @brief Queue that stores lengths of packets that will eventually be concatenated to Type-BD transfer frame data.
-	     */
-	    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBD;
+        /**
+         * @brief Queue that stores lengths of packets that will eventually be concatenated to Type-BD
+         * transfer frame data by packetProcessing.
+         */
+        etl::queue<uint16_t, 10 * T> packetLengthBufferTypeBD;
 
-	    /**
-         * @brief Queue that stores the bytes of packets that will eventually be concatenated to Type-BD transfer frame data.
-	     */
-	    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
+        /**
+         * @brief Queue that stores the bytes of packets that will eventually be concatenated to Type-BD
+         * transfer frame data by packetProcessing.
+         */
+        etl::queue<uint8_t, 100 * T> packetBufferTypeBD;
 
-// Allow access to internal buffers when unit testing
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	    etl::queue<uint16_t, PacketBufferTcSize>& getPacketLengthBufferTxTcTypeAD() {
-		    return packetLengthBufferTxTcTypeAD;
-	    }
+        /**
+         * Holds pointers to frames after packetProcessing.
+         */
+        etl::list<TransferFrameTC *, T> framesUnderProcessing;
 
-	    etl::queue<uint8_t, PacketBufferTcSize>& getPacketBufferTxTcTypeAD() {
-		    return packetBufferTxTcTypeAD;
-	    }
+        // Give the user access when debugging/testing
+#ifdef ENABLE_CHANNEL_ACCESS
+    public:
+        etl::queue<uint16_t, 10 * T>& getPacketLengthBufferTypeAD() {
+            return packetLengthBufferTypeAD;
+        }
 
-	    etl::queue<uint16_t, PacketBufferTcSize>& getPacketLengthBufferTxTcTypeBD() {
-		    return packetLengthBufferTxTcTypeBD;
-	    }
+        etl::queue<uint8_t, 100 * T>& getPacketBufferTypeAD() {
+            return packetBufferTypeAD;
+        }
 
-	    etl::queue<uint8_t, PacketBufferTcSize>& getPacketBufferTxTcTypeBD() {
-		    return packetBufferTxTcTypeBD;
-	    }
-#endif // ENABLE_BUFFER_ACCESS
+        etl::queue<uint16_t, 10 * T>& getPacketLengthBufferTypeBD() {
+            return packetLengthBufferTypeBD;
+        }
+
+        etl::queue<uint8_t, 100 * T>& getPacketBufferTypeBD() {
+            return packetBufferTypeBD;
+        }
+
+        etl::list<TransferFrameTC *, T>& getFramesUnderProcessing() {
+            return framesUnderProcessing;
+        }
+#endif
     };
 
-	class VirtualChannelGroundSegment : public BaseVirtualChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
-	public:
-	    VirtualChannelGroundSegment(const uint8_t vcid,
-	                               const etl::flat_map<uint8_t, BaseMAPChannel, MaxMapChannels>& mapChan, const uint8_t vcRepetitions,
-	                               bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
-	                               const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
-	                               const bool segmentationTM, const bool operationalControlFieldTMPresent,
-	                               const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-	                               const SynchronizationFlag synchronization,
-	                               etl::list<TransferFrameTC, MaxTxInMasterChannel>& masterCopyTxTC,
-	                               MemoryPool& memoryPoolTxTC)
-	        : BaseVirtualChannel(vcid, vcRepetitions, frameErrorControlFieldPresent,
-	                         maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
-	                         operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
-	                         synchronization),
-	          fop(FrameOperationProcedure(vcid, frameErrorControlFieldPresent, masterCopyTxTC, memoryPoolTxTC)) {}
+    template<std::size_t T>
+    class VirtualChannelGroundSegment : public BaseVirtualChannel {
+        friend class ChannelsInterface;
+    public:
+        VirtualChannelGroundSegment(const uint32_t gvcid, const uint8_t vcRepetitions,
+                                    const bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
+                                    const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
+                                    const bool segmentationTM, const bool operationalControlFieldTMPresent,
+                                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
+                                    const DefsAndUtils::SynchronizationFlag synchronization,
+                                    const uint16_t fopTiInitial,
+                                    const uint16_t fopTransmissionLimit,
+                                    const uint16_t fopSlidingWindowWidth)
+            : BaseVirtualChannel(gvcid, vcRepetitions, frameErrorControlFieldPresent,
+                                 maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
+                                 operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
+                                 synchronization),
+                                fop(FrameOperationProcedure(DefsAndUtils::extractVcidFromGvcid(gvcid),
+                                    frameErrorControlFieldPresent,
+                                    fopTiInitial,
+                                    fopTransmissionLimit,
+                                    fopSlidingWindowWidth))
+              {
+        }
 
-	    VirtualChannelGroundSegment(const VirtualChannelGroundSegment& v)
-	        : BaseVirtualChannel(v), fop(v.fop), packetLengthBufferTxTcTypeAD(v.packetLengthBufferTxTcTypeAD),
-	          packetBufferTxTcTypeAD(v.packetBufferTxTcTypeAD),
-	          packetLengthBufferTxTcTypeBD(v.packetLengthBufferTxTcTypeBD),
-	          packetBufferTxTcTypeBD(v.packetBufferTxTcTypeBD),
-	          framesBeforeSDLSProcessingTxTC(v.framesBeforeSDLSProcessingTxTC),
-	          unprocessedFrameListBufferTxTC(v.unprocessedFrameListBufferTxTC) {}
+        VirtualChannelGroundSegment(const VirtualChannelGroundSegment &v)
+            : BaseVirtualChannel(v), fop(v.fop), packetLengthBufferTcTypeAD(v.packetLengthBufferTcTypeAD),
+              packetBufferTcTypeAD(v.packetBufferTcTypeAD),
+              packetLengthBufferTcTypeBD(v.packetLengthBufferTcTypeBD),
+              packetBufferTcTypeBD(v.packetBufferTcTypeBD),
+              framesUnderProcessing(v.framesUnderProcessing) {
+        }
 
-	    VirtualChannelAlert addMAPChannel(const MAPChannelGroundSegment& m) {
-		    if (mapChannels.full()) {
-			    ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert,
-			                   VirtualChannelAlert::MAX_AMOUNT_OF_MAP_CHANNELS);
-			    return VirtualChannelAlert::MAX_AMOUNT_OF_MAP_CHANNELS;
-		    }
+    private:
+        /**
+         * @brief Object that stores and manages the FOP state of the virtual channel.
+         */
+        FrameOperationProcedure fop;
 
-		    mapChannels.emplace(m.getMAPID(), m);
-		    return VirtualChannelAlert::NO_VC_ALERT;
-	    }
-
-	private:
-	    etl::flat_map<uint8_t, MAPChannelGroundSegment, MaxMapChannels> mapChannels;
-
-	    /**
-	     * @brief Object that stores and manages the FOP state of the virtual channel.
-	     */
-	    FrameOperationProcedure fop;
-
-	    /**
+        /**
          * @brief Queue that stores the lengths of the packets that will eventually be concatenated
          * to Type-AD transfer frame data.
-	     */
-	    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeAD;
+         */
+        etl::queue<uint16_t, 10 * T> packetLengthBufferTcTypeAD;
 
-	    /**
+        /**
          * @brief Queue that stores the bytes of the packets that will eventually be concatenated to
          * Type-AD transfer frame data.
-	     */
-	    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeAD;
+         */
+        etl::queue<uint8_t, DefsAndUtils::MaxSpacePacketSize * T> packetBufferTcTypeAD;
 
-	    /**
+        /**
          * @brief Queue that stores the lengths of the packets that will eventually be concatenated
          * to Type-BD transfer frame data.
-	     */
-	    etl::queue<uint16_t, PacketBufferTcSize> packetLengthBufferTxTcTypeBD;
+         */
+        etl::queue<uint16_t, 10 * T> packetLengthBufferTcTypeBD;
 
-	    /**
+        /**
          * @brief Queue that stores the bytes of the packets that will eventually be concatenated to
          * Type-BD transfer frame data.
-	     */
-	    etl::queue<uint8_t, PacketBufferTcSize> packetBufferTxTcTypeBD;
+         */
+        etl::queue<uint8_t, DefsAndUtils::MaxSpacePacketSize * T> packetBufferTcTypeBD;
 
-	    /**
-         * @brief Buffer that stores pointers to frames after packet processing and before SDLS processing.
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> framesBeforeSDLSProcessingTxTC;
+        /**
+         * @brief Holds pointers to TC frames after being created by packetProcessing and during applySecurity,
+         *        vcGeneration.
+         */
+        etl::list<TransferFrameTC *, T> framesUnderProcessing;
 
-	    /**
-         * @brief Buffer that stores pointers to frames after SDLS processing and before vcGeneration (FOP processing).
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer> unprocessedFrameListBufferTxTC;
+        // Give the user access when debugging/testing
+#ifdef ENABLE_CHANNEL_ACCESS
+    public:
+        etl::queue<uint16_t, 10 * T>& getPacketLengthBufferTcTypeAD() {
+            return packetLengthBufferTcTypeAD;
+        }
 
-	    // RxTM chain
-	    //        /**
-	    //         * @brief TM transfer frames after being processed by the MasterChannelReception Service.
-	    //         */
-	    //        etl::list<TransferFrameTM *, MaxReceivedRxTmInVirtBuffer> framesAfterMcReceptionRxTM;
-	    //
-	    //        /**
-	    //         * @brief Buffer holding the CLCW that is received
-	    //         */
-	    //        etl::list<CLCW, 1> receivedClcwBuffer;
+        etl::queue<uint8_t, DefsAndUtils::MaxSpacePacketSize * T>& getPacketBufferTcTypeAD() {
+            return packetBufferTcTypeAD;
+        }
 
-// Allow access to internal buffers when unit testing
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	    etl::queue<uint16_t, PacketBufferTcSize>& getPacketLengthBufferTxTcTypeAD() {
-		    return packetLengthBufferTxTcTypeAD;
-	    }
+        etl::queue<uint16_t, 10 * T>& getPacketLengthBufferTcTypeBD() {
+            return packetLengthBufferTcTypeBD;
+        }
 
-	    etl::queue<uint8_t, PacketBufferTcSize>& getPacketBufferTxTcTypeAD() {
-		    return packetBufferTxTcTypeAD;
-	    }
+        etl::queue<uint8_t, DefsAndUtils::MaxSpacePacketSize * T>& getPacketBufferTcTypeBD() {
+            return packetBufferTcTypeBD;
+        }
 
-	    etl::queue<uint16_t, PacketBufferTcSize>& getPacketLengthBufferTxTcTypeBD() {
-		    return packetLengthBufferTxTcTypeAD;
-	    }
-
-	    etl::queue<uint8_t, PacketBufferTcSize>& getPacketBufferTxTcTypeBD() {
-		    return packetBufferTxTcTypeBD;
-	    }
-
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer>& getUnprocessedFrameListBufferTxTC() {
-		    return unprocessedFrameListBufferTxTC;
-	    }
-
-	    etl::list<TransferFrameTC *, MaxReceivedUnprocessedTxTcInVirtBuffer>& getFramesBeforeSDLSProcessingTxTC() {
-		    return framesBeforeSDLSProcessingTxTC;
-	    }
-#endif // ENABLE_BUFFER_ACCESS
+        etl::list<TransferFrameTC *, T>& getFramesUnderProcessing() {
+            return framesUnderProcessing;
+        }
+#endif
     };
 
+    template<std::size_t T>
     class MasterChannelGroundSegment : public BaseMasterChannel {
-	    friend class BaseServiceChannel;
-	    friend class ServiceChannelSpaceSegment;
-	    friend class ServiceChannelGroundSegment;
-	public:
-	    explicit MasterChannelGroundSegment(uint16_t scid)
-	        : BaseMasterChannel(scid), masterChannelPoolTxTC(MemoryPool()){}
+        friend class ChannelsInterface;
+    public:
+        explicit MasterChannelGroundSegment(const uint16_t mscid)
+            : BaseMasterChannel(mscid), masterChannelPoolTxTC(MemoryPool<1000 * T>()) {
+        }
 
-	    MasterChannelGroundSegment(const MasterChannelGroundSegment& m)
-	        : BaseMasterChannel(m),
-	          virtualChannels(m.virtualChannels), outFramesBeforeAllFramesGenerationListTxTC(m.outFramesBeforeAllFramesGenerationListTxTC),
-	          masterCopyTxTC(m.masterCopyTxTC), masterChannelPoolTxTC(m.masterChannelPoolTxTC) {}
+        MasterChannelGroundSegment(const MasterChannelGroundSegment &m)
+            : BaseMasterChannel(m),
+              masterCopyTxTC(m.masterCopyTxTC), masterChannelPoolTxTC(m.masterChannelPoolTxTC) {
+        }
 
-	    MasterChannelAlert addVirtualChannel(const VirtualChannelGroundSegment& v) {
-		    if (virtualChannels.full()) {
-			    ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMasterChannelAlert, MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS);
-			    return MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS;
-		    }
-		    virtualChannels.emplace(v.getVCID(), v);
+    private:
+        /**
+         * @brief Buffer that stores the actual TC transfer frame objects for the TxTC chain.
+         */
+        etl::list<TransferFrameTC, T> masterCopyTxTC;
 
-		    return MasterChannelAlert::NO_MC_ALERT;
-	    }
+        /**
+         * @brief An object that manages a statically allocated block of memory, storing the octets for TC frames in the
+         * TxTC chain.
+         */
+        MemoryPool<1000*T> masterChannelPoolTxTC;
 
-	private:
-	    etl::flat_map<uint8_t, VirtualChannelGroundSegment, MaxVirtualChannels> virtualChannels;
+        // Give the user access when debugging/testing
+#ifdef ENABLE_CHANNEL_ACCESS
+    public:
+        etl::list<TransferFrameTC, T>& getMasterCopyTxTC() {
+            return masterCopyTxTC;
+        }
 
-	    /**
-		 * @brief Buffer that stores pointers to TC frames after vcGeneration (FOP processing) and before
-		 * allFramesGeneration.
-	     */
-	    etl::list<TransferFrameTC *, MaxReceivedTxTcInMasterBuffer> outFramesBeforeAllFramesGenerationListTxTC;
-
-	    /**
-		 * @brief Buffer that stores the actual TC transfer frame objects for the TxTC chain.
-	     */
-	    etl::list<TransferFrameTC, MaxTxInMasterChannel> masterCopyTxTC;
-
-	    /**
-		 * @brief Remove TC a transfer frame object in the TxTC chain.
-	     */
-	    void removeMasterTxTC(TransferFrameTC *frame_ptr);
-
-	    /**
-		 * @brief An object that manages a statically allocated block of memory, storing the octets for TC frames in the
-		 * TxTC chain.
-	     */
-	    MemoryPool masterChannelPoolTxTC;
-
-	    // RxTM chain
-	    // etl::list<TransferFrameTM, MaxRxInMasterChannel> masterCopyRxTM;
-	    // void removeMasterRxTM(TransferFrameTM *frame_ptr);
-
-// Allow access to internal buffers when unit testing
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	    etl::flat_map<uint8_t, VirtualChannelGroundSegment, MaxVirtualChannels>& getVirtualChannels() {
-		    return virtualChannels;
-	    };
-	    etl::list<TransferFrameTC *, MaxReceivedTxTcInMasterBuffer>& getOutFramesBeforeAllFramesGenerationListTxTC() {
-		    return outFramesBeforeAllFramesGenerationListTxTC;
-	    }
-	    etl::list<TransferFrameTC, MaxTxInMasterChannel>& getMasterCopyTxTC() {
-		    return masterCopyTxTC;
-	    }
-	    MemoryPool& getMasterChannelPoolTxTC() {
-		    return masterChannelPoolTxTC;
-	    } 
-#endif // ENABLE_BUFFER_ACCESS
+        MemoryPool<1000*T>& getMasterChannelPoolTxTC() {
+            return masterChannelPoolTxTC;
+        }
+#endif
     };
 #endif // GROUND_SEGMENT
-
 } // namespace CCSDSDataLinkLayer

@@ -4,7 +4,8 @@
 #include "Alert.hpp"
 
 namespace CCSDSDataLinkLayer {
-    uint8_t *MemoryPool::allocatePacket(uint8_t *packet, uint16_t packetLength) {
+    template<std::size_t T>
+    uint8_t *MemoryPool<T>::allocatePacket(uint8_t *packet, uint16_t packetLength) {
         std::pair<uint16_t, MasterChannelAlert> index = findFit(packetLength);
         uint16_t start = index.first;
         if (index.second == MasterChannelAlert::NO_SPACE) {
@@ -18,7 +19,8 @@ namespace CCSDSDataLinkLayer {
         return memory + start;
     }
 
-    bool MemoryPool::deletePacket(const uint8_t *packet, uint16_t packetLength) {
+    template<std::size_t T>
+    bool MemoryPool<T>::deletePacket(const uint8_t *packet, uint16_t packetLength) {
         int32_t indexInMemory = packet - &memory[0];
         if (indexInMemory >= 0 && indexInMemory + packetLength < memorySize) {
             usedMemory.erase(indexInMemory);
@@ -28,7 +30,8 @@ namespace CCSDSDataLinkLayer {
         return false;
     }
 
-    std::pair<uint16_t, MasterChannelAlert> MemoryPool::findFit(uint16_t packetLength) {
+    template<std::size_t T>
+    std::pair<uint16_t, MasterChannelAlert> MemoryPool<T>::findFit(uint16_t packetLength) {
         std::pair<uint16_t, MasterChannelAlert> fit;
         fit.second = MasterChannelAlert::NO_MC_ALERT;
 
@@ -70,7 +73,8 @@ namespace CCSDSDataLinkLayer {
         return fit;
     }
 
-    uint8_t *MemoryPool::getMemory() {
+    template<std::size_t T>
+    uint8_t *MemoryPool<T>::getMemory() {
         return &memory[0];
     }
 } // namespace CCSDSDataLinkLayer

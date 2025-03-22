@@ -56,7 +56,7 @@ add_executable(ccsds_tm_packets_yamcs_connection
         src/Platform/x86/FrameSender.cpp
         src/Platform/x86/main.cpp
         )
-target_compile_definitions(ccsds_tm_packets_yamcs_connection PRIVATE ENABLE_BUFFER_ACCESS)
+target_compile_definitions(ccsds_tm_packets_yamcs_connection PRIVATE ENABLE_CHANNEL_ACCESS)
 add_dependencies(ccsds_tm_packets_yamcs_connection TinyCryptLib) # ensure "TinyCryptLib" target is built first
 target_link_libraries(ccsds_tm_packets_yamcs_connection PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 
@@ -71,7 +71,7 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
            # ${test_main_SRC}
            # ${test_SRC}
     )
-    target_compile_definitions(tests PRIVATE ENABLE_BUFFER_ACCESS)
+    target_compile_definitions(tests PRIVATE ENABLE_CHANNEL_ACCESS)
     add_dependencies(tests TinyCryptLib) # ensure "TinyCryptLib" target is built first
     target_link_libraries(tests Catch2::Catch2WithMain  ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 ENDIF ()

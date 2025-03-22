@@ -7,37 +7,31 @@
 
 #include "etl/optional.h"
 #include "TransferFrame.hpp"
-#include "CCSDS_Definitions.hpp"
+#include "CCSDSDefinitionsAndUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
-    /**
-     * @brief Indicates the type of data carried by the TM transfer frame.
-     *
-     * @details OCTET_SYNCHRONIZED_FORWARD_ORDERED packets are of known structure to the data link ("Space Packets"
-     * as defined in the CCSDS Space Packet Protocol). VCA_SDU is for packets of unknown structure.
-     * 
-     * @see p. 4.1.2.7.3 from TM Space Data Link Protocol
-     */
-    enum class SynchronizationFlag : bool {
-        OCTET_SYNCHRONIZED_FORWARD_ORDERED = false,
-        VCA_SDU = true
-    };
-
     class TransferFrameTM : public TransferFrame {
     public:
         /**
          * @brief Constructor for frame creation within the data link (operational control field remains uninitialized).
          */
-        TransferFrameTM(uint8_t *frameData, uint16_t frameLength, uint8_t vcid, bool operationalControlFieldPresent,
-                        uint8_t virtualChannelFrameCount, bool transferFrameSecondaryHeaderPresent,
-                        SynchronizationFlag syncFlag, bool packetOrder, uint8_t segmentationLengthId,
-                        uint16_t firstHeaderPointer, bool eccFieldPresent, uint16_t firstEmptyOctet = 0)
-                : TransferFrame(FrameType::TM, frameLength, frameData, firstEmptyOctet), eccFieldPresent(eccFieldPresent) {
+        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const uint8_t vcid, const uint16_t scid,
+                        const bool operationalControlFieldPresent,
+                        const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
+                        const DefsAndUtils::SynchronizationFlag syncFlag, const bool packetOrder,
+                        const uint8_t segmentationLengthId,
+                        const uint16_t firstHeaderPointer, const bool eccFieldPresent,
+                        const uint16_t firstEmptyOctet = 0)
+            : TransferFrame(DefsAndUtils::FrameType::TM, frameLength, frameData, firstEmptyOctet),
+              eccFieldPresent(eccFieldPresent),
+              processingStage(DefsAndUtils::TmFrameProcessingStage::PROCESSED_BY_VC_GENERATION) {
             // Transfer Frame Version Number + Spacecraft Id
-            frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6U) |
-                           static_cast<uint8_t>((SpacecraftIdentifier & 0x3F0) >> 4U);
+            frameData[0] = (static_cast<uint8_t>(
+                                DefsAndUtils::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
+                            << 6U) |
+                           static_cast<uint8_t>((scid & 0x3F0) >> 4U);
             // Spacecraft  Id + Virtual Channel ID + Operational Control Field
-            frameData[1] = static_cast<uint8_t>((SpacecraftIdentifier & 0x0F) << 4U) | ((vcid & 0x7) << 1U) |
+            frameData[1] = static_cast<uint8_t>((scid & 0x0F) << 4U) | ((vcid & 0x7) << 1U) |
                            static_cast<uint8_t>(operationalControlFieldPresent);
             // Master Channel Frame Count is set by the MC Generation Service
             frameData[2] = 0;
@@ -53,16 +47,23 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Constructor for frame creation within the data link (operational control field is initialized).
          */
-        TransferFrameTM(uint8_t *frameData, uint16_t frameLength, uint16_t vcid, uint32_t operationalControlField,
-                        uint8_t virtualChannelFrameCount, bool transferFrameSecondaryHeaderPresent,
-                        SynchronizationFlag syncFlag, bool packetOrder, uint8_t segmentationLengthId,
-                        uint16_t firstHeaderPointer, bool eccFieldExists, uint16_t firstEmptyOctet = 0)
-                : TransferFrame(FrameType::TM, frameLength, frameData, firstEmptyOctet), eccFieldPresent(eccFieldExists)  {
+        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const uint16_t vcid, const uint16_t scid,
+                        const uint32_t operationalControlField,
+                        const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
+                        DefsAndUtils::SynchronizationFlag syncFlag, const bool packetOrder,
+                        const uint8_t segmentationLengthId,
+                        const uint16_t firstHeaderPointer, const bool eccFieldExists,
+                        const uint16_t firstEmptyOctet = 0)
+            : TransferFrame(DefsAndUtils::FrameType::TM, frameLength, frameData, firstEmptyOctet),
+              eccFieldPresent(eccFieldExists),
+              processingStage(DefsAndUtils::TmFrameProcessingStage::PROCESSED_BY_VC_GENERATION) {
             // Transfer Frame Version Number + Spacecraft Id
-            frameData[0] = ((TransferFrameVersionNumber & 0x3) << 6U) |
-                           static_cast<uint8_t>((SpacecraftIdentifier & 0x3F0) >> 4U);
+            frameData[0] = (static_cast<uint8_t>(
+                                DefsAndUtils::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
+                            << 6U) |
+                           static_cast<uint8_t>((scid & 0x3F0) >> 4U);
             // Spacecraft  Id + Virtual Channel ID + Operational Control Field
-            frameData[1] = static_cast<uint8_t>((SpacecraftIdentifier & 0x0F) << 4U) | ((vcid & 0x7) << 1U) | 0x1;
+            frameData[1] = static_cast<uint8_t>((scid & 0x0F) << 4U) | ((vcid & 0x7) << 1U) | 0x1;
             // Master Channel Frame Count is set by the MC Generation Service
             frameData[2] = 0;
             frameData[3] = virtualChannelFrameCount;
@@ -72,7 +73,9 @@ namespace CCSDSDataLinkLayer {
                            ((segmentationLengthId & 0x3) << 3U) |
                            static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8U);
             frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
-            uint8_t *ocfPointer = frameData + transferFrameLength - TmOperationalControlFieldSize - ErrorControlFieldSize * eccFieldExists;
+            uint8_t *ocfPointer = frameData + transferFrameLength -
+                                  DefsAndUtils::TmOperationalControlFieldSize
+                                  - DefsAndUtils::ErrorControlFieldSize * eccFieldExists;
             ocfPointer[0] = static_cast<uint8_t>(operationalControlField >> 24U);
             ocfPointer[1] = static_cast<uint8_t>((operationalControlField >> 16U) & 0xFF);
             ocfPointer[2] = static_cast<uint8_t>((operationalControlField >> 8U) & 0xFF);
@@ -82,9 +85,12 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Constructor for frame creation from received octets.
          */
-        TransferFrameTM(uint8_t *frameData, uint16_t frameLength, bool eccFieldExists, uint16_t firstEmptyOctet = 0)
-                : TransferFrame(FrameType::TM, frameLength, frameData, firstEmptyOctet),
-                eccFieldPresent(eccFieldExists) {}
+        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const bool eccFieldExists,
+                        const uint16_t firstEmptyOctet = 0)
+            : TransferFrame(DefsAndUtils::FrameType::TM, frameLength, frameData, firstEmptyOctet),
+              eccFieldPresent(eccFieldExists),
+              processingStage(DefsAndUtils::TmFrameProcessingStage::PROCESSED_BY_ALL_FRAMES_GENERATION_RX) {
+        }
 
         /**
          * @brief Transfer frame version number.
@@ -133,7 +139,7 @@ namespace CCSDSDataLinkLayer {
             return transferFrameData[2];
         }
 
-        void setMasterChannelFrameCount(uint8_t masterChannelFrameCount) {
+        void setMasterChannelFrameCount(const uint8_t masterChannelFrameCount) const {
             transferFrameData[2] = masterChannelFrameCount;
         }
 
@@ -163,8 +169,8 @@ namespace CCSDSDataLinkLayer {
          * @see p. 4.1.2.7.3 from TM SPACE DATA LINK PROTOCOL
          */
 
-        [[nodiscard]] SynchronizationFlag getSynchronizationFlag() const {
-            return static_cast<SynchronizationFlag>((transferFrameData[4] & 0x40) >> 6U);
+        [[nodiscard]] DefsAndUtils::SynchronizationFlag getSynchronizationFlag() const {
+            return static_cast<DefsAndUtils::SynchronizationFlag>((transferFrameData[4] & 0x40) >> 6U);
         }
 
         /**
@@ -226,22 +232,34 @@ namespace CCSDSDataLinkLayer {
             if (!getOperationalControlFieldFlag()) {
                 return etl::nullopt;
             }
-            uint32_t operationalControlField;
-            uint8_t *operationalControlFieldPointer;
 
-            operationalControlFieldPointer = transferFrameData + transferFrameLength - TmOperationalControlFieldSize - ErrorControlFieldSize * eccFieldPresent;
-            operationalControlField = (operationalControlFieldPointer[0] << 24U) |
-                                      (operationalControlFieldPointer[1] << 16U) |
-                                      (operationalControlFieldPointer[2] << 8U) | operationalControlFieldPointer[3];
+            const uint8_t *operationalControlFieldPointer = transferFrameData + transferFrameLength -
+                                                            DefsAndUtils::TmOperationalControlFieldSize
+                                                            - DefsAndUtils::ErrorControlFieldSize *
+                                                            eccFieldPresent;
+            uint32_t operationalControlField = (operationalControlFieldPointer[0] << 24U) |
+                                               (operationalControlFieldPointer[1] << 16U) |
+                                               (operationalControlFieldPointer[2] << 8U) |
+                                               operationalControlFieldPointer[3];
             return operationalControlField;
         }
 
-        void setOperationalControlField(uint32_t operationalControlField) {
-            uint8_t *ocfPointer = transferFrameData + transferFrameLength - TmOperationalControlFieldSize - ErrorControlFieldSize * eccFieldPresent;
+        void setOperationalControlField(const uint32_t operationalControlField) const {
+            uint8_t *ocfPointer = transferFrameData + transferFrameLength -
+                                  DefsAndUtils::TmOperationalControlFieldSize -
+                                  DefsAndUtils::ErrorControlFieldSize * eccFieldPresent;
             ocfPointer[0] = operationalControlField >> 24U;
             ocfPointer[1] = (operationalControlField >> 16U) & 0xFF;
             ocfPointer[2] = (operationalControlField >> 8U) & 0xFF;
             ocfPointer[3] = operationalControlField & 0xFF;
+        }
+
+        [[nodiscard]] DefsAndUtils::TmFrameProcessingStage getProcessingStage() const {
+            return processingStage;
+        }
+
+        void updateProcessingStage(const DefsAndUtils::TmFrameProcessingStage newProcessingStage) {
+            processingStage = newProcessingStage;
         }
 
     private:
@@ -252,5 +270,6 @@ namespace CCSDSDataLinkLayer {
          * the operational control field.
          */
         bool eccFieldPresent;
+        DefsAndUtils::TmFrameProcessingStage processingStage;
     };
 } // namespace CCSDSDataLinkLayer

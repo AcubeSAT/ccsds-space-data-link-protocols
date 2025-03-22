@@ -1,10 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <bitset>
 #include "etl/map.h"
 #include "Alert.hpp"
-#include "CCSDS_Definitions.hpp"
+#include "CCSDSDefinitionsAndUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
 /**
@@ -12,21 +11,22 @@ namespace CCSDSDataLinkLayer {
  * This helps better keep track of data and reduce the memory needed for storing them.
  */
 
+	template <std::size_t T>
     class MemoryPool {
     private:
         /**
          * @var The size of the block of memory in bytes
          */
-        static constexpr uint16_t memorySize = MemoryPoolMemorySize;
+        static constexpr uint16_t memorySize = T;
 
         /**
          * @var Maximum number of packets that can be allocated to the memory buffer
          */
-        static constexpr uint16_t maxAllocatedPackets = MaxAllocatedPackets;
+        static constexpr uint16_t maxAllocatedPackets = DefsAndUtils::MaxAllocatedPackets;
         /**
          * @var An array that allocates statically memory to be used for the packet data
          */
-        uint8_t memory[memorySize];
+        uint8_t memory[T];
 
         /**
          * @var Keep track of currently used slots. It uses an ordered map to keep track of the beginning position of each

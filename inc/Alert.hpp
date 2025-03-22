@@ -9,13 +9,14 @@ namespace CCSDSDataLinkLayer {
     };
 
     enum class NotificationType : uint8_t {
-        TypeVirtualChannelAlert = 0x00,
-        TypeMasterChannelAlert = 0x01,
-        TypeServiceChannelNotif = 0x02,
-        TypeFDURequestType = 0x03,
-        TypeSDLSVerificationStatusCode = 0x04,
-        TypeFOPNotif = 0x05,
-        TypeFARMNotif = 0x06,
+	    TypeMAPChannelAlert = 0x00,
+        TypeVirtualChannelAlert = 0x01,
+        TypeMasterChannelAlert = 0x02,
+        TypeServiceChannelNotif = 0x03,
+        TypeFDURequestType = 0x04,
+        TypeSDLSVerificationStatusCode = 0x05,
+        TypeFOPNotif = 0x06,
+        TypeFARMNotif = 0x07,
     };
 
     enum class ServiceChannelNotification : uint8_t {
@@ -60,6 +61,15 @@ namespace CCSDSDataLinkLayer {
         GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER = 0x2C
     };
 
+    enum class MapChannelAlert : uint8_t {
+	    PROCESSING_LIST_FULL = 0x01,
+        PROCESSING_LIST_EMPTY = 0x02,
+	    INVALID_SERVICE_TYPE = 0x03,
+	    REQUSTED_SERVICE_TYPE_FRAME_NOT_FOUND = 0x04,
+        PACKET_QUEUE_FULL = 0x05,
+        PACKET_QUEUE_EMPTY = 0x06,
+    };
+
     enum class VirtualChannelAlert : uint8_t {
         NO_VC_ALERT = 0x01,
         UNPROCESSED_PACKET_LIST_FULL = 0x02,
@@ -96,8 +106,7 @@ namespace CCSDSDataLinkLayer {
         WAIT_QUEUE_EMPTY = 0x05,
         SIGNAL_QUEUE_FULL = 0x06,
         SIGNAL_QUEUE_EMPTY = 0x07,
-        FOP_MEMORY_POOL_FULL = 0x08,
-        FOP_MASTER_COPY_BUFFER_FULL = 0x09,
+        FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL = 0x08,
         FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT = 0x0A,
         FOP_UNEXPECTED_VALUE = 0x0B,
     };

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include "etl/flat_map.h"
 #include "etl/array.h"
-#include "CCSDS_Definitions.hpp"
+#include "CCSDSDefinitionsAndUtilities.hpp"
 #include "TransferFrameTC.hpp"
 #include "TransferFrameTM.hpp"
 #include "Alert.hpp"

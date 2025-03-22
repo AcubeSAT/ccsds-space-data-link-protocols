@@ -1,7 +1,7 @@
 #include "FrameSender.hpp"
 #include "CCSDSServiceChannel.hpp"
 #include "FrameMaker.hpp"
-#include "CCSDS_Definitions.hpp"
+#include "CCSDSDefinitionsAndUtilities.hpp"
 #include "CCSDSChannel.hpp"
 
 namespace CCSDSDataLinkLayer {
