@@ -4,8 +4,6 @@
 #include "etl/queue.h"
 #include "etl/list.h"
 #include "etl/optional.h"
-#include "etl/circular_buffer.h"
-#include "TransferFrameTC.hpp"
 #include "CountdownTimer.hpp"
 #include "CLCW.hpp"
 #include "Alert.hpp"
@@ -41,6 +39,7 @@ namespace CCSDSDataLinkLayer {
      * FARM-1 is implemented as a state machine.
      */
     class FrameAcceptanceReporting {
+        friend class ChannelsInterface;
     private:
         /** FARM-1 Variables **/
 

@@ -116,10 +116,11 @@ namespace CCSDSDataLinkLayer {
         if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
             INSERT_ELEMENT(MasterChannelAlert::NO_MC_ALERT);
-            INSERT_ELEMENT(MasterChannelAlert::OUT_FRAMES_LIST_FULL);
-            INSERT_ELEMENT(MasterChannelAlert::TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
-            INSERT_ELEMENT(MasterChannelAlert::MAX_AMOUNT_OF_VIRT_CHANNELS);
-            INSERT_ELEMENT(MasterChannelAlert::NO_SPACE);
+            INSERT_ELEMENT(MasterChannelAlert::FRAME_LIST_FULL);
+            INSERT_ELEMENT(MasterChannelAlert::FRAME_LIST_EMPTY);
+            INSERT_ELEMENT(MasterChannelAlert::REQUESTED_FRAME_NOT_FOUND);
+            INSERT_ELEMENT(MasterChannelAlert::MASTER_COPY_BUFFER_FULL);
+            INSERT_ELEMENT(MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
@@ -129,11 +130,15 @@ namespace CCSDSDataLinkLayer {
         static std::map<VirtualChannelAlert, std::string> strings;
         if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
-            INSERT_ELEMENT(VirtualChannelAlert::NO_VC_ALERT);
-            INSERT_ELEMENT(VirtualChannelAlert::UNPROCESSED_PACKET_LIST_FULL);
-            INSERT_ELEMENT(VirtualChannelAlert::TX_WAIT_QUEUE_FULL);
-            INSERT_ELEMENT(VirtualChannelAlert::RX_WAIT_QUEUE_FULL);
-		    INSERT_ELEMENT(VirtualChannelAlert::MAX_AMOUNT_OF_MAP_CHANNELS);
+            INSERT_ELEMENT(VirtualChannelAlert::FRAME_LIST_FULL);
+            INSERT_ELEMENT(VirtualChannelAlert::FRAME_LIST_EMPTY);
+            INSERT_ELEMENT(VirtualChannelAlert::INVALID_SERVICE_TYPE);
+            INSERT_ELEMENT(VirtualChannelAlert::INVALID_INPUT);
+            INSERT_ELEMENT(VirtualChannelAlert::REQUSTED_FRAME_NOT_FOUND);
+            INSERT_ELEMENT(VirtualChannelAlert::PACKET_QUEUE_FULL);
+            INSERT_ELEMENT(VirtualChannelAlert::PACKET_QUEUE_EMPTY);
+            INSERT_ELEMENT(VirtualChannelAlert::FOP_SIGNAL_QUEUE_FULL);
+            INSERT_ELEMENT(VirtualChannelAlert::FOP_SIGNAL_QUEUE_EMPTY);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
@@ -143,10 +148,10 @@ namespace CCSDSDataLinkLayer {
 	    static std::map<MapChannelAlert, std::string> strings;
 	    if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
-		    INSERT_ELEMENT(MapChannelAlert::PROCESSING_LIST_FULL);
-	        INSERT_ELEMENT(MapChannelAlert::PROCESSING_LIST_EMPTY);
+		    INSERT_ELEMENT(MapChannelAlert::FRAME_LIST_FULL);
+	        INSERT_ELEMENT(MapChannelAlert::FRAME_LIST_EMPTY);
 		    INSERT_ELEMENT(MapChannelAlert::INVALID_SERVICE_TYPE);
-	        INSERT_ELEMENT(MapChannelAlert::REQUSTED_SERVICE_TYPE_FRAME_NOT_FOUND);
+	        INSERT_ELEMENT(MapChannelAlert::REQUSTED_FRAME_NOT_FOUND);
 	        INSERT_ELEMENT(MapChannelAlert::PACKET_QUEUE_FULL);
 	        INSERT_ELEMENT(MapChannelAlert::PACKET_QUEUE_EMPTY);
 #undef INSERT_ELEMENT

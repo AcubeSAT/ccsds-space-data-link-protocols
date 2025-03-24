@@ -62,28 +62,33 @@ namespace CCSDSDataLinkLayer {
     };
 
     enum class MapChannelAlert : uint8_t {
-	    PROCESSING_LIST_FULL = 0x01,
-        PROCESSING_LIST_EMPTY = 0x02,
+	    FRAME_LIST_FULL = 0x01,
+        FRAME_LIST_EMPTY = 0x02,
 	    INVALID_SERVICE_TYPE = 0x03,
-	    REQUSTED_SERVICE_TYPE_FRAME_NOT_FOUND = 0x04,
+	    REQUSTED_FRAME_NOT_FOUND = 0x04,
         PACKET_QUEUE_FULL = 0x05,
         PACKET_QUEUE_EMPTY = 0x06,
     };
 
     enum class VirtualChannelAlert : uint8_t {
-        NO_VC_ALERT = 0x01,
-        UNPROCESSED_PACKET_LIST_FULL = 0x02,
-        TX_WAIT_QUEUE_FULL = 0x03,
-        RX_WAIT_QUEUE_FULL = 0x04,
-	    MAX_AMOUNT_OF_MAP_CHANNELS = 0x05,
+        FRAME_LIST_FULL = 0x01,
+        FRAME_LIST_EMPTY = 0x02,
+        INVALID_SERVICE_TYPE = 0x03,
+        INVALID_INPUT = 0x04,
+        REQUSTED_FRAME_NOT_FOUND = 0x05,
+        PACKET_QUEUE_FULL = 0x06,
+        PACKET_QUEUE_EMPTY = 0x07,
+        FOP_SIGNAL_QUEUE_FULL = 0x08,
+        FOP_SIGNAL_QUEUE_EMPTY = 0x09,
     };
 
     enum class MasterChannelAlert : uint8_t {
         NO_MC_ALERT = 0x01,
-        OUT_FRAMES_LIST_FULL = 0x02,
-        TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x03,
-        MAX_AMOUNT_OF_VIRT_CHANNELS = 0x04,
-        NO_SPACE = 0x05
+        FRAME_LIST_FULL = 0x02,
+        FRAME_LIST_EMPTY = 0x03,
+        REQUESTED_FRAME_NOT_FOUND = 0x04,
+        MASTER_COPY_BUFFER_FULL = 0x05,
+        NOT_ENOUGH_SPACE_IN_MEMORY_POOL = 0x06,
     };
 
     enum class SDLSVerificationStatusCode : uint8_t {

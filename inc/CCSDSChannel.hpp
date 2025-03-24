@@ -409,7 +409,7 @@ namespace CCSDSDataLinkLayer {
          *        without interrupting the type-AD service. If no MAP channels exist for this virtual channel,
          *        the pointers remain in this buffer after security processing.
          */
-        etl::circular_buffer<TransferFrameTC*, T> framesAfterVCReceptionTCTypeBD;
+        etl::list<TransferFrameTC*, T> framesAfterVCReceptionTCTypeBD;
 
         /**
          * @brief Counter for the amount of TM transfer frames transmitted through this virtual channel.
@@ -469,16 +469,16 @@ namespace CCSDSDataLinkLayer {
         friend class ChannelsInterface;
     public:
         explicit MasterChannelSpaceSegment(const uint16_t mscid) : BaseMasterChannel(mscid),
-                                                             masterChannelPoolRxTC(MemoryPool<1000 * T>()),
+                                                             masterChannelPoolTC(MemoryPool<1000 * T>()),
                                                              masterChannelFrameCountTM(0),
-                                                             masterChannelPoolTxTM(MemoryPool<1000 * T>()) {
+                                                             masterChannelPoolTM(MemoryPool<1000 * T>()) {
         }
 
         MasterChannelSpaceSegment(const MasterChannelSpaceSegment &m)
             : BaseMasterChannel(m), framesUnderProcessingTM(m.framesUnderProcessingTM),
-              masterCopyRxTC(m.masterCopyRxTC), masterChannelPoolRxTC(m.masterChannelPoolRxTC),
+              masterCopyTC(m.masterCopyTC), masterChannelPoolTC(m.masterChannelPoolTC),
               masterChannelFrameCountTM(m.masterChannelFrameCountTM),
-              masterCopyTxTM(m.masterCopyTxTM), masterChannelPoolTxTM(m.masterChannelPoolTxTM) {
+              masterCopyTM(m.masterCopyTM), masterChannelPoolTM(m.masterChannelPoolTM) {
         }
 
     private:
@@ -490,13 +490,13 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Buffer that stores the actual TC transfer frame objects for the RxTC chain.
          */
-        etl::list<TransferFrameTC, T> masterCopyRxTC;
+        etl::list<TransferFrameTC, T> masterCopyTC;
 
         /**
          * @brief An object that manages a statically allocated block of memory, storing the octets for TC frames in the
          * RxTC chain.
          */
-        MemoryPool<1000 * T> masterChannelPoolRxTC;
+        MemoryPool<1000 * T> masterChannelPoolTC;
 
         /**
          * @brief A counter that keeps track the number of TM transfer frames transmitted from this master channel. The
@@ -510,13 +510,13 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Buffer that stores the actual TM transfer frame objects for the TxTM chain.
          */
-        etl::list<TransferFrameTM, T> masterCopyTxTM;
+        etl::list<TransferFrameTM, T> masterCopyTM;
 
         /**
          * @brief An object that manages a statically allocated block of memory, storing the octets for TM frames in the
          * TxTM chain.
          */
-        MemoryPool<1000 * T> masterChannelPoolTxTM;
+        MemoryPool<1000 * T> masterChannelPoolTM;
 
         // Give the user access while debugging, testing
 #ifdef ENABLE_CHANNEL_ACCESS
@@ -649,7 +649,7 @@ namespace CCSDSDataLinkLayer {
               packetBufferTcTypeAD(v.packetBufferTcTypeAD),
               packetLengthBufferTcTypeBD(v.packetLengthBufferTcTypeBD),
               packetBufferTcTypeBD(v.packetBufferTcTypeBD),
-              framesUnderProcessing(v.framesUnderProcessing) {
+              framesUnderProcessingTC(v.framesUnderProcessing) {
         }
 
     private:
@@ -686,7 +686,7 @@ namespace CCSDSDataLinkLayer {
          * @brief Holds pointers to TC frames after being created by packetProcessing and during applySecurity,
          *        vcGeneration.
          */
-        etl::list<TransferFrameTC *, T> framesUnderProcessing;
+        etl::list<TransferFrameTC *, T> framesUnderProcessingTC;
 
         // Give the user access when debugging/testing
 #ifdef ENABLE_CHANNEL_ACCESS
@@ -718,25 +718,25 @@ namespace CCSDSDataLinkLayer {
         friend class ChannelsInterface;
     public:
         explicit MasterChannelGroundSegment(const uint16_t mscid)
-            : BaseMasterChannel(mscid), masterChannelPoolTxTC(MemoryPool<1000 * T>()) {
+            : BaseMasterChannel(mscid), masterChannelPoolTC(MemoryPool<1000 * T>()) {
         }
 
         MasterChannelGroundSegment(const MasterChannelGroundSegment &m)
             : BaseMasterChannel(m),
-              masterCopyTxTC(m.masterCopyTxTC), masterChannelPoolTxTC(m.masterChannelPoolTxTC) {
+              masterCopyTC(m.masterCopyTC), masterChannelPoolTC(m.masterChannelPoolTC) {
         }
 
     private:
         /**
          * @brief Buffer that stores the actual TC transfer frame objects for the TxTC chain.
          */
-        etl::list<TransferFrameTC, T> masterCopyTxTC;
+        etl::list<TransferFrameTC, T> masterCopyTC;
 
         /**
          * @brief An object that manages a statically allocated block of memory, storing the octets for TC frames in the
          * TxTC chain.
          */
-        MemoryPool<1000*T> masterChannelPoolTxTC;
+        MemoryPool<1000*T> masterChannelPoolTC;
 
         // Give the user access when debugging/testing
 #ifdef ENABLE_CHANNEL_ACCESS

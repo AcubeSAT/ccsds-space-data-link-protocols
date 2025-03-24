@@ -400,41 +400,5 @@ namespace CCSDSDataLinkLayer {
         timer.startTimer(tiInitial);
         suspendState = DefsAndUtils::SuspendVariableState::NOT_SUSPENDED;
     }
-
-    /** Implementation specific FOP-1 methods (for usage inside vcGeneration service)**/
-
-    FOPNotification FrameOperationProcedure::pushLowerLayerResponseSignal(const DefsAndUtils::LowerLayerResponseSignal signal) {
-        if (lowerLayerResponseSignalQueue.full()) {
-            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::SIGNAL_QUEUE_FULL);
-            return FOPNotification::SIGNAL_QUEUE_FULL;
-        }
-
-        lowerLayerResponseSignalQueue.push(signal);
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::NO_FOP_EVENT);
-        return FOPNotification::NO_FOP_EVENT;
-    }
-
-    /** Implementation specific FOP-1 methods (for the the TC Data Link User). Wrapper functions are provided
-     * in ServiceChannel
-     */
-
-    FOPNotification FrameOperationProcedure::pushDirectiveRequestSignal(const DefsAndUtils::DirectiveRequestSignal &signal) {
-        if (directiveRequestSignalQueue.full()) {
-            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::SIGNAL_QUEUE_FULL);
-            return FOPNotification::SIGNAL_QUEUE_FULL;
-        }
-
-        directiveRequestSignalQueue.push(signal);
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::NO_FOP_EVENT);
-        return FOPNotification::NO_FOP_EVENT;
-    }
-
-    void FrameOperationProcedure::pushClcw(const CLCW clcw) {
-        if (clcwQueue.full()) {
-            clcwQueue.clear();
-        }
-
-        clcwQueue.push(clcw);
-    }
 #endif // GROUND_SEGMENT
 } // namespace CCSDSDataLinkLayer

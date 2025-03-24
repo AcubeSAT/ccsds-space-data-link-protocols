@@ -33,10 +33,7 @@ namespace CCSDSDataLinkLayer {
      *
      */
     class FrameOperationProcedure {
-        friend class BaseServiceChannel;
-        friend class ServiceChannelGroundSegment;
-
-        friend class MasterChannelGroundSegment;
+        friend class ChannelsInterface;
 
     private:
         /** FOP-1 VARIABLES **/
@@ -267,37 +264,6 @@ namespace CCSDSDataLinkLayer {
          *
          */
         std::pair<FOPNotification, uint8_t> applyFopStateTable(const ChannelConfig::MasterChannelGroundSegmentVariant& masterChannelVariant);
-
-        /**
-         * Respond to FOP-1's request for passing a frame to lower layers.
-         */
-        FOPNotification pushLowerLayerResponseSignal(DefsAndUtils::LowerLayerResponseSignal signal);
-
-        /** Implementation specific FOP-1 methods (for the the TC Data Link User). Wrapper functions are provided
-         * in ServiceChannel.
-         */
-
-        /**
-         * Pass a directive request to FOP-1. This method is offers a way for the TC Data Link users to send commands
-         * to FOP-1
-         *
-         * @param signal: A DirectiveRequestSignal, specifying the type of directive and a signal ID.
-         *          At a later time, a ACCEPT_RESPONSE_TO_DIRECTIVE or a REJECT_RESPONSE_TO_DIRECTIVE signal will be returned.
-         *          What an acceptance or rejection mean is explained below:
-         *          - ACCEPT_RESPONSE_TO_DIRECTIVE -> The directive is successfully stored in the queue. However,
-         *          it's execution will be confirmed at a later time either by receiving a POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE
-         *          or a NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE.
-         *
-         *          - REJECT_RESPONSE_TO_DIRECTIVE -> The directive is rejected either because the signal queue
-         *          is full, or there is a FOP related reason (@see p. 5.3 from COP-1 CCSDS)
-         */
-        FOPNotification pushDirectiveRequestSignal(const DefsAndUtils::DirectiveRequestSignal &signal);
-
-        /**
-         * Push a CLCW for FOP-1 to inspect. Since only the most recent CLCW is of interest, the old one (if it exists)
-         * is overwritten.
-         */
-        void pushClcw(CLCW clcw);
 
     public:
         FrameOperationProcedure(const uint8_t vid, const bool errorControlFieldPresent, const uint16_t tiInitial,

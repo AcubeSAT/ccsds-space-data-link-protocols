@@ -8,7 +8,7 @@ namespace CCSDSDataLinkLayer {
     uint8_t *MemoryPool<T>::allocatePacket(uint8_t *packet, uint16_t packetLength) {
         std::pair<uint16_t, MasterChannelAlert> index = findFit(packetLength);
         uint16_t start = index.first;
-        if (index.second == MasterChannelAlert::NO_SPACE) {
+        if (index.second == MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL) {
             LOG_ERROR << "There is no space in memory pool for the packet.";
             return nullptr;
         }
@@ -31,12 +31,12 @@ namespace CCSDSDataLinkLayer {
     }
 
     template<std::size_t T>
-    std::pair<uint16_t, MasterChannelAlert> MemoryPool<T>::findFit(uint16_t packetLength) {
+    std::pair<uint16_t, MasterChannelAlert> MemoryPool<T>::findFit(const uint16_t packetLength) {
         std::pair<uint16_t, MasterChannelAlert> fit;
         fit.second = MasterChannelAlert::NO_MC_ALERT;
 
         if (packetLength > memorySize) {
-            fit.second = MasterChannelAlert::NO_SPACE;
+            fit.second = MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL;
             return fit;
         }
 
@@ -53,7 +53,7 @@ namespace CCSDSDataLinkLayer {
 
         etl::imap<uint16_t, uint16_t>::iterator mapIterator = iteratorBegin;
 
-        for (mapIterator; mapIterator != iteratorEnd; mapIterator++) {
+        for (mapIterator; mapIterator != iteratorEnd; ++mapIterator) {
             gapSize = etl::next(mapIterator)->first - (mapIterator->first + mapIterator->second);
             if (gapSize >= packetLength) {
                 fit.first = mapIterator->first + mapIterator->second;
@@ -69,7 +69,7 @@ namespace CCSDSDataLinkLayer {
             return fit;
         }
 
-        fit.second = MasterChannelAlert::NO_SPACE;
+        fit.second = MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL;
         return fit;
     }
 

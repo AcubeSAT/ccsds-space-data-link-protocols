@@ -72,7 +72,7 @@ namespace CCSDSDataLinkLayer::ChannelConfig {
      */
     using MasterChannelGroundSegmentVariant = etl::variant<
         MasterChannelGroundSegment<10>,
-        MasterChannelGroundSegment<20>,
+        MasterChannelGroundSegment<20>
     >;
 
 
