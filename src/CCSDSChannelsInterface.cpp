@@ -8,14 +8,20 @@ namespace CCSDSDataLinkLayer {
      *   MapChannelSpaceSegment operations
      *  ===================================
      */
-    BaseMAPChannel ChannelsInterface::upcastToBase(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant) {
-        return etl::visit([](auto &mapChan) -> BaseMAPChannel {
-            return static_cast<BaseMAPChannel>(mapChan);
+    BaseMAPChannel* ChannelsInterface::upcastToBase(MAPChannelSpaceSegmentVariant &mapChannelVariant) {
+        return etl::visit([](auto &mapChan) -> BaseMAPChannel* {
+            return static_cast<BaseMAPChannel*>(&mapChan);
+        }, mapChannelVariant);
+    }
+
+    uint16_t ChannelsInterface::frameListAvailableMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant) {
+        return etl::visit([](auto &mapChan) -> uint16_t {
+            return mapChan.framesUnderProcessing.available();
         }, mapChannelVariant);
     }
 
     etl::expected<void, MapChannelAlert>
-    ChannelsInterface::pushFrameMapChannelSpaceSegment(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant,
+    ChannelsInterface::pushFrameMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant,
                                                        TransferFrameTC *frameTC) {
         return etl::visit([&](auto &mapChan) -> etl::expected<void, MapChannelAlert> {
             if (mapChan.framesUnderProcessing.full()) {
@@ -30,7 +36,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<void, MapChannelAlert>
-    ChannelsInterface::popFrameMapChannelSpaceSegment(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant,
+    ChannelsInterface::popFrameMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant,
                                                       TransferFrameTC *frameTC) {
         return etl::visit([&](auto &mapChan) -> etl::expected<void, MapChannelAlert> {
             auto it = mapChan.framesUnderProcessing.begin();
@@ -47,7 +53,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<TransferFrameTC *, MapChannelAlert>
-    ChannelsInterface::getFrameMapChannelSpaceSegment(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant,
+    ChannelsInterface::getFrameMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant,
                                                       const DefsAndUtils::ServiceType serviceType,
                                                       const DefsAndUtils::TcFrameProcessingStage processingStage) {
         return etl::visit([&](auto &mapChan) -> etl::expected<TransferFrameTC *, MapChannelAlert> {
@@ -67,25 +73,35 @@ namespace CCSDSDataLinkLayer {
      *   VirtualChannelSpaceSegment operations
      *  =======================================
      */
-    BaseVirtualChannel ChannelsInterface::upcastToBase(
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
-        return etl::visit([](auto &vcChan) -> BaseVirtualChannel {
-            return static_cast<BaseVirtualChannel>(vcChan);
+    BaseVirtualChannel* ChannelsInterface::upcastToBase(
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
+        return etl::visit([](auto &vcChan) -> BaseVirtualChannel* {
+            return static_cast<BaseVirtualChannel*>(&vcChan);
         }, virtualChannelVariant);
     }
 
-    etl::pair<FARMNotification, uint8_t> ChannelsInterface::applyFarmStateTable(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
-        return etl::visit([&](auto &vcChan) -> std::pair<FARMNotification, uint8_t> {
-            return vcChan.farm.applyFarmStateTable(masterChannelVariant, virtualChannelVariant);
+    uint16_t ChannelsInterface::frameListAvailableVirtualChannelSpaceSegment(
+            VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+            const VchanBuffType vchanBuffType
+        ) {
+        return etl::visit([&](auto &vcChan) -> uint16_t {
+            switch (vchanBuffType) {
+                case VchanBuffType::UNDER_PROCESSING_TM:
+                    return !vcChan.framesUnderProcessingTM.available();
+                case VchanBuffType::AFTER_ALL_FRAMES_RECEPTION_TC:
+                    return !vcChan.framesAfterAllFramesReceptionTC.available();
+                case VchanBuffType::AFTER_VC_GENERATION_TC_TYPE_AD:
+                    return !vcChan.framesAfterVCReceptionTCTypeAD.available();
+                case VchanBuffType::AFTER_VC_GENERATION_TC_TYPE_BD:
+                    return !vcChan.framesAfterVCReceptionTCTypeBD.available();
+            }
         }, virtualChannelVariant);
     }
 
     etl::expected<void, VirtualChannelAlert>
     ChannelsInterface::pushFrameVirtualChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
         etl::variant<TransferFrameTM *, TransferFrameTC *> frame,
         const VchanBuffType vchanBuffType
     ) {
@@ -139,7 +155,7 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<void, VirtualChannelAlert>
     ChannelsInterface::popFrameVirtualChannelSpaceSegment(
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
         etl::variant<TransferFrameTM *, TransferFrameTC *> frame,
         const VchanBuffType vchanBuffType) {
         // check if the correct frame type was given
@@ -206,7 +222,7 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<etl::variant<TransferFrameTM *, TransferFrameTC *>, VirtualChannelAlert>
     ChannelsInterface::getFrameVirtualChannelSpaceSegment(
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
         const VchanBuffType vchanBuffType,
         const etl::variant<DefsAndUtils::TcFrameProcessingStage,
             DefsAndUtils::TmFrameProcessingStage> processingStage) {
@@ -275,7 +291,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     uint8_t ChannelsInterface::readAndUpdateTmFrameCountVirtualChannelSpaceSegment(
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
         return etl::visit([](auto &vcChan) -> uint8_t {
             // The C++ standard guarantees that unsigned integers wraparound in case of overflow,
             // which is the desired behavior.
@@ -285,7 +301,7 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<void, VirtualChannelAlert>
     ChannelsInterface::pushTmPacketVirtualChannelSpaceSegment(
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
         const uint8_t *packetSource,
         const uint16_t packetLength,
         const bool pushToFront) {
@@ -312,29 +328,20 @@ namespace CCSDSDataLinkLayer {
         }, virtualChannelVariant);
     }
 
-    etl::expected<uint16_t, VirtualChannelAlert>
-    ChannelsInterface::popTmPacketVirtualChannelSpaceSegment(
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
-        uint8_t *packetDestination,
+    etl::expected<uint16_t, VirtualChannelAlert> ChannelsInterface::popTmPacketLengthVirtualChannelSpaceSegment(
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
         const bool popFromBack) {
         return etl::visit([&](auto &vcChan) -> etl::expected<uint16_t, VirtualChannelAlert> {
             if (!vcChan.packetLengthBufferTM.empty()) {
+                uint16_t length = 0;
                 if (popFromBack) {
-                    uint16_t packetLength = vcChan.packetLengthBufferTM.back();
+                    length = vcChan.packetLengthBufferTM.back();
                     vcChan.packetLengthBufferTM.pop_back();
-                    for (uint16_t i = 0; i < packetLength; i++) {
-                        packetDestination[i] = vcChan.packetBufferTM.back();
-                        vcChan.packetLengthBufferTM.pop_back();
-                    }
-                    return packetLength;
+                    return length;
                 } else {
-                    uint16_t packetLength = vcChan.packetLengthBufferTM.front();
+                    length = vcChan.packetLengthBufferTM.front();
                     vcChan.packetLengthBufferTM.pop_front();
-                    for (uint16_t i = 0; i < packetLength; i++) {
-                        packetDestination[i] = vcChan.packetBufferTM.front();
-                        vcChan.packetLengthBufferTM.pop_front();
-                    }
-                    return packetLength;
+                    return length;
                 }
             }
 
@@ -344,19 +351,54 @@ namespace CCSDSDataLinkLayer {
         }, virtualChannelVariant);
     }
 
+    etl::expected<void, VirtualChannelAlert>
+    ChannelsInterface::popTmPacketSegmentVirtualChannelSpaceSegment(
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        uint8_t *packetDestination,
+        const uint16_t numOctets,
+        const bool popFromBack) {
+        return etl::visit([&](auto &vcChan) -> etl::expected<void, VirtualChannelAlert> {
+            if (!vcChan.packetLengthBufferTM.available() >= numOctets) {
+                if (popFromBack) {
+                    for (uint16_t i = 0; i < numOctets; i++) {
+                        packetDestination[i] = vcChan.packetBufferTM.back();
+                        vcChan.packetLengthBufferTM.pop_back();
+                    }
+                    return {};
+                } else {
+                    for (uint16_t i = 0; i < numOctets; i++) {
+                        packetDestination[i] = vcChan.packetBufferTM.front();
+                        vcChan.packetLengthBufferTM.pop_front();
+                    }
+                    return {};
+                }
+            }
+
+            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert,
+                           VirtualChannelAlert::INVALID_REQUESTED_PACKET_SEGMENT);
+            return etl::unexpected(VirtualChannelAlert::INVALID_REQUESTED_PACKET_SEGMENT);
+        }, virtualChannelVariant);
+    }
+
     /** ======================================
      *   MasterChannelSpaceSegment operations
      *  ======================================
      */
-    BaseMasterChannel ChannelsInterface::upcastToBase(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant) {
-        return etl::visit([](auto &mcChan) -> BaseMasterChannel {
-            return static_cast<BaseMasterChannel>(mcChan);
+    BaseMasterChannel* ChannelsInterface::upcastToBase(
+        MasterChannelSpaceSegmentVariant &masterChannelVariant) {
+        return etl::visit([](auto &mcChan) -> BaseMasterChannel* {
+            return static_cast<BaseMasterChannel*>(&mcChan);
+        }, masterChannelVariant);
+    }
+
+    uint16_t ChannelsInterface::frameListAvailableMasterChannelSpaceSegment(MasterChannelSpaceSegmentVariant &masterChannelVariant) {
+        return etl::visit([](auto &mcChan) -> uint16_t {
+            return mcChan.framesUnderProcessingTM.available();
         }, masterChannelVariant);
     }
 
     etl::expected<void, MasterChannelAlert> ChannelsInterface::pushTmFrameMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
         TransferFrameTM *frameTM) {
         return etl::visit([&](auto &mcChan) -> etl::expected<void, MasterChannelAlert> {
             if (mcChan.framesUnderProcessingTM.full()) {
@@ -369,7 +411,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<void, MasterChannelAlert> ChannelsInterface::popTmFrameMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
         TransferFrameTM *frameTM) {
         return etl::visit([&](auto &mcChan) -> etl::expected<void, MasterChannelAlert> {
             auto it = mcChan.framesUnderProcessingTM.begin();
@@ -388,7 +430,7 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<TransferFrameTM *, MasterChannelAlert>
     ChannelsInterface::getTmFrameMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
         const DefsAndUtils::TmFrameProcessingStage processingStage) {
         return etl::visit([&](auto &mcChan) -> etl::expected<TransferFrameTM *, MasterChannelAlert> {
             auto it = mcChan.framesUnderProcessingTM.begin();
@@ -404,7 +446,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     bool ChannelsInterface::hasCapacityForFrameDataMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
         const DefsAndUtils::FrameType frameType,
         const uint16_t numberOfFrames,
         const uint16_t numberOfOctets) {
@@ -428,7 +470,7 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<uint8_t *, MasterChannelAlert>
     ChannelsInterface::addFrameOctetsToMemPoolMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
         const DefsAndUtils::FrameType frameType,
         uint8_t *octetsSource, const uint16_t frameLength) {
         return etl::visit([&](auto &mcChan) -> etl::expected<uint8_t *, MasterChannelAlert> {
@@ -450,35 +492,36 @@ namespace CCSDSDataLinkLayer {
         }, masterChannelVariant);
     }
 
-    etl::expected<void, MasterChannelAlert>
+    etl::expected<etl::variant<TransferFrameTM *, TransferFrameTC *>, MasterChannelAlert>
     ChannelsInterface::addFrameObjectToMasterCopyBufferMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
         const DefsAndUtils::FrameType frameType,
         etl::variant<TransferFrameTM &, TransferFrameTC &> frame) {
-        return etl::visit([&](auto &mcChan) -> etl::expected<void, MasterChannelAlert> {
-            if (frameType == DefsAndUtils::FrameType::TM &&
-                frame.is_type<TransferFrameTM &>() &&
-                !mcChan.masterCopyTM.full()) {
-                mcChan.masterCopyTM.push_back(etl::get<TransferFrameTM &>(frame));
-                return {};
-            }
+        return etl::visit(
+            [&](auto &mcChan) -> etl::expected<etl::variant<TransferFrameTM *, TransferFrameTC *>, MasterChannelAlert> {
+                if (frameType == DefsAndUtils::FrameType::TM &&
+                    frame.is_type<TransferFrameTM &>() &&
+                    !mcChan.masterCopyTM.full()) {
+                    mcChan.masterCopyTM.push_back(etl::get<TransferFrameTM &>(frame));
+                    return etl::variant<TransferFrameTM *, TransferFrameTC *>(&(mcChan.masterCopyTM.back()));
+                }
 
-            if (frameType == DefsAndUtils::FrameType::TC &&
-                frame.is_type<TransferFrameTC &>() &&
-                !mcChan.masterCopyTC.full()) {
-                mcChan.masterCopyTC.push_back(etl::get<TransferFrameTC &>(frame));
-                return {};
-            }
+                if (frameType == DefsAndUtils::FrameType::TC &&
+                    frame.is_type<TransferFrameTC &>() &&
+                    !mcChan.masterCopyTC.full()) {
+                    mcChan.masterCopyTC.push_back(etl::get<TransferFrameTC &>(frame));
+                    return etl::variant<TransferFrameTM *, TransferFrameTC *>(&(mcChan.masterCopyTC.back()));
+                }
 
-            ccsdsLogNotice(TxRx::Rx, NotificationType::TypeMasterChannelAlert,
-                           MasterChannelAlert::MASTER_COPY_BUFFER_FULL);
-            return etl::unexpected(MasterChannelAlert::MASTER_COPY_BUFFER_FULL);
-        }, masterChannelVariant);
+                ccsdsLogNotice(TxRx::Rx, NotificationType::TypeMasterChannelAlert,
+                               MasterChannelAlert::MASTER_COPY_BUFFER_FULL);
+                return etl::unexpected(MasterChannelAlert::MASTER_COPY_BUFFER_FULL);
+            }, masterChannelVariant);
     }
 
     etl::expected<void, MasterChannelAlert>
     ChannelsInterface::removeFrameDataMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
         etl::variant<TransferFrameTM *, TransferFrameTC *> frame) {
         return etl::visit([&](auto &mcChan) -> etl::expected<void, MasterChannelAlert> {
             if (frame.is_type<TransferFrameTM *>()) {
@@ -513,7 +556,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     uint8_t ChannelsInterface::readAndUpdateTmFrameCountMasterChannelSpaceSegment(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant) {
+        MasterChannelSpaceSegmentVariant &masterChannelVariant) {
         return etl::visit([](auto &mcChan) -> uint8_t {
             // The C++ standard guarantees that unsigned integers wraparound in case of overflow,
             // which is the desired behavior.
@@ -527,15 +570,15 @@ namespace CCSDSDataLinkLayer {
      *   MapChannelGroundSegment operations
      *  ====================================
      */
-    BaseMAPChannel ChannelsInterface::upcastToBase(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant) {
-        return etl::visit([](auto &mapChan) -> BaseMAPChannel {
-            return static_cast<BaseMAPChannel>(mapChan);
+    BaseMAPChannel* ChannelsInterface::upcastToBase(MAPChannelGroundSegmentVariant &mapChannelVariant) {
+        return etl::visit([](auto &mapChan) -> BaseMAPChannel* {
+            return static_cast<BaseMAPChannel*>(&mapChan);
         }, mapChannelVariant);
     }
 
     etl::expected<void, MapChannelAlert>
     ChannelsInterface::pushPacketMAPChannelGroundSegment(
-        ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+        MAPChannelGroundSegmentVariant &mapChannelVariant,
         const DefsAndUtils::ServiceType serviceType,
         uint8_t *packetSource,
         const uint16_t packetLength) {
@@ -573,10 +616,8 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<uint16_t, MapChannelAlert>
-    ChannelsInterface::popPacketMAPChannelGroundSegment(
-        ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
-        const DefsAndUtils::ServiceType serviceType,
-        uint8_t *packetDestination) {
+    ChannelsInterface::popPacketLengthMAPChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
+                                                              DefsAndUtils::ServiceType serviceType) {
         if (serviceType == DefsAndUtils::ServiceType::TYPE_BC ||
             serviceType == DefsAndUtils::ServiceType::TYPE_RESERVED) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMAPChannelAlert, MapChannelAlert::INVALID_SERVICE_TYPE);
@@ -584,25 +625,20 @@ namespace CCSDSDataLinkLayer {
         }
 
         return etl::visit([&](auto &mapChan) -> etl::expected<uint16_t, MapChannelAlert> {
+            uint16_t length = 0;
             if (serviceType == DefsAndUtils::ServiceType::TYPE_AD &&
                 !mapChan.packetLengthBufferTypeAD.empty()) {
-                const uint16_t length = mapChan.packetLengthBufferTypeAD.front();
+                length = mapChan.packetLengthBufferTypeAD.front();
                 mapChan.packetLengthBufferTypeAD.pop();
-                for (uint16_t i = 0; i < length; ++i) {
-                    packetDestination[i] = mapChan.packetBufferTypeAD.front();
-                }
+                return length;
+            }
+            if (serviceType == DefsAndUtils::ServiceType::TYPE_BD &&
+                !mapChan.packetLengthBufferTypeBD.empty()) {
+                length = mapChan.packetLengthBufferTypeBD.front();
+                mapChan.packetLengthBufferTypeBD.pop();
                 return length;
             }
 
-            if (serviceType == DefsAndUtils::ServiceType::TYPE_BD &&
-                !mapChan.packetLengthBufferTypeBD.empty()) {
-                const uint16_t length = mapChan.packetLengthBufferTypeBD.front();
-                mapChan.packetLengthBufferTypeBD.pop();
-                for (uint16_t i = 0; i < length; ++i) {
-                    packetDestination[i] = mapChan.packetBufferTypeBD.front();
-                }
-                return length;
-            }
 
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMAPChannelAlert, MapChannelAlert::PACKET_QUEUE_EMPTY);
             return etl::unexpected(MapChannelAlert::PACKET_QUEUE_EMPTY);
@@ -610,8 +646,48 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<void, MapChannelAlert>
+    ChannelsInterface::popPacketSegmentMAPChannelGroundSegment(
+        MAPChannelGroundSegmentVariant &mapChannelVariant,
+        const DefsAndUtils::ServiceType serviceType,
+        uint8_t *packetDestination,
+        uint16_t numOctets) {
+        if (serviceType == DefsAndUtils::ServiceType::TYPE_BC ||
+            serviceType == DefsAndUtils::ServiceType::TYPE_RESERVED) {
+            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMAPChannelAlert, MapChannelAlert::INVALID_SERVICE_TYPE);
+            return etl::unexpected(MapChannelAlert::INVALID_SERVICE_TYPE);
+        }
+
+        return etl::visit([&](auto &mapChan) -> etl::expected<void, MapChannelAlert> {
+            if (serviceType == DefsAndUtils::ServiceType::TYPE_AD &&
+                mapChan.packetBufferTypeAD.available() >= numOctets) {
+                for (uint16_t i = 0; i < numOctets; ++i) {
+                    packetDestination[i] = mapChan.packetBufferTypeAD.front();
+                }
+                return {};
+            }
+
+            if (serviceType == DefsAndUtils::ServiceType::TYPE_BD &&
+                mapChan.packetBufferTypeBD.available() >= numOctets) {
+                for (uint16_t i = 0; i < numOctets; ++i) {
+                    packetDestination[i] = mapChan.packetBufferTypeBD.front();
+                }
+                return {};
+            }
+
+            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMAPChannelAlert, MapChannelAlert::INVALID_REQUESTED_PACKET_SEGMENT);
+            return etl::unexpected(MapChannelAlert::INVALID_REQUESTED_PACKET_SEGMENT);
+        }, mapChannelVariant);
+    }
+
+    uint16_t ChannelsInterface::frameListAvailableMapChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant) {
+        return etl::visit([&](auto &mapChan) -> uint16_t {
+            return mapChan.framesUnderProcessing.available();
+        }, mapChannelVariant);
+    }
+
+    etl::expected<void, MapChannelAlert>
     ChannelsInterface::pushFrameMapChannelGroundSegment(
-        ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+        MAPChannelGroundSegmentVariant &mapChannelVariant,
         TransferFrameTC *frameTC) {
         return etl::visit([&](auto &mapChan) -> etl::expected<void, MapChannelAlert> {
             if (mapChan.framesUnderProcessing.full()) {
@@ -626,7 +702,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<void, MapChannelAlert>
-    ChannelsInterface::popFrameMapChannelGroundSegment(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+    ChannelsInterface::popFrameMapChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
                                                        TransferFrameTC *frameTC) {
         return etl::visit([&](auto &mapChan) -> etl::expected<void, MapChannelAlert> {
             auto it = mapChan.framesUnderProcessing.begin();
@@ -643,7 +719,7 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<TransferFrameTC *, MapChannelAlert>
-    ChannelsInterface::getFrameMapChannelGroundSegment(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+    ChannelsInterface::getFrameMapChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
                                                        const DefsAndUtils::ServiceType serviceType,
                                                        const DefsAndUtils::TcFrameProcessingStage processingStage) {
         return etl::visit([&](auto &mapChan) -> etl::expected<TransferFrameTC *, MapChannelAlert> {
@@ -663,102 +739,22 @@ namespace CCSDSDataLinkLayer {
      *   VirtualChannelGroundSegment operations
      *  ========================================
      */
-    BaseVirtualChannel ChannelsInterface::upcastToBase(
-        ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant) {
-        return etl::visit([](auto &vcChan) -> BaseVirtualChannel {
-            return static_cast<BaseVirtualChannel>(vcChan);
+    BaseVirtualChannel* ChannelsInterface::upcastToBase(
+        VirtualChannelGroundSegmentVariant &virtualChannelVariant) {
+        return etl::visit([](auto &vcChan) -> BaseVirtualChannel* {
+            return static_cast<BaseVirtualChannel*>(&vcChan);
         }, virtualChannelVariant);
     }
 
-    std::pair<FOPNotification, uint8_t> ChannelsInterface::applyFopStateTable(
-        ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
-        ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant) {
-        return etl::visit([&](auto &vcChan) -> std::pair<FOPNotification, uint8_t> {
-            return vcChan.fop.applyFopStateTable(masterChannelVariant);
-        }, virtualChannelVariant);
-    }
-
-    etl::expected<void, VirtualChannelAlert>
-    ChannelsInterface::pushSignalToFop(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
-                                       etl::variant<DefsAndUtils::DirectiveRequestSignal,
-                                           DefsAndUtils::FduTransferSignal,
-                                           DefsAndUtils::LowerLayerResponseSignal,
-                                           CLCW> signal) {
-        return etl::visit([&](auto &vcChan) -> etl::expected<void, VirtualChannelAlert> {
-            if (signal.is_type<DefsAndUtils::DirectiveRequestSignal>() &&
-                !vcChan.fop.directiveRequestSignalQueue.full()
-            ) {
-                vcChan.fop.directiveRequestSignalQueue.push(etl::get<DefsAndUtils::DirectiveRequestSignal>(signal));
-            } else if (signal.is_type<DefsAndUtils::FduTransferSignal>() &&
-                       !vcChan.fop.transferFduSignalQueue.full()
-            ) {
-                vcChan.fop.transferFduSignalQueue.push(etl::get<DefsAndUtils::FduTransferSignal>(signal));
-            } else if (signal.is_type<DefsAndUtils::LowerLayerResponseSignal>() &&
-                       !vcChan.fop.lowerLayerResponseSignalQueue.full()
-            ) {
-                vcChan.fop.lowerLayerResponseSignalQueue.push(etl::get<DefsAndUtils::LowerLayerResponseSignal>(signal));
-            } else if (signal.is_type<CLCW>() &&
-                       !vcChan.fop.clcwQueue.full()
-            ) {
-                vcChan.fop.clcwQueue.push(etl::get<CLCW>(signal));
-            }
-
-            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert,
-                           VirtualChannelAlert::FOP_SIGNAL_QUEUE_FULL);
-            return etl::unexpected(VirtualChannelAlert::FOP_SIGNAL_QUEUE_FULL);
-        }, virtualChannelVariant);
-    }
-
-    etl::expected<etl::variant<DefsAndUtils::DirectiveNotificationSignal,
-        DefsAndUtils::TransferNotificationSignal,
-        DefsAndUtils::AsynchronousNotificationSignal,
-        DefsAndUtils::FopToLowerLayerRequestSignal>, VirtualChannelAlert>
-    ChannelsInterface::popSignalFromFop(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
-                                        const FopOutputQueueType queueType) {
-        using signalVariant = etl::variant<DefsAndUtils::DirectiveNotificationSignal,
-            DefsAndUtils::TransferNotificationSignal,
-            DefsAndUtils::AsynchronousNotificationSignal,
-            DefsAndUtils::FopToLowerLayerRequestSignal>;
-
-        return etl::visit([&](auto &vcChan) -> signalVariant {
-            switch (queueType) {
-                case FopOutputQueueType::TRANSFER_NOTIFICATION_QUEUE:
-                    if (!vcChan.fop.transferNotificationSignalQueue.empty()) {
-                        auto signal = vcChan.fop.transferNotificationSignalQueue.front();
-                        vcChan.fop.transferNotificationSignalQueue.pop();
-                        return signalVariant(signal);
-                    }
-                    break;
-                case FopOutputQueueType::DIRECTIVE_NOTIFICATION_QUEUE:
-                    if (!vcChan.fop.directiveNotificationSignalQueue.empty()) {
-                        auto signal = vcChan.fop.directiveNotificationSignalQueue.front();
-                        vcChan.fop.directiveNotificationSignalQueue.pop();
-                        return signalVariant(signal);
-                    }
-                    break;
-                case FopOutputQueueType::FOP_TO_LOWER_LAYER_REQUEST_QUEUE:
-                    if (!vcChan.fop.fopToLowerLayerRequestSignalQueue.empty()) {
-                        auto signal = vcChan.fop.fopToLowerLayerRequestSignalQueue.front();
-                        vcChan.fop.fopToLowerLayerRequestSignalQueue.pop();
-                        return signalVariant(signal);
-                    }
-                    break;
-                case FopOutputQueueType::ASYNCHRONOUS_NOTIFICATION_QUEUE:
-                    if (!vcChan.fop.asynchronousNotificationSignalQueue.empty()) {
-                        auto signal = vcChan.fop.asynchronousNotificationSignalQueue.front();
-                        vcChan.fop.asynchronousNotificationSignalQueue.pop();
-                        return signalVariant(signal);
-                    }
-            }
-            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert,
-                           VirtualChannelAlert::FOP_SIGNAL_QUEUE_EMPTY);
-            return etl::unexpected(VirtualChannelAlert::FOP_SIGNAL_QUEUE_EMPTY);
+    uint16_t ChannelsInterface::frameListAvailableVirtualChannelGroundSegment(VirtualChannelGroundSegmentVariant &virtualChannelVariant) {
+        return etl::visit([&](auto &vcChan) -> uint16_t {
+            return vcChan.framesUnderProcessingTC.available();
         }, virtualChannelVariant);
     }
 
     etl::expected<void, VirtualChannelAlert>
     ChannelsInterface::pushFrameVirtualChannelGroundSegment(
-        ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
+        VirtualChannelGroundSegmentVariant &virtualChannelVariant,
         TransferFrameTC *frameTC) {
         return etl::visit([&](auto &vcChan) -> etl::expected<void, VirtualChannelAlert> {
             if (vcChan.framesUnderProcessingTC.full()) {
@@ -774,7 +770,7 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<void, VirtualChannelAlert>
     ChannelsInterface::popFrameVirtualChannelGroundSegment(
-        ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
+        VirtualChannelGroundSegmentVariant &virtualChannelVariant,
         TransferFrameTC *frameTC) {
         return etl::visit([&](auto &vcChan) -> etl::expected<void, VirtualChannelAlert> {
             auto it = vcChan.framesUnderProcessingTC.begin();
@@ -793,7 +789,7 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<TransferFrameTC *, VirtualChannelAlert>
     ChannelsInterface::getFrameVirtualChannelGroundSegment(
-        ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
+        VirtualChannelGroundSegmentVariant &virtualChannelVariant,
         const DefsAndUtils::ServiceType serviceType,
         const DefsAndUtils::TcFrameProcessingStage processingStage) {
         return etl::visit([&](auto &vcChan) -> etl::expected<TransferFrameTC *, VirtualChannelAlert> {
@@ -814,15 +810,15 @@ namespace CCSDSDataLinkLayer {
      *   MasterChannelGroundSegment operations
      *  =======================================
      */
-    BaseMasterChannel ChannelsInterface::upcastToBase(
-        ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant) {
-        return etl::visit([](auto &mcChan) -> BaseMasterChannel {
-            return static_cast<BaseMasterChannel>(mcChan);
+    BaseMasterChannel* ChannelsInterface::upcastToBase(
+        MasterChannelGroundSegmentVariant &masterChannelVariant) {
+        return etl::visit([](auto &mcChan) -> BaseMasterChannel* {
+            return static_cast<BaseMasterChannel*>(&mcChan);
         }, masterChannelVariant);
     }
 
     bool ChannelsInterface::hasCapacityForFrameDataMasterChannelGroundSegment(
-        ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
+        MasterChannelGroundSegmentVariant &masterChannelVariant,
         const uint16_t numberOfFrames,
         const uint16_t numberOfOctets) {
         return etl::visit([&](auto &mcChan) -> bool {
@@ -835,16 +831,15 @@ namespace CCSDSDataLinkLayer {
         }, masterChannelVariant);
     }
 
-
     etl::expected<uint8_t *, MasterChannelAlert>
     ChannelsInterface::addFrameOctetsToMemPoolMasterChannelGroundSegment(
-        ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
+        MasterChannelGroundSegmentVariant &masterChannelVariant,
         uint8_t *octetsSource, const uint16_t frameLength) {
         return etl::visit([&](auto &mcChan) -> etl::expected<uint8_t *, MasterChannelAlert> {
             uint8_t *ptr = mcChan.masterChannelPoolTC.allocatePacket(octetsSource, frameLength);
 
             if (ptr == nullptr) {
-                ccsdsLogNotice(TxRx::Tx, NotificationType::TypeMasterChannelAlert,
+                ccsdsLogNotice(TxRx::Rx, NotificationType::TypeMasterChannelAlert,
                                MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL);
                 return etl::unexpected(MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL);
             }
@@ -853,9 +848,27 @@ namespace CCSDSDataLinkLayer {
         }, masterChannelVariant);
     }
 
+    etl::expected<etl::variant<TransferFrameTM *, TransferFrameTC *>, MasterChannelAlert>
+    ChannelsInterface::addFrameObjectToMasterCopyBufferMasterChannelGroundSegment(
+        MasterChannelGroundSegmentVariant &masterChannelVariant,
+        const TransferFrameTC &frame) {
+        return etl::visit(
+            [&](auto &mcChan) -> etl::expected<etl::variant<TransferFrameTM *, TransferFrameTC *>, MasterChannelAlert> {
+                if (!mcChan.masterCopyTC.full()) {
+                    mcChan.masterCopyTC.push_back(frame);
+                    return etl::expected<etl::variant<TransferFrameTM *, TransferFrameTC *>,
+                        MasterChannelAlert>(&(mcChan.masterCopyTC.back()));
+                }
+
+                ccsdsLogNotice(TxRx::Rx, NotificationType::TypeMasterChannelAlert,
+                               MasterChannelAlert::MASTER_COPY_BUFFER_FULL);
+                return etl::unexpected(MasterChannelAlert::MASTER_COPY_BUFFER_FULL);
+            }, masterChannelVariant);
+    }
+
     etl::expected<void, MasterChannelAlert>
     ChannelsInterface::removeFrameDataMasterChannelGroundSegment(
-        ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
+        MasterChannelGroundSegmentVariant &masterChannelVariant,
         TransferFrameTC &frame) {
         return etl::visit([&](auto &mcChan) -> etl::expected<void, MasterChannelAlert> {
             const auto framePtr = &frame;

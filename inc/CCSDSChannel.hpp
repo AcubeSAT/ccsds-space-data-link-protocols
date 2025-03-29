@@ -20,14 +20,11 @@
 #include "etl/list.h"
 #include "etl/queue.h"
 #include "etl/deque.h"
-#include "etl/circular_buffer.h"
+#include "etl/span.h"
 #include "CCSDSDefinitionsAndUtilities.hpp"
-#include "FrameOperationProcedure.hpp"
-#include "FrameAcceptanceReporting.hpp"
 #include "TransferFrameTC.hpp"
 #include "TransferFrameTM.hpp"
 #include "MemoryPool.hpp"
-#include "CLCW.hpp"
 
 namespace CCSDSDataLinkLayer {
     class ChannelsInterface;
@@ -36,18 +33,39 @@ namespace CCSDSDataLinkLayer {
      */
     class PhysicalChannel {
         friend class ChannelsInterface;
+
     public:
-        PhysicalChannel(const uint16_t maxFrameLength, const uint16_t maxFramesPdu, const uint16_t maxPduLength,
+        PhysicalChannel(const DefsAndUtils::TransferFrameVersionNumber tfvn, const etl::span<uint16_t> &validScids,
+                        const uint16_t maxFrameLength,
+                        const uint16_t maxFramesPdu, const uint16_t maxPduLength,
                         const uint32_t bitrate, const uint16_t repetitions)
-            : maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength),
+            : tfvn(tfvn), maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength),
               bitrate(bitrate),
               repetitions(repetitions) {
+
+            for (uint8_t i = 0; i < std::min(validScids.size(), DefsAndUtils::MaxSCIDInPhysicalChannel); i++ ) {
+                this->validScids[i] = validScids[i];
+            }
         }
 
         /**
-         * @brief Empty default constructor.
+         * @brief Defines the type of protocol used
+         * @see SANA transfer frame version numbers registry
          */
-        PhysicalChannel() : maxFrameLength(0), maxFramePdu(0), maxPDULength(0), bitrate(0), repetitions(0) {
+        [[nodiscard]] DefsAndUtils::TransferFrameVersionNumber getTFVN() const {
+            return tfvn;
+        }
+
+        /**
+         * @brief Returns whether given scid belongs in the physical channel's scid list.
+         */
+        [[nodiscard]] bool validScid(const uint16_t scid) const {
+            for (uint8_t i = 0; i < validScids.size(); i++) {
+                if (validScids[i] == scid) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
@@ -62,21 +80,21 @@ namespace CCSDSDataLinkLayer {
          */
         [[nodiscard]] uint16_t getMaxFramePdu() const {
             return maxFramePdu;
-        };
+        }
 
         /**
          * @brief Maximum length of a data unit.
          */
         [[nodiscard]] uint16_t getMaxPDULength() const {
             return maxPDULength;
-        };
+        }
 
         /**
          * @brief Maximum bit rate (bits per second).
          */
         [[nodiscard]] uint32_t getBitrate() const {
             return bitrate;
-        };
+        }
 
         /**
          * @brief Maximum number of retransmissions for a data unit.
@@ -86,29 +104,12 @@ namespace CCSDSDataLinkLayer {
         }
 
     private:
-        /**
-         * @brief Maximum length of a single transfer frame.
-         */
+        const DefsAndUtils::TransferFrameVersionNumber tfvn;
+        etl::array<uint8_t, DefsAndUtils::MaxSCIDInPhysicalChannel> validScids;
         const uint16_t maxFrameLength;
-
-        /**
-         * @brief Sets the maximum number of transfer frames that can be transferred in a single data unit.
-         */
         const uint16_t maxFramePdu;
-
-        /**
-         * @brief Maximum length of a data unit.
-         */
         const uint16_t maxPDULength;
-
-        /**
-         * @brief Maximum bit rate (bits per second).
-         */
         const uint32_t bitrate;
-
-        /**
-         * @brief Maximum number of retransmissions for a data unit.
-         */
         const uint16_t repetitions;
     };
 
@@ -118,7 +119,7 @@ namespace CCSDSDataLinkLayer {
     class BaseMAPChannel {
         friend class ChannelsInterface;
     public:
-        BaseMAPChannel(const uint32_t gmapid, bool blockingTC, bool segmentationTC)
+        BaseMAPChannel(const uint32_t gmapid, const bool blockingTC, const bool segmentationTC)
             : gmapid(gmapid & 0x00FFFFFFU), blockingTC(blockingTC), segmentationTC(segmentationTC) {
         }
 
@@ -174,7 +175,7 @@ namespace CCSDSDataLinkLayer {
               maxFrameLengthTC(maxFrameLengthTC), segmentHeaderTCPresent(segmentHeaderTCPresent),
               blockingTC(blockingTC), blockingTM(blockingTM), segmentationTM(segmentationTM),
               operationalControlFieldTMPresent(operationalControlFieldTMPresent),
-              secondaryHeaderTMLength(secondaryHeaderTMLength), secondaryHeaderTMPresent(secondaryHeaderTMPresent),
+              secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
               synchronizationTM(synchronization) {
         }
 
@@ -228,6 +229,9 @@ namespace CCSDSDataLinkLayer {
             return synchronizationTM;
         }
 
+        [[nodiscard]] etl::optional<uint16_t> getAssociatedSdlsSPI() const {
+            return associatedSdlsSPI;
+        }
     protected:
         /**
          * @brief Global Virtual Channel Identifier.
@@ -294,6 +298,13 @@ namespace CCSDSDataLinkLayer {
          * @brief Defines whether octet and forward-ordered synchronization is used for TM transfer frames.
          */
         const DefsAndUtils::SynchronizationFlag synchronizationTM;
+
+        /**
+         * @brief The presence of an SDLS SPI (Security Parameter Index) shall indicate that this virtual channel
+         *        instance is associated with a specific SecurityAssociation, therefore the according authentication
+         *        and encryption services will be applied.
+         */
+        const etl::optional<uint16_t> associatedSdlsSPI;
     };
 
     /**
@@ -350,35 +361,21 @@ namespace CCSDSDataLinkLayer {
     template<std::size_t T>
     class VirtualChannelSpaceSegment : public BaseVirtualChannel {
         friend class ChannelsInterface;
+        friend class FrameAcceptanceReporting;
     public:
         VirtualChannelSpaceSegment(const uint32_t gvcid, const uint8_t vcRepetitions,
                                    const bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
                                    const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
                                    const bool segmentationTM, const bool operationalControlFieldTMPresent,
                                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-                                   const DefsAndUtils::SynchronizationFlag synchronization,
-                                   const uint8_t farmSlidingWinWidth,
-                                   const uint8_t farmPositiveWinWidth,
-                                   const uint8_t farmNegativeWinWidth,
-                                   const uint16_t farmClcwReportInterval,
-                                   etl::optional<CLCW> &farmClcwOutputBuffer)
+                                   const DefsAndUtils::SynchronizationFlag synchronization)
             : BaseVirtualChannel(gvcid, vcRepetitions, frameErrorControlFieldPresent,
                                  maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
                                  operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
-                                 synchronization),
-              farm(FrameAcceptanceReporting(
-                  DefsAndUtils::extractVcidFromGvcid(gvcid),
-                  frameErrorControlFieldPresent,
-                  farmSlidingWinWidth,
-                  farmPositiveWinWidth,
-                  farmNegativeWinWidth,
-                  farmClcwReportInterval,
-                  farmClcwOutputBuffer)),
-              frameCountTM(0) {
-        }
+                                 synchronization), frameCountTM(0) {}
 
         VirtualChannelSpaceSegment(const VirtualChannelSpaceSegment &v)
-            : BaseVirtualChannel(v), farm(v.farm), framesAfterAllFramesReceptionTC(v.framesAfterAllFramesReceptionTC),
+            : BaseVirtualChannel(v), framesAfterAllFramesReceptionTC(v.framesAfterAllFramesReceptionTC),
               framesAfterVCReceptionTCTypeAD(v.framesAfterVCReceptionTCTypeAD),
               framesAfterVCReceptionTCTypeBD(v.framesAfterVCReceptionTCTypeBD),
               frameCountTM(v.frameCountTM), framesUnderProcessingTM(v.framesUnderProcessingTM),
@@ -387,11 +384,6 @@ namespace CCSDSDataLinkLayer {
         }
 
     private:
-        /**
-         * @brief Object that stores and manages the FARM state of the virtual channel.
-         */
-        FrameAcceptanceReporting farm;
-
         /**
          * @brief Stores pointers to TC frames (of all types) after being created by all frames reception.
          */
@@ -442,11 +434,11 @@ namespace CCSDSDataLinkLayer {
             return framesAfterVCReceptionTCTypeAD;
         }
 
-        etl::circular_buffer<TransferFrameTC*, T>& getFramesAfterVCReceptionTCTypeBD() {
+        etl::list<TransferFrameTC*, T>& getFramesAfterVCReceptionTCTypeBD() {
             return framesAfterVCReceptionTCTypeBD;
         }
 
-        uint8_t getFrameCountTM() {
+        [[nodiscard]] uint8_t getFrameCountTM() const {
             return frameCountTM;
         }
 
@@ -485,7 +477,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Buffer that holds pointers to TM frames after mc generation and before all frames generation.
          */
-        etl::list<TransferFrameTM *, T> framesUnderProcessingTM;
+        etl::list<TransferFrameTM *, T> framesUnderProcfessingTM;
 
         /**
          * @brief Buffer that stores the actual TC transfer frame objects for the RxTC chain.
@@ -526,11 +518,11 @@ namespace CCSDSDataLinkLayer {
         }
 
         etl::list<TransferFrameTC, T>& getMasterCopyRxTC() {
-            return masterCopyRxTC;
+            return masterCopyTC;
         }
 
         MemoryPool<1000 * T>& getMasterChannelPoolRxTC() {
-            return masterChannelPoolRxTC;
+            return masterChannelPoolTC;
         }
 
         uint8_t getMasterChannelFrameCountTM() {
@@ -538,11 +530,11 @@ namespace CCSDSDataLinkLayer {
         }
 
         etl::list<TransferFrameTM, T>& getMasterCopyTxTM() {
-            return masterCopyTxTM;
+            return masterCopyTM;
         }
 
         MemoryPool<1000 * T>& getMasterChannelPoolTxTM() {
-            return masterChannelPoolTxTM;
+            return masterChannelPoolTM;
         }
 #endif // ENABLE_CHANNEL_ACCESS
     };
@@ -628,36 +620,21 @@ namespace CCSDSDataLinkLayer {
                                     const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
                                     const bool segmentationTM, const bool operationalControlFieldTMPresent,
                                     const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-                                    const DefsAndUtils::SynchronizationFlag synchronization,
-                                    const uint16_t fopTiInitial,
-                                    const uint16_t fopTransmissionLimit,
-                                    const uint16_t fopSlidingWindowWidth)
+                                    const DefsAndUtils::SynchronizationFlag synchronization)
             : BaseVirtualChannel(gvcid, vcRepetitions, frameErrorControlFieldPresent,
                                  maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
                                  operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
-                                 synchronization),
-                                fop(FrameOperationProcedure(DefsAndUtils::extractVcidFromGvcid(gvcid),
-                                    frameErrorControlFieldPresent,
-                                    fopTiInitial,
-                                    fopTransmissionLimit,
-                                    fopSlidingWindowWidth))
-              {
-        }
+                                 synchronization) {}
 
         VirtualChannelGroundSegment(const VirtualChannelGroundSegment &v)
-            : BaseVirtualChannel(v), fop(v.fop), packetLengthBufferTcTypeAD(v.packetLengthBufferTcTypeAD),
+            : BaseVirtualChannel(v), packetLengthBufferTcTypeAD(v.packetLengthBufferTcTypeAD),
               packetBufferTcTypeAD(v.packetBufferTcTypeAD),
               packetLengthBufferTcTypeBD(v.packetLengthBufferTcTypeBD),
               packetBufferTcTypeBD(v.packetBufferTcTypeBD),
-              framesUnderProcessingTC(v.framesUnderProcessing) {
+              framesUnderProcessingTC(v.framesUnderProcessingTC) {
         }
 
     private:
-        /**
-         * @brief Object that stores and manages the FOP state of the virtual channel.
-         */
-        FrameOperationProcedure fop;
-
         /**
          * @brief Queue that stores the lengths of the packets that will eventually be concatenated
          * to Type-AD transfer frame data.
@@ -707,8 +684,8 @@ namespace CCSDSDataLinkLayer {
             return packetBufferTcTypeBD;
         }
 
-        etl::list<TransferFrameTC *, T>& getFramesUnderProcessing() {
-            return framesUnderProcessing;
+        etl::list<TransferFrameTC *, T>& getFramesUnderProcessingTC() {
+            return framesUnderProcessingTC;
         }
 #endif
     };
@@ -742,11 +719,11 @@ namespace CCSDSDataLinkLayer {
 #ifdef ENABLE_CHANNEL_ACCESS
     public:
         etl::list<TransferFrameTC, T>& getMasterCopyTxTC() {
-            return masterCopyTxTC;
+            return masterCopyTC;
         }
 
         MemoryPool<1000*T>& getMasterChannelPoolTxTC() {
-            return masterChannelPoolTxTC;
+            return masterChannelPoolTC;
         }
 #endif
     };

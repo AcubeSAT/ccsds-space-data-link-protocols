@@ -97,7 +97,7 @@ namespace CCSDSDataLinkLayer {
         return FOPNotification::NO_FOP_EVENT;
     }
 
-    FOPNotification FrameOperationProcedure::transmitBcFrame(const ChannelConfig::MasterChannelGroundSegmentVariant& masterChannelVariant,
+    FOPNotification FrameOperationProcedure::transmitBcFrame(MasterChannelGroundSegmentVariant& masterChannelVariant,
         const DefsAndUtils::DirectiveRequestSignal &directiveSignal) {
         if (directiveSignal.directiveType != DefsAndUtils::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK &&
             directiveSignal.directiveType != DefsAndUtils::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_SET_VR) {
@@ -133,7 +133,7 @@ namespace CCSDSDataLinkLayer {
                              DefsAndUtils::ErrorControlFieldSize;
 
         if (!ChannelsInterface::hasCapacityForFrameDataMasterChannelGroundSegment(
-            masterChannelVariant, DefsAndUtils::FrameType::TC,
+            masterChannelVariant,
             1, bcFrameLen)) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL);
             return FOPNotification::FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL;
@@ -154,9 +154,11 @@ namespace CCSDSDataLinkLayer {
         // place octets in the memory pool
         uint8_t *data = ChannelsInterface::addFrameOctetsToMemPoolMasterChannelGroundSegment(masterChannelVariant, tmpData, bcFrameLen).value();
 
+        const BaseMasterChannel* baseMcChanPtr = ChannelsInterface::upcastToBase(masterChannelVariant);
         TransferFrameTC bcFrame = TransferFrameTC(data,
                                                   DefsAndUtils::ServiceType::TYPE_BC,
                                                   vid,
+                                                  DefsAndUtils::extractScidFromMcid(baseMcChanPtr->getMscid()),
                                                   bcFrameLen,
                                                   false);
 

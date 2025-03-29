@@ -1,34 +1,33 @@
 /**
  * @file CCSDSServiceChannel.hpp
- * @details  This provides a way to interconnect all different CCSDS Space Data Protocol Services and a
- *           bidirectional interface between the receiving and transmitting parties.
+ * @details Provides a collection of data processing functions / services, contained within the "service channels"
+ *          Those classes constitute the interface through which the data link user can interact.
  */
 
 #pragma once
 
-#include <utility>
 #include "etl/optional.h"
 #include "etl/expected.h"
 #include "etl/utility.h"
 #include "CCSDSChannel.hpp"
 #include "Alert.hpp"
-#include "TransferFrameTC.hpp"
-#include "CCSDSLoggerImpl.h"
+#include "CCSDSChannelConfiguration.hpp"
 #include "CCSDSSecurityAssociation.hpp"
+#include "FrameAcceptanceReporting.hpp"
 
 namespace CCSDSDataLinkLayer {
+	/**
+	 * @brief Contains services common to both space and ground segments.
+	 */
 	class BaseServiceChannel {
 	public:
-	    explicit BaseServiceChannel(const PhysicalChannel& physicalChannel, const SecurityAssociation& securityAssociation)
-	        : physicalChannel(physicalChannel), securityAssociation(securityAssociation) {}
-
 	    // Debugging services
 	    /**
-         * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging purposes
+         * @brief Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging purposes.
          * @param ocfPresent, eccPresent              Indicates to the function whether those fields exist.
-         * @param verbosePrimaryHeader, verboseOCF    If true, subfield names will also appear for each field, but more space is taken
+         * @param verbosePrimaryHeader, verboseOCF    If true, subfield names will also appear for each field, but more space is taken.
 	     */
-	    void printTransferFrameTM(TransferFrameTM &TransferFrameTM,
+	    static void printTransferFrameTM(const TransferFrameTM &TransferFrameTM,
 	                                     bool ocfPresent,
 	                                     bool eccPresent,
 	                                     bool verbosePrimaryHeader,
@@ -36,12 +35,12 @@ namespace CCSDSDataLinkLayer {
 	                                     uint16_t transferFrameDataFieldLength);
 
 	    /**
-         * Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging purposes
-         * @param verbose     If true, names will also be printed for each field
-         * @param vid, mapid  Used to detect the existence of certain fields, that depend on certain virtual/MAP channel flags
-         *                    mapid will be ignored if MAP channels do not exist in the given virtual channel
+         * @brief Auxiliary service that accepts TM transfer frames and print their fields. Offered for debugging purposes
+         * @param segHeaderPresent, eccFieldPresent, verbosePrimaryHeader Indicates to the function whether those fields exist.
+         * @param verbosePrimaryHeader  If true, the primary header fields will also be printed.
 	     */
-	    void printTransferFrameTC(TransferFrameTC &TransferFrameTC,
+	    static void printTransferFrameTC(const TransferFrameTC &TransferFrameTC,
+	    	                      const SecurityAssociation& securityAssociation,
 	                              bool segHeaderPresent,
 	                              bool eccFieldPresent,
 	                              bool verbosePrimaryHeader,
@@ -50,87 +49,67 @@ namespace CCSDSDataLinkLayer {
 
 	    // Other services
 	    /**
-         * Reset anti replay attack sequence numbers, used for frame authentication by the security association (SA).
-         * A reset may be performed for the following reasons:
+         * @brief Reset anti replay attack sequence numbers, used for frame authentication by the security association (SA).
+         * @details A reset may be performed for the following reasons:
          * - Testing of the SA
          * - Sequence number overflow
          * - Sender-Receiver sequence number difference exceeded sequenceNumberWindow
 	     */
-	    void resetSequenceCountersSA() {
+	    static void resetSequenceCountersSA(SecurityAssociation& securityAssociation) {
 		    securityAssociation.resetSequenceNumber();
 	    }
-
-	protected:
-	    /**
-         * @brief PhysicalChannel is used to simply represent parameters of the physical channel like the maximum frame
-         * length.
-         * TODO: Replace defines for maxFrameLength
-	     */
-	    PhysicalChannel physicalChannel;
-
-	    /**
-		 * @brief The security association is used for providing authentication and enryption services.
-	     */
-	    SecurityAssociation securityAssociation;
 	};
 
 #ifdef SPACE_SEGMENT
-class ServiceChannelSpaceSegment : public BaseServiceChannel {
+class ServiceChannelSpaceSegment {
 	public:
-	    ServiceChannelSpaceSegment(const PhysicalChannel& physicalChannel,
-	                               const MasterChannelSpaceSegment& masterChannelSpaceSegment,
-	                               const SecurityAssociation& securityAssociation)
-	        : BaseServiceChannel(physicalChannel, securityAssociation),
-	          masterChannel(masterChannelSpaceSegment) {}
+		/** ================================================
+		 *   @name TC TransferFrame - Receiving End (TC Rx)
+		 *  ================================================
+		 *  @{
+		 */
 
-	    // TC TransferFrame - Receiving End (TC Rx)
-
-	    //     - Utility and Debugging
-
-	    /**
-         * Returns the total length of a space packet (as defined in CCSDS Space Packet Protocol)
-	     */
-	    static uint16_t getSpacePacketLength(const uint8_t *packetSource) {
-		    // plus one is added because the field actually contains the data field length, reduced by one
-		    return (static_cast<uint16_t>(packetSource[PacketDataLengthFieldPosition - 1]) << 8) |
-		           (static_cast<uint16_t>(packetSource[PacketDataLengthFieldPosition])) + PacketPrimaryHeaderLength + 1;
-	    }
-
-	    //     - All Frames Reception
+	    // All Frames Reception
 	    /**
          * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
          * encoding defined by this Recommendation, along with other standard checks. Serves as an entry point
          * for frames.
-         * @see p. 4.2.7 from TC Space Data Link Protocol
+         * @see p. 4.2.7 from TCstatic  Space Data Link Protocol
 	     */
-	    etl::expected<void, ServiceChannelNotification> allFramesReceptionRequestRxTC(uint8_t *frameData, uint16_t frameLength);
+	    static etl::expected<void, ServiceChannelNotification> allFramesReceptionRequestTC(
+	    	const PhysicalChannel& physicalChannel,
+		    MasterChannelSpaceSegmentVariant& mcChanVariant,
+		    VirtualChannelSearchFunctionType vChanSearchFunction,
+		    MapChannelSearchFunctionType mapChanSearchFunction,
+		    uint8_t *frameData, uint16_t frameLength);
 
-	    //     - Master Channel Demultiplexing
+	    // Master Channel Demultiplexing
 
-	    //     - Virtual Channel Reception
+	    // Virtual Channel Reception
 	    /**
          * The Virtual Channel Reception Function shall perform the Frame Acceptance and
          * Reporting Mechanism (FARM), which is a sub-procedure of the Communications Operation
          * Procedure (COP).
          * @see  p. 4.4.5 from TC Space Data Link Protocol
 	     */
-	    etl::pair<ServiceChannelNotification, uint8_t> vcReceptionRxTC(uint8_t vid);
+	    static etl::pair<ServiceChannelNotification, uint8_t> vcReceptionTC(
+	    	FrameAcceptanceReporting& farm,
+		    MasterChannelSpaceSegmentVariant& mcChanVariant,
+		    VirtualChannelSpaceSegmentVariant& vcChanVariant);
 
-	    //     - FARM-1 utility and debugging functions
-	    /**
-         * Directly inject a clcw to the corresponding master channel data structure (this process is normally handled
-         * inside FARM-1). Offered for situations where the TM-Tx chain needs to be tested, but the TC-Rx chain is not available.
-	     */
-	    etl::expected<void, ServiceChannelNotification> injectClcw(uint32_t clcw, uint8_t vid);
+	    // SDLS Processing
+		/**
+	     * @brief Processes TC frames that belong in a security association and discards them if they do not pass checks.
+	     * @param mapChanFunction: Used to find the correct map channel in case the frame has a segmentation header present.
+		 */
+		static etl::expected<void, ServiceChannelNotification> processSDLSSecurityTC(
+			SecurityAssociation& securityAssociation,
+			MasterChannelSpaceSegmentVariant &mcChanVariant,
+			VirtualChannelSpaceSegmentVariant &vcChanVariant,
+			MapChannelSearchFunctionType mapChanFunction,
+			DefsAndUtils::ServiceType serviceType);
 
-	    //    - SDLS Processing
-	    /**
-         * Processes TC frames that belong in a security association and discards them if they do not pass checks.
-         * @param mapid Is ignored if no MAP channels exist for the given virtual channel
-	     */
-	    etl::expected<void, ServiceChannelNotification> processSDLSSecurityRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType);
-
-	    //     - Packet Extraction
+	    // Packet Extraction
 	    /**
          * The VC Packet Extraction Function shall be used to extract variable-length
          * Packets from Frame Data Units on a Virtual Channel
@@ -154,20 +133,30 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	    etl::expected<uint16_t , ServiceChannelNotification>
 	    packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t *packetDest);
 
-	    // TM TransferFrame - Sending End (TM Tx)
+		/**
+		 * @}
+		 */
 
-	    //     - Packet Processing and Virtual Channel Generation
+		/** ==============================================
+		 *   @name TM TransferFrame - Sending End (TM Tx)
+		 *  ==============================================
+		 *  @{
+		 */
+
+	    // Packet Processing and Virtual Channel Generation
 
 	    /**
          * Serves as the main entry point from the upper layers.
          * Stores the raw packets  along with their length so they can be later inserted into transfer frames,
          * and be transmitted.
          *
-         * @param packet pointer to the packet
+         * @param packetSource pointer to the packet
          * @param packetLength length of the packet
-         * @param vid the virtual channel id
 	     */
-	    etl::expected<void, ServiceChannelNotification> storePacketTxTM(uint8_t *packet, uint16_t packetLength, uint8_t vid);
+	    static etl::expected<void, ServiceChannelNotification> storePacketTM(
+	    	VirtualChannelSpaceSegmentVariant &vcChanVariant,
+	    	const uint8_t *packetSource,
+	    	uint16_t packetLength);
 
 	    /**
          * Function used by the vcGenerationServiceTxTM function to implement the segmentation of packets stored in
@@ -178,26 +167,31 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
          * @param transferFrameDataFieldLength The length of the data field of the TM Transfer frame, taken by the
          *                                     vcGenerationServiceTxTM parameter
          * @param packetLength                 The length of the next transfer frame data in the packetBufferTxTM
-         * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
          * @return                             A Service Channel Notification as it is the case with vcGenerationServiceTxTM
 	     */
-	    etl::expected<void, ServiceChannelNotification> segmentationTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength,
-	                                                                   uint16_t packetLength, uint8_t vid);
+		static etl::expected<void, ServiceChannelNotification> segmentationTM(
+			MasterChannelSpaceSegmentVariant &mcChanVariant,
+			VirtualChannelSpaceSegmentVariant &vcChanVariant,
+			TransferFrameTM *prevFrame,
+			uint16_t transferFrameDataFieldLength,
+			uint16_t packetLength);
 
-	    /**
-         * Auxiliary function for blocking of packets stored in the stored packet buffer
-         *
-         * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
-         *                                       not exist or is full)
-         * @param transferFrameFieldLength       The length of the data field of the TM Transfer frame (where packets are
-         *                                       stored)
-         * @param packetLength                   The length of the next packet in the stored TM packet buffer
-         * @param vcid                           Virtual Channel ID
-         * @param idlePacketFlag                 Indicates whether the next packet is an idle space packet or not
-         * @return                               A Service Channel Notification
-	     */
-	    etl::expected<void, ServiceChannelNotification> blockingTM(TransferFrameTM *prevFrame, uint16_t transferFrameDataFieldLength,
-	                                                               uint16_t packetLength, uint8_t vid);
+		/**
+	     * Auxiliary function for blocking of packets stored in the stored packet buffer
+	     *
+	     * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
+	     *                                       not exist or is full)
+	     * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame (where packets are
+	     *                                       stored)
+	     * @param packetLength                   The length of the next packet in the stored TM packet buffer
+	     * @return                               A Service Channel Notification
+		 */
+	    static etl::expected<void, ServiceChannelNotification> blockingTM(
+			MasterChannelSpaceSegmentVariant &mcChanVariant,
+			VirtualChannelSpaceSegmentVariant &vcChanVariant,
+	    	TransferFrameTM *prevFrame,
+	    	uint16_t transferFrameDataFieldLength,
+	    	uint16_t packetLength);
 
 	    /**
          * Auxiliary function for generating idle space packets in the scenario that there are not enough packets to
@@ -226,7 +220,7 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	     */
 	    etl::expected<void, ServiceChannelNotification> vcGenerationServiceTxTM(uint16_t transferFrameDataFieldLength, uint8_t vid);
 
-	    //     - Master Channel Generation
+	    // Master Channel Generation
 	    /**
          * The Master Channel Generation Service shall be used to insert Transfer Frame
          * Secondary Header and/or Operational Control Field service data units into Transfer Frames
@@ -235,7 +229,7 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	     */
 	    etl::expected<void, ServiceChannelNotification> mcGenerationRequestTxTM();
 
-	    //     - All Frames Generation
+	    // All Frames Generation
 	    /**
          * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
          * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
@@ -244,36 +238,24 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
          * @TODO do not forget to have a mechanism for sending frames at an appropriate rate (unless lower layers can handle it by transmitting empty codewords)
 	     */
 	    etl::expected<void, ServiceChannelNotification> allFramesGenerationRequestTxTM(uint8_t *frameDataTarget);
-
-	private:
-	    /**
-         * @brief The Master Channel essentially stores the configuration of your channel. It partitions the physical
-         * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic.
-	     */
-	    MasterChannelSpaceSegment masterChannel;
-
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	    MasterChannelSpaceSegment& getMasterChannel() {
-		    return masterChannel;
-	    }
-#endif // ENABLE_BUFFER_ACCESS
 	};
+
+	/**
+	 * @}
+	 */
 #endif // SPACE_SEGMENT
 
 #ifdef GROUND_SEGMENT
-    class ServiceChannelGroundSegment :public BaseServiceChannel {
+    class ServiceChannelGroundSegment {
 	public:
-	    ServiceChannelGroundSegment(const PhysicalChannel& physicalChannel,
-	                               const MasterChannelGroundSegment& masterChannelGroundSegment,
-	                               const SecurityAssociation& securityAssociation)
-	        : BaseServiceChannel(physicalChannel, securityAssociation),
-	          masterChannel(masterChannelGroundSegment) {}
 
+	    /** ==============================================
+	     *   @name TC TransferFrame - Sending End (TC Tx)
+	     *  ==============================================
+	     *  @{
+	     */
 
-	    // TC TransferFrame - Sending End (TC Tx)
-
-	    //     - MAP/VC Packet Processing and Frame Initialization
+	    // MAP/VC Packet Processing and Frame Initialization
 	    /**
          * @brief Auxiliary function to implement the segmentation of packets stored in the packet buffer.
          * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to
@@ -339,14 +321,14 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	    packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
 	                                ServiceType serviceType);
 
-	    //    - SDLS Processing
+	    // SDLS Processing
 	    /**
          * Apply security services for TC frames
          * @param mapid Is ignored if no MAP channels exist for the given virtual channel
 	     */
 	    etl::expected<void, ServiceChannelNotification> applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid);
 
-	    //     - Virtual Channel Generation
+	    // Virtual Channel Generation
 	    /**
          * The  Virtual  Channel  Generation  Function  shall  perform  the  following  two
          * procedures in the following order:
@@ -367,7 +349,7 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	    etl::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vid);
 
 
-	    //         -- FOP-1 User services and debugging methods
+	    //         - FOP-1 User services and debugging methods
 
 	    etl::expected<void, ServiceChannelNotification>
 	    pushDirectiveRequestSignal(uint8_t vid, const DirectiveRequestSignal &directiveRequestSignal);
@@ -416,7 +398,7 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	     */
 	    [[nodiscard]] uint8_t getExpectedFrameSeqNumber(uint8_t vid) const;
 
-	    //     - All frames generation
+	    // All frames generation
 	    /**
          * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
          * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
@@ -429,6 +411,9 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	     */
 	    etl::expected<uint16_t, ServiceChannelNotification> allFramesGenerationRequestTxTC(uint8_t *frameTarget);
 
+    	/**
+    	 * @}
+    	 */
 	    // TM TransferFrame - Receiving End (TM Rx)
 	    //
 	    //        //     - Utility and Debugging
@@ -456,20 +441,6 @@ class ServiceChannelSpaceSegment : public BaseServiceChannel {
 	    //         * @param packetTarget A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
 	    //         */
 	    //        ServiceChannelNotification packetExtractionRxTM(uint8_t vid, uint8_t *packetTarget);
-
-	private:
-	    /**
-         * @brief The Master Channel essentially stores the configuration of your channel. It partitions the physical
-         * channel into virtual channels, each of which has different parameters in order to easily manage incoming traffic.
-	     */
-	    MasterChannelGroundSegment masterChannel;
-
-#ifdef ENABLE_BUFFER_ACCESS
-	public:
-	    MasterChannelGroundSegment& getMasterChannel() {
-		    return masterChannel;
-	    }
-#endif // ENABLE_BUFFER_ACCESS
 	};
 #endif // GROUND_SEGMENT
 } // namespace CCSDSDataLinkLayer

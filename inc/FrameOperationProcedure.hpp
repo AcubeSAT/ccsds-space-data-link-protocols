@@ -33,7 +33,7 @@ namespace CCSDSDataLinkLayer {
      *
      */
     class FrameOperationProcedure {
-        friend class ChannelsInterface;
+        friend class ServiceChannelGroundSegment;
 
     private:
         /** FOP-1 VARIABLES **/
@@ -181,7 +181,7 @@ namespace CCSDSDataLinkLayer {
          * Those frames are removed from the sent queue once the lower layers accept them
          * @see p. 5.2.5 from COP-1 CCSDS
          */
-        FOPNotification transmitBcFrame(const ChannelConfig::MasterChannelGroundSegmentVariant& masterChannelVariant,
+        FOPNotification transmitBcFrame(MasterChannelGroundSegmentVariant& masterChannelVariant,
             const DefsAndUtils::DirectiveRequestSignal &directiveSignal);
 
         /**
@@ -263,7 +263,7 @@ namespace CCSDSDataLinkLayer {
          * @returns The event code detected. An event code of 0 means no event.
          *
          */
-        std::pair<FOPNotification, uint8_t> applyFopStateTable(const ChannelConfig::MasterChannelGroundSegmentVariant& masterChannelVariant);
+        std::pair<FOPNotification, uint8_t> applyFopStateTable(const MasterChannelGroundSegmentVariant& masterChannelVariant);
 
     public:
         FrameOperationProcedure(const uint8_t vid, const bool errorControlFieldPresent, const uint16_t tiInitial,

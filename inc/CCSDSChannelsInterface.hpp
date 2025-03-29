@@ -7,6 +7,7 @@
 #include <cstdint>
 #include "etl/expected.h"
 #include "CCSDSChannelConfiguration.hpp"
+#include "CLCW.hpp"
 
 namespace CCSDSDataLinkLayer {
     class FrameAcceptanceReporting;
@@ -42,16 +43,18 @@ namespace CCSDSDataLinkLayer {
          */
 
         /**
-         * @brief Takes a MapChannelGroundSegment variant and returns a copy of it's base class. Useful for accessing
-         *        common parameters.
+         * @brief Takes a MapChannelSpaceSegment variant and returns a pointer of it's base class type.
+         *        Useful for accessing common parameters.
          */
-        static BaseMAPChannel upcastToBase(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant);
+        static BaseMAPChannel* upcastToBase(MAPChannelSpaceSegmentVariant &mapChannelVariant);
+
+        static uint16_t frameListAvailableMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant);
 
         /**
          * @brief Push frame pointer to the back of the frame processing list.
          */
         static etl::expected<void, MapChannelAlert>
-        pushFrameMapChannelSpaceSegment(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant,
+        pushFrameMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant,
                                         TransferFrameTC *frameTC);
 
 
@@ -59,11 +62,11 @@ namespace CCSDSDataLinkLayer {
          * @brief Erase frame pointer from the frame processing list. Search starts from the front.
          */
         static etl::expected<void, MapChannelAlert>
-        popFrameMapChannelSpaceSegment(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant,
+        popFrameMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant,
                                        TransferFrameTC *frameTC);
 
         static etl::expected<TransferFrameTC *, MapChannelAlert>
-        getFrameMapChannelSpaceSegment(ChannelConfig::MAPChannelSpaceSegmentVariant &mapChannelVariant,
+        getFrameMapChannelSpaceSegment(MAPChannelSpaceSegmentVariant &mapChannelVariant,
                                        DefsAndUtils::ServiceType serviceType,
                                        DefsAndUtils::TcFrameProcessingStage processingStage);
         /**
@@ -77,25 +80,10 @@ namespace CCSDSDataLinkLayer {
          */
 
         /**
-         * @brief Takes a VirtualChannelSpaceSegment variant and returns a copy of it's base class. Useful for accessing
-         *        common parameters.
+         * @brief Takes a VirtualChannelSpaceSegment variant and returns a pointer of it's base class type.
+         *        Useful for accessing common parameters.
          */
-        static BaseVirtualChannel upcastToBase(ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
-
-        /**
-         * @brief Execute FARM-1 state machine.
-         *
-         * @param masterChannelVariant Used by FARM for to delete type-BC frames.
-         * @param virtualChannelVariant The virtual channel FARM belongs to. Used for obtaining access
-         *                              to frame processing lists.
-         *
-         * @return A FARM notification and the state machine event code.
-         * @note The user should ensure that the given virtual channel belongs to the given master channel.
-         */
-        static etl::pair<FARMNotification, uint8_t> applyFarmStateTable(
-            ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
-            ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
-
+        static BaseVirtualChannel* upcastToBase(VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
 
         enum class VchanBuffType : uint8_t {
             UNDER_PROCESSING_TM,
@@ -103,6 +91,11 @@ namespace CCSDSDataLinkLayer {
             AFTER_VC_GENERATION_TC_TYPE_AD,
             AFTER_VC_GENERATION_TC_TYPE_BD
         };
+
+        static uint16_t frameListAvailableVirtualChannelSpaceSegment(
+            VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+            VchanBuffType vchanBuffType
+        );
 
         /**
          * @brief Push frame pointer to the back of the specified frame processing list.
@@ -115,8 +108,8 @@ namespace CCSDSDataLinkLayer {
          *       the oldest frame pointer and the master copy are deleted.
          */
         static etl::expected<void, VirtualChannelAlert>
-        pushFrameVirtualChannelSpaceSegment(ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
-                                            ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        pushFrameVirtualChannelSpaceSegment(MasterChannelSpaceSegmentVariant &masterChannelVariant,
+                                            VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
                                             etl::variant<TransferFrameTM *, TransferFrameTC *> frame,
                                             VchanBuffType vchanBuffType
         );
@@ -128,7 +121,7 @@ namespace CCSDSDataLinkLayer {
          *                      enum member specifies the container.
          */
         static etl::expected<void, VirtualChannelAlert>
-        popFrameVirtualChannelSpaceSegment(ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        popFrameVirtualChannelSpaceSegment(VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
                                            etl::variant<TransferFrameTM *, TransferFrameTC *> frame,
                                            VchanBuffType vchanBuffType);
 
@@ -136,7 +129,7 @@ namespace CCSDSDataLinkLayer {
          * @brief Get frame from specified frame processing list and processing stage.
          */
         static etl::expected<etl::variant<TransferFrameTM *, TransferFrameTC *>, VirtualChannelAlert>
-        getFrameVirtualChannelSpaceSegment(ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        getFrameVirtualChannelSpaceSegment(VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
                                            VchanBuffType vchanBuffType,
                                            etl::variant<DefsAndUtils::TcFrameProcessingStage,
                                                DefsAndUtils::TmFrameProcessingStage> processingStage);
@@ -145,7 +138,7 @@ namespace CCSDSDataLinkLayer {
          * @brief Read and increase by one the virtual channel frame counter for TM frames.
          */
         static uint8_t readAndUpdateTmFrameCountVirtualChannelSpaceSegment(
-            ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
+            VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
 
         /**
          *  @brief Push a packet that will later be inserted in a TM frame.
@@ -153,21 +146,34 @@ namespace CCSDSDataLinkLayer {
          *                     is set to true, the packet data and lengths will be pushed to the front of the queues instead.
          */
         static etl::expected<void, VirtualChannelAlert>
-        pushTmPacketVirtualChannelSpaceSegment(ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        pushTmPacketVirtualChannelSpaceSegment(VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
                                                const uint8_t *packetSource,
                                                uint16_t packetLength,
                                                bool pushToFront = false);
 
+
         /**
-         * @brief Pop a packet (destined for TM frames) from the virtual channel
+         * @brief Pop the length of the next packet waiting in the queue.
+         *
+         *  @param popFromBack: The data structures used for storing the packet are dequeues. If this parameter
+         *                     is set to true, the packet length will be popped from the back of the queue instead.
+         */
+        static etl::expected<uint16_t, VirtualChannelAlert> popTmPacketLengthVirtualChannelSpaceSegment(
+            VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+            bool popFromBack = false);
+
+        /**
+         * @brief Pop a partial packet (destined for TM frames) from the virtual channel
          *        queue.
         *  @param popFromBack: The data structures used for storing the packets are dequeues. If this parameter
          *                     is set to true, the packet data and lengths will be popped from the back of the queue instead.
+         * @param numOctets: The amount of octets to pop
          * @return The packet's length
          */
-        static etl::expected<uint16_t, VirtualChannelAlert>
-        popTmPacketVirtualChannelSpaceSegment(ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        static etl::expected<void, VirtualChannelAlert>
+        popTmPacketSegmentVirtualChannelSpaceSegment(VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
                                               uint8_t *packetDestination,
+                                              uint16_t numOctets,
                                               bool popFromBack = false);
         /**
          * @}
@@ -180,27 +186,29 @@ namespace CCSDSDataLinkLayer {
          */
 
         /**
-         * @brief Takes a MasterChannelSpaceSegment variant and returns a copy of it's base class. Useful for accessing
-         *        common parameters.
+         * @brief Takes a MasterChannelSpaceSegment variant and returns a pointer of it's base class type.
+         *        Useful for accessing common parameters.
          */
-        static BaseMasterChannel upcastToBase(ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant);
+        static BaseMasterChannel* upcastToBase(MasterChannelSpaceSegmentVariant &masterChannelVariant);
+
+        static uint16_t frameListAvailableMasterChannelSpaceSegment(MasterChannelSpaceSegmentVariant &masterChannelVariant);
 
         /**
          * @brief Push TM frame pointer to the back of the processing list.
          */
         static etl::expected<void, MasterChannelAlert> pushTmFrameMasterChannelSpaceSegment(
-            ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+            MasterChannelSpaceSegmentVariant &masterChannelVariant,
             TransferFrameTM *frameTM);
 
         /**
          * @brief Erase TC frame pointer from the processing list. Search starts from the front.
          */
         static etl::expected<void, MasterChannelAlert> popTmFrameMasterChannelSpaceSegment(
-            ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+            MasterChannelSpaceSegmentVariant &masterChannelVariant,
             TransferFrameTM *frameTM);
 
         static etl::expected<TransferFrameTM *, MasterChannelAlert>
-        getTmFrameMasterChannelSpaceSegment(ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        getTmFrameMasterChannelSpaceSegment(MasterChannelSpaceSegmentVariant &masterChannelVariant,
                                             DefsAndUtils::TmFrameProcessingStage processingStage);
 
         /**
@@ -211,7 +219,7 @@ namespace CCSDSDataLinkLayer {
          *
          */
         static bool hasCapacityForFrameDataMasterChannelSpaceSegment(
-            ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+            MasterChannelSpaceSegmentVariant &masterChannelVariant,
             DefsAndUtils::FrameType frameType,
             uint16_t numberOfFrames,
             uint16_t numberOfOctets);
@@ -223,16 +231,18 @@ namespace CCSDSDataLinkLayer {
          */
         static etl::expected<uint8_t *, MasterChannelAlert>
         addFrameOctetsToMemPoolMasterChannelSpaceSegment(
-            ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+            MasterChannelSpaceSegmentVariant &masterChannelVariant,
             DefsAndUtils::FrameType frameType,
             uint8_t *octetsSource, uint16_t frameLength);
 
         /**
          * @brief Push frame object to the back of the master copy buffer.
+         *
+         * @returns A pointer to the frame object.
          */
-        static etl::expected<void, MasterChannelAlert>
+        static etl::expected<etl::variant<TransferFrameTM*, TransferFrameTC*>, MasterChannelAlert>
         addFrameObjectToMasterCopyBufferMasterChannelSpaceSegment(
-            ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+            MasterChannelSpaceSegmentVariant &masterChannelVariant,
             DefsAndUtils::FrameType frameType,
             etl::variant<TransferFrameTM &, TransferFrameTC &> frame);
 
@@ -241,14 +251,14 @@ namespace CCSDSDataLinkLayer {
          *        from the memory pool.
          */
         static etl::expected<void, MasterChannelAlert>
-        removeFrameDataMasterChannelSpaceSegment(ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        removeFrameDataMasterChannelSpaceSegment(MasterChannelSpaceSegmentVariant &masterChannelVariant,
                                                  etl::variant<TransferFrameTM *, TransferFrameTC *> frame);
 
         /**
          *  @brief Return the current value of the master channel TM frame counter and increase it by one.
          */
         static uint8_t readAndUpdateTmFrameCountMasterChannelSpaceSegment(
-            ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant);
+            MasterChannelSpaceSegmentVariant &masterChannelVariant);
 
         /**
          * @}
@@ -264,41 +274,47 @@ namespace CCSDSDataLinkLayer {
          */
 
         /**
-         * @brief Takes a MapChannelGroundSegment variant and returns a copy of it's base class. Useful for accessing
-         *        common parameters.
+         * @brief Takes a MapChannelGroundSegment variant and returns a pointer of it's base class type.
+         *        Useful for accessing common parameters.
          */
-        static BaseMAPChannel upcastToBase(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant);
+        static BaseMAPChannel* upcastToBase(MAPChannelGroundSegmentVariant &mapChannelVariant);
 
         /**
          *  @brief Push a packet that will later be inserted in a type-AD or type-BD frame.
          */
         static etl::expected<void, MapChannelAlert>
-        pushPacketMAPChannelGroundSegment(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+        pushPacketMAPChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
                                           DefsAndUtils::ServiceType serviceType,
                                           uint8_t *packetSource,
                                           uint16_t packetLength);
 
-        /**
-         * @brief Pop a packet (destined for type-AD or type-BD frames) from the MAP channel
-         *        queues.
-         * @return The packet's length
-         */
         static etl::expected<uint16_t, MapChannelAlert>
-        popPacketMAPChannelGroundSegment(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+        popPacketLengthMAPChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
+                                               DefsAndUtils::ServiceType serviceType);
+        /**
+         * @brief Pop a packet segment (destined for type-AD or type-BD frames) from the MAP channel
+         *        queues.
+         * @param numOctets: The length of the packet segment
+         */
+        static etl::expected<void, MapChannelAlert>
+        popPacketSegmentMAPChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
                                          DefsAndUtils::ServiceType serviceType,
-                                         uint8_t *packetDestination);
+                                         uint8_t *packetDestination,
+                                         uint16_t numOctets);
+
+        static uint16_t frameListAvailableMapChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant);
 
         static etl::expected<void, MapChannelAlert>
-        pushFrameMapChannelGroundSegment(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+        pushFrameMapChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
                                          TransferFrameTC *frameTC);
 
 
         static etl::expected<void, MapChannelAlert>
-        popFrameMapChannelGroundSegment(ChannelConfig::MAPChannelGroundSegmentVariant &mapChannelVariant,
+        popFrameMapChannelGroundSegment(MAPChannelGroundSegmentVariant &mapChannelVariant,
                                         TransferFrameTC *frameTC);
 
         static etl::expected<TransferFrameTC *, MapChannelAlert>
-        getFrameMapChannelGroundSegment(ChannelConfig::MAPChannelGroundSegmentVariant &,
+        getFrameMapChannelGroundSegment(MAPChannelGroundSegmentVariant &,
                                         DefsAndUtils::ServiceType serviceType,
                                         DefsAndUtils::TcFrameProcessingStage processingStage);
 
@@ -313,75 +329,24 @@ namespace CCSDSDataLinkLayer {
          */
 
         /**
-         * @brief Takes a VirtualChannelGroundSegment variant and returns a copy of it's base class. Useful for accessing
-         *        common parameters.
+         * @brief Takes a VirtualChannelGroundSegment variant and returns a pointer of it's base class type.
+         *        Useful for accessing common parameters.
          */
-        static BaseVirtualChannel
-        upcastToBase(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant);
+        static BaseVirtualChannel*
+        upcastToBase(VirtualChannelGroundSegmentVariant &virtualChannelVariant);
 
-        /**
-         * @brief Execute FOP-1 state machine.
-         *
-         * @param masterChannelVariant Used by FOP for to create type-BC frames.
-         * @param virtualChannelVariant The virtual channel FOP belongs to.
-         *
-         * @return A FOP notification and the state machine event code.
-         * @note The user should ensure that the given virtual channel belongs to the given master channel.
-         */
-        static std::pair<FOPNotification, uint8_t> applyFopStateTable(
-            ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
-            ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant);
-
-        /**
-         * @brief Push a signal to a virtual channel's FOP state machine.
-         * @param signal There are 4 types of signals FOP can accept:\n
-         *      DirectiveRequestSignal: Order FOP to change a parameter or synchronize with FARM\n
-         *      FduTransferSignal: Send a new frame for FOP to process.\n
-         *      LowerLayerResponseSignal: Respond to FOP's request of moving a frame to the lower layer\n
-         *      CLCW: A report of FARM's status.
-         *
-         * @note Directive requests and CLCWs are provided by the data link user, so
-         *       wrapper functions for this purpose are provided in the service channel.
-         */
-        static etl::expected<void, VirtualChannelAlert>
-        pushSignalToFop(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
-                        etl::variant<DefsAndUtils::DirectiveRequestSignal,
-                            DefsAndUtils::FduTransferSignal,
-                            DefsAndUtils::LowerLayerResponseSignal,
-                            CLCW> signal);
-
-        enum class FopOutputQueueType : uint8_t {
-            DIRECTIVE_NOTIFICATION_QUEUE,
-            TRANSFER_NOTIFICATION_QUEUE,
-            ASYNCHRONOUS_NOTIFICATION_QUEUE,
-            FOP_TO_LOWER_LAYER_REQUEST_QUEUE
-        };
-
-        /**
-         * @brief Get a signal from a virtual channel's FOP. There are 3 types of signals:\name
-         *        DirectiveNotificationSignal: Informs if the directive is accepted and successfully executed by FOP.\n
-         *        TransferNotificationSignal: Informs if the transfer frame is accepted and sent by FOP.\n
-         *        AsynchronousNotificationSignal: Informs of an unrecoverable problem or if FOP is suspended.\n
-         * @param queueType Which queue to pop a signal from.
-         * @return The requested signal type.
-         */
-        static etl::expected<etl::variant<DefsAndUtils::DirectiveNotificationSignal,
-            DefsAndUtils::TransferNotificationSignal,
-            DefsAndUtils::AsynchronousNotificationSignal,
-            DefsAndUtils::FopToLowerLayerRequestSignal>, VirtualChannelAlert>
-        popSignalFromFop(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
-                         FopOutputQueueType queueType);
+        static uint16_t frameListAvailableVirtualChannelGroundSegment(VirtualChannelGroundSegmentVariant &virtualChannelVariant);
 
         static etl::expected<void, VirtualChannelAlert>
-        pushFrameVirtualChannelGroundSegment(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
+        pushFrameVirtualChannelGroundSegment(VirtualChannelGroundSegmentVariant &virtualChannelVariant,
                                              TransferFrameTC *frameTC);
 
         static etl::expected<void, VirtualChannelAlert>
-        popFrameVirtualChannelGroundSegment(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
+        popFrameVirtualChannelGroundSegment(VirtualChannelGroundSegmentVariant &virtualChannelVariant,
                                             TransferFrameTC *frameTC);
 
         static etl::expected<TransferFrameTC *, VirtualChannelAlert>
-        getFrameVirtualChannelGroundSegment(ChannelConfig::VirtualChannelGroundSegmentVariant &virtualChannelVariant,
+        getFrameVirtualChannelGroundSegment(VirtualChannelGroundSegmentVariant &virtualChannelVariant,
                                             DefsAndUtils::ServiceType serviceType,
                                             DefsAndUtils::TcFrameProcessingStage processingStage);
 
@@ -396,10 +361,10 @@ namespace CCSDSDataLinkLayer {
          */
 
         /**
-         * @brief Takes a MasterChannelGroundSegment variant and returns a copy of it's base class. Useful for accessing
-         *        common parameters.
+         * @brief Takes a MasterChannelGroundSegment variant and returns a pointer of it's base class type.
+         *        Useful for accessing common parameters.
          */
-        static BaseMasterChannel upcastToBase(ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant);
+        static BaseMasterChannel* upcastToBase(MasterChannelGroundSegmentVariant &masterChannelVariant);
 
         /**
          * @brief Indicates if there is enough capacity for storing new frames.
@@ -409,7 +374,7 @@ namespace CCSDSDataLinkLayer {
          *
          */
         static bool hasCapacityForFrameDataMasterChannelGroundSegment(
-            ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
+            MasterChannelGroundSegmentVariant &masterChannelVariant,
             uint16_t numberOfFrames,
             uint16_t numberOfOctets);
 
@@ -420,8 +385,18 @@ namespace CCSDSDataLinkLayer {
          */
         static etl::expected<uint8_t *, MasterChannelAlert>
         addFrameOctetsToMemPoolMasterChannelGroundSegment(
-            ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
+            MasterChannelGroundSegmentVariant &masterChannelVariant,
             uint8_t *octetsSource, uint16_t frameLength);
+
+        /**
+         * @brief Push frame object to the back of the master copy buffer.
+         *
+         * @returns A pointer to the frame object
+         */
+        static etl::expected<etl::variant<TransferFrameTM*, TransferFrameTC*>, MasterChannelAlert>
+        addFrameObjectToMasterCopyBufferMasterChannelGroundSegment(
+            MasterChannelGroundSegmentVariant &masterChannelVariant,
+            const TransferFrameTC& frame);
 
         /**
          * @brief Remove specified frame object from the master copy buffer, as well as it's octets
@@ -429,7 +404,7 @@ namespace CCSDSDataLinkLayer {
          */
         static etl::expected<void, MasterChannelAlert>
         removeFrameDataMasterChannelGroundSegment(
-            ChannelConfig::MasterChannelGroundSegmentVariant &masterChannelVariant,
+            MasterChannelGroundSegmentVariant &masterChannelVariant,
             TransferFrameTC& frame);
 
         /**

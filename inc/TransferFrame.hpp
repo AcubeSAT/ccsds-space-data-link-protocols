@@ -33,12 +33,13 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * @brief Partially or completely replace the frame data of this transfer frame.
+         * @brief Partially or completely replace frame data of this transfer frame.
          * @param dataSource Source of new data.
          * @param dataLength Amount of bytes to copy.
+         * @param offset Offset from the start of the frame
          */
-        void setNewFrameData(uint8_t *dataSource, uint16_t dataLength) {
-            std::memcpy(transferFrameData, dataSource, dataLength * sizeof(uint8_t));
+        void modifyFrameData(const uint8_t *dataSource, const uint16_t dataLength, const uint16_t offset = 0) {
+            std::memcpy(transferFrameData + offset, dataSource, dataLength * sizeof(uint8_t));
         }
 
         /**

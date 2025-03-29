@@ -17,7 +17,7 @@ namespace CCSDSDataLinkLayer {
 
     std::ostream &operator<<(std::ostream &out, const MasterChannelAlert value);
 
-    std::ostream &operator<<(std::ostream &out, const SDLSVerificationStatusCode value);
+    std::ostream &operator<<(std::ostream &out, const SDLSVerificationError value);
 
     std::ostream &operator<<(std::ostream &out, const FOPNotification value);
 

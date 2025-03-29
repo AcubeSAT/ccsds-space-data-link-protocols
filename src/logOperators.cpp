@@ -35,45 +35,25 @@ namespace CCSDSDataLinkLayer {
         static std::map<ServiceChannelNotification, std::string> strings;
         if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
-            INSERT_ELEMENT(ServiceChannelNotification::NO_SERVICE_EVENT);
-            INSERT_ELEMENT(ServiceChannelNotification::MAP_CHANNEL_FRAME_BUFFER_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::MASTER_CHANNEL_FRAME_BUFFER_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::VC_MC_FRAME_BUFFER_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::TX_MC_FRAME_BUFFER_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::NO_TX_PACKETS_TO_PROCESS);
-            INSERT_ELEMENT(ServiceChannelNotification::NO_RX_PACKETS_TO_PROCESS);
-            INSERT_ELEMENT(ServiceChannelNotification::PACKET_EXCEEDS_MAX_SIZE);
-            INSERT_ELEMENT(ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY);
-            INSERT_ELEMENT(ServiceChannelNotification::TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::RX_IN_MC_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::RX_IN_BUFFER_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::RX_OUT_BUFFER_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::RX_INVALID_TFVN);
-            INSERT_ELEMENT(ServiceChannelNotification::RX_INVALID_SCID);
-            INSERT_ELEMENT(ServiceChannelNotification::RX_INVALID_LENGTH);
-            INSERT_ELEMENT(ServiceChannelNotification::VC_RX_WAIT_QUEUE_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::VC_MC_FRAME_BUFFER_EMPTY);
-            INSERT_ELEMENT(ServiceChannelNotification::INVALID_VC_ID);
-            INSERT_ELEMENT(ServiceChannelNotification::INVALID_MAP_ID);
-            INSERT_ELEMENT(ServiceChannelNotification::RX_INVALID_CRC);
-            INSERT_ELEMENT(ServiceChannelNotification::INVALID_SERVICE_CALL);
-            INSERT_ELEMENT(ServiceChannelNotification::PACKET_BUFFER_EMPTY);
-            INSERT_ELEMENT(ServiceChannelNotification::NO_TX_PACKETS_TO_TRANSFER_FRAME);
-            INSERT_ELEMENT(ServiceChannelNotification::MC_RX_INVALID_COUNT);
-            INSERT_ELEMENT(ServiceChannelNotification::MEMORY_POOL_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::INVALID_INPUT);
-            INSERT_ELEMENT(ServiceChannelNotification::SDLS_ERROR);
-            INSERT_ELEMENT(ServiceChannelNotification::FOP_BUFFER_FULL);
-            INSERT_ELEMENT(ServiceChannelNotification::FOP_BUFFER_EMPTY);
-            INSERT_ELEMENT(ServiceChannelNotification::INVALID_SERVICE_TYPE);
-            INSERT_ELEMENT(ServiceChannelNotification::FOP_ERROR);
-            INSERT_ELEMENT(ServiceChannelNotification::UNEXPECTED_FOP_RETURN_SIGNAL);
-            INSERT_ELEMENT(ServiceChannelNotification::CLCW_BUFFER_EMPTY);
-            INSERT_ELEMENT(ServiceChannelNotification::PROCESSING_SEGMENTED_PACKET);
-            INSERT_ELEMENT(ServiceChannelNotification::INVALID_SEQUENCE_FLAG);
-            INSERT_ELEMENT(ServiceChannelNotification::UNKNOWN_ERROR);
-            INSERT_ELEMENT(ServiceChannelNotification::FARM_ERROR);
-            INSERT_ELEMENT(ServiceChannelNotification::GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER);
+        INSERT_ELEMENT(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_TFVN);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_SCID);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_LENGTH);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_CRC);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_VCID);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_MAPID);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_CHANNELS_COMBINATION);
+        INSERT_ELEMENT(ServiceChannelNotification::FARM_ERROR);
+        INSERT_ELEMENT(ServiceChannelNotification::FRAME_LIST_FULL);
+        INSERT_ELEMENT(ServiceChannelNotification::FRAME_LIST_EMPTY);
+        INSERT_ELEMENT(ServiceChannelNotification::PACKET_QUEUE_FULL);
+        INSERT_ELEMENT(ServiceChannelNotification::PACKET_QUEUE_EMPTY);
+        INSERT_ELEMENT(ServiceChannelNotification::UNASSOCIATED_CHANNEL);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_SECURITY_PARAMETER_INDEX);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_MAC);
+        INSERT_ELEMENT(ServiceChannelNotification::FRAME_REPLAY_ATTEMPT);
+        INSERT_ELEMENT(ServiceChannelNotification::SLDS_ERROR);
+        INSERT_ELEMENT(ServiceChannelNotification::NO_SERVICE_EVENT);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
@@ -137,6 +117,7 @@ namespace CCSDSDataLinkLayer {
             INSERT_ELEMENT(VirtualChannelAlert::REQUSTED_FRAME_NOT_FOUND);
             INSERT_ELEMENT(VirtualChannelAlert::PACKET_QUEUE_FULL);
             INSERT_ELEMENT(VirtualChannelAlert::PACKET_QUEUE_EMPTY);
+            INSERT_ELEMENT(VirtualChannelAlert::INVALID_REQUESTED_PACKET_SEGMENT);
             INSERT_ELEMENT(VirtualChannelAlert::FOP_SIGNAL_QUEUE_FULL);
             INSERT_ELEMENT(VirtualChannelAlert::FOP_SIGNAL_QUEUE_EMPTY);
 #undef INSERT_ELEMENT
@@ -154,24 +135,24 @@ namespace CCSDSDataLinkLayer {
 	        INSERT_ELEMENT(MapChannelAlert::REQUSTED_FRAME_NOT_FOUND);
 	        INSERT_ELEMENT(MapChannelAlert::PACKET_QUEUE_FULL);
 	        INSERT_ELEMENT(MapChannelAlert::PACKET_QUEUE_EMPTY);
+	        INSERT_ELEMENT(MapChannelAlert::INVALID_REQUESTED_PACKET_SEGMENT);
 #undef INSERT_ELEMENT
 	    }
 	    return out << strings[value];
     }
 
-    std::ostream &operator<<(std::ostream &out, const SDLSVerificationStatusCode value) {
-        static std::map<SDLSVerificationStatusCode, std::string> strings;
+    std::ostream &operator<<(std::ostream &out, const SDLSVerificationError value) {
+        static std::map<SDLSVerificationError, std::string> strings;
         if (strings.empty()) {
 #define INSERT_ELEMENT(p) strings[p] = #p
-            INSERT_ELEMENT(SDLSVerificationStatusCode::NO_FAILURE);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::INVALID_SPI);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::INVALID_FRAME_TYPE);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::UNASSOCIATED_CHANNEL);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::INVALID_USER);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::MAC_CALCULATION_ERROR);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::MAC_VERIFICATION_FAILURE);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE);
-            INSERT_ELEMENT(SDLSVerificationStatusCode::PADDING_ERROR);
+            INSERT_ELEMENT(SDLSVerificationError::NO_SECURITY_CONFIGURED);
+            INSERT_ELEMENT(SDLSVerificationError::INVALID_SPI);
+            INSERT_ELEMENT(SDLSVerificationError::INVALID_FRAME_TYPE);
+            INSERT_ELEMENT(SDLSVerificationError::INVALID_USER);
+            INSERT_ELEMENT(SDLSVerificationError::MAC_CALCULATION_ERROR);
+            INSERT_ELEMENT(SDLSVerificationError::MAC_VERIFICATION_FAILURE);
+            INSERT_ELEMENT(SDLSVerificationError::ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE);
+            INSERT_ELEMENT(SDLSVerificationError::PADDING_ERROR);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];

@@ -39,7 +39,7 @@ namespace CCSDSDataLinkLayer {
      * FARM-1 is implemented as a state machine.
      */
     class FrameAcceptanceReporting {
-        friend class ChannelsInterface;
+        friend class ServiceChannelSpaceSegment;
     private:
         /** FARM-1 Variables **/
 
@@ -115,15 +115,15 @@ namespace CCSDSDataLinkLayer {
          *
          * @see p. 6.2.2 of COP-1 CCSDS
          */
-        static FARMNotification accept(ChannelConfig::MasterChannelSpaceSegmentVariant& masterChannelVariant,
-            ChannelConfig::VirtualChannelSpaceSegmentVariant& virtualChannelVariant, TransferFrameTC *frame, DefsAndUtils::ServiceType serviceType);
+        static FARMNotification accept(MasterChannelSpaceSegmentVariant& masterChannelVariant,
+            VirtualChannelSpaceSegmentVariant& virtualChannelVariant, TransferFrameTC *frame, DefsAndUtils::ServiceType serviceType);
 
         /**
          * Deletes frame master copy and octets.
          *
          * @see p. 6.2.3 of COP-1 CCSDS
          */
-        static void discard(ChannelConfig::MasterChannelSpaceSegmentVariant& masterChannelVariant, TransferFrameTC *frame);
+        static void discard(MasterChannelSpaceSegmentVariant& masterChannelVariant, TransferFrameTC *frame);
 
         /**
          * Creates a CLCW report based on the current state machine variable values and
@@ -151,8 +151,8 @@ namespace CCSDSDataLinkLayer {
          * @returns The occurred event code. An event code of 0 means no event was
          *          detected.
          */
-        std::pair<FARMNotification, uint8_t> applyFarmStateTable(ChannelConfig::MasterChannelSpaceSegmentVariant& masterChannelVariant,
-                                                                 ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
+        std::pair<FARMNotification, uint8_t> applyFarmStateTable(MasterChannelSpaceSegmentVariant& masterChannelVariant,
+                                                                 VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
 
     public:
         FrameAcceptanceReporting(const uint8_t vid,

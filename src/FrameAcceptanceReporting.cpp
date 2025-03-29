@@ -6,8 +6,8 @@
 namespace CCSDSDataLinkLayer {
 #ifdef SPACE_SEGMENT
     FARMNotification FrameAcceptanceReporting::accept(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
+        MasterChannelSpaceSegmentVariant &masterChannelVariant,
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
         TransferFrameTC *frame,
         const DefsAndUtils::ServiceType serviceType) {
         if (serviceType == DefsAndUtils::ServiceType::TYPE_AD) {
@@ -16,6 +16,7 @@ namespace CCSDSDataLinkLayer {
                 ChannelsInterface::VchanBuffType::AFTER_VC_GENERATION_TC_TYPE_AD);
 
             if (!error.has_value()) {
+                frame->updateProcessingStage(DefsAndUtils::TcFrameProcessingStage::PROCESSED_BY_FARM);
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeFARMNotif,
                                FARMNotification::FARM_HIGH_LAYER_AD_BUFFER_FULL);
                 return FARMNotification::FARM_HIGH_LAYER_AD_BUFFER_FULL;
@@ -23,6 +24,7 @@ namespace CCSDSDataLinkLayer {
 
             return FARMNotification::NO_FARM_EVENT;
         } else if (serviceType == DefsAndUtils::ServiceType::TYPE_BD) {
+            frame->updateProcessingStage(DefsAndUtils::TcFrameProcessingStage::PROCESSED_BY_FARM);
             ChannelsInterface::pushFrameVirtualChannelSpaceSegment(
                 masterChannelVariant, virtualChannelVariant, frame,
                 ChannelsInterface::VchanBuffType::AFTER_VC_GENERATION_TC_TYPE_BD);
@@ -34,7 +36,7 @@ namespace CCSDSDataLinkLayer {
         return FARMNotification::FARM_UNEXPECTED_VALUE;
     }
 
-    void FrameAcceptanceReporting::discard(ChannelConfig::MasterChannelSpaceSegmentVariant &masterChannelVariant,
+    void FrameAcceptanceReporting::discard(MasterChannelSpaceSegmentVariant &masterChannelVariant,
                                            TransferFrameTC *frame) {
         ChannelsInterface::removeFrameDataMasterChannelSpaceSegment(masterChannelVariant, frame);
     }
@@ -84,9 +86,9 @@ namespace CCSDSDataLinkLayer {
     }
 
     std::pair<FARMNotification, uint8_t> FrameAcceptanceReporting::applyFarmStateTable(
-        ChannelConfig::MasterChannelSpaceSegmentVariant &
+        MasterChannelSpaceSegmentVariant &
         masterChannelVariant,
-        ChannelConfig::VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
         uint8_t eventCode = 0;
         FARMNotification farmNotification = FARMNotification::NO_FARM_EVENT;
 
@@ -101,8 +103,12 @@ namespace CCSDSDataLinkLayer {
         }
 
         /** Check if upper layer buffer has free space **/
+        const bool higherLayerAdBufferFull = etl::visit(
+            [&](auto &vcChan) -> bool {
+                return vcChan.framesAfterVCReceptionTCTypeAD.full();
+            }, virtualChannelVariant);
 
-        if (!higherLayerBufferTypeAD.full() && wait) {
+        if (!higherLayerAdBufferFull && wait) {
             // E10
             eventCode = 10;
             wait = false;
@@ -125,7 +131,7 @@ namespace CCSDSDataLinkLayer {
 
             if (frameTc->getServiceType() == DefsAndUtils::ServiceType::TYPE_AD) {
                 if (frameTc->getTransferFrameSequenceNumber() == receiverFrameSeqNumber) {
-                    if (!higherLayerBufferTypeAD.full()) {
+                    if (!higherLayerAdBufferFull) {
                         // E1
                         eventCode = 1;
                         if (state == FARMState::OPEN) {
@@ -216,7 +222,7 @@ namespace CCSDSDataLinkLayer {
                 // Dispose frame. Invalid frames are disposed without any further action being taken.
                 discard(masterChannelVariant, frameTc);
             } else {
-                // E9 (received TYPE-BC frame)
+                // E9 (received a TYPE-RESERVED frame, which is invalid)
                 eventCode = 9;
                 discard(masterChannelVariant, frameTc);
             }

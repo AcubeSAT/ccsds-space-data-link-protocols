@@ -20,45 +20,26 @@ namespace CCSDSDataLinkLayer {
     };
 
     enum class ServiceChannelNotification : uint8_t {
-        NO_SERVICE_EVENT = 0x01,
-        MAP_CHANNEL_FRAME_BUFFER_FULL = 0x02,
-        MASTER_CHANNEL_FRAME_BUFFER_FULL = 0x03,
-        VC_MC_FRAME_BUFFER_FULL = 0x04,
-        TX_MC_FRAME_BUFFER_FULL = 0x05,
-        NO_TX_PACKETS_TO_PROCESS = 0x06,
-        NO_RX_PACKETS_TO_PROCESS = 0x07,
-        PACKET_EXCEEDS_MAX_SIZE = 0x08,
-        TX_TO_BE_TRANSMITTED_FRAMES_LIST_EMPTY = 0x0A,
-        TX_TO_BE_TRANSMITTED_FRAMES_LIST_FULL = 0x0B,
-        RX_IN_MC_FULL = 0x0D,
-        RX_IN_BUFFER_FULL = 0x0E,
-        RX_OUT_BUFFER_FULL = 0x0F,
-        RX_INVALID_TFVN = 0x10,
-        RX_INVALID_SCID = 0x11,
-        RX_INVALID_LENGTH = 0x12,
-        VC_RX_WAIT_QUEUE_FULL = 0x13,
-        VC_MC_FRAME_BUFFER_EMPTY = 0x15,
-        INVALID_VC_ID = 0x16,
-        INVALID_MAP_ID = 0x17,
-        RX_INVALID_CRC = 0x1A,
-        INVALID_SERVICE_CALL = 0x1B,
-        PACKET_BUFFER_EMPTY = 0x1C,
-        NO_TX_PACKETS_TO_TRANSFER_FRAME = 0x1D,
-        MC_RX_INVALID_COUNT = 0x1E,
-        MEMORY_POOL_FULL = 0x1F,
-        INVALID_INPUT = 0x20,
-        SDLS_ERROR = 0x21,
-        FOP_BUFFER_FULL = 0x22,
-        FOP_BUFFER_EMPTY = 0x23,
-        INVALID_SERVICE_TYPE = 0x24,
-        FOP_ERROR = 0x25,
-        UNEXPECTED_FOP_RETURN_SIGNAL = 0x26,
-        CLCW_BUFFER_EMPTY = 0x27,
-        PROCESSING_SEGMENTED_PACKET = 0x28,
-        INVALID_SEQUENCE_FLAG = 0x29,
-        UNKNOWN_ERROR = 0x2A,
-        FARM_ERROR = 0x2B,
-        GOT_INVALID_MAC_OR_ANTIREPLAY_SEQ_NUMBER = 0x2C
+        NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL = 0x01,
+        INVALID_TFVN = 0x03,
+        INVALID_SCID = 0x04,
+        INVALID_LENGTH = 0x05,
+        INVALID_CRC = 0x06,
+        INVALID_VCID = 0x07,
+        INVALID_MAPID = 0x08,
+        INVALID_CHANNELS_COMBINATION = 0x09,
+        INVALID_SERVICE_TYPE = 0x0A,
+        FARM_ERROR = 0x0B,
+        FRAME_LIST_FULL = 0x0C,
+        FRAME_LIST_EMPTY = 0x0D,
+        PACKET_QUEUE_FULL = 0x0E,
+        PACKET_QUEUE_EMPTY = 0x0F,
+        UNASSOCIATED_CHANNEL = 0x10,
+        INVALID_SECURITY_PARAMETER_INDEX = 0x11,
+        INVALID_MAC = 0x12,
+        FRAME_REPLAY_ATTEMPT = 0x13,
+        SLDS_ERROR = 0x14,
+        NO_SERVICE_EVENT = 0x15,
     };
 
     enum class MapChannelAlert : uint8_t {
@@ -68,6 +49,7 @@ namespace CCSDSDataLinkLayer {
 	    REQUSTED_FRAME_NOT_FOUND = 0x04,
         PACKET_QUEUE_FULL = 0x05,
         PACKET_QUEUE_EMPTY = 0x06,
+        INVALID_REQUESTED_PACKET_SEGMENT = 0x09,
     };
 
     enum class VirtualChannelAlert : uint8_t {
@@ -78,8 +60,9 @@ namespace CCSDSDataLinkLayer {
         REQUSTED_FRAME_NOT_FOUND = 0x05,
         PACKET_QUEUE_FULL = 0x06,
         PACKET_QUEUE_EMPTY = 0x07,
-        FOP_SIGNAL_QUEUE_FULL = 0x08,
-        FOP_SIGNAL_QUEUE_EMPTY = 0x09,
+        INVALID_REQUESTED_PACKET_SEGMENT = 0x08,
+        FOP_SIGNAL_QUEUE_FULL = 0x09,
+        FOP_SIGNAL_QUEUE_EMPTY = 0x0A,
     };
 
     enum class MasterChannelAlert : uint8_t {
@@ -91,16 +74,15 @@ namespace CCSDSDataLinkLayer {
         NOT_ENOUGH_SPACE_IN_MEMORY_POOL = 0x06,
     };
 
-    enum class SDLSVerificationStatusCode : uint8_t {
-        NO_FAILURE = 0x01,
+    enum class SDLSVerificationError : uint8_t {
+        NO_SECURITY_CONFIGURED = 0x01,
         INVALID_SPI = 0x02,
         INVALID_FRAME_TYPE = 0x03,
-        UNASSOCIATED_CHANNEL = 0x04,
-        INVALID_USER = 0x05,
-        MAC_CALCULATION_ERROR = 0x06,
-        MAC_VERIFICATION_FAILURE = 0x07,
-        ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE = 0x08,
-        PADDING_ERROR = 0x09
+        INVALID_USER = 0x04,
+        MAC_CALCULATION_ERROR = 0x05,
+        MAC_VERIFICATION_FAILURE = 0x06,
+        ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE = 0x07,
+        PADDING_ERROR = 0x08
     };
 
     enum class FOPNotification : uint8_t {
