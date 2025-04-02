@@ -132,6 +132,7 @@ namespace CCSDSDataLinkLayer {
         uint8_t bcFrameLen = DefsAndUtils::TcPrimaryHeaderSize + dataFieldSize + errorControlFieldPresent *
                              DefsAndUtils::ErrorControlFieldSize;
 
+
         if (!ChannelsInterface::hasCapacityForFrameDataMasterChannelGroundSegment(
             masterChannelVariant,
             1, bcFrameLen)) {
@@ -139,37 +140,36 @@ namespace CCSDSDataLinkLayer {
             return FOPNotification::FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL;
         }
 
-        static uint8_t tmpData[DefsAndUtils::TcPrimaryHeaderSize + DefsAndUtils::SetVrCommandSize
-                               + DefsAndUtils::ErrorControlFieldSize];
+        // allocate a block for the frame data in the memory pool
+        uint8_t *data = ChannelsInterface::allocateBlockFromMemPoolMasterChannelGroundSegment(masterChannelVariant, bcFrameLen).value();
 
         if (directiveSignal.directiveType == DefsAndUtils::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK) {
-            tmpData[DefsAndUtils::TcPrimaryHeaderSize] = DefsAndUtils::UnlockCommandOctet;
+            data[DefsAndUtils::TcPrimaryHeaderSize] = DefsAndUtils::UnlockCommandOctet;
         } else {
-            tmpData[DefsAndUtils::TcPrimaryHeaderSize] = DefsAndUtils::SetVrCommandOctet1;
-            tmpData[DefsAndUtils::TcPrimaryHeaderSize + 1] = DefsAndUtils::SetVrCommandOctet2;
-            tmpData[DefsAndUtils::TcPrimaryHeaderSize + 2] = static_cast<uint8_t>(directiveSignal.
+            data[DefsAndUtils::TcPrimaryHeaderSize] = DefsAndUtils::SetVrCommandOctet1;
+            data[DefsAndUtils::TcPrimaryHeaderSize + 1] = DefsAndUtils::SetVrCommandOctet2;
+            data[DefsAndUtils::TcPrimaryHeaderSize + 2] = static_cast<uint8_t>(directiveSignal.
                 directiveQualifier.value());
         }
 
-        // place octets in the memory pool
-        uint8_t *data = ChannelsInterface::addFrameOctetsToMemPoolMasterChannelGroundSegment(masterChannelVariant, tmpData, bcFrameLen).value();
-
         const BaseMasterChannel* baseMcChanPtr = ChannelsInterface::upcastToBase(masterChannelVariant);
-        TransferFrameTC bcFrame = TransferFrameTC(data,
-                                                  DefsAndUtils::ServiceType::TYPE_BC,
-                                                  vid,
-                                                  DefsAndUtils::extractScidFromMcid(baseMcChanPtr->getMscid()),
-                                                  bcFrameLen,
-                                                  false);
 
-        bcFrame.setTransferFrameSequenceNumber(0); /// @see p. 4.2.1.8 of TC Data Link
+        // create and store frame master copy
+        const auto frameTcPtr =
+                etl::get<TransferFrameTC *>(
+                    ChannelsInterface::addFrameObjectToMasterCopyBufferMasterChannelGroundSegment(
+                        masterChannelVariant, TransferFrameTC(data,
+                                                              DefsAndUtils::ServiceType::TYPE_BC,
+                                                              vid,
+                                                              DefsAndUtils::extractScidFromMcid(
+                                                                  baseMcChanPtr->getMscid()),
+                                                              bcFrameLen,
+                                                              false)).value());
 
-        // store master copy
-        ChannelsInterface::addFrameObjectToMasterCopyBufferMasterChannelGroundSegment(masterChannelVariant, bcFrame);
+        frameTcPtr->setTransferFrameSequenceNumber(0); /// @see p. 4.2.1.8 of TC Data Link
 
         // store to sent queue
-        TransferFrameTC *bcFramePtr = &bcFrame;
-        sentQueueFOP.push_back(bcFramePtr);
+        sentQueueFOP.push_back(frameTcPtr);
 
         transmissionCount = 1;
 
@@ -179,7 +179,7 @@ namespace CCSDSDataLinkLayer {
 
         fopToLowerLayerRequestSignalQueue.push(
             DefsAndUtils::FopToLowerLayerRequestSignal(DefsAndUtils::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
-                                         DefsAndUtils::ServiceType::TYPE_BC, bcFramePtr));
+                                         DefsAndUtils::ServiceType::TYPE_BC, frameTcPtr));
         ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::NO_FOP_EVENT);
         return FOPNotification::NO_FOP_EVENT;
     }

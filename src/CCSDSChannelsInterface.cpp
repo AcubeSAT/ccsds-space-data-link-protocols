@@ -299,28 +299,26 @@ namespace CCSDSDataLinkLayer {
         }, virtualChannelVariant);
     }
 
+    bool ChannelsInterface::packetAvailableVirtualChannelSpaceSegment(
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
+        return etl::visit([](auto &vcChan) -> bool {
+            return !vcChan.packetLengthBufferTM.empty();
+        }, virtualChannelVariant);
+    }
+
     etl::expected<void, VirtualChannelAlert>
     ChannelsInterface::pushTmPacketVirtualChannelSpaceSegment(
         VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
         const uint8_t *packetSource,
-        const uint16_t packetLength,
-        const bool pushToFront) {
+        const uint16_t packetLength) {
         return etl::visit([&](auto &vcChan) -> etl::expected<void, VirtualChannelAlert> {
             if (vcChan.packetBufferTM.available() >= packetLength &&
                 !vcChan.packetLengthBufferTM.full()) {
-                if (pushToFront) {
-                    vcChan.packetLengthBufferTM.push_front(packetLength);
-                    for (uint16_t i = 0; i < packetLength; i++) {
-                        vcChan.packetBufferTM.push_front(packetSource[i]);
-                    }
-                    return {};
-                } else {
-                    vcChan.packetLengthBufferTM.push_back(packetLength);
-                    for (uint16_t i = 0; i < packetLength; i++) {
-                        vcChan.packetBufferTM.push_back(packetSource[i]);
-                    }
-                    return {};
+                vcChan.packetLengthBufferTM.push_back(packetLength);
+                for (uint16_t i = 0; i < packetLength; i++) {
+                    vcChan.packetBufferTM.push(packetSource[i]);
                 }
+                return {};
             }
 
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert, VirtualChannelAlert::PACKET_QUEUE_FULL);
@@ -329,20 +327,13 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<uint16_t, VirtualChannelAlert> ChannelsInterface::popTmPacketLengthVirtualChannelSpaceSegment(
-        VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
-        const bool popFromBack) {
+        VirtualChannelSpaceSegmentVariant &virtualChannelVariant) {
         return etl::visit([&](auto &vcChan) -> etl::expected<uint16_t, VirtualChannelAlert> {
             if (!vcChan.packetLengthBufferTM.empty()) {
                 uint16_t length = 0;
-                if (popFromBack) {
-                    length = vcChan.packetLengthBufferTM.back();
-                    vcChan.packetLengthBufferTM.pop_back();
-                    return length;
-                } else {
                     length = vcChan.packetLengthBufferTM.front();
                     vcChan.packetLengthBufferTM.pop_front();
                     return length;
-                }
             }
 
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert,
@@ -354,24 +345,17 @@ namespace CCSDSDataLinkLayer {
     etl::expected<void, VirtualChannelAlert>
     ChannelsInterface::popTmPacketSegmentVirtualChannelSpaceSegment(
         VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
-        uint8_t *packetDestination,
         const uint16_t numOctets,
-        const bool popFromBack) {
+        uint8_t *packetDestination) {
         return etl::visit([&](auto &vcChan) -> etl::expected<void, VirtualChannelAlert> {
-            if (!vcChan.packetLengthBufferTM.available() >= numOctets) {
-                if (popFromBack) {
-                    for (uint16_t i = 0; i < numOctets; i++) {
-                        packetDestination[i] = vcChan.packetBufferTM.back();
-                        vcChan.packetLengthBufferTM.pop_back();
-                    }
-                    return {};
-                } else {
-                    for (uint16_t i = 0; i < numOctets; i++) {
+            if (vcChan.packetBufferTM.available() >= numOctets) {
+                for (uint16_t i = 0; i < numOctets; i++) {
+                    if (packetDestination != nullptr) {
                         packetDestination[i] = vcChan.packetBufferTM.front();
-                        vcChan.packetLengthBufferTM.pop_front();
                     }
-                    return {};
+                    vcChan.packetBufferTM.pop();
                 }
+                return {};
             }
 
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeVirtualChannelAlert,
@@ -469,17 +453,18 @@ namespace CCSDSDataLinkLayer {
 
 
     etl::expected<uint8_t *, MasterChannelAlert>
-    ChannelsInterface::addFrameOctetsToMemPoolMasterChannelSpaceSegment(
-        MasterChannelSpaceSegmentVariant &masterChannelVariant,
-        const DefsAndUtils::FrameType frameType,
-        uint8_t *octetsSource, const uint16_t frameLength) {
+    allocateBlockFromMemPoolMasterChannelSpaceSegment(
+    MasterChannelSpaceSegmentVariant &masterChannelVariant,
+    const DefsAndUtils::FrameType frameType,
+    uint16_t blockLength,
+    uint8_t *frameDataSource) {
         return etl::visit([&](auto &mcChan) -> etl::expected<uint8_t *, MasterChannelAlert> {
             uint8_t *ptr;
             if (frameType == DefsAndUtils::FrameType::TM) {
-                ptr = mcChan.masterChannelPoolTM.allocatePacket(octetsSource, frameLength);
+                ptr = mcChan.masterChannelPoolTM.allocateBlock(blockLength, frameDataSource);
             } else {
                 // TC
-                ptr = mcChan.masterChannelPoolTC.allocatePacket(octetsSource, frameLength);
+                ptr = mcChan.masterChannelPoolTC.allocateBlock(blockLength, frameDataSource);
             }
 
             if (ptr == nullptr) {
@@ -529,7 +514,7 @@ namespace CCSDSDataLinkLayer {
                 auto it = mcChan.masterCopyTM.begin();
                 while (it != mcChan.masterCopyTM.end()) {
                     if ((&(*it)) == framePtr) {
-                        mcChan.masterChannelPoolTM.deletePacket(framePtr->getFrameData(), framePtr->getFrameLength());
+                        mcChan.masterChannelPoolTM.deleteBlock(framePtr->getFrameData(), framePtr->getFrameLength());
                         mcChan.masterCopyTM.erase(it);
                         return {};
                     }
@@ -541,7 +526,7 @@ namespace CCSDSDataLinkLayer {
                 auto it = mcChan.masterCopyTC.begin();
                 while (it != mcChan.masterCopyTC.end()) {
                     if ((&(*it)) == framePtr) {
-                        mcChan.masterChannelPoolTC.deletePacket(framePtr->getFrameData(), framePtr->getFrameLength());
+                        mcChan.masterChannelPoolTC.deleteBlock(framePtr->getFrameData(), framePtr->getFrameLength());
                         mcChan.masterCopyTC.erase(it);
                         return {};
                     }
@@ -832,11 +817,12 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<uint8_t *, MasterChannelAlert>
-    ChannelsInterface::addFrameOctetsToMemPoolMasterChannelGroundSegment(
-        MasterChannelGroundSegmentVariant &masterChannelVariant,
-        uint8_t *octetsSource, const uint16_t frameLength) {
+    ChannelsInterface::allocateBlockFromMemPoolMasterChannelGroundSegment(
+    MasterChannelGroundSegmentVariant &masterChannelVariant,
+    const uint16_t blockLength,
+    uint8_t *frameDataSource) {
         return etl::visit([&](auto &mcChan) -> etl::expected<uint8_t *, MasterChannelAlert> {
-            uint8_t *ptr = mcChan.masterChannelPoolTC.allocatePacket(octetsSource, frameLength);
+            uint8_t *ptr = mcChan.masterChannelPoolTC.allocateBlock(blockLength, frameDataSource);
 
             if (ptr == nullptr) {
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeMasterChannelAlert,
@@ -875,7 +861,7 @@ namespace CCSDSDataLinkLayer {
             auto it = mcChan.masterCopyTC.begin();
             while (it != mcChan.masterCopyTC.end()) {
                 if ((&(*it)) == framePtr) {
-                    mcChan.masterChannelPoolTC.deletePacket(framePtr->getFrameData(), framePtr->getFrameLength());
+                    mcChan.masterChannelPoolTC.deleteBlock(framePtr->getFrameData(), framePtr->getFrameLength());
                     mcChan.masterCopyTC.erase(it);
                     return {};
                 }

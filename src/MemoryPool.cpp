@@ -5,24 +5,27 @@
 
 namespace CCSDSDataLinkLayer {
     template<std::size_t T>
-    uint8_t *MemoryPool<T>::allocatePacket(uint8_t *packet, uint16_t packetLength) {
-        std::pair<uint16_t, MasterChannelAlert> index = findFit(packetLength);
+    uint8_t *MemoryPool<T>::allocateBlock(const uint16_t blockLength, const uint8_t *packetSource) {
+        std::pair<uint16_t, MasterChannelAlert> index = findFit(blockLength);
         uint16_t start = index.first;
         if (index.second == MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL) {
             LOG_ERROR << "There is no space in memory pool for the packet.";
             return nullptr;
         }
-        std::memcpy(memory + start, packet, packetLength * sizeof(uint8_t));
 
-        usedMemory[index.first] = packetLength;
+        if (packetSource != nullptr) {
+            std::memcpy(memory + start, packetSource, blockLength * sizeof(uint8_t));
+        }
+
+        usedMemory[index.first] = blockLength;
 
         return memory + start;
     }
 
     template<std::size_t T>
-    bool MemoryPool<T>::deletePacket(const uint8_t *packet, uint16_t packetLength) {
-        int32_t indexInMemory = packet - &memory[0];
-        if (indexInMemory >= 0 && indexInMemory + packetLength < memorySize) {
+    bool MemoryPool<T>::deleteBlock(const uint8_t *blockStart, uint16_t blockLength) {
+        int32_t indexInMemory = blockStart - &memory[0];
+        if (indexInMemory >= 0 && indexInMemory + blockLength < memorySize) {
             usedMemory.erase(indexInMemory);
             return true;
         }

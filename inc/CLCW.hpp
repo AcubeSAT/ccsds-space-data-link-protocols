@@ -19,7 +19,7 @@ namespace CCSDSDataLinkLayer {
                 farmBCounter << 9U | reportValue) {};
 
     public:
-        [[nodiscard]] const uint32_t getClcw() const {
+        [[nodiscard]] const uint32_t getRawBytes() const {
             return clcw;
         }
 

@@ -104,6 +104,7 @@ class ServiceChannelSpaceSegment {
 		 */
 		static etl::expected<void, ServiceChannelNotification> processSDLSSecurityTC(
 			SecurityAssociation& securityAssociation,
+			PhysicalChannel& physicalChannel,
 			MasterChannelSpaceSegmentVariant &mcChanVariant,
 			VirtualChannelSpaceSegmentVariant &vcChanVariant,
 			MapChannelSearchFunctionType mapChanFunction,
@@ -146,9 +147,9 @@ class ServiceChannelSpaceSegment {
 	    // Packet Processing and Virtual Channel Generation
 
 	    /**
-         * Serves as the main entry point from the upper layers.
-         * Stores the raw packets  along with their length so they can be later inserted into transfer frames,
-         * and be transmitted.
+         * Serves as the main entry point from the upper layers, by storing
+         * raw packets along with their length so they can be later inserted into transfer frames,
+         * and transmitted.
          *
          * @param packetSource pointer to the packet
          * @param packetLength length of the packet
@@ -158,86 +159,143 @@ class ServiceChannelSpaceSegment {
 	    	const uint8_t *packetSource,
 	    	uint16_t packetLength);
 
-	    /**
-         * Function used by the vcGenerationServiceTxTM function to implement the segmentation of packets stored in
-         * packetBufferTxTM
-         *
-         * @param prevFrame                    Half full frame waiting in the master channel (nullptr if it does
-         *                                     not exist or is full)
-         * @param transferFrameDataFieldLength The length of the data field of the TM Transfer frame, taken by the
-         *                                     vcGenerationServiceTxTM parameter
-         * @param packetLength                 The length of the next transfer frame data in the packetBufferTxTM
-         * @return                             A Service Channel Notification as it is the case with vcGenerationServiceTxTM
-	     */
-		static etl::expected<void, ServiceChannelNotification> segmentationTM(
-			MasterChannelSpaceSegmentVariant &mcChanVariant,
-			VirtualChannelSpaceSegmentVariant &vcChanVariant,
-			TransferFrameTM *prevFrame,
-			uint16_t transferFrameDataFieldLength,
-			uint16_t packetLength);
-
+	private:
 		/**
-	     * Auxiliary function for blocking of packets stored in the stored packet buffer
+	     * @brief Auxiliary function for blocking of packets stored in packet queue
 	     *
-	     * @param prevFrame                      Half full frame waiting in the master channel (nullptr if it does
-	     *                                       not exist or is full)
-	     * @param transferFrameDataFieldLength   The length of the data field of the TM Transfer frame (where packets are
-	     *                                       stored)
-	     * @param packetLength                   The length of the next packet in the stored TM packet buffer
-	     * @return                               A Service Channel Notification
-		 */
-	    static etl::expected<void, ServiceChannelNotification> blockingTM(
+	     * @param finishedOperationsFlag Signifies to vcGeneration that no more processing can take place and that it
+	     *                               should exit.
+	     * @param segmentationData If a packet is too large to fit in a frame, the frame pointer and the packet
+	     *                         length is returned to this parameter, so that segmentation may handle this case.
+	     */
+		static etl::expected<void, ServiceChannelNotification> blockingTM(
+			const PhysicalChannel &physicalChannel,
 			MasterChannelSpaceSegmentVariant &mcChanVariant,
 			VirtualChannelSpaceSegmentVariant &vcChanVariant,
-	    	TransferFrameTM *prevFrame,
-	    	uint16_t transferFrameDataFieldLength,
-	    	uint16_t packetLength);
+			bool &finishedOperationsFlag,
+			etl::optional<etl::pair<TransferFrameTM *, uint16_t> > &segmentationData
+		);
 
 	    /**
-         * Auxiliary function for generating idle space packets in the scenario that there are not enough packets to
-         * fill the transfer frame data field, or blocking and segmentation permissions do not allow for their placement.
-         * @see Space Packet Protocol for details on the idle space packet
+         * @brief Auxiliary function for segmentation of packets stored in packet queue
          *
-         * @param vid                   Virtual channel ID
-         * @param lastPacketPlacedIdle  An indicator on whether the last packet placed in a frame was idle.
-         * @return                      A service channel notification and an indication on whether an idle packet was generated or not
+         * @param frameTm      Pointer to half full frame given by blockingTC.
+         * @param packetLength The length of the packet that is too large to fit in the frame.
 	     */
-	    etl::expected<bool, ServiceChannelNotification>
-	    generateIdleSpacePacket(uint8_t vid, TransferFrameTM *lastProcessedFrame, uint16_t transferFrameDataFieldLength,
-	                            bool lastPacketPlacedIdle);
+		static etl::expected<void, ServiceChannelNotification>
+		segmentationTM(
+			const PhysicalChannel &physicalChannel,
+			MasterChannelSpaceSegmentVariant &mcChanVariant,
+			VirtualChannelSpaceSegmentVariant &vcChanVariant,
+			TransferFrameTM *frameTm,
+			uint16_t packetLength
+		);
 
+	    /**
+         * @brief Auxiliary function that generates a space packet and pushes it to the corresponding
+         * virtual channel queue.
+         *
+         * @param remainingDataFieldSpace This parameter determines the length of the generated packet. If it is
+         *                                greater or equal than the minimum space packet length (
+         *                                SpacePacketPrimaryHeaderLength + 1), then the resulting
+         *                                length is remainingDataFieldSpace. Otherwise, the minimum length packet
+         *                                will be created, which will need to be segmented across two frames.
+         *                                @see	p. 4.2.2.5 from CCSDS TM SPACE DATA LINK PROTOCOL
+         *
+	     */
+		static void generateIdleSpacePacket(VirtualChannelSpaceSegmentVariant &vChanVariant,
+								uint16_t remainingDataFieldSpace);
+
+	public:
 	    /**
          * Service that generates a transfer frame by combining packets via blocking and segmentation and initializing
-         * the transfer frame primary header @see p. 4.2.2 and 4.2.3 of TM Space Data Link protocol. If the virtual channel
-         * supports the presence of the operational control field in frames, it is filled with a clcw. In case there is no clcw
-         * to be placed to a newly generated frame, it is withheld until one becomes available.
+         * the transfer frame primary header @see p. 4.2.2 and 4.2.3 of TM Space Data Link protocol.
          *
-         * @param transferFrameDataFieldLength the transfer frame data field length
-         * @param gvcid the global virtual channel id
-         * @return PACKET_BUFFER_EMPTY Alert if the virtual channel packet buffer is empty
-         * NO_TX_PACKETS_TO_TRANSFER_FRAME Alert if no packets from the packet buffer can be stored to the transfer frame
-         * NO_SERVICE_EVENT Alert if the packets are stored as expected to the transfer frame
+         * @return void, when if there were packets to process and all the necessary frames could be created.
+         *         INVALID_CHANNELS_COMBINATION, if an invalid channel hierarchy is used as input.
+         *         PACKET_QUEUE_EMPTY, if there were no packets to process. An idle frame is generated.
+         *         NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL or FRAME_LIST_FULL in case of insufficient space.
+         *
 	     */
-	    etl::expected<void, ServiceChannelNotification> vcGenerationServiceTxTM(uint16_t transferFrameDataFieldLength, uint8_t vid);
+		static etl::expected<void, ServiceChannelNotification> vcGenerationServiceTM(
+			const PhysicalChannel &physicalChannel,
+			MasterChannelSpaceSegmentVariant &mcChanVariant,
+			VirtualChannelSpaceSegmentVariant &vcChanVariant
+		);
+
+		// Virtual channel multiplexing
+	private:
+		/**
+	     * @brief In the scenario that there frames for the multiplexer to process, OID frames shall be generated to
+	     *        keep the frame rate constant.
+	     * @details OID (Only Idle Data) frames do not carry any information, with its data field being filled with
+	     *          pseudorandom noise
+	     * @param vChanVariant OID frames will appear as being generated by this virtual channel.
+	     */
+		static etl::expected<void, ServiceChannelNotification> generateOidFrame(
+			const PhysicalChannel &physicalChannel,
+			MasterChannelSpaceSegmentVariant &mcChanVariant,
+			VirtualChannelSpaceSegmentVariant &vChanVariant);
+
+	public:
+		/**
+		 * @brief This service is responsible extracting frames pointers from the virtual channel
+		 *        instances and moving them to the appropriate master channel.
+		 *
+		 * @details  The multiplexer will pop one frame per virtual channel. The popping order is defined
+		 *           by the order the virtual channels where placed in the span. In the absence
+	     *           of frames, an OID (only idle data) frame will be generated. The user can choose
+	     *           which virtual channel this OID frame will "belong" to, but it is recommended
+	     *           to use one where the operational control field is present, to ensure that CLCW
+	     *           report rate is not influenced by the TM frame rate.
+	     *
+	     * @note In case a given virtual channel (in the span or for OID frame generation) does not belong
+	     *       to the given master channel, it will be ignored, but frames from valid
+	     *       virtual channels will still get multiplexed.
+	     *
+		 * @param vcChanVariants The virtual channels whose frames will be multiplexed in the master
+		 *                       channel.
+		 *
+		 */
+		static etl::expected<void, ServiceChannelNotification> virtualChannelMultiplexerTM(
+			PhysicalChannel& physical_channel,
+			MasterChannelSpaceSegmentVariant mcChanVariant,
+			etl::span<VirtualChannelSpaceSegmentVariant&>& vcChanVariants,
+			VirtualChannelSpaceSegmentVariant& vcChanVariantForOidGeneration);
 
 	    // Master Channel Generation
 	    /**
-         * The Master Channel Generation Service shall be used to insert Transfer Frame
+         * @brief The Master Channel Generation Service shall be used to insert Transfer Frame
          * Secondary Header and/or Operational Control Field service data units into Transfer Frames
          * of a Master Channel.
+         *
+         * @param clcwContainers The clcw containers of every virtual channel that belongs to the given
+         *                       master channel.
+         * @note Should there be no clcw available during the call of this function, frames with an operational
+         *       control field will be marked as 'under processing', and operations with
+         *
          * @see p. 4.2.5 from TM Space Data Link Protocol (CCSDS 132.0-B-3)
 	     */
-	    etl::expected<void, ServiceChannelNotification> mcGenerationRequestTxTM();
+	    static etl::expected<void, ServiceChannelNotification> mcGenerationRequestTM(
+	    	MasterChannelSpaceSegmentVariant &mcChanVariant,
+	    	etl::span<etl::optional<CLCW>>& clcwContainers);
 
 	    // All Frames Generation
 	    /**
          * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
          * encoding defined by this Recommendation and to deliver Transfer Frames at an appropriate
          * rate to the Channel Coding Sublayer.
+         *
+         * @param frameDestination User provided buffer to copy the fully processed transfer frame.
          * @see p. 4.2.7 from TM Space Data Link Protocol
-         * @TODO do not forget to have a mechanism for sending frames at an appropriate rate (unless lower layers can handle it by transmitting empty codewords)
+         *  TODO do not forget to have a mechanism for sending frames at an appropriate rate (unless lower layers can handle it by transmitting empty codewords)
+         *  TODO consider a no-copy approach where a pointer to the frame data is returned and then the user has to delete it
+         *       explicitly for the memory pool and master copy buffer (if copying proves to be a bottleneck)
 	     */
-	    etl::expected<void, ServiceChannelNotification> allFramesGenerationRequestTxTM(uint8_t *frameDataTarget);
+	    static etl::expected<void, ServiceChannelNotification> allFramesGenerationRequestTM(
+	    	PhysicalChannel& physicalChannel,
+	    	MasterChannelSpaceSegmentVariant& mcChanVariant,
+	    	uint8_t *frameDestination);
 	};
 
 	/**

@@ -60,7 +60,7 @@ namespace CCSDSDataLinkLayer {
 
                         // setup authentication mask (see p.4.2.2.6.2)
                         // mask  virtual channel id, security header, data field
-                        authMaskTCLength = DefsAndUtils::MaxTmTransferFrameLength;
+                        authMaskTCLength = DefsAndUtils::MaxTcTransferFrameLength;
                         authMaskTC[0] = 0x00;
                         authMaskTC[1] = 0x00;
                         authMaskTC[2] = 0xFC;

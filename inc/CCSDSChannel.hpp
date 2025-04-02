@@ -16,7 +16,6 @@
 #pragma once
 
 #include <cstdint>
-#include <iostream>
 #include "etl/list.h"
 #include "etl/queue.h"
 #include "etl/deque.h"
@@ -36,14 +35,13 @@ namespace CCSDSDataLinkLayer {
 
     public:
         PhysicalChannel(const DefsAndUtils::TransferFrameVersionNumber tfvn, const etl::span<uint16_t> &validScids,
-                        const uint16_t maxFrameLength,
+                        const uint16_t maxTcFrameLength, const uint16_t tmFrameLength,
                         const uint16_t maxFramesPdu, const uint16_t maxPduLength,
-                        const uint32_t bitrate, const uint16_t repetitions)
-            : tfvn(tfvn), maxFrameLength(maxFrameLength), maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength),
-              bitrate(bitrate),
-              repetitions(repetitions) {
-
-            for (uint8_t i = 0; i < std::min(validScids.size(), DefsAndUtils::MaxSCIDInPhysicalChannel); i++ ) {
+                        const uint32_t bitrate, const uint16_t repetitions, const bool frameErrorControlFieldPresent)
+            : tfvn(tfvn), maxTcFrameLength(maxTcFrameLength), tmFrameLength(tmFrameLength),
+              maxFramePdu(maxFramesPdu), maxPDULength(maxPduLength), bitrate(bitrate),
+              repetitions(repetitions), frameErrorControlFieldPresent(frameErrorControlFieldPresent) {
+            for (uint8_t i = 0; i < std::min(validScids.size(), DefsAndUtils::MaxSCIDInPhysicalChannel); i++) {
                 this->validScids[i] = validScids[i];
             }
         }
@@ -59,7 +57,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Returns whether given scid belongs in the physical channel's scid list.
          */
-        [[nodiscard]] bool validScid(const uint16_t scid) const {
+        [[nodiscard]] bool isValidScid(const uint16_t scid) const {
             for (uint8_t i = 0; i < validScids.size(); i++) {
                 if (validScids[i] == scid) {
                     return true;
@@ -69,10 +67,17 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * @brief Get the maximum allowed frame length in this physical channel.
+         * @brief Get the maximum allowed TC frame length in this physical channel.
          */
-        [[nodiscard]] uint16_t getMaxFrameLength() const {
-            return maxFrameLength;
+        [[nodiscard]] uint16_t getMaxTcFrameLength() const {
+            return maxTcFrameLength;
+        }
+
+        /**
+         * @brief Get length of TM frames in this virtual channel
+         */
+        [[nodiscard]] uint16_t getTMFrameLength() const {
+            return tmFrameLength;
         }
 
         /**
@@ -103,14 +108,23 @@ namespace CCSDSDataLinkLayer {
             return repetitions;
         }
 
+        /**
+         * @brief Defines whether the ECF service is present in transfer frames.
+         */
+        [[nodiscard]] bool getFrameErrorControlFieldPresent() const {
+            return frameErrorControlFieldPresent;
+        }
+
     private:
         const DefsAndUtils::TransferFrameVersionNumber tfvn;
-        etl::array<uint8_t, DefsAndUtils::MaxSCIDInPhysicalChannel> validScids;
-        const uint16_t maxFrameLength;
+        etl::array<uint16_t, DefsAndUtils::MaxSCIDInPhysicalChannel> validScids;
+        const uint16_t maxTcFrameLength;
+        const uint16_t tmFrameLength;
         const uint16_t maxFramePdu;
         const uint16_t maxPDULength;
         const uint32_t bitrate;
         const uint16_t repetitions;
+        const bool frameErrorControlFieldPresent;
     };
 
     /**
@@ -118,9 +132,12 @@ namespace CCSDSDataLinkLayer {
      */
     class BaseMAPChannel {
         friend class ChannelsInterface;
+
     public:
-        BaseMAPChannel(const uint32_t gmapid, const bool blockingTC, const bool segmentationTC)
-            : gmapid(gmapid & 0x00FFFFFFU), blockingTC(blockingTC), segmentationTC(segmentationTC) {
+        BaseMAPChannel(const uint32_t gmapid, const bool blockingTC, const bool segmentationTC,
+                       const etl::optional<uint16_t> &associatedSdlsSPI = etl::nullopt)
+            : gmapid(gmapid & 0x00FFFFFFU), blockingTC(blockingTC), segmentationTC(segmentationTC),
+              associatedSdlsSPI(associatedSdlsSPI) {
         }
 
         BaseMAPChannel(const BaseMAPChannel &m) = default;
@@ -135,6 +152,10 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] bool getSegmentationTC() const {
             return segmentationTC;
+        }
+
+        [[nodiscard]] etl::optional<uint16_t> getAssociatedSdlsSPI() const {
+            return associatedSdlsSPI;
         }
 
     protected:
@@ -156,6 +177,13 @@ namespace CCSDSDataLinkLayer {
          * (applies for Type AD, BD).
          */
         const bool segmentationTC;
+
+        /**
+         * @brief The presence of an SDLS SPI (Security Parameter Index) shall indicate that this map channel
+         *        instance is associated with a specific SecurityAssociation, therefore the according authentication
+         *        and encryption services will be applied to its frames.
+         */
+        const etl::optional<uint16_t> associatedSdlsSPI;
     };
 
     /**
@@ -163,20 +191,20 @@ namespace CCSDSDataLinkLayer {
      */
     class BaseVirtualChannel {
         friend class ChannelsInterface;
+
     public:
-        BaseVirtualChannel(const uint32_t gvcid, const uint8_t vcRepetitions,
-                           const bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
-                           const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
-                           const bool segmentationTM, const bool operationalControlFieldTMPresent,
+        BaseVirtualChannel(const uint32_t gvcid, const uint8_t vcRepetitions, const uint16_t maxFrameLengthTC,
+                           const bool segmentHeaderTCPresent, const bool blockingTC,
+                           const bool operationalControlFieldTMPresent,
                            const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
-                           const DefsAndUtils::SynchronizationFlag synchronization)
+                           const DefsAndUtils::SynchronizationFlag synchronization,
+                           const etl::optional<uint16_t> &associatedSdlsSPI = etl::nullopt)
             : gvcid(gvcid & 0x0003FFFFU), vcRepetitions(vcRepetitions),
-              frameErrorControlFieldPresent(frameErrorControlFieldPresent),
               maxFrameLengthTC(maxFrameLengthTC), segmentHeaderTCPresent(segmentHeaderTCPresent),
-              blockingTC(blockingTC), blockingTM(blockingTM), segmentationTM(segmentationTM),
+              blockingTC(blockingTC),
               operationalControlFieldTMPresent(operationalControlFieldTMPresent),
               secondaryHeaderTMPresent(secondaryHeaderTMPresent), secondaryHeaderTMLength(secondaryHeaderTMLength),
-              synchronizationTM(synchronization) {
+              synchronizationTM(synchronization), associatedSdlsSPI(associatedSdlsSPI) {
         }
 
         BaseVirtualChannel(const BaseVirtualChannel &v) = default;
@@ -189,10 +217,6 @@ namespace CCSDSDataLinkLayer {
             return vcRepetitions;
         }
 
-        [[nodiscard]] bool getFrameErrorControlFieldPresent() const {
-            return frameErrorControlFieldPresent;
-        }
-
         [[nodiscard]] uint16_t getMaxFrameLengthTC() const {
             return maxFrameLengthTC;
         }
@@ -203,14 +227,6 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] bool getBlockingTC() const {
             return blockingTC;
-        }
-
-        [[nodiscard]] bool getBlockingTM() const {
-            return blockingTM;
-        }
-
-        [[nodiscard]] bool getSegmentationTM() const {
-            return segmentationTM;
         }
 
         [[nodiscard]] bool getOperationalControlFieldTMPresent() const {
@@ -232,6 +248,7 @@ namespace CCSDSDataLinkLayer {
         [[nodiscard]] etl::optional<uint16_t> getAssociatedSdlsSPI() const {
             return associatedSdlsSPI;
         }
+
     protected:
         /**
          * @brief Global Virtual Channel Identifier.
@@ -245,11 +262,6 @@ namespace CCSDSDataLinkLayer {
          * TODO ??
          */
         const uint8_t vcRepetitions;
-
-        /**
-         * @brief Defines whether the ECF service is present in transfer frames.
-         */
-        const bool frameErrorControlFieldPresent;
 
         /**
          * @brief Maximum length of a single TC transfer frame
@@ -267,16 +279,6 @@ namespace CCSDSDataLinkLayer {
          * (applies for Type-AD/BD frames in case MAP services are disabled).
          */
         const bool blockingTC;
-
-        /**
-         * @brief Determines whether smaller data units can be combined into a single TM transfer frame.
-         */
-        const bool blockingTM;
-
-        /**
-        * @brief Determines whether large packets can be segmented to multiple TM transfer frames.
-        */
-        const bool segmentationTM;
 
         /**
          * @brief Defines whether the OCF field is present in TM transfer frames.
@@ -302,7 +304,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief The presence of an SDLS SPI (Security Parameter Index) shall indicate that this virtual channel
          *        instance is associated with a specific SecurityAssociation, therefore the according authentication
-         *        and encryption services will be applied.
+         *        and encryption services will be applied to its frames.
          */
         const etl::optional<uint16_t> associatedSdlsSPI;
     };
@@ -312,6 +314,7 @@ namespace CCSDSDataLinkLayer {
      */
     class BaseMasterChannel {
         friend class ChannelsInterface;
+
     public:
         explicit BaseMasterChannel(const uint16_t mscid) : mscid(mscid) {
         }
@@ -334,6 +337,7 @@ namespace CCSDSDataLinkLayer {
     template<std::size_t T>
     class MAPChannelSpaceSegment : public BaseMAPChannel {
         friend class ChannelsInterface;
+
     public:
         MAPChannelSpaceSegment(const uint32_t gmapid, const bool blockingTC, const bool segmentationTC)
             : BaseMAPChannel(gmapid, blockingTC, segmentationTC) {
@@ -362,17 +366,19 @@ namespace CCSDSDataLinkLayer {
     class VirtualChannelSpaceSegment : public BaseVirtualChannel {
         friend class ChannelsInterface;
         friend class FrameAcceptanceReporting;
+        friend class ServiceChannelSpaceSegment;
+
     public:
-        VirtualChannelSpaceSegment(const uint32_t gvcid, const uint8_t vcRepetitions,
-                                   const bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
-                                   const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
-                                   const bool segmentationTM, const bool operationalControlFieldTMPresent,
+        VirtualChannelSpaceSegment(const uint32_t gvcid, const uint8_t vcRepetitions, const uint16_t maxFrameLengthTC,
+                                   const bool segmentHeaderTCPresent, const bool blockingTC,
+                                   const bool operationalControlFieldTMPresent,
                                    const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
                                    const DefsAndUtils::SynchronizationFlag synchronization)
-            : BaseVirtualChannel(gvcid, vcRepetitions, frameErrorControlFieldPresent,
-                                 maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
-                                 operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
-                                 synchronization), frameCountTM(0) {}
+            : BaseVirtualChannel(gvcid, vcRepetitions,  maxFrameLengthTC, segmentHeaderTCPresent, blockingTC,
+                                 operationalControlFieldTMPresent, secondaryHeaderTMLength,
+                                 secondaryHeaderTMPresent,
+                                 synchronization), frameCountTM(0) {
+        }
 
         VirtualChannelSpaceSegment(const VirtualChannelSpaceSegment &v)
             : BaseVirtualChannel(v), framesAfterAllFramesReceptionTC(v.framesAfterAllFramesReceptionTC),
@@ -387,13 +393,13 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Stores pointers to TC frames (of all types) after being created by all frames reception.
          */
-        etl::list<TransferFrameTC*, T> framesAfterAllFramesReceptionTC;
+        etl::list<TransferFrameTC *, T> framesAfterAllFramesReceptionTC;
 
         /**
          * @brief Stores pointers to type-AD TC frames after being processed by vc generation. If no MAP channels
          *        exist for this virtual channel, the pointers remain in this buffer after security processing.
          */
-        etl::list<TransferFrameTC*, T> framesAfterVCReceptionTCTypeAD;
+        etl::list<TransferFrameTC *, T> framesAfterVCReceptionTCTypeAD;
 
         /**
          * @brief Stores pointers to type-BD TC frames after being processed by vc generation. The separate buffer
@@ -401,7 +407,7 @@ namespace CCSDSDataLinkLayer {
          *        without interrupting the type-AD service. If no MAP channels exist for this virtual channel,
          *        the pointers remain in this buffer after security processing.
          */
-        etl::list<TransferFrameTC*, T> framesAfterVCReceptionTCTypeBD;
+        etl::list<TransferFrameTC *, T> framesAfterVCReceptionTCTypeBD;
 
         /**
          * @brief Counter for the amount of TM transfer frames transmitted through this virtual channel.
@@ -411,17 +417,17 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Stores pointers to created TM frames after vc generation.
          */
-        etl::list<TransferFrameTM*, T> framesUnderProcessingTM;
+        etl::list<TransferFrameTM *, T> framesUnderProcessingTM;
 
         /**
          *  @brief Queue that stores the lengths of packets that will eventually be concatenated to TM transfer frame data.
          */
-        etl::deque<uint16_t, 100 * T> packetLengthBufferTM;
+        etl::deque<uint16_t, 10 * T> packetLengthBufferTM;
 
         /**
          *  @brief Queue that stores the packet data that will eventually be concatenated to TM transfer frame data.
          */
-        etl::deque<uint8_t, 100 * T> packetBufferTM;
+        etl::queue<uint8_t, 100 * T> packetBufferTM;
 
         // Give the user access while debugging, testing
 #ifdef ENABLE_CHANNEL_ACCESS
@@ -459,11 +465,12 @@ namespace CCSDSDataLinkLayer {
     template<std::size_t T>
     class MasterChannelSpaceSegment : public BaseMasterChannel {
         friend class ChannelsInterface;
+
     public:
         explicit MasterChannelSpaceSegment(const uint16_t mscid) : BaseMasterChannel(mscid),
-                                                             masterChannelPoolTC(MemoryPool<1000 * T>()),
-                                                             masterChannelFrameCountTM(0),
-                                                             masterChannelPoolTM(MemoryPool<1000 * T>()) {
+                                                                   masterChannelPoolTC(MemoryPool<1000 * T>()),
+                                                                   masterChannelFrameCountTM(0),
+                                                                   masterChannelPoolTM(MemoryPool<1000 * T>()) {
         }
 
         MasterChannelSpaceSegment(const MasterChannelSpaceSegment &m)
@@ -477,7 +484,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Buffer that holds pointers to TM frames after mc generation and before all frames generation.
          */
-        etl::list<TransferFrameTM *, T> framesUnderProcfessingTM;
+        etl::list<TransferFrameTM *, T> framesUnderProcessingTM;
 
         /**
          * @brief Buffer that stores the actual TC transfer frame objects for the RxTC chain.
@@ -544,8 +551,10 @@ namespace CCSDSDataLinkLayer {
     template<std::size_t T>
     class MAPChannelGroundSegment : public BaseMAPChannel {
         friend class ChannelsInterface;
+
     public:
-        MAPChannelGroundSegment(const uint32_t gmapid, const bool blockingTC, const bool segmentationTC) : BaseMAPChannel(
+        MAPChannelGroundSegment(const uint32_t gmapid, const bool blockingTC,
+                                const bool segmentationTC) : BaseMAPChannel(
             gmapid, blockingTC, segmentationTC) {
         }
 
@@ -614,17 +623,17 @@ namespace CCSDSDataLinkLayer {
     template<std::size_t T>
     class VirtualChannelGroundSegment : public BaseVirtualChannel {
         friend class ChannelsInterface;
+
     public:
-        VirtualChannelGroundSegment(const uint32_t gvcid, const uint8_t vcRepetitions,
-                                    const bool frameErrorControlFieldPresent, const uint16_t maxFrameLengthTC,
-                                    const bool segmentHeaderTCPresent, const bool blockingTC, const bool blockingTM,
-                                    const bool segmentationTM, const bool operationalControlFieldTMPresent,
+        VirtualChannelGroundSegment(const uint32_t gvcid, const uint8_t vcRepetitions, const uint16_t maxFrameLengthTC,
+                                    const bool segmentHeaderTCPresent, const bool blockingTC,
+                                    const bool operationalControlFieldTMPresent,
                                     const bool secondaryHeaderTMPresent, const uint8_t secondaryHeaderTMLength,
                                     const DefsAndUtils::SynchronizationFlag synchronization)
-            : BaseVirtualChannel(gvcid, vcRepetitions, frameErrorControlFieldPresent,
-                                 maxFrameLengthTC, segmentHeaderTCPresent, blockingTC, blockingTM, segmentationTM,
+            : BaseVirtualChannel(gvcid, vcRepetitions, maxFrameLengthTC, segmentHeaderTCPresent, blockingTC,
                                  operationalControlFieldTMPresent, secondaryHeaderTMLength, secondaryHeaderTMPresent,
-                                 synchronization) {}
+                                 synchronization) {
+        }
 
         VirtualChannelGroundSegment(const VirtualChannelGroundSegment &v)
             : BaseVirtualChannel(v), packetLengthBufferTcTypeAD(v.packetLengthBufferTcTypeAD),
@@ -693,6 +702,7 @@ namespace CCSDSDataLinkLayer {
     template<std::size_t T>
     class MasterChannelGroundSegment : public BaseMasterChannel {
         friend class ChannelsInterface;
+
     public:
         explicit MasterChannelGroundSegment(const uint16_t mscid)
             : BaseMasterChannel(mscid), masterChannelPoolTC(MemoryPool<1000 * T>()) {
@@ -713,7 +723,7 @@ namespace CCSDSDataLinkLayer {
          * @brief An object that manages a statically allocated block of memory, storing the octets for TC frames in the
          * TxTC chain.
          */
-        MemoryPool<1000*T> masterChannelPoolTC;
+        MemoryPool<1000 * T> masterChannelPoolTC;
 
         // Give the user access when debugging/testing
 #ifdef ENABLE_CHANNEL_ACCESS

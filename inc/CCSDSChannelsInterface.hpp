@@ -141,40 +141,39 @@ namespace CCSDSDataLinkLayer {
             VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
 
         /**
+         * @brief Returns whether there are available space packets for the TM link to process.
+         */
+        static bool ChannelsInterface::packetAvailableVirtualChannelSpaceSegment(
+            VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
+
+        /**
          *  @brief Push a packet that will later be inserted in a TM frame.
-         *  @param pushToFront: The data structures used for storing the packets are dequeues. If this parameter
-         *                     is set to true, the packet data and lengths will be pushed to the front of the queues instead.
          */
         static etl::expected<void, VirtualChannelAlert>
         pushTmPacketVirtualChannelSpaceSegment(VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
                                                const uint8_t *packetSource,
-                                               uint16_t packetLength,
-                                               bool pushToFront = false);
+                                               uint16_t packetLength);
 
 
         /**
          * @brief Pop the length of the next packet waiting in the queue.
          *
-         *  @param popFromBack: The data structures used for storing the packet are dequeues. If this parameter
-         *                     is set to true, the packet length will be popped from the back of the queue instead.
          */
         static etl::expected<uint16_t, VirtualChannelAlert> popTmPacketLengthVirtualChannelSpaceSegment(
-            VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
-            bool popFromBack = false);
+            VirtualChannelSpaceSegmentVariant &virtualChannelVariant);
 
         /**
          * @brief Pop a partial packet (destined for TM frames) from the virtual channel
          *        queue.
-        *  @param popFromBack: The data structures used for storing the packets are dequeues. If this parameter
-         *                     is set to true, the packet data and lengths will be popped from the back of the queue instead.
          * @param numOctets: The amount of octets to pop
+         * @param packetDestination: A destination for the packets. No copy will take place if the value is nullptr
+         *                           (useful when there is a need to discard the packet)
          * @return The packet's length
          */
         static etl::expected<void, VirtualChannelAlert>
         popTmPacketSegmentVirtualChannelSpaceSegment(VirtualChannelSpaceSegmentVariant &virtualChannelVariant,
-                                              uint8_t *packetDestination,
-                                              uint16_t numOctets,
-                                              bool popFromBack = false);
+                                                     uint16_t numOctets,
+                                                     uint8_t *packetDestination = nullptr);
         /**
          * @}
          */
@@ -212,8 +211,9 @@ namespace CCSDSDataLinkLayer {
                                             DefsAndUtils::TmFrameProcessingStage processingStage);
 
         /**
-         * @brief Indicates if there is enough capacity for storing new frames.
-         *
+         * @brief Indicates if there is enough capacity for storing new frames. Both the master copy buffer
+         *        and memory pool are checked.
+         * @param frameType Whether the search will occur in TM or TC master copy buffer and memory pool
          * @param numberOfFrames Used to determine if there is enough space in the master copy buffer.
          * @param numberOfOctets The total amount of bytes/octets that need to be allocated in the memory pool.
          *
@@ -225,15 +225,19 @@ namespace CCSDSDataLinkLayer {
             uint16_t numberOfOctets);
 
         /**
-         * @brief Allocate frame data to the memory pool.
+         * @brief Allocate a block for frame data from the memory pool.
          *
-         * @return A pointer to the start of the allocated data.
+         * @param frameType Indicates whether the allocation will occur in the TM or TC memory pool.
+         * @param blockLength The length of the block.
+         * @param frameDataSource Optionally copy data from this source to the block.
+         * @return A pointer to the start of the allocated block, if one could be found.
          */
         static etl::expected<uint8_t *, MasterChannelAlert>
-        addFrameOctetsToMemPoolMasterChannelSpaceSegment(
+        allocateBlockFromMemPoolMasterChannelSpaceSegment(
             MasterChannelSpaceSegmentVariant &masterChannelVariant,
             DefsAndUtils::FrameType frameType,
-            uint8_t *octetsSource, uint16_t frameLength);
+            uint16_t blockLength,
+            uint8_t *frameDataSource = nullptr);
 
         /**
          * @brief Push frame object to the back of the master copy buffer.
@@ -367,7 +371,8 @@ namespace CCSDSDataLinkLayer {
         static BaseMasterChannel* upcastToBase(MasterChannelGroundSegmentVariant &masterChannelVariant);
 
         /**
-         * @brief Indicates if there is enough capacity for storing new frames.
+        * @brief Indicates if there is enough capacity for storing new frames. Both the master copy buffer
+         *        and memory pool are checked.
          *
          * @param numberOfFrames Used to determine if there is enough space in the master copy buffer.
          * @param numberOfOctets The total amount of bytes/octets that need to be allocated in the memory pool.
@@ -379,14 +384,17 @@ namespace CCSDSDataLinkLayer {
             uint16_t numberOfOctets);
 
         /**
-         * @brief Allocate frame data to the memory pool.
+         * @brief Allocate a block for frame data from the memory pool.
          *
-         * @return A pointer to the start of the allocated data.
+         * @param blockLength The length of the block.
+         * @param frameDataSource Optionally copy data from this source to the block.
+         * @return A pointer to the start of the allocated block, if one could be found.
          */
         static etl::expected<uint8_t *, MasterChannelAlert>
-        addFrameOctetsToMemPoolMasterChannelGroundSegment(
+        allocateBlockFromMemPoolMasterChannelGroundSegment(
             MasterChannelGroundSegmentVariant &masterChannelVariant,
-            uint8_t *octetsSource, uint16_t frameLength);
+            uint16_t blockLength,
+            uint8_t *frameDataSource = nullptr);
 
         /**
          * @brief Push frame object to the back of the master copy buffer.

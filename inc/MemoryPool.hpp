@@ -1,3 +1,7 @@
+/**
+ * @file MemoryPool.hpp
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -22,7 +26,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @var Maximum number of packets that can be allocated to the memory buffer
          */
-        static constexpr uint16_t maxAllocatedPackets = DefsAndUtils::MaxAllocatedPackets;
+        static constexpr uint16_t maxAllocatedPackets = DefsAndUtils::MaxAllocatedFramesInMemoryPool;
         /**
          * @var An array that allocates statically memory to be used for the packet data
          */
@@ -39,37 +43,39 @@ namespace CCSDSDataLinkLayer {
         MemoryPool() = default;
 
         /**
-         * This method finds the head of a contiguous block in the memory pool of a given size
+         * @brief This method finds the head of a contiguous block in the memory pool of a given size
          * @param packetLength length of the data (bytes)
-         * @return A `MasterChannelAlert` is raised if there was not enough space for the data, else returns the index of
+         * @return A `MasterChannelAlert` is raised if there was not enough space for the block, else returns the index of
          * the first memory where the data will be stored.
          */
         std::pair<uint16_t, MasterChannelAlert> findFit(uint16_t packetLength);
 
         /**
-         * Method that copies the packet data to the first contiguous block of memory of the memory pool.
-         * Calls the `findFit` method in order to find the index of the array that is first available.
-         * @param packet pointer to the packet data.
-         * @param packetLength the length of the packet data.
-         * @return `uint8_t` pointer to the packet data in the memory pool or `nullptr` if packet could not be allocated.
+         * @brief Method that allocates the first contiguous block of memory of the memory pool and optionally
+         *        copies packet data to that block.
+         * @details Calls the `findFit` method in order to find the index of the array that is first available.
+         * @param blockLength The length of the packet block.
+	     * @param packetSource Pointer to the packet data. In order for a copy to not take place, this value should be nullptr.
+         * @return A `uint8_t` pointer to the block start in the memory pool or `nullptr` if no such block could be
+         *          allocated.
          */
-        uint8_t* allocatePacket(uint8_t *packet, uint16_t packetLength);
+        uint8_t* allocateBlock(uint16_t blockLength, const uint8_t *packetSource = nullptr);
 
         /**
-         * This method is called when we want to delete the data of a packet.
-         * @param packet pointer to the packet data in the pool.
-         * @param packetLength length of the data.
-         * @return true if the delete was successful and false if the packet was not found.
+         * @brief This method is called when we want to deallocate a block and delete the data of a packet.
+         * @param blockStart pointer to the packet data in the pool.
+         * @param blockLength length of the data.
+         * @return true if the deletion was successful and false if the block was not found.
          */
-        bool deletePacket(const uint8_t *packet, uint16_t packetLength);
+        bool deleteBlock(const uint8_t *blockStart, uint16_t blockLength);
 
         /**
-         * @return pointer to the array that stores the data.
+         * @return Pointer to the array that stores the data.
          */
         uint8_t* getMemory();
 
         /**
-         * @return the bitset that shows if each memory slot is used.
+         * @return The map that shows the allocated memory block positions and their lengths.
          */
         etl::map<uint16_t, uint16_t, maxAllocatedPackets> &getUsedMemory() {
             return usedMemory;

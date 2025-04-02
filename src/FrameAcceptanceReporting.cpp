@@ -45,7 +45,7 @@ namespace CCSDSDataLinkLayer {
         // TODO: See if there is any use for the optional fields and report them here (not part of COP-1):
         //       statusField, noRfAvailable, noBitLock and farmBCount (the last one is updated, but
         //       not used by COP-1)
-        clcwBuffer = CLCW(DefsAndUtils::ControlWordType,
+        clcwBuffer = CLCW(DefsAndUtils::ControlWordTypeCLCW,
                           DefsAndUtils::ClcwVersionNumber,
                           0,
                           DefsAndUtils::CopInEffect,

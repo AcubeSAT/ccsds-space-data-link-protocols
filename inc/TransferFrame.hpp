@@ -50,7 +50,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * @brief Utility function for calculating the CRC-16 code of an data sequence.
+         * @brief Utility function for calculating the CRC-16 code of a data sequence.
          * @param data Start of data sequence.
          * @param len  Length of data sequence.
          * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL

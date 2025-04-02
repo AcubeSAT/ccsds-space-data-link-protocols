@@ -20,7 +20,7 @@ namespace CCSDSDataLinkLayer {
             clcwQueue.pop();
 
             // standard validity checks
-            if ((clcw.getControlWordType() != DefsAndUtils::ControlWordType) ||
+            if ((clcw.getControlWordType() != DefsAndUtils::ControlWordTypeCLCW) ||
                 (clcw.getClcwVersion() != DefsAndUtils::ClcwVersionNumber) ||
                 (clcw.getCopInEffect() != DefsAndUtils::CopInEffect) ||
                 (clcw.getVcId() != vid)) {

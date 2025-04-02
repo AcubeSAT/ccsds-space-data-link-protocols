@@ -1,5 +1,6 @@
-/*
- * All necessary definitions used throughout the program
+/**
+ * @file CCSDSDefinitionsAndUtilities.hpp
+ * @brief All definitions used throughout the Data Link.
  */
 
 #pragma once
@@ -12,9 +13,10 @@ namespace CCSDSDataLinkLayer {
 }
 
 namespace CCSDSDataLinkLayer::DefsAndUtils {
-    /** =======
-     *   Enums
-     *  =======
+    /** =============================
+     *   @name Tc and Tm frame enums
+     *  =============================
+     *  @{
      */
 
     /**
@@ -73,11 +75,14 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
 
     enum class TmFrameProcessingStage : uint8_t {
         // Tx chain
-        PROCESSED_BY_VC_GENERATION = 0x0,
-        PROCESSED_BY_MC_GENERATION = 0x1,
-        PROCESSED_BY_ALL_FRAMES_GENERATION_TX = 0x2,
+        UNDER_PROCESSING_BY_VC_GENERATION = 0x0,
+        PROCESSED_BY_VC_GENERATION = 0x1,
+        PROCESSED_BY_VC_MULTIPLEXER = 0x2,
+        UNDER_PROCESSING_MC_GENERATION = 0x3,
+        PROCESSED_BY_MC_GENERATION = 0x4,
+        PROCESSED_BY_ALL_FRAMES_GENERATION_TX = 0x5,
         // Rx chain
-        PROCESSED_BY_ALL_FRAMES_GENERATION_RX = 0x3,
+        PROCESSED_BY_ALL_FRAMES_GENERATION_RX = 0x6,
     };
 
     enum class TcFrameProcessingStage : uint8_t {
@@ -92,9 +97,14 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
         PROCESSED_BY_SECURITY_RX = 0x6,
     };
 
-    /** ===============================
-     *    Channel Addressing functions
-     *  ===============================
+    /**
+     * @}
+     */
+
+    /** =====================================
+     *    @name Channel Addressing functions
+     *  =====================================
+     *  @{
      */
 
     /**
@@ -144,9 +154,14 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
         return gmapid & 0x3FU;
     }
 
-    /** =================================
-     *   Field lengths - Field constants
-     *  =================================
+    /**
+     * @}
+     */
+
+    /** =======================================
+     *   @name Field lengths - Field constants
+     *  =======================================
+     *  @{
      */
 
     inline constexpr uint8_t ErrorControlFieldSize = 2;
@@ -183,14 +198,19 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
      */
     inline constexpr uint16_t MaxTmTransferFrameLength = 1024;
 
-    /** ======================================
-     *   Space packet constants and utilities
+    /**
+     * @}
+     */
+
+    /** ============================================
+     *   @name Space packet constants and utilities
      *   @see CCSDS Space Packet Protocol
-     *  ======================================
+     *  ============================================
+     *   @{
      */
 
     static constexpr uint16_t MaxSpacePacketSize = 128;
-    static constexpr uint8_t PacketPrimaryHeaderLength = 6;
+    static constexpr uint8_t SpacePacketPrimaryHeaderLength = 6;
     static constexpr uint8_t PacketVersionNumber = 0x0; // Defines this packet as a 'Version 1' space packet
     static constexpr uint8_t PacketDataLengthFieldPosition = 5; // 5th and 6th bytes constitute the data field length
 
@@ -200,29 +220,33 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
     static uint16_t getSpacePacketLength(const uint8_t *packetSource) {
         // plus one is added because the field actually contains the data field length, reduced by one
         return (static_cast<uint16_t>(packetSource[DefsAndUtils::PacketDataLengthFieldPosition - 1]) << 8) |
-               (static_cast<uint16_t>(packetSource[DefsAndUtils::PacketDataLengthFieldPosition])) + DefsAndUtils::PacketPrimaryHeaderLength + 1;
+               (static_cast<uint16_t>(packetSource[DefsAndUtils::PacketDataLengthFieldPosition])) + DefsAndUtils::SpacePacketPrimaryHeaderLength + 1;
     }
 
     /**
       * Idle space packet specific constants
       */
-    static constexpr bool PacketType = false; // Telemetry Packet
-    static constexpr bool SecondaryHeaderFlag = false; // Must always be false for idle packets
-    static constexpr uint16_t APID = 0x7FF; // Reserved value for idle packets
-    static constexpr uint8_t SeqFlags = 0x3; // Unsegmented data
+    static constexpr bool TypeTelemetryPacket = false;
+    static constexpr bool IdlePacketSecondaryHeaderFlag = false; // Must always be false for idle packets
+    static constexpr uint16_t IdlePacketAPID = 0x7FF; // Reserved value for idle packets
+    static constexpr uint8_t UnsegmentedDataSeqFlag = 0x3; // Unsegmented data
     // @TODO This should NOT be constant. After the ECSS integration with the comms repo, ensure that it takes correct values
     static constexpr uint16_t PacketSequenceCount = 0x0;
-    static constexpr uint8_t PacketPrimaryHeader[PacketPrimaryHeaderLength] = {
-        (PacketVersionNumber << 5) | (PacketType << 4) | (SecondaryHeaderFlag << 3) | (APID >> 8),
-        static_cast<uint8_t>(APID),
-        (SeqFlags << 6) | (PacketSequenceCount >> 8),
+    static constexpr uint8_t IdlePacketPrimaryHeader[SpacePacketPrimaryHeaderLength] = {
+        (PacketVersionNumber << 5) | (TypeTelemetryPacket << 4) | (IdlePacketSecondaryHeaderFlag << 3) | (IdlePacketAPID >> 8),
+        static_cast<uint8_t>(IdlePacketAPID),
+        (UnsegmentedDataSeqFlag << 6) | (PacketSequenceCount >> 8),
         static_cast<uint8_t>(PacketSequenceCount)
     };
 
+    /**
+     * @}
+     */
 
-    /** =============================
-     *   COP constants and utilities
-     *  =============================
+    /** ===================================
+     *   @name COP constants and utilities
+     *  ===================================
+     *  @{
      */
 
     /**
@@ -271,14 +295,19 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
      * CLCW fields
      * @see p. 4.2 of TC Data Link Protocol
      */
-    inline constexpr uint8_t ControlWordType = 0x00; // the value of 0 indicates that clcws are carried as a report word
+    inline constexpr uint8_t ControlWordTypeCLCW = 0x00; // the value of 0 ('Type 1 control word type') indicates that clcws are carried as a report word
     inline constexpr uint8_t ClcwVersionNumber = 0x0; // '00' is the only available value currently
     inline constexpr uint8_t CopInEffect = 0x01; // Indicates COP-1 is used
 
+    /**
+     * @}
+     */
+
 #ifdef GROUND_SEGMENT
-    /** ================================
-     *   FOP-1 Signal structs and enums
-     *  ================================
+    /** ======================================
+     *   @name FOP-1 Signal structs and enums
+     *  ======================================
+     *  @{
      */
 
     /**
@@ -481,11 +510,16 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
         SUSPENDED_PREV_STATE_RETRANSMIT_WITH_WAIT = 3,
         SUSPENDED_PREV_STATE_INITIALIZING_WITHOUT_BC_FRAME = 4
     };
+
+    /**
+     * @}
+     */
 #endif //GROUND_SEGMENT
 
-    /** ==================================
-     *   Pseudo-random data and crc table
-     *  ==================================
+    /** ========================================
+     *   @name Pseudo-random data and crc table
+     *  ========================================
+     *  @{
      */
     inline constexpr uint8_t idle_data[] = {
         0x53, 0x45, 0x24, 0x03, 0xce, 0xf0, 0xd2, 0x75, 0x50, 0xb9, 0x57, 0x24, 0x70, 0x83, 0xa8, 0x4e, 0x44,0xd4, 0xa6,
@@ -681,15 +715,25 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
         0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
     };
 
-    /** =================
-     *   Container Sizes
-     *  =================
+    /**
+     * @}
+     */
+
+    /** ========================
+     *    @name Container Sizes
+     *  ========================
      */
     inline constexpr std::size_t MaxSCIDInPhysicalChannel = 5;
+    inline constexpr uint16_t MaxAllocatedFramesInMemoryPool = 50;
 
-    /** ================
-     *   SDLS Constants
-     *  ================
+    /**
+     * @}
+     */
+
+    /** ======================
+     *   @name SDLS Constants
+     *  ======================
+     *  @{
      */
     inline constexpr uint8_t securityParameterIndexLength = 2;
     inline constexpr uint8_t MaxAuthenticationKeyLength = 64;
@@ -716,15 +760,24 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
         RECEIVER
     };
 
-    /** ==================
-     *   Logger constants
-     *  ==================
+    /**
+     * @}
+     */
+
+    /** ========================
+     *   @name Logger constants
+     *  ========================
+     *  @{
      */
     inline constexpr uint16_t TmHelperFuncMaxMessageSize = MaxTmTransferFrameLength * 6 + 500;
     inline constexpr uint16_t TcHelperFuncMaxMessageSize = MaxTcTransferFrameLength * 6 + 330;
     inline constexpr uint16_t LoggerMaxMessageSize = TmHelperFuncMaxMessageSize;
 
     inline constexpr uint8_t logVerbose = 0;
+
+    /**
+     * @}
+     */
 
     // inline constexpr uint8_t MaxReceivedTcInMapChannel = 5;
     // inline constexpr uint8_t MaxReceivedTmInMapChannel = 5;
@@ -798,7 +851,6 @@ namespace CCSDSDataLinkLayer::DefsAndUtils {
     // inline constexpr uint8_t MaxFramesWithSegmentedPackets = 5;
 
     // inline constexpr uint16_t MemoryPoolMemorySize = 5 * 128; // Size of memory pool
-     inline constexpr uint16_t MaxAllocatedPackets = 50;
     //
     // inline constexpr uint16_t PacketBufferTmSize = 512;
     // inline constexpr uint16_t PacketBufferTcSize = 512;

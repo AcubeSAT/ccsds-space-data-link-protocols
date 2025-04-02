@@ -46,6 +46,7 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::FARM_ERROR);
         INSERT_ELEMENT(ServiceChannelNotification::FRAME_LIST_FULL);
         INSERT_ELEMENT(ServiceChannelNotification::FRAME_LIST_EMPTY);
+        INSERT_ELEMENT(ServiceChannelNotification::REQUESTED_FRAME_TYPE_NOT_FOUND);
         INSERT_ELEMENT(ServiceChannelNotification::PACKET_QUEUE_FULL);
         INSERT_ELEMENT(ServiceChannelNotification::PACKET_QUEUE_EMPTY);
         INSERT_ELEMENT(ServiceChannelNotification::UNASSOCIATED_CHANNEL);
@@ -53,6 +54,7 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::INVALID_MAC);
         INSERT_ELEMENT(ServiceChannelNotification::FRAME_REPLAY_ATTEMPT);
         INSERT_ELEMENT(ServiceChannelNotification::SLDS_ERROR);
+        INSERT_ELEMENT(ServiceChannelNotification::NO_CLCW_AVAILABLE);
         INSERT_ELEMENT(ServiceChannelNotification::NO_SERVICE_EVENT);
 #undef INSERT_ELEMENT
         }
