@@ -1,11 +1,14 @@
-#pragma once
+/**
+ * @file CountdownTimer.hpp
+ */
 
+#pragma once
 #include <chrono>
 
 namespace CCSDSDataLinkLayer {
 /**
  * A countdown timer (for x86) that has a running/not running state, with multiple instances being
- * able to run concurrently. Intended for use within COP-1.
+ * able to run concurrently. Intended for use within COP-1
  */
     class CountdownTimer {
 

@@ -5,15 +5,22 @@ project(ccsds_tm_packets)
 set(CMAKE_CXX_STANDARD 17)
 
 # Specify the directories for #includes
-include_directories("${PROJECT_SOURCE_DIR}/inc"
+include_directories("${PROJECT_SOURCE_DIR}"
+                    "${PROJECT_SOURCE_DIR}/inc"
+                    "${PROJECT_SOURCE_DIR}/inc/Channels"
+                    "${PROJECT_SOURCE_DIR}/inc/COP1"
+                    "${PROJECT_SOURCE_DIR}/inc/CoreDataStructures"
+                    "${PROJECT_SOURCE_DIR}/inc/DataHandlingFunctions"
+                    "${PROJECT_SOURCE_DIR}/inc/NotificationUtilities"
                     "${PROJECT_SOURCE_DIR}/lib/etl/include"
                     "${PROJECT_SOURCE_DIR}/inc/Platform/x86"
-                    "${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include")
+                    "${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include"
+                    )
 
 add_compile_options(-Wvla)
 add_compile_definitions(LOGLEVEL_TRACE) # Lowest possible log level for Logger.hpp (logs every message)
-add_compile_definitions(SPACE_SEGMENT)  # Include code mean for both ground and space segments (for now)
-add_compile_definitions(GROUND_SEGMENT)
+add_compile_definitions(INCLUDE_SPACE_SEGMENT_CODE)
+add_compile_definitions(INCLUDE_GROUND_SEGMENT_CODE)
 
 add_custom_target(check
         COMMAND ./cppcheck.sh
@@ -30,35 +37,38 @@ add_custom_target(
 
 # Specify the .cpp files common across all targets
 add_library(common OBJECT
-        src/Logger.cpp
-        src/Platform/x86/Logger.cpp
-        src/CCSDSServiceChannel.cpp
-        src/CCSDSChannel.cpp
-        src/FrameOperationProcedure.cpp
-        src/FopStateTable.cpp
-        src/FrameAcceptanceReporting.cpp
-        src/logOperators.cpp
-        src/MemoryPool.cpp
-        src/CCSDSSecurityAssociation.cpp
+        src/COP1/FopStateTable.cpp
+        src/COP1/FrameAcceptanceReporting.cpp
+        src/COP1/FrameOperationProcedure.cpp
+        src/DataHandlingFunctions/GroundSegmentTcDataHandlingFunctions.cpp
+        src/DataHandlingFunctions/GroundSegmentTmDataHandlingFunctions.cpp
+        src/DataHandlingFunctions/SpaceSegmentTcDataHandlingFunctions.cpp
+        src/DataHandlingFunctions/SpaceSegmentTmDataHandlingFunctions.cpp
+        src/DataStructures/ExternalContainers.cpp
+        src/DataStructures/MemoryPool.cpp
+        src/NotificationUtilities/Logger.cpp
+        src/NotificationUtilities/logOperators.cpp
+        src/SecurityAssociation.cpp
+        src/StructureGeneration.cpp
         )
 
 # Specify the .cpp files for the executables
-add_executable(ccsds_tm_packets_default
+add_executable(ccsds_data_link_default
         $<TARGET_OBJECTS:common>
         src/main.cpp
         )
-add_dependencies(ccsds_tm_packets_default TinyCryptLib) # ensure "TinyCryptLib" target is built first
-target_link_libraries(ccsds_tm_packets_default PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
+add_dependencies(ccsds_data_link_default TinyCryptLib) # ensure "TinyCryptLib" target is built first
+target_link_libraries(ccsds_data_link_default PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 
-add_executable(ccsds_tm_packets_yamcs_connection
+add_executable(ccsds_data_link_yamcs_connection
         $<TARGET_OBJECTS:common>
         src/Platform/x86/FrameMaker.cpp
         src/Platform/x86/FrameSender.cpp
         src/Platform/x86/main.cpp
         )
-target_compile_definitions(ccsds_tm_packets_yamcs_connection PRIVATE ENABLE_CHANNEL_ACCESS)
-add_dependencies(ccsds_tm_packets_yamcs_connection TinyCryptLib) # ensure "TinyCryptLib" target is built first
-target_link_libraries(ccsds_tm_packets_yamcs_connection PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
+target_compile_definitions(ccsds_data_link_yamcs_connection PRIVATE ENABLE_CHANNEL_ACCESS)
+add_dependencies(ccsds_data_link_yamcs_connection TinyCryptLib) # ensure "TinyCryptLib" target is built first
+target_link_libraries(ccsds_data_link_yamcs_connection PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 
 IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     # Gather all the .cpp files corresponding to tests
@@ -66,14 +76,14 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     file(GLOB test_SRC "test/**/*.cpp")
 
     add_subdirectory(lib/Catch2)
-    add_executable(tests
+    add_executable(ccsds_data_link_catch2_unit_tests
             $<TARGET_OBJECTS:common>
            # ${test_main_SRC}
            # ${test_SRC}
     )
-    target_compile_definitions(tests PRIVATE ENABLE_CHANNEL_ACCESS)
-    add_dependencies(tests TinyCryptLib) # ensure "TinyCryptLib" target is built first
-    target_link_libraries(tests Catch2::Catch2WithMain  ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
+    target_compile_definitions(ccsds_data_link_catch2_unit_tests PRIVATE ENABLE_PRIVATE_MEMBER_ACCESS)
+    add_dependencies(ccsds_data_link_catch2_unit_tests TinyCryptLib) # ensure "TinyCryptLib" target is built first
+    target_link_libraries(ccsds_data_link_catch2_unit_tests Catch2::Catch2WithMain  ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 ENDIF ()
 set_target_properties(common PROPERTIES COMPILE_DEFINITIONS LOGLEVEL_TRACE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")

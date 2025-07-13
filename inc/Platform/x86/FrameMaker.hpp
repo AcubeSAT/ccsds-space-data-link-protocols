@@ -4,7 +4,7 @@
 #include <queue>
 #include "etl/expected.h"
 #include "CCSDSServiceChannel.hpp"
-#include "TransferFrameTM.hpp"
+#include "../../CoreDataStructures/TransferFrameTM.hpp"
 
 namespace CCSDSDataLinkLayer {
 /**

@@ -1,0 +1,199 @@
+// Introduction
+// =====================================================================================================================
+// Create your data link configuration in a static manner here, using x-macros.
+// The example below indicates how to create such a configuration.
+// Note that it is not necessary to nest the channels as shown, though it is recommended
+// to follow this pattern so that you have an easier time. This implementation allows the
+// configuration of 8 data link objects:
+//
+// - PHYSICAL_CHANNEL: Stores core data link parameters
+// - MASTER_CHANNEL_TM: Main telemetry channel
+// - MASTER_CHANNEL_TC: Main telecommand channel
+// - VIRTUAL_CHANNEL_TM: Granularizes telemetry traffic of MASTER_CHANNEL_TM to multiple streams
+// - VIRTUAL_CHANNEL_TC: Granularizes telecommand traffic of MASTER_CHANNEL_TC to multiple streams
+// - MAP_CHANNEL: Granularizes telecommand traffic of a single VIRTUAL_CHANNEL_TC to multiple streams
+// - COP1: A closed loop procedure that manages telecommand acknowledgement
+// - SECURITY_ASSOCIATION: Offers frame encryption and authentication services to traffic in VIRTUAL_CHANNEL_TC
+//                         and MAP_CHANNEL.
+//
+// General rules:
+// =====================================================================================================================
+// - Define one PHYSICAL_CHANNEL() per link
+// - Define one MASTER_CHANNEL_TM() per PHYSICAL_CHANNEL()
+// - Define at least one VIRTUAL_CHANNEL_TM() per MASTER_CHANNEL_TM()
+// - Define at least one VIRTUAL_CHANNEL_TC() per MASTER_CHANNEL_TC()
+// - Definition of MAP_CHANNEL() is optional. Note however, that if a VIRTUAL_CHANNEL_TC()
+//   has at least one MAP_CHANNEL(), then frames cannot be inserted directly to the VIRTUAL_CHANNEL_TC()
+//   itself, but rather on one of it's MAP_CHANNELS
+// - TM channels should be associated with TM channels only. Same for TC.
+// - Channels that have the same id and name, but different types of frames (TM/TC) are allowed
+// - If there exists at least one defined TC channel with enabled COP, it is necessary that at least
+//   one TM channel with an operational control field is also defined. This guarantees that
+//   a return path for TC frame acknowledgements is available
+//
+// Configuration Parameters:
+// =====================================================================================================================
+// - PHYSICAL_CHANNEL(physicalChannelName,
+//                    pcid,
+//                    tfvn,
+//                    maxTcLength,
+//                    tmLength,
+//                    maxFramesPdu,
+//                    maxPduLength,
+//                    bitRate,
+//                    fecPresent)
+//   -- physicalChannelName: A name that can be used to uniquely identify this physical channel
+//   -- pcid: An 8 bit id to uniquely identify this physical channel. It is not part of the CCSDS standards, and is not
+//            carried by any frame. It is added for addressing consistency with the other channels
+//   -- tfvn: Transfer frame version number. Enter the value: "TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1"
+//   -- maxTcLength: The maximum allowed length of a TC frame (in bytes)
+//   -- tmLength: The length of the TM frame in bytes
+//   -- maxFramesPdu: TODO implement?
+//   -- maxPduLength: TODO implement?
+//   -- bitRate: The bitrate of the link, in bits per second TODO no use for this yet
+//   -- fecPresent: A non zero number indicates that frames on this physical channel will have a frame error
+//                  control field (16 bit CRC code)
+//
+// - MASTER_CHANNEL_TM(masterChannelName,
+//                     scid,
+//                     parentPcid)
+//   -- masterChannelName: A name that can be used to uniquely identify this master channel
+//   -- parentPcid: Associates this master channel with a specific physical channel
+//   -- scid: A 10 bit id assigned by CCSDS, for uniquely defining a master channel
+//
+// - MASTER_CHANNEL_TC(masterChannelName,
+//                     scid,
+//                     parentPcid)
+//   -- masterChannelName: A name that can be used to uniquely identify this master channel
+//   -- scid: A 10 bit id assigned by CCSDS, for uniquely defining a master channel
+//   -- parentPcid: Associates this master channel with a specific physical channel
+//
+// - VIRTUAL_CHANNEL_TM(virtualChannelName,
+//                      vcid,
+//                      parentScid,
+//                      associatedSdlsSPI,
+//                      secondaryHeaderPresent,
+//                      secondaryHeaderLength,
+//                      ocfFieldPresent,
+//                      synchronization,
+//                      repetitions,
+//                      frameCapacity,
+//                      packetCapacity)
+//   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel
+//   -- vcid: A 6 bit id (unique for all TM virtual channels under a specific TM master channel)
+//   -- parentScid: Associates this virtual channel with a specific master channel
+//   -- associatedSdls: Security parameter index associated with this virtual channel. Unimplemented for TM frames
+//                      (unimplemented, this value is ignored)
+//   -- secondaryHeaderPresent: Unimplemented (unimplemented, this value is ignored)
+//   -- secondaryHeaderLength: Unimplemented (unimplemented, this value is ignored)
+//   -- ocfFieldPresent: Whether the frame has an operational control field. In this implementation, the
+//                       ocf field carries CLCWs generated by the COP-1 procedures
+//   -- synchronization: Use "SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED" if the frame payload
+//                       has a known structure (this version of the protocol supports "Space Packets" and
+//                       "Encapsulation Packets"). If the packet has a different structure, enter
+//                       "SynchronizationFlag::VCA_SDU"
+//   -- repetitions: How many times each frame will be transmitted to the Channel Coding and Synchronization Sublayer
+//   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size)
+//   -- packetCapacity: Maximum amount of packets this channel can support (affects memory allocation size). A packet
+//                      is defined as the data unit carried by the payload field of a frame.
+//
+// - VIRTUAL_CHANNEL_TC(virtualChannelName,
+//                      vcid,
+//                      parentScid,
+//                      segHeaderPresent,
+//                      blocking,
+//                      copInEffect,
+//                      associatedSdlsSPI,
+//                      repetitions,
+//                      frameCapacity,
+//                      typeAdPacketCapacity,
+//                      typeBdPacketCapacity)
+//   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel
+//   -- vcid: A 6 bit id (unique for all TM virtual channels under a specific TM master channel)
+//   -- parentScid: Associates this virtual channel with a specific master channel
+//   -- segHeaderPresent: A value of non zero indicates that map channels exist under this virtual channel
+//   -- blocking: A value of non zero allows combining multiple small TCs in a single TC transfer frame. Superseded in
+//                the scenario that map channels exist under this virtual channel.
+//   -- copInEffect: A value of non zero indicates that COP-1 frame acknowledgement system is active for this channel.
+//                   For COP-1 to work, ensure that a COP1() object is associated with this channel.
+//   -- vcid: A 6 bit id (unique for all TM virtual channels under a specific TM master channel)
+//   -- repetitions: How many times each frame will be transmitted to the Channel Coding and Synchronization Sublayer
+//   -- associatedSdlsSPI: Security parameter index associated with this virtual channel. Value 0 indicates
+//                         that frames in this channel are not encrypted, nor authenticated. Superseded in the scenario
+//                         that map channels exist under this virtual channel. Ensure that a SECURITY_ASSOCIATION()
+//                         with this associatedSdls exists.
+//   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size)
+//                     WARNING: If map channels exist under this virtual channel this value MUST be set to 0.
+//                              Otherwise, an excess amount of memory will be allocated
+//   -- typeAdPacketCapacity, typeBdPacketCapacity: Amount of packets this channel can support (affects memory
+//                     allocation size). Packets are defined as the data units carried by the payload field of a frame.
+//                     Type AD packets are subject to the COP-1 process, while Type BD are expedited (a similar analogy
+//                     with internet protocols is TCP segments vs UDP datagrams). The value typeAdPacketCapacity is
+//                     ignored if copInEffect == 0, and type-AD packets will not be accepted by this channel.
+//                     WARNING: If map channels exist under this virtual channel those values MUST be set to0.
+//                              Otherwise, an excess amount of memory will be allocated.
+//
+// - MAP_CHANNEL(mapChannelName,
+//               mapid,
+//               parentVcid,
+//               parentScid,
+//               blocking,
+//               segmentation,
+//               associatedSdlsSPI,
+//               frameCapacity,
+//               typeAdPacketCapacity,
+//               typeBdPacketCapacity)
+//   -- mapChannelName: A name that can be used to uniquely identify this map channel
+//   -- mapid: A 6 bit id (unique for all map channels under a specific TC virtual channel)
+//   -- parentVcid: Associates this map with a specific virtual channel
+//   -- parentScid: This id is necessary to uniquely identify 2 map channels that have the same parentVcid, meaning
+//                  their parent virtual channels belong to different master channels and have the same vcid.
+//   -- blocking: A value of non zero allows combining multiple small TCs in a single TC transfer frame
+//   -- segmentation: A value of non zero allows splitting large TCs in multiple TC transfer frames
+//   -- associatedSdlsSPI: Security parameter index associated with this virtual channel. A value of 0 indicates that
+//                         frames in this channel are not encrypted, nor authenticated. Superseded in the scenario
+//                         that map channels exist under this virtual channel
+//   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size)
+//   -- typeAdPacketCapacity, typeBdPacketCapacity: Amount of packets this channel can support (affects memory
+//                     allocation size). Packets are defined as the data units carried by the payload field of a frame.
+//                     Type AD packets are subject to the COP-1 process, while Type BD are expedited (a similar analogy
+//                     with internet protocols is TCP segments vs UDP datagrams). The value typeAdPacketCapacity is
+//                     ignored if copInEffect == 0, and type-AD packets will not be accepted by this channel.
+//
+// - COP1(vcid,
+//        tiInitial,
+//        transmissionLimit,
+//        fopSlidingWindowWidth,
+//        timeoutType,
+//        farmSlidingWindowWidth,
+//        farmPositiveWindowWidth,
+//        farmNegativeWindowWidth,
+//        clcwReportInterval)
+//   -- vcid: A 6 bit that associates this COP1 object with a specific virtual channel
+//   -- tiInitial: A reverse countdown timer value in milliseconds. The ground segment will wait for this amount of
+//                 time before retransmitting a TC frame
+//   -- transmissionLimit: Amount of retransmissions, before the ground segment announces a break in the link
+//   -- fopSlidingWindowWidth: Limits the amount of TC frames the ground segment can transmit ahead of the last
+//                             acknowledged frame
+//   -- timeoutType: Determines type of action when the transmission limit is reached and the timer is expired
+//   -- farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth: Determine the range of
+//      allowed sequence numbers the space segment can accept
+//   -- clcwReportInterval: CLCW generation period by the space segment (in milliseconds) CLCWs are carried by TM
+//                          frames and are used by the ground segment to assess the status of accepted TCs by the
+//                          space segment
+//
+// - SECURITY_ASSOCIATION(spi,
+//                        authenticationAlgorithm,
+//                        enryptionAlgorithm,
+//                        authKey)
+//   -- spi: Security parameter index. Virtual and map channels can be associated with this security association, by
+//           using this index
+//   -- authenticationAlgorithm: Currently, only "AuthenticationAlgorithm::HMAC_SHA256_40_BIT" is supported. If no
+//                               authentication is needed, use "AuthenticationAlgorithm::NO_AUTHENTICATION"
+//   -- encryptionAlgorithm: Unimplemented. This value is ignored
+//
+//   NOTE: When the authentication service is enabled, an authentication key is required. This key should be placed in
+//         AuthenticationKey.hpp
+
+
+PHYSICAL_CHANNEL(TestPhysicalChannel, TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1, 1024, 1024, 1, 1, 1000, 1, 1)

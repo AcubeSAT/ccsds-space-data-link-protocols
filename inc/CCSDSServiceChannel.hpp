@@ -10,10 +10,10 @@
 #include "etl/expected.h"
 #include "etl/utility.h"
 #include "CCSDSChannel.hpp"
-#include "Alert.hpp"
-#include "CCSDSChannelConfiguration.hpp"
-#include "CCSDSSecurityAssociation.hpp"
-#include "FrameAcceptanceReporting.hpp"
+#include "NotificationUtilities/Alert.hpp"
+#include "StructureGeneration.hpp"
+#include "SecurityAssociation.hpp"
+#include "COP1/FrameAcceptanceReporting.hpp"
 
 namespace CCSDSDataLinkLayer {
 	/**
@@ -132,7 +132,7 @@ class ServiceChannelSpaceSegment {
          *       MaxPacketSize), but the user will not be alerted (a 'NO_SERVICE_EVENT' is returned).
 	     */
 	    etl::expected<uint16_t , ServiceChannelNotification>
-	    packetExtractionRxTC(uint8_t vid, uint8_t mapid, ServiceType serviceType, uint8_t *packetDest);
+	    packetExtractionTC(uint8_t vcid, uint8_t mapid, ServiceType serviceType, uint8_t *packetDest);
 
 		/**
 		 * @}
@@ -151,13 +151,14 @@ class ServiceChannelSpaceSegment {
          * raw packets along with their length so they can be later inserted into transfer frames,
          * and transmitted.
          *
-         * @param packetSource pointer to the packet
-         * @param packetLength length of the packet
+         *	@see p. 3.2.2 of CCSDS TM SPACE DATA LINK PROTOCOL for a definition of the 'packet' data structure
+         *	@see SANA Packet Version Number registry for a list of supported packets types.
+         *
+         *  @param packetSource pointer to the packet
 	     */
 	    static etl::expected<void, ServiceChannelNotification> storePacketTM(
 	    	VirtualChannelSpaceSegmentVariant &vcChanVariant,
-	    	const uint8_t *packetSource,
-	    	uint16_t packetLength);
+	    	const etl::span<uint8_t>& packetSource);
 
 	private:
 		/**
@@ -179,7 +180,7 @@ class ServiceChannelSpaceSegment {
 	    /**
          * @brief Auxiliary function for segmentation of packets stored in packet queue
          *
-         * @param frameTm      Pointer to half full frame given by blockingTC.
+         * @param frameTm      Pointer to half full frame given by blockingTM.
          * @param packetLength The length of the packet that is too large to fit in the frame.
 	     */
 		static etl::expected<void, ServiceChannelNotification>
@@ -312,51 +313,62 @@ class ServiceChannelSpaceSegment {
 	     *  ==============================================
 	     *  @{
 	     */
-
 	    // MAP/VC Packet Processing and Frame Initialization
-	    /**
-         * @brief Auxiliary function to implement the segmentation of packets stored in the packet buffer.
-         * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to
-         *                                           take (the segment header is included in this length, if it exists).
-         * @param packetLength                   The length of the next packet in the packetBufferTxTM.
-         * @param vid                            Virtual Channel ID.
-         * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain
-         *                                       MAP channels (segmentHeaderTCPresent == false) or if the service type
-         *                                       is BC.
-         * @param serviceType                    Whether the service is of type AD or BC.
-         * @return A Service Channel Notification indicating whether an error has occurred.
-	     */
-	    etl::expected<void, ServiceChannelNotification> segmentationTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
-	                                                                   uint8_t vid, uint8_t mapid, ServiceType serviceType);
 
+    	/**
+		 * Serves as the main entry point from the upper layers, by storing
+		 * raw packets along with their length so they can be later inserted into transfer frames,
+		 * and transmitted.
+		 *
+		 *	@see p. 3.2.2 of CCSDS TM SPACE DATA LINK PROTOCOL for a definition of the 'packet' data structure
+		 *	@see SANA Packet Version Number registry for a list of supported packets types.
+		 *
+		 *  @param channelVariant Push packet to either a Virtual or MAP channel.
+		 *  @param packetSource Pointer to the packet
+		 *  @param serviceType Type-AD or Type-BD packets.  
+		 */
+    	static etl::expected<void, ServiceChannelNotification> storePacketTC(
+    		etl::variant<VirtualChannelGroundSegmentVariant&, MAPChannelGroundSegmentVariant&>& channelVariant,
+    		DefsAndUtils::ServiceType serviceType,
+    		const etl::span<uint8_t>& packetSource);
+
+    private:
 	    /**
          * @brief Auxiliary function to implement the blocking of packets stored in the packet buffer.
-         * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to
-         *                                           take (the segment header is included in this length, if it exists).
-         * @param packetLength                   The length of the next packet in the packetBufferTxTM.
-         * @param vid                            Virtual Channel ID.
-         * @param mapid                          MAP Channel ID. This is ignored if the virtual channel does not contain
-         *                                       MAP channels (segmentHeaderTCPresent == false) or if the service type
-         *                                       is BC.
-         * @param serviceType                    Whether the service is of type AD or BC.
-         * @return A Service Channel Notification indicating whether an error has occurred.
+         *
+         * @param ranOutOfPacketsFlag         Indicates packetProcessingTC() that the packet queue is empty
+         * @param packetLengthForSegmentation In case a packet turns out to be too large to fit in a single frame,
+         *                                    a request for segmentation is made by the function by placing it's length
+         *                                    in this parameter.
 	     */
-	    etl::expected<void, ServiceChannelNotification> blockingTC(uint16_t maxTransferFrameDataFieldLength, uint16_t packetLength,
-	                                                               uint8_t vid, uint8_t mapid, ServiceType serviceType);
+	    static etl::expected<void, ServiceChannelNotification> blocking(
+		    const PhysicalChannel& physicalChannel,
+			MasterChannelGroundSegmentVariant &mcChanVariant,
+			VirtualChannelGroundSegmentVariant &vcChanVariant,
+			etl::optional<MAPChannelGroundSegmentVariant&> &mapChanVariant,
+			DefsAndUtils::ServiceType serviceType,
+			uint16_t securityHeaderLength = 0,
+			uint16_t securityTrailerLength = 0,
+			bool& ranOutOfPacketsFlag,
+			etl::optional<uint16_t>& packetLengthForSegmentation);
 
 	    /**
-         * @brief Stores a packet's bytes and it's length in the appropriate buffers.
+         * @brief Auxiliary function to implement the segmentation of packets stored in the packet buffer.
          *
-         * @param packet        Pointer to the packet source.
-         * @param packetLength  Length of the packet.
-         * @param vid           Virtual Channel ID.
-         * @param mapid         MAP Channel ID. This is ignored if the virtual channel does not contain MAP channels
-         *                      (segmentHeaderTCPresent == false) or if the service type is BC.
-         * @param serviceType  Type AD, BD frames
+         * @param serviceType  Whether the service is of type AD or BC.
+         * @return A Service Channel Notification indicating whether an error has occurred.
 	     */
-	    etl::expected<void, ServiceChannelNotification> storePacketTxTC(uint8_t *packet, uint16_t packetLength, uint8_t vid,
-	                                                                    ServiceType serviceType, etl::optional<uint8_t> mapid = etl::nullopt);
+	    static etl::expected<void, ServiceChannelNotification> segmentation(
+	    	PhysicalChannel& physicalChannel,
+	    	MasterChannelGroundSegmentVariant &mcChanVariant,
+	    	VirtualChannelGroundSegmentVariant &vcChanVariant,
+	    	etl::optional<MAPChannelGroundSegmentVariant&> &mapChanVariant,
+	    	DefsAndUtils::ServiceType serviceType,
+	    	uint16_t packetLength,
+	    	uint16_t securityHeaderLength = 0,
+	    	uint16_t securityTrailerLength = 0);
 
+    public:
 	    /**
          * Requests to process the last packet stored in the buffer of the specific MAP/VC channel
          * (possible more if blocking is enabled). The packets are segmented or blocked together
@@ -376,7 +388,7 @@ class ServiceChannelSpaceSegment {
          *                                  be grouped together
 	     */
 	    etl::expected<void, ServiceChannelNotification>
-	    packetProcessingRequestTxTC(uint8_t vid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
+	    packetProcessingRequestTxTC(uint8_t vcid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
 	                                ServiceType serviceType);
 
 	    // SDLS Processing
@@ -384,7 +396,7 @@ class ServiceChannelSpaceSegment {
          * Apply security services for TC frames
          * @param mapid Is ignored if no MAP channels exist for the given virtual channel
 	     */
-	    etl::expected<void, ServiceChannelNotification> applySDLSSecurityTxTC(uint8_t vid, uint8_t mapid);
+	    etl::expected<void, ServiceChannelNotification> applySDLSSecurityTxTC(uint8_t vcid, uint8_t mapid);
 
 	    // Virtual Channel Generation
 	    /**
@@ -404,41 +416,41 @@ class ServiceChannelSpaceSegment {
          * @note If an alert is contained within the asynchronous notification, an unrecoverable error occurred within FOP-1,
          *       which demands action from a higher layer. Only Type-BD frame transmission remains undisrupted.
 	     */
-	    etl::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vid);
+	    etl::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vcid);
 
 
 	    //         - FOP-1 User services and debugging methods
 
 	    etl::expected<void, ServiceChannelNotification>
-	    pushDirectiveRequestSignal(uint8_t vid, const DirectiveRequestSignal &directiveRequestSignal);
+	    pushDirectiveRequestSignal(uint8_t vcid, const DirectiveRequestSignal &directiveRequestSignal);
 
 	    /**
          *  Push a CLCW to FOP-1's single capacity queue for inspection. The old CLCW (if it exists) is overwritten.
 	     */
-	    etl::expected<void, ServiceChannelNotification> pushClcwToFop(uint8_t vid, CLCW clcw);
+	    etl::expected<void, ServiceChannelNotification> pushClcwToFop(uint8_t vcid, CLCW clcw);
 
 	    /**
          * Get FOP State of the virtual channel
 	     */
-	    [[nodiscard]] FOPState getFopState(uint8_t vid) const;
+	    [[nodiscard]] FOPState getFopState(uint8_t vcid) const;
 
 	    /**
          * Returns the value of the timer that is used to determine the time frame for acknowledging transferred
          * frames
 	     */
-	    [[nodiscard]] uint16_t getT1Timer(uint8_t vid) const;
+	    [[nodiscard]] uint16_t getT1Timer(uint8_t vcid) const;
 
 	    /**
          * Indicates the width of the sliding window which is used to proceed to the lockout state in case the
          * transfer frame number of the received packet deviates too much from the expected one.
 	     */
-	    [[nodiscard]] uint8_t getFopSlidingWindowWidth(uint8_t vid) const;
+	    [[nodiscard]] uint8_t getFopSlidingWindowWidth(uint8_t vcid) const;
 
 	    /**
          * Returns the timeout action which is to be performed once the maximum transmission limit is reached and
          * the timer has expired.
 	     */
-	    [[nodiscard]] bool getTimeoutType(uint8_t vid) const;
+	    [[nodiscard]] bool getTimeoutType(uint8_t vcid) const;
 
 	    /**
          * Returns the last frame sequence number, V(S), that will be placed in the header of the next transferred
@@ -446,7 +458,7 @@ class ServiceChannelSpaceSegment {
          *
          * @param vid Virtual Channel ID
 	     */
-	    [[nodiscard]] uint8_t getTransmitterFrameSeqNumber(uint8_t vid) const;
+	    [[nodiscard]] uint8_t getTransmitterFrameSeqNumber(uint8_t vcid) const;
 
 	    /**
          * Returns the expected acknowledgement frame sequence number, NN(R). This is essentially the frame sequence
@@ -454,7 +466,7 @@ class ServiceChannelSpaceSegment {
          *
          * @param vid Virtual Channel ID
 	     */
-	    [[nodiscard]] uint8_t getExpectedFrameSeqNumber(uint8_t vid) const;
+	    [[nodiscard]] uint8_t getExpectedFrameSeqNumber(uint8_t vcid) const;
 
 	    // All frames generation
 	    /**
@@ -476,7 +488,7 @@ class ServiceChannelSpaceSegment {
 	    //
 	    //        //     - Utility and Debugging
 	    //
-	    //        [[nodiscard]] uint8_t getVirtualChannelFrameCountTM(uint8_t vid);
+	    //        [[nodiscard]] uint8_t getVirtualChannelFrameCountTM(uint8_t vcid);
 	    //
 	    //        [[nodiscard]] uint8_t getMasterChannelFrameCountTM() const;
 	    //
@@ -495,10 +507,10 @@ class ServiceChannelSpaceSegment {
 	    //        /**
 	    //         * This service is used for extracting RX TM packets. It signals the end of the TM Rx chain
 	    //         *
-	    //         * @param vid           Virtual Channel ID that determines from which vid buffer the frame is processed
+	    //         * @param vcid           Virtual Channel ID that determines from which vcid buffer the frame is processed
 	    //         * @param packetTarget A pointer to the packet buffer. The user has to pre-allocate the correct size for the buffer
 	    //         */
-	    //        ServiceChannelNotification packetExtractionRxTM(uint8_t vid, uint8_t *packetTarget);
+	    //        ServiceChannelNotification packetExtractionRxTM(uint8_t vcid, uint8_t *packetTarget);
 	};
 #endif // GROUND_SEGMENT
 } // namespace CCSDSDataLinkLayer

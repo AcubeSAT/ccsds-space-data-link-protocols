@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CCSDSChannel.hpp"
-#include "TransferFrameTM.hpp"
+#include "../../CoreDataStructures/TransferFrameTM.hpp"
 #include <arpa/inet.h>
 #include "iomanip"
 #include "iostream"

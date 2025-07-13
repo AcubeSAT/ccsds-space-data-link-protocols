@@ -1,6 +1,6 @@
 #include "Logger.hpp"
 #include "CCSDSChannel.hpp"
-#include "CCSDSLogger.h"
+#include "../inc/NotificationUtilities/CCSDSLogger.h"
 
 int main() {
     return 0;
