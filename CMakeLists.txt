@@ -7,11 +7,13 @@ set(CMAKE_CXX_STANDARD 17)
 # Specify the directories for #includes
 include_directories("${PROJECT_SOURCE_DIR}"
                     "${PROJECT_SOURCE_DIR}/inc"
+                    "${PROJECT_SOURCE_DIR}/inc/CCSDSUtilities"
                     "${PROJECT_SOURCE_DIR}/inc/Channels"
                     "${PROJECT_SOURCE_DIR}/inc/COP1"
-                    "${PROJECT_SOURCE_DIR}/inc/CoreDataStructures"
+                    "${PROJECT_SOURCE_DIR}/inc/DataStructures"
                     "${PROJECT_SOURCE_DIR}/inc/DataHandlingFunctions"
-                    "${PROJECT_SOURCE_DIR}/inc/NotificationUtilities"
+                    "${PROJECT_SOURCE_DIR}/inc/Services"
+                    "${PROJECT_SOURCE_DIR}/inc/NotificationAndLoggingUtilities"
                     "${PROJECT_SOURCE_DIR}/lib/etl/include"
                     "${PROJECT_SOURCE_DIR}/inc/Platform/x86"
                     "${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include"
@@ -46,8 +48,13 @@ add_library(common OBJECT
         src/DataHandlingFunctions/SpaceSegmentTmDataHandlingFunctions.cpp
         src/DataStructures/ExternalContainers.cpp
         src/DataStructures/MemoryPool.cpp
-        src/NotificationUtilities/Logger.cpp
-        src/NotificationUtilities/logOperators.cpp
+        src/NotificationAndLoggingUtilities/Logger.cpp
+        src/NotificationAndLoggingUtilities/logOperators.cpp
+        src/NotificationAndLoggingUtilities/FramePrintingFunctions.cpp
+        src/Services/SpaceSegmentTcServices.cpp
+        src/Services/SpaceSegmentTmServices.cpp
+        src/Services/GroundSegmentTcServices.cpp
+        src/Services/GroundSegmentTmServices.cpp
         src/SecurityAssociation.cpp
         src/StructureGeneration.cpp
         )
@@ -81,7 +88,7 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
            # ${test_main_SRC}
            # ${test_SRC}
     )
-    target_compile_definitions(ccsds_data_link_catch2_unit_tests PRIVATE ENABLE_PRIVATE_MEMBER_ACCESS)
+    target_compile_definitions(ccsds_data_link_catch2_unit_tests PRIVATE ENABLE_CHANNEL_QUEUE_ACCESS)
     add_dependencies(ccsds_data_link_catch2_unit_tests TinyCryptLib) # ensure "TinyCryptLib" target is built first
     target_link_libraries(ccsds_data_link_catch2_unit_tests Catch2::Catch2WithMain  ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
 ENDIF ()

@@ -40,26 +40,31 @@
 //                    tmLength,
 //                    maxFramesPdu,
 //                    maxPduLength,
-//                    bitRate,
+//                    maximumBitRate,
 //                    fecPresent)
 //   -- physicalChannelName: A name that can be used to uniquely identify this physical channel
 //   -- pcid: An 8 bit id to uniquely identify this physical channel. It is not part of the CCSDS standards, and is not
 //            carried by any frame. It is added for addressing consistency with the other channels
 //   -- tfvn: Transfer frame version number. Enter the value: "TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1"
-//   -- maxTcLength: The maximum allowed length of a TC frame (in bytes)
-//   -- tmLength: The length of the TM frame in bytes
+//   -- maxTcLength: The maximum allowed length of a TC frame (in bytes). Do insert more than "MaxTcTransferFrameLength"
+//                   (Defined in DefinitionsAndUtilities.hpp)
+//   -- tmLength: The length of the TM frame in bytes. Do insert more than "MaxTmTransferFrameLength"
 //   -- maxFramesPdu: TODO implement?
 //   -- maxPduLength: TODO implement?
-//   -- bitRate: The bitrate of the link, in bits per second TODO no use for this yet
+//   -- maximumBitRate: The maximum bit rate accepted by the channel coding anc synchronization sublayer
 //   -- fecPresent: A non zero number indicates that frames on this physical channel will have a frame error
 //                  control field (16 bit CRC code)
 //
 // - MASTER_CHANNEL_TM(masterChannelName,
 //                     scid,
-//                     parentPcid)
+//                     parentPcid,
+//                     ocfSduCapacity)
 //   -- masterChannelName: A name that can be used to uniquely identify this master channel
 //   -- parentPcid: Associates this master channel with a specific physical channel
 //   -- scid: A 10 bit id assigned by CCSDS, for uniquely defining a master channel
+//   -- ocfSduCapacity: If the ocf service is used in this virtual channel, a queue is required to hold the
+//                      OCF_SDUs waiting to be transmitted. This parameter controls the size of that queue.
+//                      Insert 0 if the ocf service is not used or the mcfServiceFlag is true.
 //
 // - MASTER_CHANNEL_TC(masterChannelName,
 //                     scid,
@@ -93,7 +98,7 @@
 //                       "Encapsulation Packets"). If the packet has a different structure, enter
 //                       "SynchronizationFlag::VCA_SDU"
 //   -- repetitions: How many times each frame will be transmitted to the Channel Coding and Synchronization Sublayer
-//   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size)
+//   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size).
 //   -- packetCapacity: Maximum amount of packets this channel can support (affects memory allocation size). A packet
 //                      is defined as the data unit carried by the payload field of a frame.
 //

@@ -1,19 +1,20 @@
 /**
  * @file TransferFrame.hpp
- * @brief Defines the fundamental block of the data link. It encapsulates packets sent from higher layers.
+ * @brief Defines the fundamental structure of the data link. It encapsulates packets sent from higher layers.
  */
 
 #pragma once
 #include <cstdint>
 #include <cstring>
-#include "DefinitionsAndUtilities.hpp"
+#include "CcsdsDefinitions.hpp"
+#include "CRC16CCITT.hpp"
 
 namespace CCSDSDataLinkLayer {
     class TransferFrame {
     public:
         TransferFrame() = default;
 
-        TransferFrame(DefsAndUtils::FrameType t, uint16_t transferFrameLength, uint8_t *frameData, uint16_t firstEmptyOctet = 0)
+        TransferFrame(Defs::FrameType t, uint16_t transferFrameLength, uint8_t *frameData, uint16_t firstEmptyOctet = 0)
                 : type(t), transferFrameLength(transferFrameLength), transferFrameData(frameData),
                   firstDataFieldEmptyOctet(firstEmptyOctet) {};
 
@@ -51,30 +52,13 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * @brief Utility function for calculating the CRC-16 code of a data sequence.
-         * @param data Start of data sequence.
-         * @param len  Length of data sequence.
-         * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
-         */
-        static uint16_t calculateCRC(const uint8_t *data, uint16_t len) {
-            uint16_t crc = 0xFFFF;
-
-            // calculate remainder of binary polynomial division
-            for (uint16_t i = 0; i < len; i++) {
-                crc = DefsAndUtils::crc_16_ccitt_table[(data[i] ^ (crc >> 8U)) & 0xFF] ^ (crc << 8U);
-            }
-
-            return crc;
-        }
-
-        /**
          * @brief Appends the CRC code to the end of the frame (error control field). It should be called only if the
          * frame actually contains an error control field.
          * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
          */
         void appendCRC() {
-            uint16_t len = transferFrameLength - DefsAndUtils::ErrorControlFieldSize;
-            uint16_t crc = calculateCRC(transferFrameData, len);
+            const uint16_t len = transferFrameLength - Defs::ErrorControlFieldSize;
+            const uint16_t crc = calculateCRC16CCITT(etl::span{transferFrameData, len});
 
             // append CRC
             transferFrameData[transferFrameLength - 2] = (crc >> 8U) & 0xFF;
@@ -82,7 +66,7 @@ namespace CCSDSDataLinkLayer {
         }
 
     protected:
-        DefsAndUtils::FrameType type;
+        Defs::FrameType type;
 
         uint16_t transferFrameLength;
         uint8_t *transferFrameData;

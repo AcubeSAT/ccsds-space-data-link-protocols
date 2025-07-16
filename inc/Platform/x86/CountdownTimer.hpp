@@ -1,5 +1,11 @@
 /**
  * @file CountdownTimer.hpp
+ *
+ * @brief A countdown timer (for x86) that has a running/not running state, with multiple instances being
+ * able to run concurrently. Intended for use within COP-1.
+ *
+ * @note This implementation works for x86 architecture. The user must provide its own implementation depending
+ *       on the system's architecture and Operating System
  */
 
 #pragma once
@@ -7,8 +13,7 @@
 
 namespace CCSDSDataLinkLayer {
 /**
- * A countdown timer (for x86) that has a running/not running state, with multiple instances being
- * able to run concurrently. Intended for use within COP-1
+ *
  */
     class CountdownTimer {
 

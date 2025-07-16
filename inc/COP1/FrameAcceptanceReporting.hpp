@@ -11,12 +11,14 @@
 #include "CountdownTimer.hpp"
 #include "CLCW.hpp"
 #include "Alert.hpp"
-#include "DefinitionsAndUtilities.hpp"
+#include "CcsdsDefinitions.hpp"
 #include "VirtualChannel.hpp"
 #include "StructureGeneration.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
+    class SpaceSegmentTmDataHandling;
+
     /**
      * @see p. 6.1.2 from COP-1 CCSDS
      */
@@ -44,7 +46,7 @@ namespace CCSDSDataLinkLayer {
      * FARM-1 is implemented as a state machine.
      */
     class FrameAcceptanceReporting {
-        friend class ServiceChannelSpaceSegment;
+        friend class SpaceSegmentTmDataHandling;
     private:
         /** FARM-1 Variables **/
 
@@ -99,6 +101,12 @@ namespace CCSDSDataLinkLayer {
         const uint16_t clcwReportInterval;
         CountdownTimer timer;
 
+        /**
+         * Generated CLCWs are placed here. Since we only care about the most recent state of farm, this is a length
+         * one buffer.
+         */
+        etl::optional<CLCW> clcwBuffer;
+
         /** Implementation specific variables **/
 
         /**
@@ -114,7 +122,7 @@ namespace CCSDSDataLinkLayer {
          *
          * @see p. 6.2.2 of COP-1 CCSDS
          */
-        static FARMNotification accept(TransferFrameTC *frame, DefsAndUtils::ServiceType serviceType);
+        static FARMNotification accept(TransferFrameTC *frame, Defs::ServiceType serviceType);
 
         /**
          * Deletes frame master copy and octets.
@@ -165,7 +173,8 @@ namespace CCSDSDataLinkLayer {
               farmPositiveWinWidth(farmPositiveWinWidth), farmNegativeWidth(farmNegativeWinWidth),
               clcwReportInterval(clcwReportInterval),
               timer(CountdownTimer()),
-              vcid(vcid)
+              vcid(vcid),
+              clcwBuffer(etl::nullopt)
               {}
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE

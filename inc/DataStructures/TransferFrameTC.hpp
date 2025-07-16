@@ -5,7 +5,7 @@
 
 #pragma once
 #include "etl/optional.h"
-#include "DefinitionsAndUtilities.hpp"
+#include "CcsdsDefinitions.hpp"
 #include "TransferFrame.hpp"
 
 namespace CCSDSDataLinkLayer {
@@ -16,24 +16,24 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Constructor for frame creation within the data link.
          */
-        TransferFrameTC(uint8_t *frameData, const DefsAndUtils::ServiceType serviceType, const uint8_t vid,
+        TransferFrameTC(uint8_t *frameData, const Defs::ServiceType serviceType, const uint8_t vid,
                         const uint16_t scid, const uint16_t frameLength,
                         const bool segHdrPresent,
-                        DefsAndUtils::SequenceFlag sequenceFlag =
-                                DefsAndUtils::SequenceFlag::NoSegmentation, const uint8_t mapId = 0,
+                        Defs::SequenceFlag sequenceFlag =
+                                Defs::SequenceFlag::NoSegmentation, const uint8_t mapId = 0,
                         const uint16_t firstEmptyOctet = 0)
-            : TransferFrame(DefsAndUtils::FrameType::TC, frameLength, frameData, firstEmptyOctet),
+            : TransferFrame(Defs::FrameType::TC, frameLength, frameData, firstEmptyOctet),
               toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
-            const uint8_t bypassFlag = ((serviceType == DefsAndUtils::ServiceType::TYPE_AD) ||
-                                        (serviceType == DefsAndUtils::ServiceType::TYPE_RESERVED))
+            const uint8_t bypassFlag = ((serviceType == Defs::ServiceType::TYPE_AD) ||
+                                        (serviceType == Defs::ServiceType::TYPE_RESERVED))
                                            ? 0
                                            : 1;
-            const uint8_t ctrlCmdFlag = ((serviceType == DefsAndUtils::ServiceType::TYPE_BC) ||
-                                         (serviceType == DefsAndUtils::ServiceType::TYPE_RESERVED))
+            const uint8_t ctrlCmdFlag = ((serviceType == Defs::ServiceType::TYPE_BC) ||
+                                         (serviceType == Defs::ServiceType::TYPE_RESERVED))
                                             ? 1
                                             : 0;
             frameData[0] = (static_cast<uint8_t>(
-                                DefsAndUtils::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
+                                Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
                             << 6U) |
                            (bypassFlag << 5U) | (ctrlCmdFlag << 4U) | 0 |
                            static_cast<uint8_t>((scid & 0x300) >> 8U);
@@ -50,7 +50,7 @@ namespace CCSDSDataLinkLayer {
          * @brief Constructor for frame creation from received octets.
          */
         TransferFrameTC(uint8_t *frameData, const uint16_t frameLength, const uint16_t firstEmptyOctet = 0)
-            : TransferFrame(DefsAndUtils::FrameType::TC, frameLength, frameData, firstEmptyOctet) {
+            : TransferFrame(Defs::FrameType::TC, frameLength, frameData, firstEmptyOctet) {
         };
 
         /**
@@ -145,21 +145,21 @@ namespace CCSDSDataLinkLayer {
          * @brief Determined by the sequence and control&command flags.
          * @see p. 2.2.2 from TC SPACE DATA LINK PROTOCOL
          */
-        [[nodiscard]] DefsAndUtils::ServiceType getServiceType() const {
+        [[nodiscard]] Defs::ServiceType getServiceType() const {
             const bool bypass = getBypassFlag();
             const bool ctrl = getCtrlAndCmdFlag();
 
             if (bypass && ctrl) {
-                return DefsAndUtils::ServiceType::TYPE_BC;
+                return Defs::ServiceType::TYPE_BC;
             }
             if (bypass && !ctrl) {
-                return DefsAndUtils::ServiceType::TYPE_BD;
+                return Defs::ServiceType::TYPE_BD;
             }
             if (!bypass && !ctrl) {
-                return DefsAndUtils::ServiceType::TYPE_AD;
+                return Defs::ServiceType::TYPE_AD;
             }
             // Reserved type not normally used as per the standard
-            return DefsAndUtils::ServiceType::TYPE_RESERVED;
+            return Defs::ServiceType::TYPE_RESERVED;
         }
 
         void setFrameLength(const uint16_t frameLength) {
@@ -196,9 +196,9 @@ namespace CCSDSDataLinkLayer {
             return etl::nullopt;
         }
 
-        [[nodiscard]] etl::optional<DefsAndUtils::SequenceFlag> getSequenceFlag() const {
+        [[nodiscard]] etl::optional<Defs::SequenceFlag> getSequenceFlag() const {
             if (segmentationHeaderPresent) {
-                return static_cast<DefsAndUtils::SequenceFlag>((transferFrameData[5] >> 6U) & 0x03);
+                return static_cast<Defs::SequenceFlag>((transferFrameData[5] >> 6U) & 0x03);
             }
             return etl::nullopt;
         }

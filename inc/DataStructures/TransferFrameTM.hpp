@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "../../lib/etl/include/etl/optional.h"
+#include "etl/optional.h"
 #include "TransferFrame.hpp"
-#include "../DefinitionsAndUtilities.hpp"
+#include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
     class TransferFrameTM : public TransferFrame {
@@ -20,15 +20,15 @@ namespace CCSDSDataLinkLayer {
         TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const uint8_t vcid, const uint16_t scid,
                         const bool operationalControlFieldPresent,
                         const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
-                        const DefsAndUtils::SynchronizationFlag syncFlag, const bool packetOrder,
-                        const uint8_t segmentationLengthId,
+                        const Defs::SynchronizationFlag syncFlag, const bool packetOrder,
+                        const uint8_t segmentLengthIdentifier,
                         const uint16_t firstHeaderPointer, const bool eccFieldPresent,
                         const uint16_t firstEmptyOctet = 0)
-            : TransferFrame(DefsAndUtils::FrameType::TM, frameLength, frameData, firstEmptyOctet),
+            : TransferFrame(Defs::FrameType::TM, frameLength, frameData, firstEmptyOctet),
               eccFieldPresent(eccFieldPresent) {
             // Transfer Frame Version Number + Spacecraft Id
             frameData[0] = (static_cast<uint8_t>(
-                                DefsAndUtils::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
+                                Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
                             << 6U) |
                            static_cast<uint8_t>((scid & 0x3F0) >> 4U);
             // Spacecraft  Id + Virtual Channel ID + Operational Control Field
@@ -40,7 +40,7 @@ namespace CCSDSDataLinkLayer {
             // Data field status
             frameData[4] = (transferFrameSecondaryHeaderPresent << 7U) | (static_cast<uint8_t>(syncFlag) << 6U) |
                            ((packetOrder & 0x1) << 5U) |
-                           ((segmentationLengthId & 0x3) << 3U) |
+                           ((segmentLengthIdentifier & 0x3) << 3U) |
                            static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8U);
             frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
         }
@@ -51,15 +51,15 @@ namespace CCSDSDataLinkLayer {
         TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const uint16_t vcid, const uint16_t scid,
                         const uint32_t operationalControlField,
                         const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
-                        DefsAndUtils::SynchronizationFlag syncFlag, const bool packetOrder,
+                        Defs::SynchronizationFlag syncFlag, const bool packetOrder,
                         const uint8_t segmentationLengthId,
                         const uint16_t firstHeaderPointer, const bool eccFieldExists,
                         const uint16_t firstEmptyOctet = 0)
-            : TransferFrame(DefsAndUtils::FrameType::TM, frameLength, frameData, firstEmptyOctet),
+            : TransferFrame(Defs::FrameType::TM, frameLength, frameData, firstEmptyOctet),
               eccFieldPresent(eccFieldExists) {
             // Transfer Frame Version Number + Spacecraft Id
             frameData[0] = (static_cast<uint8_t>(
-                                DefsAndUtils::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
+                                Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
                             << 6U) |
                            static_cast<uint8_t>((scid & 0x3F0) >> 4U);
             // Spacecraft  Id + Virtual Channel ID + Operational Control Field
@@ -74,8 +74,8 @@ namespace CCSDSDataLinkLayer {
                            static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8U);
             frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
             uint8_t *ocfPointer = frameData + transferFrameLength -
-                                  DefsAndUtils::TmOperationalControlFieldSize
-                                  - DefsAndUtils::ErrorControlFieldSize * eccFieldExists;
+                                  Defs::TmOperationalControlFieldSize
+                                  - Defs::ErrorControlFieldSize * eccFieldExists;
             ocfPointer[0] = static_cast<uint8_t>(operationalControlField >> 24U);
             ocfPointer[1] = static_cast<uint8_t>((operationalControlField >> 16U) & 0xFF);
             ocfPointer[2] = static_cast<uint8_t>((operationalControlField >> 8U) & 0xFF);
@@ -87,7 +87,7 @@ namespace CCSDSDataLinkLayer {
          */
         TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const bool eccFieldExists,
                         const uint16_t firstEmptyOctet = 0)
-            : TransferFrame(DefsAndUtils::FrameType::TM, frameLength, frameData, firstEmptyOctet),
+            : TransferFrame(Defs::FrameType::TM, frameLength, frameData, firstEmptyOctet),
               eccFieldPresent(eccFieldExists) {}
 
         /**
@@ -156,7 +156,6 @@ namespace CCSDSDataLinkLayer {
          * @details Bit  32  of  the Transfer  Frame  Primary  Header
          * @see p. 4.1.2.7.2 from TM SPACE DATA LINK PROTOCOL
          */
-
         [[nodiscard]] bool getTransferFrameSecondaryHeaderFlag() const {
             return (transferFrameData[4] & 0x80) >> 7U;
         }
@@ -166,9 +165,8 @@ namespace CCSDSDataLinkLayer {
          * @details Bit 33 of the Transfer Frame Primary Header
          * @see p. 4.1.2.7.3 from TM SPACE DATA LINK PROTOCOL
          */
-
-        [[nodiscard]] DefsAndUtils::SynchronizationFlag getSynchronizationFlag() const {
-            return static_cast<DefsAndUtils::SynchronizationFlag>((transferFrameData[4] & 0x40) >> 6U);
+        [[nodiscard]] Defs::SynchronizationFlag getSynchronizationFlag() const {
+            return static_cast<Defs::SynchronizationFlag>((transferFrameData[4] & 0x40) >> 6U);
         }
 
         /**
@@ -194,8 +192,8 @@ namespace CCSDSDataLinkLayer {
 
         /**
          * @brief If the Synchronization Flag is set to ‘0’, the First Header Pointer shall contain
-         *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field.
-         *		Otherwise it is undefined.
+         *		the position of the first octet of the first TransferFrame that starts in the Transfer Frame Data Field,
+         *		otherwise it is undefined.
          * @details Bits 37–47 of the Transfer Frame Primary Header
          * @see p. 4.1.2.7.6 from TM SPACE DATA LINK PROTOCOL
          */
@@ -232,8 +230,8 @@ namespace CCSDSDataLinkLayer {
             }
 
             const uint8_t *operationalControlFieldPointer = transferFrameData + transferFrameLength -
-                                                            DefsAndUtils::TmOperationalControlFieldSize
-                                                            - DefsAndUtils::ErrorControlFieldSize *
+                                                            Defs::TmOperationalControlFieldSize
+                                                            - Defs::ErrorControlFieldSize *
                                                             eccFieldPresent;
             uint32_t operationalControlField = (operationalControlFieldPointer[0] << 24U) |
                                                (operationalControlFieldPointer[1] << 16U) |
@@ -244,8 +242,8 @@ namespace CCSDSDataLinkLayer {
 
         void setOperationalControlField(const uint32_t operationalControlField) const {
             uint8_t *ocfPointer = transferFrameData + transferFrameLength -
-                                  DefsAndUtils::TmOperationalControlFieldSize -
-                                  DefsAndUtils::ErrorControlFieldSize * eccFieldPresent;
+                                  Defs::TmOperationalControlFieldSize -
+                                  Defs::ErrorControlFieldSize * eccFieldPresent;
             ocfPointer[0] = operationalControlField >> 24U;
             ocfPointer[1] = (operationalControlField >> 16U) & 0xFF;
             ocfPointer[2] = (operationalControlField >> 8U) & 0xFF;

@@ -1,6 +1,7 @@
 #include "FrameOperationProcedure.hpp"
 #include "VirtualChannel.hpp"
 #include "LoggerImpl.h"
+#include "AddressingAndParsingUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
@@ -14,17 +15,17 @@ namespace CCSDSDataLinkLayer {
         }
 
         while (sent_queue_it != sentQueueFOP.end()) {
-            if ((*sent_queue_it)->getServiceType() == DefsAndUtils::ServiceType::TYPE_AD && !
+            if ((*sent_queue_it)->getServiceType() == Defs::ServiceType::TYPE_AD && !
                 transferNotificationSignalQueue.full()) {
                 transferNotificationSignalQueue.push(
-                    DefsAndUtils::TransferNotificationSignal(DefsAndUtils::TransferNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU,
+                    Defs::TransferNotificationSignal(Defs::TransferNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU,
                                                *sent_queue_it));
             }
 
-            if ((*sent_queue_it)->getServiceType() == DefsAndUtils::ServiceType::TYPE_BC &&
+            if ((*sent_queue_it)->getServiceType() == Defs::ServiceType::TYPE_BC &&
                 !directiveNotificationSignalQueue.full()) {
-                directiveNotificationSignalQueue.push(DefsAndUtils::DirectiveNotificationSignal(initiateWithBcFrameId.value(),
-                    DefsAndUtils::DirectiveNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE,
+                directiveNotificationSignalQueue.push(Defs::DirectiveNotificationSignal(initiateWithBcFrameId.value(),
+                    Defs::DirectiveNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE,
                     *sent_queue_it));
             }
 
@@ -52,7 +53,7 @@ namespace CCSDSDataLinkLayer {
         etl::ilist<TransferFrameTC *>::iterator wait_queue_it = waitQueueFOP.begin();
 
         transferNotificationSignalQueue.push(
-            DefsAndUtils::TransferNotificationSignal(DefsAndUtils::TransferNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU,
+            Defs::TransferNotificationSignal(Defs::TransferNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU,
                                        *wait_queue_it));
 
         // remove pointer from sent queue
@@ -69,7 +70,7 @@ namespace CCSDSDataLinkLayer {
             return FOPNotification::SENT_QUEUE_FULL;
         }
 
-        if (adFrame->getServiceType() != DefsAndUtils::ServiceType::TYPE_AD) {
+        if (adFrame->getServiceType() != Defs::ServiceType::TYPE_AD) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::FOP_UNEXPECTED_VALUE);
             return FOPNotification::FOP_UNEXPECTED_VALUE;
         }
@@ -90,16 +91,16 @@ namespace CCSDSDataLinkLayer {
 
         adOut = false;
         fopToLowerLayerRequestSignalQueue.push(
-            DefsAndUtils::FopToLowerLayerRequestSignal(DefsAndUtils::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
-                                         DefsAndUtils::ServiceType::TYPE_AD, adFrame));
+            Defs::FopToLowerLayerRequestSignal(Defs::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
+                                         Defs::ServiceType::TYPE_AD, adFrame));
         ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::NO_FOP_EVENT);
         return FOPNotification::NO_FOP_EVENT;
     }
 
     FOPNotification FrameOperationProcedure::transmitBcFrame(MasterChannelGroundSegmentVariant& masterChannelVariant,
-        const DefsAndUtils::DirectiveRequestSignal &directiveSignal) {
-        if (directiveSignal.directiveType != DefsAndUtils::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK &&
-            directiveSignal.directiveType != DefsAndUtils::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_SET_VR) {
+        const Defs::DirectiveRequestSignal &directiveSignal) {
+        if (directiveSignal.directiveType != Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK &&
+            directiveSignal.directiveType != Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_SET_VR) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::FOP_UNEXPECTED_VALUE);
             return FOPNotification::FOP_UNEXPECTED_VALUE;
         }
@@ -125,11 +126,11 @@ namespace CCSDSDataLinkLayer {
         }
 
         // bc frames do not have a segmentation header, security header or security trailer
-        const uint8_t dataFieldSize = (directiveSignal.directiveType == DefsAndUtils::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK)
-                                    ? DefsAndUtils::UnlockCommandSize
-                                    : DefsAndUtils::SetVrCommandSize;
-        uint8_t bcFrameLen = DefsAndUtils::TcPrimaryHeaderSize + dataFieldSize + errorControlFieldPresent *
-                             DefsAndUtils::ErrorControlFieldSize;
+        const uint8_t dataFieldSize = (directiveSignal.directiveType == Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK)
+                                    ? Defs::UnlockCommandSize
+                                    : Defs::SetVrCommandSize;
+        uint8_t bcFrameLen = Defs::TcPrimaryHeaderSize + dataFieldSize + errorControlFieldPresent *
+                             Defs::ErrorControlFieldSize;
 
 
         if (!ChannelsInterface::hasCapacityForFrameDataMasterChannelGroundSegment(
@@ -142,12 +143,12 @@ namespace CCSDSDataLinkLayer {
         // allocate a block for the frame data in the memory pool
         uint8_t *data = ChannelsInterface::allocateBlockFromMemPoolMasterChannelGroundSegment(masterChannelVariant, bcFrameLen).value();
 
-        if (directiveSignal.directiveType == DefsAndUtils::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK) {
-            data[DefsAndUtils::TcPrimaryHeaderSize] = DefsAndUtils::UnlockCommandOctet;
+        if (directiveSignal.directiveType == Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK) {
+            data[Defs::TcPrimaryHeaderSize] = Defs::UnlockCommandOctet;
         } else {
-            data[DefsAndUtils::TcPrimaryHeaderSize] = DefsAndUtils::SetVrCommandOctet1;
-            data[DefsAndUtils::TcPrimaryHeaderSize + 1] = DefsAndUtils::SetVrCommandOctet2;
-            data[DefsAndUtils::TcPrimaryHeaderSize + 2] = static_cast<uint8_t>(directiveSignal.
+            data[Defs::TcPrimaryHeaderSize] = Defs::SetVrCommandOctet1;
+            data[Defs::TcPrimaryHeaderSize + 1] = Defs::SetVrCommandOctet2;
+            data[Defs::TcPrimaryHeaderSize + 2] = static_cast<uint8_t>(directiveSignal.
                 directiveQualifier.value());
         }
 
@@ -158,9 +159,9 @@ namespace CCSDSDataLinkLayer {
                 etl::get<TransferFrameTC *>(
                     ChannelsInterface::addFrameObjectToMasterCopyBufferMasterChannelGroundSegment(
                         masterChannelVariant, TransferFrameTC(data,
-                                                              DefsAndUtils::ServiceType::TYPE_BC,
+                                                              Defs::ServiceType::TYPE_BC,
                                                               vcid,
-                                                              DefsAndUtils::extractScidFromMcid(
+                                                              Defs::extractScidFromMcid(
                                                                   baseMcChanPtr->getMscid()),
                                                               bcFrameLen,
                                                               false)).value());
@@ -177,14 +178,14 @@ namespace CCSDSDataLinkLayer {
         bcOut = false;
 
         fopToLowerLayerRequestSignalQueue.push(
-            DefsAndUtils::FopToLowerLayerRequestSignal(DefsAndUtils::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
-                                         DefsAndUtils::ServiceType::TYPE_BC, frameTcPtr));
+            Defs::FopToLowerLayerRequestSignal(Defs::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
+                                         Defs::ServiceType::TYPE_BC, frameTcPtr));
         ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::NO_FOP_EVENT);
         return FOPNotification::NO_FOP_EVENT;
     }
 
     FOPNotification FrameOperationProcedure::transmitBdFrame(TransferFrameTC *bdFrame) {
-        if (bdFrame->getServiceType() != DefsAndUtils::ServiceType::TYPE_BD) {
+        if (bdFrame->getServiceType() != Defs::ServiceType::TYPE_BD) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::FOP_UNEXPECTED_VALUE);
             return FOPNotification::FOP_UNEXPECTED_VALUE;
         }
@@ -198,15 +199,15 @@ namespace CCSDSDataLinkLayer {
         bdFrame->setTransferFrameSequenceNumber(0); /// @see p. 4.2.1.8 of TC Data Link
 
         fopToLowerLayerRequestSignalQueue.push(
-            DefsAndUtils::FopToLowerLayerRequestSignal(DefsAndUtils::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
-                                         DefsAndUtils::ServiceType::TYPE_BD, bdFrame));
+            Defs::FopToLowerLayerRequestSignal(Defs::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
+                                         Defs::ServiceType::TYPE_BD, bdFrame));
         ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::NO_FOP_EVENT);
         return FOPNotification::NO_FOP_EVENT;
     }
 
-    FOPNotification FrameOperationProcedure::initiateRetransmission(DefsAndUtils::ServiceType serviceType) {
-        if ((serviceType != DefsAndUtils::ServiceType::TYPE_AD) && (
-                serviceType != DefsAndUtils::ServiceType::TYPE_BC)) {
+    FOPNotification FrameOperationProcedure::initiateRetransmission(Defs::ServiceType serviceType) {
+        if ((serviceType != Defs::ServiceType::TYPE_AD) && (
+                serviceType != Defs::ServiceType::TYPE_BC)) {
             ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::FOP_UNEXPECTED_VALUE);
             return FOPNotification::FOP_UNEXPECTED_VALUE;
         }
@@ -222,7 +223,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         fopToLowerLayerRequestSignalQueue.push(
-            DefsAndUtils::FopToLowerLayerRequestSignal(DefsAndUtils::LowerLayerRequestType::LOW_LAYER_ABORT, serviceType));
+            Defs::FopToLowerLayerRequestSignal(Defs::LowerLayerRequestType::LOW_LAYER_ABORT, serviceType));
         transmissionCount = (transmissionCount == 255) ? 0 : (transmissionCount + 1);
         timer.startTimer(tiInitial);
 
@@ -246,14 +247,14 @@ namespace CCSDSDataLinkLayer {
         TransferFrameTC *adFrame;
         while (sent_queue_it != sentQueueFOP.end()) {
             adFrame = *sent_queue_it;
-            if ((adFrame->getServiceType() == DefsAndUtils::ServiceType::TYPE_AD) &&
-                DefsAndUtils::withinWindow(adFrame->getTransferFrameSequenceNumber(),
+            if ((adFrame->getServiceType() == Defs::ServiceType::TYPE_AD) &&
+                withinWindow(adFrame->getTransferFrameSequenceNumber(),
                                                       expectedAcknowledgementSeqNumber,
                                                       reportValue)) {
                 // message higher layers about the successful reception
                 if (!transferNotificationSignalQueue.full()) {
                     transferNotificationSignalQueue.push(
-                        DefsAndUtils::TransferNotificationSignal(DefsAndUtils::TransferNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU,
+                        Defs::TransferNotificationSignal(Defs::TransferNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU,
                                                    adFrame));
                 }
 
@@ -283,12 +284,12 @@ namespace CCSDSDataLinkLayer {
 
         etl::ilist<TransferFrameTC *>::iterator sent_queue_it = sentQueueFOP.begin();
         while (sent_queue_it != sentQueueFOP.end()) {
-            if (((*sent_queue_it)->getServiceType() == DefsAndUtils::ServiceType::TYPE_BC) &&
+            if (((*sent_queue_it)->getServiceType() == Defs::ServiceType::TYPE_BC) &&
                 ((*sent_queue_it)->getToBeRetransmittedFlag())) {
                 if (!fopToLowerLayerRequestSignalQueue.full()) {
                     fopToLowerLayerRequestSignalQueue.push(
-                        DefsAndUtils::FopToLowerLayerRequestSignal(DefsAndUtils::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
-                                                     DefsAndUtils::ServiceType::TYPE_BC, *sent_queue_it));
+                        Defs::FopToLowerLayerRequestSignal(Defs::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
+                                                     Defs::ServiceType::TYPE_BC, *sent_queue_it));
                 }
 
                 // NOTE: Resting the retransmission flag to false is not included in the protocol, but the corresponding action
@@ -317,12 +318,12 @@ namespace CCSDSDataLinkLayer {
         // Check if there are TYPE-AD marked 'toBeRetransmitted'. If so, retransmit the first one
         etl::ilist<TransferFrameTC *>::iterator sent_queue_it = sentQueueFOP.begin();
         while (sent_queue_it != sentQueueFOP.end()) {
-            if (((*sent_queue_it)->getServiceType() == DefsAndUtils::ServiceType::TYPE_AD) &&
+            if (((*sent_queue_it)->getServiceType() == Defs::ServiceType::TYPE_AD) &&
                 ((*sent_queue_it)->getToBeRetransmittedFlag())) {
                 if (!fopToLowerLayerRequestSignalQueue.full()) {
                     fopToLowerLayerRequestSignalQueue.push(
-                        DefsAndUtils::FopToLowerLayerRequestSignal(DefsAndUtils::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
-                                                     DefsAndUtils::ServiceType::TYPE_AD, *sent_queue_it));
+                        Defs::FopToLowerLayerRequestSignal(Defs::LowerLayerRequestType::LOW_LAYER_TRANSMIT,
+                                                     Defs::ServiceType::TYPE_AD, *sent_queue_it));
                 }
 
                 (*sent_queue_it)->setToBeRetransmittedFlag(false);
@@ -344,15 +345,15 @@ namespace CCSDSDataLinkLayer {
         const auto upperBound = static_cast<uint8_t>(
             (static_cast<uint16_t>(expectedAcknowledgementSeqNumber) + fopSlidingWindowWidth - 1) & 0xFF);
 
-        if ((waitQueueFOP.front()->getServiceType() == DefsAndUtils::ServiceType::TYPE_AD) &&
-            DefsAndUtils::withinWindow(transmitterFrameSeqNumber, expectedAcknowledgementSeqNumber,
+        if ((waitQueueFOP.front()->getServiceType() == Defs::ServiceType::TYPE_AD) &&
+            Defs::withinWindow(transmitterFrameSeqNumber, expectedAcknowledgementSeqNumber,
                                                   upperBound)) {
             TransferFrameTC *adFrame = waitQueueFOP.front();
             const FOPNotification notification = transmitAdFrame(adFrame);
             if (notification == FOPNotification::NO_FOP_EVENT) {
                 waitQueueFOP.pop_front();
                 transferNotificationSignalQueue.push(
-                    DefsAndUtils::TransferNotificationSignal(DefsAndUtils::TransferNotificationType::ACCEPT_RESPONSE_TO_TRANSFER_FDU, adFrame));
+                    Defs::TransferNotificationSignal(Defs::TransferNotificationType::ACCEPT_RESPONSE_TO_TRANSFER_FDU, adFrame));
             } else {
                 ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, notification);
                 return notification;
@@ -373,10 +374,10 @@ namespace CCSDSDataLinkLayer {
         clcwQueue.clear();
 
         transmissionCount = 1;
-        suspendState = DefsAndUtils::SuspendVariableState::NOT_SUSPENDED;
+        suspendState = Defs::SuspendVariableState::NOT_SUSPENDED;
     }
 
-    void FrameOperationProcedure::alert(const DefsAndUtils::AlertEvent event) {
+    void FrameOperationProcedure::alert(const Defs::AlertEvent event) {
         timer.stopTimer();
         purgeSentQueue();
         purgeWaitQueue();
@@ -387,19 +388,19 @@ namespace CCSDSDataLinkLayer {
          * @see p. 5.2.15 of COP-1 CCSDS
          */
         if (initiateWithClcwCheckId) {
-            directiveNotificationSignalQueue.push(DefsAndUtils::DirectiveNotificationSignal(initiateWithClcwCheckId.value(),
-                                                                              DefsAndUtils::DirectiveNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+            directiveNotificationSignalQueue.push(Defs::DirectiveNotificationSignal(initiateWithClcwCheckId.value(),
+                                                                              Defs::DirectiveNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
             initiateWithClcwCheckId = etl::nullopt;
         }
 
         // send an alert signal
         asynchronousNotificationSignalQueue.push(
-            DefsAndUtils::AsynchronousNotificationSignal(DefsAndUtils::AsynchronousNotificationType::ALERT, event));
+            Defs::AsynchronousNotificationSignal(Defs::AsynchronousNotificationType::ALERT, event));
     }
 
     void FrameOperationProcedure::resume() {
         timer.startTimer(tiInitial);
-        suspendState = DefsAndUtils::SuspendVariableState::NOT_SUSPENDED;
+        suspendState = Defs::SuspendVariableState::NOT_SUSPENDED;
     }
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

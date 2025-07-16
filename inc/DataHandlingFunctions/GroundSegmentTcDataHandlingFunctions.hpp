@@ -1,8 +1,17 @@
-//
-// Created by george on 13/7/2025.
-//
+/**
+ * @file GroundSegmentTcDataHandlingFunctions.hpp
+ * @brief Functions for creating and processing TC Transfer Frames
+ */
 
-#ifndef GROUNDSEGMENTTCDATAHANDLINGFUNCTIONS_HPP
-#define GROUNDSEGMENTTCDATAHANDLINGFUNCTIONS_HPP
+#pragma once
 
-#endif //GROUNDSEGMENTTCDATAHANDLINGFUNCTIONS_HPP
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+namespace CCSDSDataLinkLayer {
+    class GroundSegmentTcServices;
+
+    class GsTcDataHandling {
+        friend class GroundSegmentTcServices;
+
+    };
+} // CCSDSDataLinkLayer
+#endif // INCLUDE_GROUND_SEGMENT_CODE

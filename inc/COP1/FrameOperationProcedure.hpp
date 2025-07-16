@@ -11,7 +11,7 @@
 #include "etl/optional.h"
 #include "TransferFrameTC.hpp"
 #include "Alert.hpp"
-#include "DefinitionsAndUtilities.hpp"
+#include "CcsdsDefinitions.hpp"
 #include "CLCW.hpp"
 #include "CountdownTimer.hpp"
 
@@ -45,7 +45,7 @@ namespace CCSDSDataLinkLayer {
          * This  variable  represents  the  state  of  FOP-1  for  the  specific  Virtual  Channel.
          * @see p. 5.1.2 from COP-1 CCSDS
          */
-        DefsAndUtils::FOPState state;
+        Defs::FOPState state;
         /**
          * It contains the value of the Frame Sequence Number to be put in the Transfer Frame Primary Header of
          * the  next  Type-AD Transfer Frame to be transmitted.
@@ -114,7 +114,7 @@ namespace CCSDSDataLinkLayer {
          * This is the state to which FOP-1 will return should the AD Service be resumed.
          * @see p. 5.1.11 from COP-1 CCSDS
          */
-        DefsAndUtils::SuspendVariableState suspendState;
+        Defs::SuspendVariableState suspendState;
 
         /** Implementation Specific variables **/
         const uint8_t vcid;
@@ -123,19 +123,19 @@ namespace CCSDSDataLinkLayer {
         /**
          * Queues for storing incoming signals and clcws
          */
-        etl::queue<DefsAndUtils::DirectiveRequestSignal, DefsAndUtils::DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
-        etl::queue<DefsAndUtils::FduTransferSignal, DefsAndUtils::TransferfduSignalQueueSize> transferFduSignalQueue;
-        etl::queue<DefsAndUtils::LowerLayerResponseSignal, DefsAndUtils::LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
+        etl::queue<Defs::DirectiveRequestSignal, Defs::DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
+        etl::queue<Defs::FduTransferSignal, Defs::TransferfduSignalQueueSize> transferFduSignalQueue;
+        etl::queue<Defs::LowerLayerResponseSignal, Defs::LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
         etl::queue<CLCW, 1> clcwQueue;
 
         /**
          * Queues for storing output signals
          * // TODO magic number
          */
-        etl::queue<DefsAndUtils::DirectiveNotificationSignal, 1> directiveNotificationSignalQueue;
-        etl::queue<DefsAndUtils::TransferNotificationSignal, 10 + 1> transferNotificationSignalQueue;
-        etl::queue<DefsAndUtils::AsynchronousNotificationSignal, 1> asynchronousNotificationSignalQueue;
-        etl::queue<DefsAndUtils::FopToLowerLayerRequestSignal, 10 + 1> fopToLowerLayerRequestSignalQueue;
+        etl::queue<Defs::DirectiveNotificationSignal, 1> directiveNotificationSignalQueue;
+        etl::queue<Defs::TransferNotificationSignal, 10 + 1> transferNotificationSignalQueue;
+        etl::queue<Defs::AsynchronousNotificationSignal, 1> asynchronousNotificationSignalQueue;
+        etl::queue<Defs::FopToLowerLayerRequestSignal, 10 + 1> fopToLowerLayerRequestSignalQueue;
 
         /**
          * There are 3 directives that will not receive confirmation immediately upon processing:
@@ -180,7 +180,7 @@ namespace CCSDSDataLinkLayer {
          * @see p. 5.2.5 from COP-1 CCSDS
          */
         FOPNotification transmitBcFrame(MasterChannelGroundSegmentVariant& masterChannelVariant,
-            const DefsAndUtils::DirectiveRequestSignal &directiveSignal);
+            const Defs::DirectiveRequestSignal &directiveSignal);
 
         /**
          * Prepares a Type-BD Frame for transmission. Type-BD frames essentially bypass FOP-1 services.
@@ -197,7 +197,7 @@ namespace CCSDSDataLinkLayer {
          * Marks AD (or BC) Frames stored in the sent queue to be retransmitted
          * @see p. 5.2.7 from COP-1 CCSDS
          */
-        FOPNotification initiateRetransmission(DefsAndUtils::ServiceType serviceType);
+        FOPNotification initiateRetransmission(Defs::ServiceType serviceType);
 
         /**
          * Remove acknowledged TYPE-AD frames from sent queue (TYPE-BD frames are instead cleared upon successful
@@ -233,7 +233,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @see p. 5.2.15 from COP-1 CCSDS
          */
-        void alert(DefsAndUtils::AlertEvent event);
+        void alert(Defs::AlertEvent event);
 
         /**
          * @see p. 5.2.17 from COP-1 CCSDS
@@ -267,11 +267,11 @@ namespace CCSDSDataLinkLayer {
         FrameOperationProcedure(const uint8_t vcid, const uint16_t tiInitial,
                                 const uint16_t transmissionLimit,
                                 const uint8_t fopSlidingWindowWidth)
-            : state(DefsAndUtils::FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(true),
+            : state(Defs::FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(true),
               bdOut(true), bcOut(true), expectedAcknowledgementSeqNumber(0),
               tiInitial(tiInitial), transmissionLimit(transmissionLimit), transmissionCount(1),
               fopSlidingWindowWidth(fopSlidingWindowWidth), timeoutType(false),
-              suspendState(DefsAndUtils::SuspendVariableState::NOT_SUSPENDED),
+              suspendState(Defs::SuspendVariableState::NOT_SUSPENDED),
               vcid(vcid), timer(CountdownTimer()) {
         }
     };

@@ -8,6 +8,9 @@
 #include "ExternalContainers.hpp"
 
 namespace CCSDSDataLinkLayer {
+    class SpaceSegmentTcDataHandling;
+    class GroundSegmentTcDataHandling;
+
     /**
      * Base map channel class containing parameters common among space and ground segment code
      */
@@ -16,11 +19,16 @@ namespace CCSDSDataLinkLayer {
         MAPChannelBase(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
                        const uint16_t associatedSdlsSPI, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity, const uint16_t typeBdPacketCapacity)
             : mapid(mapid & 0x3FU), parentVcid(parentVcid & 0x3FU), parentScid(parentScid), blocking(blocking), segmentation(segmentation),
-              frameCapacity(frameCapacity),  typeAdPacketCapacity(typeAdPacketCapacity), typeBdPacketCapacity(typeBdPacketCapacity) {
+              frameCapacity(frameCapacity),  typeAdPacketCapacity(typeAdPacketCapacity), typeBdPacketCapacity(typeBdPacketCapacity), channelMutex(Mutex()) {
             if (associatedSdlsSPI != 0) {
                 this->associatedSdlsSPI = etl::optional(associatedSdlsSPI);
             }
         }
+
+        /**
+         * @brief Protects against concurrent access to resources
+         */
+        Mutex channelMutex;
 
         [[nodiscard]] uint32_t getMapid() const {
             return mapid;
@@ -118,6 +126,7 @@ namespace CCSDSDataLinkLayer {
      */
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class MAPChannelSs : public MAPChannelBase {
+        friend class SpaceSegmentTcDataHandling;
     public:
         MAPChannelSs(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
             const uint16_t associatedSdlsSPI, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
@@ -136,12 +145,12 @@ namespace CCSDSDataLinkLayer {
         Queue<TransferFrameTC*> framesAfterProcessSdlsSecurity;
 
         // give the user access while debugging/testing
-#ifdef ENABLE_PRIVATE_MEMBER_ACCESS
+#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
         Queue<TransferFrameTC*>& getFramesAfterProcessSdlsSecurity()  {
             return framesAfterProcessSdlsSecurity;
         }
-#endif // ENABLE_PRIVATE_MEMBER_ACCESS
+#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
@@ -150,6 +159,7 @@ namespace CCSDSDataLinkLayer {
      */
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     class MAPChannelGs : public MAPChannelBase{
+        friend class GroundSegmentTcDataHandling;
     public:
         MAPChannelGs(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
             const uint16_t associatedSdlsSPI, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
@@ -193,7 +203,7 @@ namespace CCSDSDataLinkLayer {
         Queue<uint8_t> packetOctetsTypeBD;
 
         // give the user access while debugging/testing
-#ifdef ENABLE_PRIVATE_MEMBER_ACCESS
+#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
         Queue<uint16_t>& getPacketLengthsTypeAD()  {
             return packetLengthsTypeAD;
@@ -210,7 +220,7 @@ namespace CCSDSDataLinkLayer {
         Queue<uint8_t>& getPacketOctetsTypeBD()  {
             return packetOctetsTypeBD;
         }
-#endif // ENABLE_PRIVATE_MEMBER_ACCESS
+#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

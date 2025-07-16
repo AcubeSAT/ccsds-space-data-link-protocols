@@ -5,9 +5,9 @@
 #pragma once
 
 #include <cstdint>
-#include "../../lib/etl/include/etl/map.h"
-#include "../NotificationUtilities/Alert.hpp"
-#include "../DefinitionsAndUtilities.hpp"
+#include "etl/map.h"
+#include "Alert.hpp"
+#include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
 /**

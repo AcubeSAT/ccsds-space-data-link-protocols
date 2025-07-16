@@ -1,12 +1,13 @@
 #include "FrameAcceptanceReporting.hpp"
 #include "LoggerImpl.h"
+#include "AddressingAndParsingUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     FARMNotification FrameAcceptanceReporting::accept(TransferFrameTC *frame,
-        const DefsAndUtils::ServiceType serviceType) {
+        const Defs::ServiceType serviceType) {
         // push frame to higher layer buffer
-        if (serviceType == DefsAndUtils::ServiceType::TYPE_AD) {
+        if (serviceType == Defs::ServiceType::TYPE_AD) {
             VirtualChannelSsTc& vcChan = virtualChannelSsTcMap.at(vcid);
             if (vcChan.framesAfterVcReceptionTypeAD.isFull()) {
                 ccsdsLogNotice(TxRx::Rx, NotificationType::TypeFARMNotif,
@@ -16,8 +17,8 @@ namespace CCSDSDataLinkLayer {
 
             vcChan.framesAfterVcReceptionTypeAD.push(frame);
             return FARMNotification::NO_FARM_EVENT;
-        } else if (serviceType == DefsAndUtils::ServiceType::TYPE_BD) {
-            frame->updateProcessingStage(DefsAndUtils::TcFrameProcessingStage::PROCESSED_BY_FARM);
+        } else if (serviceType == Defs::ServiceType::TYPE_BD) {
+            frame->updateProcessingStage(Defs::TcFrameProcessingStage::PROCESSED_BY_FARM);
             ChannelsInterface::pushFrameVirtualChannelSpaceSegment(
                 masterChannelVariant, virtualChannelVariant, frame,
                 ChannelsInterface::VchanBuffType::AFTER_VC_GENERATION_TC_TYPE_BD);
@@ -38,10 +39,10 @@ namespace CCSDSDataLinkLayer {
         // TODO: See if there is any use for the optional fields and report them here (not part of COP-1):
         //       statusField, noRfAvailable, noBitLock and farmBCount (the last one is updated, but
         //       not used by COP-1)
-        clcwBuffer = CLCW(DefsAndUtils::ControlWordTypeCLCW,
-                          DefsAndUtils::ClcwVersionNumber,
+        clcwBuffer = CLCW(Defs::ControlWordTypeCLCW,
+                          Defs::ClcwVersionNumber,
                           0,
-                          DefsAndUtils::CopInEffect,
+                          Defs::CopInEffect,
                           vcid,
                           0,
                           false,
@@ -58,7 +59,7 @@ namespace CCSDSDataLinkLayer {
         const auto positiveWindowBorder = static_cast<uint8_t>(
             (static_cast<uint16_t>(receiverFrameSeqNumber) + farmPositiveWinWidth - 1) & 0xFF);
         // Note: the case V(R) = N(s) is included in the positive window area
-        if (DefsAndUtils::withinWindow(frameSeqNumber, receiverFrameSeqNumber, positiveWindowBorder)) {
+        if (Defs::withinWindow(frameSeqNumber, receiverFrameSeqNumber, positiveWindowBorder)) {
             return Window::POSITIVE_WINDOW;
         }
 
@@ -70,7 +71,7 @@ namespace CCSDSDataLinkLayer {
                 (static_cast<uint16_t>(receiverFrameSeqNumber) + 0xFF - (farmNegativeWidth - 1)) & 0xFF);
         }
 
-        if (DefsAndUtils::withinWindow(frameSeqNumber, negativeWindowBorder,
+        if (Defs::withinWindow(frameSeqNumber, negativeWindowBorder,
                                        (receiverFrameSeqNumber == 0) ? 255 : (receiverFrameSeqNumber - 1))) {
             return Window::NEGATIVE_WINDOW;
         }
@@ -115,21 +116,21 @@ namespace CCSDSDataLinkLayer {
         /** Frame arrival **/
         const auto expectedFrame = ChannelsInterface::getFrameVirtualChannelSpaceSegment(virtualChannelVariant,
             ChannelsInterface::VchanBuffType::AFTER_ALL_FRAMES_RECEPTION_TC,
-            DefsAndUtils::TcFrameProcessingStage::PROCESSED_BY_ALL_FRAMES_RECEPTION);
+            Defs::TcFrameProcessingStage::PROCESSED_BY_ALL_FRAMES_RECEPTION);
         if (expectedFrame.has_value()) {
             TransferFrameTC *frameTc = etl::get<TransferFrameTC *>(expectedFrame.value());
             ChannelsInterface::popFrameVirtualChannelSpaceSegment(virtualChannelVariant,
                                                                   expectedFrame,
                                                                   ChannelsInterface::VchanBuffType::AFTER_ALL_FRAMES_RECEPTION_TC);
 
-            if (frameTc->getServiceType() == DefsAndUtils::ServiceType::TYPE_AD) {
+            if (frameTc->getServiceType() == Defs::ServiceType::TYPE_AD) {
                 if (frameTc->getTransferFrameSequenceNumber() == receiverFrameSeqNumber) {
                     if (!higherLayerAdBufferFull) {
                         // E1
                         eventCode = 1;
                         if (state == FARMState::OPEN) {
                             accept(masterChannelVariant, virtualChannelVariant, frameTc,
-                                   DefsAndUtils::ServiceType::TYPE_AD);
+                                   Defs::ServiceType::TYPE_AD);
                             receiverFrameSeqNumber = (receiverFrameSeqNumber == 255) ? 0 : (receiverFrameSeqNumber + 1);
                             retransmit = false;
                         } else if (state == FARMState::WAIT) {
@@ -172,20 +173,20 @@ namespace CCSDSDataLinkLayer {
                         state = FARMState::LOCKOUT;
                     }
                 }
-            } else if (frameTc->getServiceType() == DefsAndUtils::ServiceType::TYPE_BD) {
+            } else if (frameTc->getServiceType() == Defs::ServiceType::TYPE_BD) {
                 // E6
                 eventCode = 6;
-                accept(masterChannelVariant, virtualChannelVariant, frameTc, DefsAndUtils::ServiceType::TYPE_BD);
+                accept(masterChannelVariant, virtualChannelVariant, frameTc, Defs::ServiceType::TYPE_BD);
                 farmBCount = (farmBCount == 3) ? 0 : (farmBCount + 1);
-            } else if (frameTc->getServiceType() == DefsAndUtils::ServiceType::TYPE_BC) {
+            } else if (frameTc->getServiceType() == Defs::ServiceType::TYPE_BC) {
                 const uint16_t expectedLenWithoutDataField =
-                        DefsAndUtils::TcPrimaryHeaderSize + errorControlFieldPresent *
-                        DefsAndUtils::ErrorControlFieldSize;
+                        Defs::TcPrimaryHeaderSize + errorControlFieldPresent *
+                        Defs::ErrorControlFieldSize;
                 const uint16_t frameLength = frameTc->getFrameLength();
                 uint8_t *frameData = frameTc->getFrameData();
-                if ((frameLength == expectedLenWithoutDataField + DefsAndUtils::UnlockCommandSize) &&
-                    (frameData[DefsAndUtils::TcPrimaryHeaderSize] ==
-                     DefsAndUtils::UnlockCommandOctet)) {
+                if ((frameLength == expectedLenWithoutDataField + Defs::UnlockCommandSize) &&
+                    (frameData[Defs::TcPrimaryHeaderSize] ==
+                     Defs::UnlockCommandOctet)) {
                     // E7 (unlock command)
                     eventCode = 7;
                     farmBCount = (farmBCount == 3) ? 0 : (farmBCount + 1);
@@ -193,18 +194,18 @@ namespace CCSDSDataLinkLayer {
                     wait = false;
                     lockout = false;
                     state = FARMState::OPEN;
-                } else if ((frameLength == expectedLenWithoutDataField + DefsAndUtils::SetVrCommandSize) &&
-                           (frameData[DefsAndUtils::TcPrimaryHeaderSize] ==
-                            DefsAndUtils::SetVrCommandOctet1) &&
-                           (frameData[DefsAndUtils::TcPrimaryHeaderSize + 1] ==
-                            DefsAndUtils::SetVrCommandOctet2)) {
+                } else if ((frameLength == expectedLenWithoutDataField + Defs::SetVrCommandSize) &&
+                           (frameData[Defs::TcPrimaryHeaderSize] ==
+                            Defs::SetVrCommandOctet1) &&
+                           (frameData[Defs::TcPrimaryHeaderSize + 1] ==
+                            Defs::SetVrCommandOctet2)) {
                     // E8 (set V(R) command)
                     eventCode = 8;
                     farmBCount = (farmBCount == 3) ? 0 : (farmBCount + 1);
                     if (state == FARMState::OPEN || state == FARMState::WAIT) {
                         retransmit = false;
                         wait = false;
-                        receiverFrameSeqNumber = frameData[DefsAndUtils::TcPrimaryHeaderSize + 2];
+                        receiverFrameSeqNumber = frameData[Defs::TcPrimaryHeaderSize + 2];
                         state = FARMState::OPEN;
                     }
                 } else {

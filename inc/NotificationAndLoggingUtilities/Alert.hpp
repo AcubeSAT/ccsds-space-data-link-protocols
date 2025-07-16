@@ -30,8 +30,8 @@ namespace CCSDSDataLinkLayer {
         INVALID_CHANNELS_COMBINATION = 0x09,
         INVALID_SERVICE_TYPE = 0x0A,
         FARM_ERROR = 0x0B,
-        FRAME_LIST_FULL = 0x0C,
-        FRAME_LIST_EMPTY = 0x0D,
+        FRAME_QUEUE_FULL = 0x0C,
+        FRAME_QUEUE_EMPTY = 0x0D,
         REQUESTED_FRAME_TYPE_NOT_FOUND = 0x0E,
         PACKET_QUEUE_FULL = 0x0F,
         PACKET_QUEUE_EMPTY = 0x10,
@@ -40,9 +40,14 @@ namespace CCSDSDataLinkLayer {
         INVALID_MAC = 0x13,
         FRAME_REPLAY_ATTEMPT = 0x14,
         SLDS_ERROR = 0x15,
-        NO_CLCW_AVAILABLE = 0x16,
+        OCF_SDU_QUEUE_EMPTY = 0x16,
         INVALID_PACKET_PVN = 0x17,
         NO_SERVICE_EVENT = 0x18,
+        DISCARDED_FRAME = 0x19,
+        FAILED_TO_LOCK_MUTEX = 0x1A,
+        INVALID_CHANNEL_NAME = 0x1B,
+        UNSUPPORTED_SERVICE_TYPE = 0x1C,
+        OCF_SDU_QUEUE_FULL = 0x1D,
     };
 
     enum class MapChannelAlert : uint8_t {

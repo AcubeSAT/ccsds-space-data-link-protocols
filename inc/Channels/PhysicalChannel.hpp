@@ -4,7 +4,7 @@
 
 #pragma once
 #include <cstdint>
-#include "DefinitionsAndUtilities.hpp"
+#include "CcsdsDefinitions.hpp"
 #include "etl/span.h"
 
 namespace CCSDSDataLinkLayer {
@@ -13,7 +13,7 @@ namespace CCSDSDataLinkLayer {
      */
     class PhysicalChannel {
     public:
-        PhysicalChannel(const uint8_t pcid, const DefsAndUtils::TransferFrameVersionNumber tfvn,
+        PhysicalChannel(const uint8_t pcid, const Defs::TransferFrameVersionNumber tfvn,
                         const uint16_t maxTcFrameLength, const uint16_t tmFrameLength,
                         const uint16_t maxFramesPdu, const uint16_t maxPduLength,
                         const uint32_t bitrate, const bool frameErrorControlFieldPresent)
@@ -25,7 +25,7 @@ namespace CCSDSDataLinkLayer {
          * @brief Defines the type of protocol used
          * @see SANA transfer frame version numbers registry
          */
-        [[nodiscard]] DefsAndUtils::TransferFrameVersionNumber getTFVN() const {
+        [[nodiscard]] Defs::TransferFrameVersionNumber getTFVN() const {
             return tfvn;
         }
 
@@ -76,7 +76,7 @@ namespace CCSDSDataLinkLayer {
         }
 
     private:
-        const DefsAndUtils::TransferFrameVersionNumber tfvn;
+        const Defs::TransferFrameVersionNumber tfvn;
         const uint8_t pcid; // Physical channel id. Not part of the standard, added for consistency with the other channels
         const uint16_t maxTcFrameLength;
         const uint16_t tmFrameLength;

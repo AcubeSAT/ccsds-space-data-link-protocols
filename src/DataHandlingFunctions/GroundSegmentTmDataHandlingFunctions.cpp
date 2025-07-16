@@ -1,3 +1,8 @@
-//
-// Created by george on 13/7/2025.
-//
+#include "GroundSegmentTmDataHandlingFunctions.hpp"
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+namespace CCSDSDataLinkLayer {
+
+
+} // CCSDSDataLinkLayer
+#endif // INCLUDE_GROUND_SEGMENT_CODE

@@ -6,10 +6,15 @@
 #include <cstdint>
 #include "ExternalContainers.hpp"
 #include "TransferFrameTC.hpp"
+#include "Mutex.hpp"
 
 namespace CCSDSDataLinkLayer {
     class FrameAcceptanceReporting;
     class FrameOperationProcedure;
+    class SpaceSegmentTmDataHandling;
+    class SpaceSegmentTcDataHandling;
+    class GroundSegmentTmDataHandling;
+    class GroundSegmentTcDataHandling;
 
     /**
      * Base virtual channel class containing parameters common among space and ground segment code
@@ -19,11 +24,16 @@ namespace CCSDSDataLinkLayer {
         explicit VirtualChannelBase(const uint8_t vcid, const uint16_t parentScid,
                            const uint16_t associatedSdlsSPI, const uint16_t frameCapacity)
             : vcid(vcid & 0x3FU), parentScid(parentScid & 0x03FFU), associatedSdlsSPI(associatedSdlsSPI),
-              frameCapacity(frameCapacity) {
+              frameCapacity(frameCapacity), channelMutex(Mutex()) {
             if (associatedSdlsSPI != 0) {
                 this->associatedSdlsSPI = etl::optional(associatedSdlsSPI);
             }
         }
+
+        /**
+         * @brief Protects against concurrent access to resources
+         */
+        Mutex channelMutex;
 
         [[nodiscard]] uint32_t getVcid() const {
             return vcid;
@@ -76,18 +86,19 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class VirtualChannelSsTm : public VirtualChannelBase {
+        friend class SpaceSegmentTmDataHandling;
     public:
         explicit VirtualChannelSsTm(const uint8_t vcid, const uint16_t parentScid, const uint8_t vcRepetitions,
                                      const bool secondaryHeaderPresent, const uint8_t secondaryHeaderLength,
                                      const bool operationalControlFieldPresent,
-                                     const DefsAndUtils::SynchronizationFlag synchronization,
+                                     const Defs::SynchronizationFlag synchronization,
                                      const uint16_t associatedSdlsSPI, const uint16_t frameCapacity,
                                      const uint16_t packetCapacity)
             : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity), vcRepetitions(vcRepetitions),
               operationalControlFieldPresent(operationalControlFieldPresent),
               secondaryHeaderPresent(secondaryHeaderPresent),
               secondaryHeaderLength(secondaryHeaderLength),
-              synchronization(synchronization), packetCapacity(packetCapacity) {}
+              synchronization(synchronization), virtualChannelFrameCount(0), packetCapacity(packetCapacity) {}
 
         void initializeContainers(const etl::span<uint16_t> &packetLengthsBuff,
                                   const etl::span<uint8_t> &packetOctetsBuff) {
@@ -97,6 +108,34 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] uint16_t getPacketCapacity() const {
             return packetCapacity;
+        }
+
+        [[nodiscard]] uint8_t getVcRepetitions() const {
+            return vcRepetitions;
+        }
+
+        [[nodiscard]] bool getOperationalControlFieldPresent() const {
+            return operationalControlFieldPresent;
+        }
+
+        [[nodiscard]] bool getSecondaryHeaderPresent() const {
+            return secondaryHeaderPresent;
+        }
+
+        [[nodiscard]] uint8_t getSecondaryHeaderLength() const {
+            return secondaryHeaderLength;
+        }
+
+        [[nodiscard]] Defs::SynchronizationFlag getSynchronization() const {
+            return synchronization;
+        }
+
+        [[nodiscard]] uint16_t getVirtualChannelFrameCount() const {
+            return virtualChannelFrameCount;
+        }
+
+        void incrementVirtualChannelFrameCount() {
+            virtualChannelFrameCount++;
         }
 
     private:
@@ -125,7 +164,16 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Defines whether octet and forward-ordered synchronization is used for TM transfer frames.
          */
-        const DefsAndUtils::SynchronizationFlag synchronization;
+        const Defs::SynchronizationFlag synchronization;
+
+        /**
+         * @brief A counter that keeps track the number of TM transfer frames transmitted from this virtual channel. The
+         * virtual channel frame count is carried by TM transfer frames, hence the receiving side can deduce if frames
+         * were lost.
+         *
+         * @details The initial value of this counter should be zero
+         */
+        uint8_t virtualChannelFrameCount;
 
         /**
          * @brief States how many packets this channel should support (used during the memory pool allocation process).
@@ -133,8 +181,12 @@ namespace CCSDSDataLinkLayer {
         const uint16_t packetCapacity;
 
         /**
-         * @brief Queue that stores lengths of packets that will eventually be concatenated to TM transfer frames
-         *        by the vc generation data handling function
+         * @brief If the channel supports Packets, this is a queue that stores lengths of packets that will eventually
+         *        be concatenated to TM transfer frames by the vc generation data handling function. If the virtual
+         *        channel supports VCA SDU, then it stores the user defined fields 'packet order flag' and
+         *        'segment length identifier'. The format is the following:
+         *
+         *        | (13 bits) empty | (1 bit) packet order flag | (2 bits) segment length identifier |
          */
         Dequeue<uint16_t> packetLengths;
 
@@ -144,28 +196,8 @@ namespace CCSDSDataLinkLayer {
          */
         Dequeue<uint8_t> packetOctets;
 
-#ifdef ENABLE_PRIVATE_MEMBER_ACCESS
+#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
-        uint8_t getVcRepetitions() const {
-            return vcRepetitions;
-        }
-
-        bool getOperationalControlFieldPresent() const {
-            return operationalControlFieldPresent;
-        }
-
-        bool getSecondaryHeaderPresent() const {
-            return secondaryHeaderPresent;
-        }
-
-        uint8_t getSecondaryHeaderLength() const {
-            return secondaryHeaderLength;
-        }
-
-        bool getSynchronization() const {
-            return synchronization;
-        }
-
         Dequeue<uint16_t>& getPacketLengths() const {
             return packetLengths;
         }
@@ -173,7 +205,7 @@ namespace CCSDSDataLinkLayer {
         Dequeue<uint8_t>& getPacketOctets() const {
             return packetOctets;
         }
-#endif // ENABLE_PRIVATE_MEMBER_ACCESS
+#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
@@ -185,6 +217,7 @@ namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class VirtualChannelSsTc : public VirtualChannelBase {
        friend class FrameAcceptanceReporting;
+       friend class SpaceSegmentTcDataHandling;
     public:
         explicit VirtualChannelSsTc(const uint8_t vcid, const uint16_t parentScid,
                                      const bool segmentHeaderPresent, const bool blocking,
@@ -223,6 +256,18 @@ namespace CCSDSDataLinkLayer {
 
         void incrementTypeBdPacketCapacity(const uint16_t amount) {
             this->typeBdPacketCapacity += amount;
+        }
+
+        [[nodiscard]] bool getsegmentHeaderPresent() const {
+            return segmentHeaderPresent;
+        }
+
+        [[nodiscard]] bool getBlocking() const {
+            return blocking;
+        }
+
+        [[nodiscard]] bool getCopInEffect() const {
+            return copInEffect;
         }
 
     private:
@@ -282,24 +327,8 @@ namespace CCSDSDataLinkLayer {
          *        channel (segmentHeaderPresent == false)
          */
         Queue<TransferFrameTC*> framesAfterProcessSDLSSecurityTypeBD;
-#ifdef ENABLE_PRIVATE_MEMBER_ACCESS
+#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
-        uint16_t getMaxFrameLengthTC() const {
-            return maxFrameLengthTC;
-        }
-
-        bool getsegmentHeaderPresent() const {
-            return segmentHeaderPresent;
-        }
-
-        bool getblocking() const {
-            return blocking;
-        }
-
-        bool getCopInEffect() const {
-            return copInEffect;
-        }
-
         Queue<TransferFrameTC*>& getFramesAfterAllFramesReception() const {
             return framesAfterAllFramesReception;
         }
@@ -326,6 +355,7 @@ namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     class VirtualChannelGsTc : public VirtualChannelBase {
         friend class FrameOperationProcedure;
+        friend class GroundSegmentTcDataHandling;
     public:
         explicit VirtualChannelGsTc(const uint8_t vcid, const uint16_t parentScid, const uint8_t vcRepetitions,
                                      const bool segmentHeaderPresent, const bool blocking,
@@ -368,6 +398,23 @@ namespace CCSDSDataLinkLayer {
         void incrementTypeBdPacketCapacity(const uint16_t amount) {
             this->typeBdPacketCapacity += amount;
         }
+
+        [[nodiscard]] uint8_t getVcRepetitions() const {
+            return vcRepetitions;
+        }
+
+        [[nodiscard]] bool getsegmentHeaderPresent() const {
+            return segmentHeaderPresent;
+        }
+
+        [[nodiscard]] bool getBlocking() const {
+            return blocking;
+        }
+
+        [[nodiscard]] bool getCopInEffect() const {
+            return copInEffect;
+        }
+
     private:
         /**
          * @brief Determines the number of times a frame will be repeated in transmission to Channel Coding Layer.
@@ -445,28 +492,8 @@ namespace CCSDSDataLinkLayer {
          */
         Queue<TransferFrameTC*> framesAfterApplySDLSSecurity;
 
-#ifdef ENABLE_PRIVATE_MEMBER_ACCESS
+#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
-        uint8_t getVcRepetitions() const {
-            return vcRepetitions;
-        }
-
-        uint16_t getMaxFrameLengthTC() const {
-            return maxFrameLengthTC;
-        }
-
-        bool getsegmentHeaderPresent() const {
-            return segmentHeaderPresent;
-        }
-
-        bool getblocking() const {
-            return blocking;
-        }
-
-        bool getCopInEffect() const {
-            return copInEffect;
-        }
-
         Queue<uint16_t>& getPacketLengthsTypeAD() const {
             return packetLengthsTypeAD;
         }
@@ -490,7 +517,7 @@ namespace CCSDSDataLinkLayer {
         Queue<TransferFrameTC*>& getFramesAfterApplySDLSSecurity() const {
             return framesAfterApplySDLSSecurity;
         }
-#endif // ENABLE_PRIVATE_MEMBER_ACCESS
+#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

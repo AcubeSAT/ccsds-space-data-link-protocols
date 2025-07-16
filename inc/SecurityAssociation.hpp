@@ -1,5 +1,5 @@
 /**
- * @file CCSDSSecurityAssociation.hpp
+ * @file  SecurityAssociation.hpp
  * @brief Functionality related to frame encryption and authentication.
  */
 
@@ -7,8 +7,8 @@
 #include <cstdint>
 #include "etl/expected.h"
 #include "etl/string.h"
-#include "DefinitionsAndUtilities.hpp"
-#include "NotificationUtilities/Alert.hpp"
+#include "CcsdsDefinitions.hpp"
+#include "NotificationAndLoggingUtilities/Alert.hpp"
 #include "AuthenticationKey.hpp"
 
 namespace CCSDSDataLinkLayer {
@@ -41,29 +41,29 @@ namespace CCSDSDataLinkLayer {
     class SecurityAssociation {
     public:
         SecurityAssociation(const uint16_t securityParameterIndex,
-                            DefsAndUtils::AuthenticationAlgorithm authenticationAlgorithm,
-                            DefsAndUtils::EncryptionAlgorithm encryptionAlgorithm)
+                            Defs::AuthenticationAlgorithm authenticationAlgorithm,
+                            Defs::EncryptionAlgorithm encryptionAlgorithm)
             : securityParameterIndex(securityParameterIndex),
               authenticationAlgorithm(authenticationAlgorithm),
               encryptionAlgorithm(encryptionAlgorithm) {
 
             // authentication parameter initialization
-            if (authenticationAlgorithm != DefsAndUtils::AuthenticationAlgorithm::NO_AUTHENTICATION) {
+            if (authenticationAlgorithm != Defs::AuthenticationAlgorithm::NO_AUTHENTICATION) {
                 switch (authenticationAlgorithm) {
-                    case (DefsAndUtils::AuthenticationAlgorithm::HMAC_SHA256_40_BIT):
+                    case (Defs::AuthenticationAlgorithm::HMAC_SHA256_40_BIT):
                         macFieldLength = 5; // 40 bits HMAC
 
                         authenticationKey = AuthenticationKey;
 
                         // setup authentication mask (see p.4.2.2.6.2)
                         // mask  virtual channel id, security header, data field
-                        authMaskTCLength = DefsAndUtils::MaxTcTransferFrameLength;
+                        authMaskTCLength = Defs::MaxTcTransferFrameLength;
                         authMaskTC[0] = 0x00;
                         authMaskTC[1] = 0x00;
                         authMaskTC[2] = 0xFC;
                         authMaskTC[3] = 0x00;
                         authMaskTC[4] = 0x00;
-                        for (uint16_t i = 5; i < DefsAndUtils::MaxTcTransferFrameLength; i++) {
+                        for (uint16_t i = 5; i < Defs::MaxTcTransferFrameLength; i++) {
                             authMaskTC[i] = 0xFF;
                         }
 
@@ -78,7 +78,7 @@ namespace CCSDSDataLinkLayer {
             }
 
             // encryption parameter initialization
-            if (encryptionAlgorithm != DefsAndUtils::EncryptionAlgorithm::NO_ENCRYPTION) {
+            if (encryptionAlgorithm != Defs::EncryptionAlgorithm::NO_ENCRYPTION) {
                 // switch (encryptionAlgorithm.value()) {}
             } else {
                 // make authentication related fields zero length
@@ -157,23 +157,23 @@ namespace CCSDSDataLinkLayer {
         /**
          * @note The absence of a value indicates no authentication algorithm will be applied
          */
-        DefsAndUtils::AuthenticationAlgorithm authenticationAlgorithm;
+        Defs::AuthenticationAlgorithm authenticationAlgorithm;
 
         /**
          * @brief Container for given authentication key.
          */
-        [[maybe_unused]] etl::string<DefsAndUtils::MaxAuthenticationKeyLength> authenticationKey;
+        [[maybe_unused]] etl::string<Defs::MaxAuthenticationKeyLength> authenticationKey;
 
         /**
          * @brief Container for holding calculated mac.
          */
-        [[maybe_unused]] uint8_t mac[DefsAndUtils::MaxMACLength];
+        [[maybe_unused]] uint8_t mac[Defs::MaxMACLength];
         uint8_t macFieldLength;
 
         /**
          * @brief Mask for choosing which fields will be used in the authentication payload.
          */
-        [[maybe_unused]] uint8_t authMaskTC[DefsAndUtils::MaxTcTransferFrameLength];
+        [[maybe_unused]] uint8_t authMaskTC[Defs::MaxTcTransferFrameLength];
         [[maybe_unused]] uint16_t authMaskTCLength;
 
         /**
@@ -191,7 +191,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Container for the transfer frame segment that the authentication algorithm will be applied on.
          */
-        [[maybe_unused]] uint8_t authenticationPayload[DefsAndUtils::MaxTcTransferFrameLength];
+        [[maybe_unused]] uint8_t authenticationPayload[Defs::MaxTcTransferFrameLength];
 
         /**
          * @}
@@ -207,11 +207,11 @@ namespace CCSDSDataLinkLayer {
         /**
          * @note The absence of a value indicates no encryption algorithm will be applied
          */
-        DefsAndUtils::EncryptionAlgorithm encryptionAlgorithm;
+        Defs::EncryptionAlgorithm encryptionAlgorithm;
 
         [[maybe_unused]] uint64_t encryptionKey;
 
-        [[maybe_unused]] uint8_t initializationVector[DefsAndUtils::MaxInitializationVectorLength];
+        [[maybe_unused]] uint8_t initializationVector[Defs::MaxInitializationVectorLength];
         uint8_t initializationVectorLength;
 
         [[maybe_unused]] uint16_t padLength;
