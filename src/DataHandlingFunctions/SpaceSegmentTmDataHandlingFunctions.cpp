@@ -1,8 +1,8 @@
 #include "SpaceSegmentTmDataHandlingFunctions.hpp"
 #include "AddressingAndParsingUtilities.hpp"
 
-#ifdef INCLUDE_SPACE_SEGMENT_CODE
 namespace CCSDSDataLinkLayer {
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmDataHandling::storePacket(
         VirtualChannelSsTm& vcChan,
         etl::span<uint8_t> packetSource) {
@@ -32,7 +32,7 @@ namespace CCSDSDataLinkLayer {
             return {};
         }
 
-    	if (!vcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+    	if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
 
@@ -52,14 +52,14 @@ namespace CCSDSDataLinkLayer {
 	etl::expected<void, ServiceChannelNotification> SpaceSegmentTmDataHandling::storeVcaSdu(
 			const PhysicalChannel& phyChan,
 			VirtualChannelSsTm& vcChan,
-			etl::span<uint8_t> packetSource,
+			etl::span<uint8_t> vcaSduSource,
 			bool packetOrderFlag,
 			uint8_t segmentLengthIdentifier) {
-    	if (!vcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+    	if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
 
-    	if (vcChan.packetLengths.isFull() || vcChan.packetOctets.remainingCapacity() < packetSource.size()) {
+    	if (vcChan.packetLengths.isFull() || vcChan.packetOctets.remainingCapacity() < vcaSduSource.size()) {
     		vcChan.channelMutex.unlock();
     		return etl::unexpected(ServiceChannelNotification::PACKET_QUEUE_FULL);
     	}
@@ -70,14 +70,14 @@ namespace CCSDSDataLinkLayer {
 				vcChan.getOperationalControlFieldPresent() * Defs::TmOperationalControlFieldSize -
 				phyChan.getFrameErrorControlFieldPresent() * Defs::ErrorControlFieldSize;
 
-		if (packetSource.size() != transferFrameDataFieldLength) {
+		if (vcaSduSource.size() != transferFrameDataFieldLength) {
 			vcChan.channelMutex.unlock();
 			return etl::unexpected(ServiceChannelNotification::INVALID_LENGTH);
 		}
 
     	vcChan.packetLengths.pushBack((static_cast<uint16_t>(packetOrderFlag) << 2) | static_cast<uint16_t>(segmentLengthIdentifier));
-    	for (size_t i = 0; i < packetSource.size(); i++) {
-    		vcChan.packetOctets.pushBack(packetSource[i]);
+    	for (size_t i = 0; i < vcaSduSource.size(); i++) {
+    		vcChan.packetOctets.pushBack(vcaSduSource[i]);
     	}
 
     	vcChan.channelMutex.unlock();
@@ -331,11 +331,11 @@ namespace CCSDSDataLinkLayer {
 	    MasterChannelSsTm& mcChan,
         VirtualChannelSsTm& vcChan) {
 
-    	if (!vcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+    	if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
 
-    	if (!mcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+    	if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		vcChan.channelMutex.unlock();
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
@@ -350,6 +350,11 @@ namespace CCSDSDataLinkLayer {
     	// Handle simple case, where channel transfers vca sdu instead of packets
     	if (vcChan.getSynchronization() == Defs::SynchronizationFlag::VCA_SDU) {
     		const uint16_t frameLength = phyChan.getTMFrameLength();
+    		const uint16_t transferFrameDataFieldLength =
+						frameLength -
+						Defs::TmPrimaryHeaderSize -
+						vcChan.getOperationalControlFieldPresent() * Defs::TmOperationalControlFieldSize -
+						phyChan.getFrameErrorControlFieldPresent() * Defs::ErrorControlFieldSize;
 
     		// check if there is enough space for a new frame
     		if (mcChan.frameMasterCopies.isFull() ||
@@ -371,6 +376,12 @@ namespace CCSDSDataLinkLayer {
 
     		// allocate frame data and create the frame object
     		uint8_t *frameData = Objects::frameOctetPool.allocateBlock(frameLength, nullptr);
+
+			for (uint16_t i = 0; i < transferFrameDataFieldLength; i++) {
+				frameData[i + Defs::TmPrimaryHeaderSize] = vcChan.packetOctets.getFront();
+				vcChan.packetOctets.popFront();
+			}
+
     		TransferFrameTM* frameTmPtr = mcChan.frameMasterCopies.push(TransferFrameTM(frameData,
 									frameLength,
 									vcChan.getVcid(),
@@ -434,11 +445,11 @@ namespace CCSDSDataLinkLayer {
 		MasterChannelSsTm& mcChan,
 		VirtualChannelSsTm& vcChan) {
 
-    	if (!vcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+    	if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
 
-    	if (!mcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+    	if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		vcChan.channelMutex.unlock();
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
@@ -494,7 +505,7 @@ namespace CCSDSDataLinkLayer {
 	    const PhysicalChannel &phyChan,
 	    MasterChannelSsTm &mcChan) {
 
-    	if (!mcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+    	if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
 
@@ -569,7 +580,7 @@ namespace CCSDSDataLinkLayer {
 	    const PhysicalChannel &phyChan,
 	    MasterChannelSsTm &mcChan,
 	    uint8_t *frameDestination) {
-	    if (!mcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+	    if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
 	        return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
 	    }
 
@@ -586,14 +597,11 @@ namespace CCSDSDataLinkLayer {
 	    const uint8_t numRepetitions = Objects::virtualChannelSsTmMap.at(key).getVcRepetitions();
 
 	    // check if the frame was retransmitted enough times
-	    if (mcChan.getRepetitionCounter() >= numRepetitions) {
+	    if (frameTmPtr->getTimesSequentiallyTransmitted() >= numRepetitions) {
 	        // remove the frame from the queue and erase the master copy
 	        mcChan.framesAfterMcGeneration.pop();
 	        Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData(), phyChan.getTMFrameLength());
 	        mcChan.frameMasterCopies.erase(frameTmPtr);
-
-	        // reset repetition counter for next frame
-	        mcChan.resetRepetitionCounter();
 
 	        // if queue is empty, return
 	        if (mcChan.framesAfterMcGeneration.isEmpty()) {
@@ -601,7 +609,7 @@ namespace CCSDSDataLinkLayer {
 	            return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_EMPTY);
 	        }
 
-	        // fetch the next frame append CRC if needed
+	        // fetch the next frame, append CRC if needed
 	        frameTmPtr = mcChan.framesAfterMcGeneration.getFront();
 	        if (phyChan.getFrameErrorControlFieldPresent()) {
 	            frameTmPtr->appendCRC();
@@ -612,9 +620,10 @@ namespace CCSDSDataLinkLayer {
 	    memcpy(frameDestination, frameTmPtr->getFrameData(), phyChan.getTMFrameLength());
 
 	    // increment repetition count and return
-	    mcChan.incrementRepetitionCounter();
+	    frameTmPtr->incrementTimesSequentiallyTransmitted();
 	    mcChan.channelMutex.unlock();
 	    return {};
 	}
-} // CCSDSDataLinkLayer
 #endif // INCLUDE_SPACE_SEGMENT_CODE
+} // CCSDSDataLinkLayer
+

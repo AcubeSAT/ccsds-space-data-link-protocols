@@ -13,16 +13,15 @@ namespace CCSDSDataLinkLayer {
 
         VirtualChannelSsTm &vcChan = Objects::virtualChannelSsTmMap.at(key);
         if (vcChan.getSynchronization() != Defs::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED) {
-            return etl::unexpected(ServiceChannelNotification::UNSUPPORTED_SERVICE_TYPE);
+            return etl::unexpected(ServiceChannelNotification::UNSUPPORTED_SERVICE);
         }
 
         return SpaceSegmentTmDataHandling::storePacket(Objects::virtualChannelSsTmMap.at(key), packet);
     }
 
-
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::virtualChannelAccessServiceRequest(
         Objects::VirtualChannelTmName vcChanName,
-        etl::span<uint8_t> packet,
+        etl::span<uint8_t> vcaSdu,
         const bool packetOrderFlag,
         const uint8_t segmentLengthIdentifier) {
 
@@ -33,12 +32,12 @@ namespace CCSDSDataLinkLayer {
 
         VirtualChannelSsTm &vcChan = Objects::virtualChannelSsTmMap.at(key);
         if (vcChan.getSynchronization() != Defs::SynchronizationFlag::VCA_SDU) {
-            return etl::unexpected(ServiceChannelNotification::UNSUPPORTED_SERVICE_TYPE);
+            return etl::unexpected(ServiceChannelNotification::UNSUPPORTED_SERVICE);
         }
 
         const MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(vcChan.getParentScid());
         const PhysicalChannel& phyChan = Objects::physicalChannelMap.at(mcChan.getParentPcid());
-        return SpaceSegmentTmDataHandling::storeVcaSdu(phyChan, vcChan, packet, packetOrderFlag, segmentLengthIdentifier);
+        return SpaceSegmentTmDataHandling::storeVcaSdu(phyChan, vcChan, vcaSdu, packetOrderFlag, segmentLengthIdentifier);
     }
 
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::virtualChannelOperationalControlFieldServiceRequest(
@@ -51,7 +50,7 @@ namespace CCSDSDataLinkLayer {
         }
 
         MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(key);
-        if (!mcChan.channelMutex.tryLockFor(Defs::mutexDelayMs)) {
+        if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
         }
 

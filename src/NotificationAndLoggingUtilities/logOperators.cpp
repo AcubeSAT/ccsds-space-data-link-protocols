@@ -59,8 +59,14 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::DISCARDED_FRAME);
         INSERT_ELEMENT(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
         INSERT_ELEMENT(ServiceChannelNotification::INVALID_CHANNEL_NAME);
-        INSERT_ELEMENT(ServiceChannelNotification::UNSUPPORTED_SERVICE_TYPE);
+        INSERT_ELEMENT(ServiceChannelNotification::UNSUPPORTED_SERVICE);
         INSERT_ELEMENT(ServiceChannelNotification::OCF_SDU_QUEUE_FULL);
+        INSERT_ELEMENT(ServiceChannelNotification::COP_INACTIVE);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_CLCW);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_CLCW_VCID);
+        INSERT_ELEMENT(ServiceChannelNotification::NO_PENDING_NOTIFICATION);
+        INSERT_ELEMENT(ServiceChannelNotification::DIRECTIVE_QUEUE_FULL);
+        INSERT_ELEMENT(ServiceChannelNotification::NO_FOP_SIGNALS_TO_PROCESS);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
@@ -80,6 +86,7 @@ namespace CCSDSDataLinkLayer {
             INSERT_ELEMENT(FOPNotification::FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL);
             INSERT_ELEMENT(FOPNotification::FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
             INSERT_ELEMENT(FOPNotification::FOP_UNEXPECTED_VALUE);
+            INSERT_ELEMENT(FOPNotification::FAILED_TO_LOCK_MUTEX);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];

@@ -16,7 +16,7 @@ namespace CCSDSDataLinkLayer {
 
         TransferFrame(Defs::FrameType t, uint16_t transferFrameLength, uint8_t *frameData, uint16_t firstEmptyOctet = 0)
                 : type(t), transferFrameLength(transferFrameLength), transferFrameData(frameData),
-                  firstDataFieldEmptyOctet(firstEmptyOctet) {};
+                  timesSequentiallyTransmitted(0), firstDataFieldEmptyOctet(firstEmptyOctet) {}
 
         [[nodiscard]] uint16_t getFrameLength() const {
             return transferFrameLength;
@@ -32,6 +32,14 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] uint8_t *getFrameData() const {
             return transferFrameData;
+        }
+
+        [[nodiscard]] uint16_t getTimesSequentiallyTransmitted() const {
+            return timesSequentiallyTransmitted;
+        }
+
+        void incrementTimesSequentiallyTransmitted() {
+            timesSequentiallyTransmitted++;
         }
 
         /**
@@ -70,6 +78,7 @@ namespace CCSDSDataLinkLayer {
 
         uint16_t transferFrameLength;
         uint8_t *transferFrameData;
+        uint16_t timesSequentiallyTransmitted;
 
         /**
          *  @brief Auxiliary variable that indicates the position of the first empty octet in the transfer

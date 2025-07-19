@@ -7,6 +7,7 @@
 #include "ExternalContainers.hpp"
 #include "TransferFrameTM.hpp"
 #include "TransferFrameTC.hpp"
+#include "Mutex.hpp"
 
 namespace CCSDSDataLinkLayer {
     class SpaceSegmentTmDataHandling;
@@ -14,6 +15,7 @@ namespace CCSDSDataLinkLayer {
     class GroundSegmentTmDataHandling;
     class GroundSegmentTcDataHandling;
     class SpaceSegmentTmServices;
+    class FrameOperationProcedure;
 
     /**
      * Base virtual channel class containing parameters common among space and ground segment code
@@ -21,7 +23,7 @@ namespace CCSDSDataLinkLayer {
     class MasterChannelBase {
     public:
         explicit MasterChannelBase(const uint16_t scid, const uint8_t parentPcid)
-        : scid(scid & 0x03FFU), parentPcid(parentPcid), frameCapacity(0), channelMutex(Mutex()) {}
+        : channelMutex(Mutex()), scid(scid & 0x03FFU), parentPcid(parentPcid), frameCapacity(0) {}
 
         /**
          * @brief Protects against concurrent access to resources
@@ -69,7 +71,7 @@ namespace CCSDSDataLinkLayer {
     public:
         explicit  MasterChannelSsTm(const uint16_t mcid, const uint8_t parentPcid, const uint16_t ocfSduCapacity)
             : MasterChannelBase(mcid, parentPcid),
-              masterChannelFrameCount(0), ocfSduCapacity(ocfSduCapacity), repetitionCounter(0) {}
+              masterChannelFrameCount(0), ocfSduCapacity(ocfSduCapacity) {}
 
         void initializeContainers(
             const etl::span<TransferFrameTM*>& framesAfterVcGenerationBuff,
@@ -97,17 +99,6 @@ namespace CCSDSDataLinkLayer {
             return ocfSduCapacity;
         }
 
-        [[nodiscard]] uint16_t getRepetitionCounter() const {
-            return repetitionCounter;
-        }
-
-        void incrementRepetitionCounter() {
-            repetitionCounter++;
-        }
-
-        void resetRepetitionCounter() {
-            repetitionCounter = 0;
-        }
     private:
         /**
          * @brief A counter that keeps track the number of TM transfer frames transmitted from this master channel. The
@@ -149,12 +140,6 @@ namespace CCSDSDataLinkLayer {
          * @brief Frames that have an ocf field, but no clcw could be found for them, wait here
          */
         CircularBuffer<TransferFrameTM*> waitingBuffer;
-
-        /**
-         * @brief Counts how many times the same frame has been transmitted to the Channel Coding and Synchronization
-         *        Sublayer. Must be initialized to 0.
-         */
-        uint8_t repetitionCounter;
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
@@ -209,9 +194,10 @@ namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     class MasterChannelGsTc : public MasterChannelBase {
         friend class GroundSegmentTcDataHandling;
+        friend class FrameOperationProcedure;
     public:
         explicit  MasterChannelGsTc(const uint16_t mscid, const uint8_t parentPcid)
-        : MasterChannelBase(mscid, parentPcid), repetitionCounter(0) {}
+        : MasterChannelBase(mscid, parentPcid) {}
 
         void initializeContainers(
             const etl::span<TransferFrameTC*>& framesAfterVcGenerationBuff,
@@ -219,18 +205,6 @@ namespace CCSDSDataLinkLayer {
             const etl::span<size_t>& frameMasterCopiesIndicesBuff) {
             framesAfterVcGeneration = Queue(framesAfterVcGenerationBuff);
             frameMasterCopies = UnorderedPool(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
-        }
-
-        [[nodiscard]] uint16_t getRepetitionCounter() const {
-            return repetitionCounter;
-        }
-
-        void incrementRepetitionCounter() {
-            repetitionCounter++;
-        }
-
-        void resetRepetitionCounter() {
-            repetitionCounter = 0;
         }
 
     private:
@@ -243,12 +217,6 @@ namespace CCSDSDataLinkLayer {
          * @brief Buffer that stores the actual TC transfer frame objects under this master channel
          */
         UnorderedPool<TransferFrameTC> frameMasterCopies;
-
-        /**
-         * @brief Counts how many times the same frame has been transmitted to the Channel Coding and Synchronization
-         *        Sublayer. Must be initialized to 0.
-         */
-        uint8_t repetitionCounter;
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:

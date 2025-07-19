@@ -35,10 +35,13 @@ namespace CCSDSDataLinkLayer {
      * @brief Return the packet version number of a packet, if it is defined in the enumeration.
      */
     inline etl::optional<Defs::PacketVersionNumber> getPacketVersionNumber(uint8_t firstPacketOctet) {
-        if (const uint8_t packetVersion = firstPacketOctet >> 5; packetVersion == static_cast<uint8_t>(Defs::PacketVersionNumber::SPACE_PACKET)) {
+        const uint8_t packetVersion = firstPacketOctet >> 5
+        if (packetVersion == static_cast<uint8_t>(Defs::PacketVersionNumber::SPACE_PACKET)) {
             return Defs::PacketVersionNumber::SPACE_PACKET;
-        } else {
+        } else if (packetVersion == static_cast<uint8_t>(Defs::PacketVersionNumber::ENCAPSULATION_PACKET)) {
             return Defs::PacketVersionNumber::ENCAPSULATION_PACKET;
+        } else {
+            return etl::nullopt;
         }
     }
 

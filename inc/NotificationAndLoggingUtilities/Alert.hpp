@@ -28,7 +28,7 @@ namespace CCSDSDataLinkLayer {
         INVALID_VCID = 0x07,
         INVALID_MAPID = 0x08,
         INVALID_CHANNELS_COMBINATION = 0x09,
-        INVALID_SERVICE_TYPE = 0x0A,
+        INVALID_FRAME_SERVICE_TYPE = 0x0A,
         FARM_ERROR = 0x0B,
         FRAME_QUEUE_FULL = 0x0C,
         FRAME_QUEUE_EMPTY = 0x0D,
@@ -46,8 +46,14 @@ namespace CCSDSDataLinkLayer {
         DISCARDED_FRAME = 0x19,
         FAILED_TO_LOCK_MUTEX = 0x1A,
         INVALID_CHANNEL_NAME = 0x1B,
-        UNSUPPORTED_SERVICE_TYPE = 0x1C,
+        UNSUPPORTED_SERVICE = 0x1C,
         OCF_SDU_QUEUE_FULL = 0x1D,
+        COP_INACTIVE = 0x1E,
+        INVALID_CLCW = 0x1F,
+        INVALID_CLCW_VCID = 0x20,
+        NO_PENDING_NOTIFICATION = 0x21,
+        DIRECTIVE_QUEUE_FULL = 0x22,
+        NO_FOP_SIGNALS_TO_PROCESS = 0x23,
     };
 
     enum class MapChannelAlert : uint8_t {
@@ -103,6 +109,7 @@ namespace CCSDSDataLinkLayer {
         FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL = 0x08,
         FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT = 0x0A,
         FOP_UNEXPECTED_VALUE = 0x0B,
+        FAILED_TO_LOCK_MUTEX = 0x0C
     };
 
     enum class FARMNotification : uint8_t {

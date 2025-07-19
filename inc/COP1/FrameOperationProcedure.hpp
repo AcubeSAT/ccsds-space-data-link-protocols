@@ -9,14 +9,23 @@
 #include "etl/queue.h"
 #include "etl/list.h"
 #include "etl/optional.h"
+#include "MasterChannel.hpp"
+#include "VirtualChannel.hpp"
+#include "Mutex.hpp"
 #include "TransferFrameTC.hpp"
 #include "Alert.hpp"
 #include "CcsdsDefinitions.hpp"
 #include "CLCW.hpp"
 #include "CountdownTimer.hpp"
+#include "StructureGeneration.hpp"
+#include "AddressingAndParsingUtilities.hpp"
+#include "FrameOperationProcedureMessageLayer.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
+    class GroundSegmentTcDataHandling;
+    class GroundSegmentTcServices;
+
     /**
      * The frame operation procedure (FOP-1) is the ground segment of COP-1, a process responsible
      * for TC frame acknowledgment and keeping the frame sequence order intact. Frames
@@ -24,19 +33,27 @@ namespace CCSDSDataLinkLayer {
      * it, by transmitting 'TYPE-BD frames' (expedited service). For communication with COP-1's reception side
      * subsegment (FARM-1), 'TYPE-BC frames' are generated within FOP-1. FOP-1 (and FARM-1) are state machines.
      *
-     * For proper operation, the TC Data Link user must provide FOP-1 with:
+     * For proper operation, the TC Data Link User user must provide FOP-1 with the following information using
+     * the respective COP management services:
+     *
      * 1. CLCWs: Those are carried by TM transfer frames (@see TM Data Link Protocol), and constitute FARM-1's
-     *    method of communicating with FOP-1, thus having a closed loop system. They are provided with the method pushClcw()
-     * 2. directives: Those are commands that initialize the process or change certain parameters. They are provided with the
-     *    method pushDirectiveRequestSignal()
+     *    method of communicating with FOP-1, thus having a closed loop system.
+     * 2. directives: Those are commands that initialize the process or change certain parameters. Some of those directives
+     *                cause TYPE-BC frame generation.
      *
-     * Furthermore, signals are returned to the user via vcGeneration, the data processing function where FOP-1 is executed.
-     * These can indicate the successful or unsuccessful execution of directives and alerts, which
-     * indicate an unrecoverable problem with the data link, and demand action from higher level protocols.
+     * In return, FOP-1 answers to the user with directive notification signals, to inform about the progress of the
+     * directive and asynchronous notification signals, usually to inform about an error that cannot be resolved
+     * automatically.
      *
+     * Furthermore, FOP-1 exchanges messages with the vcGeneration data handling function:
+     *
+     *       VC Generation             FOP-1
+     * 1. transfer fdu signal -> transfer notification   Send a new frame to FOP-1
+     * 2. lower layer response <- lower layer request    Send a new frame to lower layers
      */
     class FrameOperationProcedure {
-        friend class ServiceChannelGroundSegment;
+        friend class GroundSegmentTcDataHandling;
+        friend class GroundSegmentTcServices;
 
     private:
         /** FOP-1 VARIABLES **/
@@ -46,69 +63,81 @@ namespace CCSDSDataLinkLayer {
          * @see p. 5.1.2 from COP-1 CCSDS
          */
         Defs::FOPState state;
+
         /**
          * It contains the value of the Frame Sequence Number to be put in the Transfer Frame Primary Header of
          * the  next  Type-AD Transfer Frame to be transmitted.
          * @see p. 5.1.3 from COP-1 CCSDS
          */
         uint8_t transmitterFrameSeqNumber;
+
         /**
          * Type-AD transfer frames stored in list, before being processed by the FOP service. It has a capacity of one.
          * @see p. 5.1.4 from COP-1 CCSDS
          */
         etl::list<TransferFrameTC *, 1> waitQueueFOP;
+
         /**
          * Type-AD transfer frames stored in list, after being processed by the FOP service, as well as generated Type-BC
          * frames.
          * @see p. 5.1.7 from COP-1 CCSDS
-         * // TODO magic num
          */
-        etl::list<TransferFrameTC *, 10> sentQueueFOP;
+        etl::list<TransferFrameTC *, Defs::SentQueueSize> sentQueueFOP;
+
         /**
          * @see p. 5.1.6 from COP-1 CCSDS
          */
         bool adOut;
+
         /**
          * @see p. 5.1.6 from COP-1 CCSDS
          */
         bool bdOut;
+
         /**
          * @see p. 5.1.6 from COP-1 CCSDS
          */
         bool bcOut;
+
         /**
          * @see p. 5.1.8 from COP-1 CCSDS
          */
         uint8_t expectedAcknowledgementSeqNumber;
+
         /**
          * Countdown timer initial value, in milliseconds
          * @see p. 5.1.9 from COP-1 CCSDS
          */
         uint16_t tiInitial;
+
         /**
          * The  Transmission Limit  holds  a  value  which  represents  the  maximum  number  of  times  the  first
          * Transfer  Frame  on  the  Sent_Queue  may  be  transmitted
          * @see p. 5.1.10.2 from COP-1 CCSDS
          */
         uint16_t transmissionLimit;
+
         /**
          * The  Transmission Count  variable  is  used  to  count  the  number  of  transmissions  of  the  first
          * Transfer  Frame  on  the  sent queue
          * @see p. 5.1.10.4 from COP-1 CCSDS
          */
         uint16_t transmissionCount;
+
         /**
          * The FOP Sliding Window is a mechanism which limits the number of Transfer Frames which can  be
          * transmitted  ahead  of  the  last  acknowledged  Transfer  Frame
          * @see p. 5.1.12 from COP-1 CCSDS
          */
         uint8_t fopSlidingWindowWidth;
+
         /**
          * It specifies the action to be performed when both the Timer expires and the Transmission
          * Count (see 5.1.10.4) has reached the Transmission_Limit.
          * @see p. 5.1.10.3 from COP-1 CCSDS
          */
         bool timeoutType;
+
         /**
          * It records the state that FOP-1 was in when the AD Service was suspended (as described in 5.1.10).
          * This is the state to which FOP-1 will return should the AD Service be resumed.
@@ -117,25 +146,38 @@ namespace CCSDSDataLinkLayer {
         Defs::SuspendVariableState suspendState;
 
         /** Implementation Specific variables **/
-        const uint8_t vcid;
+
+        /**
+         * Guard against multiple access to FOP-1 queues
+         */
+        Mutex signalQueueMutex;
+
+        VirtualChannelGsTc* vcChan;
+        MasterChannelGsTc* mcChan;
 
         CountdownTimer timer;
+
         /**
          * Queues for storing incoming signals and clcws
          */
-        etl::queue<Defs::DirectiveRequestSignal, Defs::DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
-        etl::queue<Defs::FduTransferSignal, Defs::TransferfduSignalQueueSize> transferFduSignalQueue;
-        etl::queue<Defs::LowerLayerResponseSignal, Defs::LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
-        etl::queue<CLCW, 1> clcwQueue;
+        etl::queue<DirectiveRequestSignal, Defs::DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
+        etl::optional<CLCW> clcwBuffer; // size 1, since we only care about the most recent state of farm
+
+        etl::queue<FduTransferSignal, Defs::FduTransferSignalQueueSize> transferFduSignalQueue;
+        etl::queue<LowerLayerResponseSignal, Defs::LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
+
 
         /**
          * Queues for storing output signals
-         * // TODO magic number
          */
-        etl::queue<Defs::DirectiveNotificationSignal, 1> directiveNotificationSignalQueue;
-        etl::queue<Defs::TransferNotificationSignal, 10 + 1> transferNotificationSignalQueue;
-        etl::queue<Defs::AsynchronousNotificationSignal, 1> asynchronousNotificationSignalQueue;
-        etl::queue<Defs::FopToLowerLayerRequestSignal, 10 + 1> fopToLowerLayerRequestSignalQueue;
+        // Directive notifications are pushed to vcGeneration as well, since some of them generate type BC frames
+        etl::queue<DirectiveNotificationSignal, Defs::DirectiveNotificationSignalQueueSize> directiveNotificationSignalQueue;
+        etl::queue<DirectiveNotificationSignalUser, Defs::DirectiveNotificationSignalQueueSize> directiveNotificationSignalQueueUser;
+
+        etl::queue<AsynchronousNotificationSignal, Defs::AsynchronousNotificationSignalQueueSize> asynchronousNotificationSignalQueue;
+
+        etl::queue<TransferNotificationSignal, Defs::TransferNotificationSignalQueueSize> transferNotificationSignalQueue;
+        etl::queue<FopToLowerLayerRequestSignal, Defs::FopToLowerLayerRequestSignalQueueSize> fopToLowerLayerRequestSignalQueue;
 
         /**
          * There are 3 directives that will not receive confirmation immediately upon processing:
@@ -179,8 +221,7 @@ namespace CCSDSDataLinkLayer {
          * Those frames are removed from the sent queue once the lower layers accept them
          * @see p. 5.2.5 from COP-1 CCSDS
          */
-        FOPNotification transmitBcFrame(MasterChannelGroundSegmentVariant& masterChannelVariant,
-            const Defs::DirectiveRequestSignal &directiveSignal);
+        FOPNotification transmitBcFrame(const DirectiveRequestSignal &directiveSignal);
 
         /**
          * Prepares a Type-BD Frame for transmission. Type-BD frames essentially bypass FOP-1 services.
@@ -233,7 +274,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @see p. 5.2.15 from COP-1 CCSDS
          */
-        void alert(Defs::AlertEvent event);
+        void alert(AlertEvent event);
 
         /**
          * @see p. 5.2.17 from COP-1 CCSDS
@@ -245,13 +286,12 @@ namespace CCSDSDataLinkLayer {
          * @note This function literally does nothing. It is added to explicitly
          *       indicate the "ignore" action in the state table.
          */
-        static inline void ignore() {
-        }
+        static inline void ignore() {}
 
         /** Implementation specific FOP-1 methods (for usage inside vcGeneration service)**/
 
         /**
-         * This is core process of FOP-1. By examining incoming signals, CLCWs and internal variables,
+         * This is the core process of FOP-1. By examining incoming signals, CLCWs and internal variables,
          * an event is detected, then appropriate actions are taken based on that event, and the current state.
          * @see p. 5.3 from COP-1 CCSDS
          *
@@ -261,10 +301,10 @@ namespace CCSDSDataLinkLayer {
          * @returns The event code detected. An event code of 0 means no event.
          *
          */
-        std::pair<FOPNotification, uint8_t> applyFopStateTable(const MasterChannelGroundSegmentVariant& masterChannelVariant);
+        std::pair<FOPNotification, uint8_t> applyFopStateTable();
 
     public:
-        FrameOperationProcedure(const uint8_t vcid, const uint16_t tiInitial,
+        FrameOperationProcedure(const uint16_t scid, const uint8_t vcid, const uint16_t tiInitial,
                                 const uint16_t transmissionLimit,
                                 const uint8_t fopSlidingWindowWidth)
             : state(Defs::FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(true),
@@ -272,7 +312,13 @@ namespace CCSDSDataLinkLayer {
               tiInitial(tiInitial), transmissionLimit(transmissionLimit), transmissionCount(1),
               fopSlidingWindowWidth(fopSlidingWindowWidth), timeoutType(false),
               suspendState(Defs::SuspendVariableState::NOT_SUSPENDED),
-              vcid(vcid), timer(CountdownTimer()) {
+              signalQueueMutex(Mutex()), timer(CountdownTimer()) {
+             vcChan = &Objects::virtualChannelGsTcMap.at(constructVcidScidKey(vcid, scid));
+             mcChan = &Objects::masterChannelGsTcMap.at(scid);
+        }
+
+        Defs::FOPState getCurrentState() const {
+            return state;
         }
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE

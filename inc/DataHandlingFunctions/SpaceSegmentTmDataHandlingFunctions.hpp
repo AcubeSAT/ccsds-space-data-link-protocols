@@ -1,8 +1,6 @@
 /**
  * @file SpaceSegmentTmDataHandlingFunctions.hpp
  * @brief Functions for creating and processing TM Transfer Frames
- * @note Any function that asks for a key (channel identifier) assumes it is valid. It is the responsibility
- *       of the user to insert a correct key.
  */
 
 #pragma once
@@ -12,8 +10,8 @@
 #include "TransferFrameTM.hpp"
 #include "StructureGeneration.hpp"
 
-#ifdef INCLUDE_SPACE_SEGMENT_CODE
 namespace CCSDSDataLinkLayer {
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
 	class SpaceSegmentTmServices;
 
 	class SpaceSegmentTmDataHandling {
@@ -39,7 +37,7 @@ namespace CCSDSDataLinkLayer {
 		 * @brief Insert a service data unit. Unlike 'Packets' its structure is not known to the Data Link (not
 		 *        'Space Packets' or 'Encapsulation Packets').
 		 *
-		 * @param packetSource Service data unit to be inserted. Note that since sdu is of unknown structure, its
+		 * @param vcaSduSource Service data unit to be inserted. Note that since the sdu is of unknown structure, its
 		 *                     length is assumed to be the size of the span. The function will return an error if this
 		 *                     size is different than the transfer frame data field length
 		 * @param packetOrderFlag User defined flag
@@ -50,7 +48,7 @@ namespace CCSDSDataLinkLayer {
 		static etl::expected<void, ServiceChannelNotification> storeVcaSdu(
 			const PhysicalChannel& phyChan,
 			VirtualChannelSsTm& vcChan,
-			etl::span<uint8_t> packetSource,
+			etl::span<uint8_t> vcaSduSource,
 			bool packetOrderFlag,
 			uint8_t segmentLengthIdentifier);
 
@@ -156,5 +154,5 @@ namespace CCSDSDataLinkLayer {
 			MasterChannelSsTm& mcChan,
 			uint8_t *frameDestination);
 	};
-} // CCSDSDataLinkLayer
 #endif // INCLUDE_SPACE_SEGMENT_CODE
+} // CCSDSDataLinkLayer

@@ -48,18 +48,19 @@ namespace CCSDSDataLinkLayer {
          * @see p. 3.4 of TM SPACE DATA LINK CCSDS
          *
          * @note For a virtual channel to support the VCP service, its synchronization flag must be defined
-         *        as: "SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED" (CCSDSDataLink.def).
+         *        as: "SynchronizationFlag::VCA_SDU" (CCSDSDataLink.def).
          *
          * @param vcChanName Virtual Channel Name, as defined in CCSDSDataLink.def
-         * @param packet The raw packet bytes. Note that the length of the packet is determined by the size of the span.
+         * @param vcaSdu The raw sdu bytes. Note that the length of the sdu is determined by the size of the span.
          *               The function returns an error if this size is different that the transfer frame data field length
          * @param packetOrderFlag User defined flag (optional)
          * @param segmentLengthIdentifier 2 bit user defined flags (optional). The 2 least significant bits of the uint8_t
          *                                are used
          * @returns TODO
          */
-        static etl::expected<void, ServiceChannelNotification> virtualChannelAccessServiceRequest(Objects::VirtualChannelTmName vcChanName,
-            etl::span<uint8_t> packet,
+        static etl::expected<void, ServiceChannelNotification> virtualChannelAccessServiceRequest(
+            Objects::VirtualChannelTmName vcChanName,
+            etl::span<uint8_t> vcaSdu,
             bool packetOrderFlag = Defs::PacketOrderFlag,
             uint8_t segmentLengthIdentifier = Defs::SegmentLengthIdentifierLegacy);
 
@@ -83,14 +84,15 @@ namespace CCSDSDataLinkLayer {
          *
          *  @returns TODO
          */
-        static etl::expected<void, ServiceChannelNotification> virtualChannelOperationalControlFieldServiceRequest(Objects::MasterChannelTmName mcChanName,
+        static etl::expected<void, ServiceChannelNotification> virtualChannelOperationalControlFieldServiceRequest(
+            Objects::MasterChannelTmName mcChanName,
             uint32_t ocfSdu);
 
         /**
          * @brief A pipeline of data handling functions that insert packets to frames and process them. Notifications
          *        are returned if serious problem is encountered, for error handling or logging purposes.
          *
-         * @details Implementation in a process thread: This function should be called inside a dedicated process/thread,
+         * @details Implementation in a process/thread: This function should be called inside a dedicated process/thread,
          *          inside a while loop. A delay between function calls can be used to control the frame generation
          *          rate (in the absence of sufficient Packets or VCA_SDUs, the pipeline still generates 'Only Idle
          *          Data Frames' in an attempt to hold a roughly constant frame generation rate and keep the OCF service

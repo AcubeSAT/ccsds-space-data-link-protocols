@@ -158,108 +158,17 @@ class ServiceChannelSpaceSegment {
 	     */
 	    // MAP/VC Packet Processing and Frame Initialization
 
-    	/**
-		 * Serves as the main entry point from the upper layers, by storing
-		 * raw packets along with their length so they can be later inserted into transfer frames,
-		 * and transmitted.
-		 *
-		 *	@see p. 3.2.2 of CCSDS TM SPACE DATA LINK PROTOCOL for a definition of the 'packet' data structure
-		 *	@see SANA Packet Version Number registry for a list of supported packets types.
-		 *
-		 *  @param channelVariant Push packet to either a Virtual or MAP channel.
-		 *  @param packetSource Pointer to the packet
-		 *  @param serviceType Type-AD or Type-BD packets.
-		 */
-    	static etl::expected<void, ServiceChannelNotification> storePacketTC(
-    		etl::variant<VirtualChannelGroundSegmentVariant&, MAPChannelGroundSegmentVariant&>& channelVariant,
-    		DefsAndUtils::ServiceType serviceType,
-    		const etl::span<uint8_t>& packetSource);
-
     private:
-	    /**
-         * @brief Auxiliary function to implement the blocking of packets stored in the packet buffer.
-         *
-         * @param ranOutOfPacketsFlag         Indicates packetProcessingTC() that the packet queue is empty
-         * @param packetLengthForSegmentation In case a packet turns out to be too large to fit in a single frame,
-         *                                    a request for segmentation is made by the function by placing it's length
-         *                                    in this parameter.
-	     */
-	    static etl::expected<void, ServiceChannelNotification> blocking(
-		    const PhysicalChannel& physicalChannel,
-			MasterChannelGroundSegmentVariant &mcChanVariant,
-			VirtualChannelGroundSegmentVariant &vcChanVariant,
-			etl::optional<MAPChannelGroundSegmentVariant&> &mapChanVariant,
-			DefsAndUtils::ServiceType serviceType,
-			uint16_t securityHeaderLength = 0,
-			uint16_t securityTrailerLength = 0,
-			bool& ranOutOfPacketsFlag,
-			etl::optional<uint16_t>& packetLengthForSegmentation);
 
-	    /**
-         * @brief Auxiliary function to implement the segmentation of packets stored in the packet buffer.
-         *
-         * @param serviceType  Whether the service is of type AD or BC.
-         * @return A Service Channel Notification indicating whether an error has occurred.
-	     */
-	    static etl::expected<void, ServiceChannelNotification> segmentation(
-	    	PhysicalChannel& physicalChannel,
-	    	MasterChannelGroundSegmentVariant &mcChanVariant,
-	    	VirtualChannelGroundSegmentVariant &vcChanVariant,
-	    	etl::optional<MAPChannelGroundSegmentVariant&> &mapChanVariant,
-	    	DefsAndUtils::ServiceType serviceType,
-	    	uint16_t packetLength,
-	    	uint16_t securityHeaderLength = 0,
-	    	uint16_t securityTrailerLength = 0);
 
     public:
-	    /**
-         * Requests to process the last packet stored in the buffer of the specific MAP/VC channel
-         * (possible more if blocking is enabled). The packets are segmented or blocked together
-         * from data of the memory pool, a transfer frame is created with some primary header fields initialized
-         * (as well as the segment header if that is required) and then transferred to the buffer of the virtual channel.
-         * This method implements the following protocol functions (@see TC Space Data Link Protocol):
-         * a) MAP Packet Processing (@see p. 4.3.1) and VC Packet Processing (@see p. 4.3.4)
-         * b) The Frame Initialization Procedure (@see p. 4.3.5.2) of the Virtual Channel Generation function (@see p. 4.3.5)
-         *
-         * @param vid           Virtual Channel ID
-         * @param mapid         MAP channel id. This is ignored if the virtual channel does not contain MAP channels
-         *                      (segmentHeaderTCPresent == false) or if the service type is BC
-         * @param maxTransferFrameDataFieldLength   The max length the data field of the transfer frame is allowed to take
-         *                                          (segment header included). Note: Should a segment header exist, it's 1
-         *                                          octet length is included in this parameter.
-         * @param serviceType               Service type of resulting frame. Only packets from the respective service will
-         *                                  be grouped together
-	     */
-	    etl::expected<void, ServiceChannelNotification>
-	    packetProcessingRequestTxTC(uint8_t vcid, uint8_t mapid, uint8_t maxTransferFrameDataFieldLength,
-	                                ServiceType serviceType);
+
 
 	    // SDLS Processing
-	    /**
-         * Apply security services for TC frames
-         * @param mapid Is ignored if no MAP channels exist for the given virtual channel
-	     */
-	    etl::expected<void, ServiceChannelNotification> applySDLSSecurityTxTC(uint8_t vcid, uint8_t mapid);
+
 
 	    // Virtual Channel Generation
-	    /**
-         * The  Virtual  Channel  Generation  Function  shall  perform  the  following  two
-         * procedures in the following order:
-         * 		The  Frame  Operation  Procedure  (FOP),  which  is  a  sub-procedure  of  the
-         * 		Communications Operation Procedure (COP)
-         *
-         * @see p. 4.3.5 from TC Space Data Link Protocol
-         *
-         * @returns - A service channel Notification indicating whether an error occurred within FOP,
-         *          or an unexpected value was encountered.
-         *          - A struct, which may or may not contain directive notifications, asynchronous notifications
-         *            and the event code detected by fop. The last field is offered for diagnostic reasons.
-         *          @see p. 4.2 & 4.3 from COP-1 CCSDS
-         *
-         * @note If an alert is contained within the asynchronous notification, an unrecoverable error occurred within FOP-1,
-         *       which demands action from a higher layer. Only Type-BD frame transmission remains undisrupted.
-	     */
-	    etl::pair<ServiceChannelNotification, FopSignals> vcGenerationRequestTxTC(uint8_t vcid);
+
 
 
 	    //         - FOP-1 User services and debugging methods

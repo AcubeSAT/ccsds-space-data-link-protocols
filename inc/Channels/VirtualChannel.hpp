@@ -223,12 +223,14 @@ namespace CCSDSDataLinkLayer {
                                      const bool segmentHeaderPresent, const bool blocking,
                                      const bool copInEffect,
                                      const uint16_t associatedSdlsSPI,
+                                     const Defs::DataFieldContent dataFieldContent,
                                      const uint16_t frameCapacity,
                                      const uint16_t typeAdPacketCapacity,
                                      const uint16_t typeBdPacketCapacity)
             : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity),
               segmentHeaderPresent(segmentHeaderPresent), blocking(blocking), copInEffect(copInEffect),
-              typeAdPacketCapacity(typeAdPacketCapacity), typeBdPacketCapacity(typeBdPacketCapacity) {}
+              dataFieldContent(dataFieldContent), typeAdPacketCapacity(typeAdPacketCapacity),
+              typeBdPacketCapacity(typeBdPacketCapacity) {}
 
         void initializeContainers(const etl::span<TransferFrameTC *> &framesAfterAllFramesReceptionBuff,
                                   const etl::span<TransferFrameTC *> &framesAfterVcReceptionTypeADBuff,
@@ -270,6 +272,10 @@ namespace CCSDSDataLinkLayer {
             return copInEffect;
         }
 
+        [[nodiscard]] Defs::DataFieldContent getDataFieldContent() const {
+            return dataFieldContent;
+        }
+
     private:
         /**
          * @brief Determines whether the Segment Header field is present if TC transfer frames
@@ -288,6 +294,11 @@ namespace CCSDSDataLinkLayer {
          *        true if a FARM instance is created)
          */
         const bool copInEffect;
+
+        /**
+         * @brief Whether Packets or VCA_SDUs are used
+         */
+        const Defs::DataFieldContent dataFieldContent;
 
         /**
          * @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
@@ -357,17 +368,20 @@ namespace CCSDSDataLinkLayer {
         friend class FrameOperationProcedure;
         friend class GroundSegmentTcDataHandling;
     public:
-        explicit VirtualChannelGsTc(const uint8_t vcid, const uint16_t parentScid, const uint8_t vcRepetitions,
-                                     const bool segmentHeaderPresent, const bool blocking,
-                                     const bool copInEffect,
-                                     const uint16_t associatedSdlsSPI,
-                                     const uint16_t frameCapacity,
-                                     const uint16_t typeAdPacketCapacity,
-                                     const uint16_t typeBdPacketCapacity)
-            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity), vcRepetitions(vcRepetitions),
+        explicit VirtualChannelGsTc(const uint8_t vcid, const uint16_t parentScid,
+                                    const uint8_t vcRepetitionsTypeAD, const uint8_t vcRepetitionsTypeBD,
+                                    const bool segmentHeaderPresent, const bool blocking,
+                                    const bool copInEffect,
+                                    const uint16_t associatedSdlsSPI,
+                                    const Defs::DataFieldContent dataFieldContent,
+                                    const uint16_t frameCapacity,
+                                    const uint16_t typeAdPacketCapacity,
+                                    const uint16_t typeBdPacketCapacity)
+            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity), vcRepetitionsTypeAD(vcRepetitionsTypeAD),
+              vcRepetitionsTypeBC(vcRepetitionsTypeBC),
               segmentHeaderPresent(segmentHeaderPresent),
-              blocking(blocking), copInEffect(copInEffect), typeAdPacketCapacity(typeAdPacketCapacity),
-              typeBdPacketCapacity(typeBdPacketCapacity) {}
+              blocking(blocking), copInEffect(copInEffect), dataFieldContent(dataFieldContent),
+              typeAdPacketCapacity(typeAdPacketCapacity), typeBdPacketCapacity(typeBdPacketCapacity) {}
 
         void initializeContainers(const etl::span<uint16_t> &packetLengthsTypeADBuff,
                                   const etl::span<uint8_t> &packetOctetsTypeADBuff,
@@ -380,7 +394,7 @@ namespace CCSDSDataLinkLayer {
             packetLengthsTypeBD = Queue(packetLengthsTypeBDBuff);
             packetOctetsTypeBD = Queue(packetOctetsTypeBDBuff);
             framesAfterPacketProcessing = Queue(framesAfterPacketProcessingBuff);
-            framesAfterApplySDLSSecurity = Queue(framesAfterApplySDLSSecurityBuff);
+            framesAfterApplySDLSSecurity = Dequeue(framesAfterApplySDLSSecurityBuff);
         }
 
         [[nodiscard]] uint16_t getTypeAdPacketCapacity() const {
@@ -399,8 +413,12 @@ namespace CCSDSDataLinkLayer {
             this->typeBdPacketCapacity += amount;
         }
 
-        [[nodiscard]] uint8_t getVcRepetitions() const {
-            return vcRepetitions;
+        [[nodiscard]] uint8_t getVcRepetitionsTypeAD() const {
+            return vcRepetitionsTypeAD;
+        }
+
+        [[nodiscard]] uint8_t getVcRepetitionsTypeBC() const {
+            return vcRepetitionsTypeBC;
         }
 
         [[nodiscard]] bool getsegmentHeaderPresent() const {
@@ -415,12 +433,20 @@ namespace CCSDSDataLinkLayer {
             return copInEffect;
         }
 
+        [[nodiscard]] Defs::DataFieldContent getDataFieldContent() const {
+            return dataFieldContent;
+        }
     private:
         /**
-         * @brief Determines the number of times a frame will be repeated in transmission to Channel Coding Layer.
-         * TODO ??
+         * @brief Determines the number of times a Type-AD frame will be repeated in transmission to Channel Coding Layer.
+         *        Note that TYPE-BD frames do not get retransmitted, since by definition they need to be expedited.
          */
-        const uint8_t vcRepetitions;
+        const uint8_t vcRepetitionsTypeAD;
+
+        /**
+         * @brief Determines the number of times a Type-BC frame will be repeated in transmission to Channel Coding Layer.
+         */
+        const uint8_t vcRepetitionsTypeBC;
 
         /**
          * @brief Determines whether the Segment Header field is present if TC transfer frames
@@ -439,6 +465,11 @@ namespace CCSDSDataLinkLayer {
          *        true if a FOP instance is created)
          */
         const bool copInEffect;
+
+        /**
+         * @brief Whether Packets or VCA_SDUs are used
+         */
+        const Defs::DataFieldContent dataFieldContent;
 
         /**
          * @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
@@ -490,7 +521,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Stores pointers to TC frame pointers after security processing and before vc generation
          */
-        Queue<TransferFrameTC*> framesAfterApplySDLSSecurity;
+        Dequeue<TransferFrameTC*> framesAfterApplySDLSSecurity;
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
@@ -514,7 +545,7 @@ namespace CCSDSDataLinkLayer {
             return framesAfterPacketProcessing;
         }
 
-        Queue<TransferFrameTC*>& getFramesAfterApplySDLSSecurity() const {
+        Dequeue<TransferFrameTC*>& getFramesAfterApplySDLSSecurity() const {
             return framesAfterApplySDLSSecurity;
         }
 #endif // ENABLE_CHANNEL_QUEUE_ACCESS

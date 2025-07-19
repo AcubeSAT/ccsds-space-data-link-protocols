@@ -3,12 +3,10 @@
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable(const ChannelConfig::MasterChannelGroundSegmentVariant& masterChannelVariant) {
-        // clear output signal queues
-        directiveNotificationSignalQueue.clear();
-        transferNotificationSignalQueue.clear();
-        asynchronousNotificationSignalQueue.clear();
-        fopToLowerLayerRequestSignalQueue.clear();
+    std::pair<FOPNotification, uint8_t> FrameOperationProcedure::applyFopStateTable() {
+        if (!signalQueueMutex.tryLockFor(Defs::MutexDelayMs)) {
+            return std::make_pair(FOPNotification::FAILED_TO_LOCK_MUTEX, 0);
+        }
 
         // The returned FopNotification will be: FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT, if somehow an
         // impossible combination of event and state are reached.
@@ -16,15 +14,15 @@ namespace CCSDSDataLinkLayer {
         /** clcw arrival events **/
         uint8_t eventCode = 0;
         FOPNotification fopNotification = FOPNotification::NO_FOP_EVENT;
-        if (!clcwQueue.empty()) {
-            CLCW clcw = clcwQueue.front();
-            clcwQueue.pop();
+        if (!clcwBuffer.has_value()) {
+            CLCW clcw = clcwBuffer.value();
+            clcwBuffer.reset();
 
             // standard validity checks
             if ((clcw.getControlWordType() != Defs::ControlWordTypeCLCW) ||
                 (clcw.getClcwVersion() != Defs::ClcwVersionNumber) ||
                 (clcw.getCopInEffect() != Defs::CopInEffect) ||
-                (clcw.getVcId() != vcid)) {
+                (clcw.getVcId() != vcChan->getVcid())) {
                 // E15
                 eventCode = 15;
                 switch (state) {
@@ -36,12 +34,14 @@ namespace CCSDSDataLinkLayer {
                     case Defs::FOPState::RETRANSMIT_WITH_WAIT:
                     case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                     case Defs::FOPState::INITIALIZING_WITH_BC_FRAME:
-                        alert(Defs::AlertEvent::ALRT_CLCW);
+                        alert(AlertEvent::ALRT_CLCW);
                         state = Defs::FOPState::INITIAL;
                 }
 
+                signalQueueMutex.unlock();
                 return std::make_pair(fopNotification, eventCode);
             }
+
 
             // validity checks of special fields that are not part of cop
             // TODO choose which of the following mission specific fields should be used and perform
@@ -63,7 +63,7 @@ namespace CCSDSDataLinkLayer {
                                         break;
                                     case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                                     case Defs::FOPState::RETRANSMIT_WITH_WAIT:
-                                        alert(Defs::AlertEvent::ALRT_SYNCH);
+                                        alert(AlertEvent::ALRT_SYNCH);
                                         state = Defs::FOPState::INITIAL;
                                         break;
                                     case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
@@ -71,8 +71,11 @@ namespace CCSDSDataLinkLayer {
                                             fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                                         }
                                         directiveNotificationSignalQueue.push(
-                                            Defs::DirectiveNotificationSignal(initiateWithClcwCheckId.value(),
-                                                                        Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                            DirectiveNotificationSignal(initiateWithClcwCheckId.value(),
+                                                                        DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                        directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(initiateWithClcwCheckId.value(),
+                                                                        DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                                         initiateWithClcwCheckId = etl::nullopt;
                                         timer.stopTimer();
                                         state = Defs::FOPState::ACTIVE;
@@ -87,9 +90,12 @@ namespace CCSDSDataLinkLayer {
                                                 // message higher layers about the successful directive (type bc frame reception)
                                                 if (!directiveNotificationSignalQueue.full()) {
                                                     directiveNotificationSignalQueue.push(
-                                                        Defs::DirectiveNotificationSignal(initiateWithBcFrameId.value(),
-                                                            Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE,
+                                                        DirectiveNotificationSignal(initiateWithBcFrameId.value(),
+                                                            DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE,
                                                             frame));
+                                                    directiveNotificationSignalQueueUser.push(
+                                                        DirectiveNotificationSignalUser(initiateWithBcFrameId.value(),
+                                                                        DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                                                     initiateWithBcFrameId = etl::nullopt;
                                                 }
 
@@ -138,7 +144,7 @@ namespace CCSDSDataLinkLayer {
                                 case Defs::FOPState::RETRANSMIT_WITH_WAIT:
                                 case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                                 case Defs::FOPState::INITIALIZING_WITH_BC_FRAME:
-                                    alert(Defs::AlertEvent::ALRT_CLCW);
+                                    alert(AlertEvent::ALRT_CLCW);
                                     state = Defs::FOPState::INITIAL;
                             }
                         }
@@ -155,7 +161,7 @@ namespace CCSDSDataLinkLayer {
                             case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                             case Defs::FOPState::RETRANSMIT_WITH_WAIT:
                             case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                                alert(Defs::AlertEvent::ALRT_SYNCH);
+                                alert(AlertEvent::ALRT_SYNCH);
                                 state = Defs::FOPState::INITIAL;
                         }
                     }
@@ -176,7 +182,7 @@ namespace CCSDSDataLinkLayer {
                                         break;
                                     case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                                     case Defs::FOPState::RETRANSMIT_WITH_WAIT:
-                                        alert(Defs::AlertEvent::ALRT_SYNCH);
+                                        alert(AlertEvent::ALRT_SYNCH);
                                         break;
                                     case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                                     case Defs::FOPState::INITIALIZING_WITH_BC_FRAME:
@@ -214,7 +220,7 @@ namespace CCSDSDataLinkLayer {
                                 case Defs::FOPState::ACTIVE:
                                 case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                                 case Defs::FOPState::RETRANSMIT_WITH_WAIT:
-                                    alert(Defs::AlertEvent::ALRT_CLCW);
+                                    alert(AlertEvent::ALRT_CLCW);
                                     state = Defs::FOPState::INITIAL;
                                     break;
                                 case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
@@ -238,7 +244,7 @@ namespace CCSDSDataLinkLayer {
                                     case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                                     case Defs::FOPState::RETRANSMIT_WITH_WAIT:
                                         fopNotification = removeAcknowledgedFramesFromSentQueue(clcw.getReportValue());
-                                        alert(Defs::AlertEvent::ALRT_LIMIT);
+                                        alert(AlertEvent::ALRT_LIMIT);
                                         state = Defs::FOPState::INITIAL;
                                         break;
                                     case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
@@ -257,7 +263,7 @@ namespace CCSDSDataLinkLayer {
                                     case Defs::FOPState::ACTIVE:
                                     case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                                     case Defs::FOPState::RETRANSMIT_WITH_WAIT:
-                                        alert(Defs::AlertEvent::ALRT_LIMIT);
+                                        alert(AlertEvent::ALRT_LIMIT);
                                         state = Defs::FOPState::INITIAL;
                                         break;
                                     case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
@@ -407,7 +413,7 @@ namespace CCSDSDataLinkLayer {
                         case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                         case Defs::FOPState::RETRANSMIT_WITH_WAIT:
                         case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                            alert(Defs::AlertEvent::ALRT_NNR);
+                            alert(AlertEvent::ALRT_NNR);
                             state = Defs::FOPState::INITIAL;
                             break;
                     }
@@ -425,7 +431,7 @@ namespace CCSDSDataLinkLayer {
                     case Defs::FOPState::RETRANSMIT_WITHOUT_WAIT:
                     case Defs::FOPState::RETRANSMIT_WITH_WAIT:
                     case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                        alert(Defs::AlertEvent::ALRT_LOCKOUT);
+                        alert(AlertEvent::ALRT_LOCKOUT);
                         state = Defs::FOPState::INITIAL;
                         break;
                 }
@@ -434,6 +440,7 @@ namespace CCSDSDataLinkLayer {
 
         // Return if an event was detected, or something went wrong
         if (fopNotification != FOPNotification::NO_FOP_EVENT || eventCode != 0) {
+            signalQueueMutex.unlock();
             return std::make_pair(fopNotification, eventCode);
         }
 
@@ -453,7 +460,7 @@ namespace CCSDSDataLinkLayer {
                             fopNotification = lookForFdu();
                             break;
                         case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
-                            alert(Defs::AlertEvent::ALRT_T1);
+                            alert(AlertEvent::ALRT_T1);
                             state = Defs::FOPState::INITIAL;
                             break;
                         case Defs::FOPState::INITIALIZING_WITH_BC_FRAME:
@@ -479,7 +486,7 @@ namespace CCSDSDataLinkLayer {
                         case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                             suspendState = Defs::SuspendVariableState::SUSPENDED_PREV_STATE_INITIALIZING_WITHOUT_BC_FRAME;
                             asynchronousNotificationSignalQueue.push(
-                                Defs::AsynchronousNotificationSignal(Defs::AsynchronousNotificationType::SUSPEND));
+                                AsynchronousNotificationSignal(AsynchronousNotificationType::SUSPEND));
                             state = Defs::FOPState::INITIAL;
                             break;
                         case Defs::FOPState::INITIALIZING_WITH_BC_FRAME:
@@ -500,7 +507,7 @@ namespace CCSDSDataLinkLayer {
                             fopNotification = FOPNotification::FOP_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT;
                             break;
                         default:
-                            alert(Defs::AlertEvent::ALRT_T1);
+                            alert(AlertEvent::ALRT_T1);
                             state = Defs::FOPState::INITIAL;
                     }
                 } else {
@@ -520,11 +527,11 @@ namespace CCSDSDataLinkLayer {
                         case Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME:
                             suspendState = Defs::SuspendVariableState::SUSPENDED_PREV_STATE_INITIALIZING_WITHOUT_BC_FRAME;
                             asynchronousNotificationSignalQueue.push(
-                                Defs::AsynchronousNotificationSignal(Defs::AsynchronousNotificationType::SUSPEND));
+                                AsynchronousNotificationSignal(AsynchronousNotificationType::SUSPEND));
                             state = Defs::FOPState::INITIAL;
                             break;
                         case Defs::FOPState::INITIALIZING_WITH_BC_FRAME:
-                            alert(Defs::AlertEvent::ALRT_T1);
+                            alert(AlertEvent::ALRT_T1);
                             state = Defs::FOPState::INITIAL;
                             break;
                         case Defs::FOPState::INITIAL:
@@ -536,12 +543,13 @@ namespace CCSDSDataLinkLayer {
 
         // Return if an event was detected, or something went wrong
         if (fopNotification != FOPNotification::NO_FOP_EVENT || eventCode != 0) {
+            signalQueueMutex.unlock();
             return std::make_pair(fopNotification, eventCode);
         }
 
         /** Receive request to transfer fdu **/
         if (!transferFduSignalQueue.empty()) {
-            Defs::FduTransferSignal fduTransferSignal = transferFduSignalQueue.front();
+            FduTransferSignal fduTransferSignal = transferFduSignalQueue.front();
             transferNotificationSignalQueue.pop();
 
             if (fduTransferSignal.serviceType != Defs::ServiceType::TYPE_AD &&
@@ -571,7 +579,7 @@ namespace CCSDSDataLinkLayer {
                         case Defs::FOPState::INITIALIZING_WITH_BC_FRAME:
                         case Defs::FOPState::INITIAL:
                             transferNotificationSignalQueue.push(
-                                Defs::TransferNotificationSignal(Defs::TransferNotificationType::REJECT_RESPONSE_TO_TRANSFER_FDU,
+                                TransferNotificationSignal(TransferNotificationType::REJECT_RESPONSE_TO_TRANSFER_FDU,
                                                            fduTransferSignal.frame));
                     }
                 } else {
@@ -579,7 +587,7 @@ namespace CCSDSDataLinkLayer {
                     // E20
                     eventCode = 20;
                     transferNotificationSignalQueue.push(
-                        Defs::TransferNotificationSignal(Defs::TransferNotificationType::REJECT_RESPONSE_TO_TRANSFER_FDU,
+                        TransferNotificationSignal(TransferNotificationType::REJECT_RESPONSE_TO_TRANSFER_FDU,
                                                    fduTransferSignal.frame));
                 }
             } else {
@@ -588,7 +596,7 @@ namespace CCSDSDataLinkLayer {
                     // E21 rev. B
                     eventCode = 21;
                     transferNotificationSignalQueue.push(
-                        Defs::TransferNotificationSignal(Defs::TransferNotificationType::ACCEPT_RESPONSE_TO_TRANSFER_FDU,
+                        TransferNotificationSignal(TransferNotificationType::ACCEPT_RESPONSE_TO_TRANSFER_FDU,
                                                    fduTransferSignal.frame));
                     fopNotification = transmitBdFrame(fduTransferSignal.frame);
                 } else {
@@ -596,7 +604,7 @@ namespace CCSDSDataLinkLayer {
                     // E22
                     eventCode = 22;
                     transferNotificationSignalQueue.push(
-                        Defs::TransferNotificationSignal(Defs::TransferNotificationType::REJECT_RESPONSE_TO_TRANSFER_FDU,
+                        TransferNotificationSignal(TransferNotificationType::REJECT_RESPONSE_TO_TRANSFER_FDU,
                                                    fduTransferSignal.frame));
                 }
             }
@@ -604,36 +612,46 @@ namespace CCSDSDataLinkLayer {
 
         // Return if an event was detected, or something went wrong
         if (fopNotification != FOPNotification::NO_FOP_EVENT || eventCode != 0) {
+            signalQueueMutex.unlock();
             return std::make_pair(fopNotification, eventCode);
         }
 
         /** Directive request reception**/
         if (!directiveRequestSignalQueue.empty()) {
-            Defs::DirectiveRequestSignal directiveRequestSignal = directiveRequestSignalQueue.front();
+            DirectiveRequestSignal directiveRequestSignal = directiveRequestSignalQueue.front();
             directiveRequestSignalQueue.pop();
 
             switch (directiveRequestSignal.directiveType) {
-                case Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITHOUT_CLCW_CHECK:
+                case DirectiveRequestType::INITIATE_AD_SERVICE_WITHOUT_CLCW_CHECK:
                     // E23
                     eventCode = 23;
                     switch (state) {
                         case Defs::FOPState::INITIAL:
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                             initialize();
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                             state = Defs::FOPState::ACTIVE;
                             break;
                         default:
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                     }
                     break;
-                case Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_CLCW_CHECK:
+                case DirectiveRequestType::INITIATE_AD_SERVICE_WITH_CLCW_CHECK:
                     // E24
                     eventCode = 24;
                     switch (state) {
@@ -641,19 +659,25 @@ namespace CCSDSDataLinkLayer {
                             initiateWithClcwCheckId.emplace(
                                 directiveRequestSignal.requestIdentifier); // store request identifier
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                             initialize();
                             timer.startTimer(tiInitial);
                             state = Defs::FOPState::INITIALIZING_WITHOUT_BC_FRAME;
                             break;
                         default:
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                     }
                     break;
-                case Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK:
+                case DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK:
                     if (!directiveRequestSignal.directiveQualifier) {
                         fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                         break;
@@ -665,28 +689,37 @@ namespace CCSDSDataLinkLayer {
                         switch (state) {
                             case Defs::FOPState::INITIAL:
                                 directiveNotificationSignalQueue.push(
-                                    Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                                Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                    DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                                DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                                 initialize();
-                                fopNotification = transmitBcFrame(masterChannelVariant, directiveRequestSignal);
+                                fopNotification = transmitBcFrame(directiveRequestSignal);
                                 initiateWithBcFrameId.emplace(directiveRequestSignal.requestIdentifier);
                                 state = Defs::FOPState::INITIALIZING_WITH_BC_FRAME;
                                 break;
                             default:
                                 directiveNotificationSignalQueue.push(
-                                    Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                                Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                                    DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                                DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                                directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                         }
                     } else {
                         // bc_out_flag not ready
                         // E26
                         eventCode = 26;
                         directiveNotificationSignalQueue.push(
-                            Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                        Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                            DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                        directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                     }
                     break;
-                case Defs::DirectiveRequestType::INITIATE_AD_SERVICE_WITH_SET_VR:
+                case DirectiveRequestType::INITIATE_AD_SERVICE_WITH_SET_VR:
                     if (!directiveRequestSignal.directiveQualifier) {
                         fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                         break;
@@ -698,71 +731,101 @@ namespace CCSDSDataLinkLayer {
                         switch (state) {
                             case Defs::FOPState::INITIAL:
                                 directiveNotificationSignalQueue.push(
-                                    Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                                Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                    DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                                DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                                 transmitterFrameSeqNumber = static_cast<uint8_t>(directiveRequestSignal.
                                     directiveQualifier.value());
                                 expectedAcknowledgementSeqNumber = static_cast<uint8_t>(directiveRequestSignal.
                                     directiveQualifier.value());
-                                fopNotification = transmitBcFrame(masterChannelVariant, directiveRequestSignal);
+                                fopNotification = transmitBcFrame(directiveRequestSignal);
                                 initiateWithBcFrameId.emplace(directiveRequestSignal.requestIdentifier);
                                 state = Defs::FOPState::INITIALIZING_WITH_BC_FRAME;
                                 break;
                             default:
                                 directiveNotificationSignalQueue.push(
-                                    Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                                Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                                    DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                                DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                                directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                         }
                     } else {
                         // bc_out_flag not ready
                         // E28
                         eventCode = 28;
                         directiveNotificationSignalQueue.push(
-                            Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                        Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                            DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                        directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                     }
                     break;
-                case Defs::DirectiveRequestType::TERMINATE_AD_SERVICE:
+                case DirectiveRequestType::TERMINATE_AD_SERVICE:
                     // E29
                     eventCode = 29;
                     switch (state) {
                         case Defs::FOPState::INITIAL:
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                             break;
                         default:
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
-                            alert(Defs::AlertEvent::ALRT_TERM);
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                            alert(AlertEvent::ALRT_TERM);
                             directiveNotificationSignalQueue.push(
-                                Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                            Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                            DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                            directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                             state = Defs::FOPState::INITIAL;
                     }
                     break;
-                case Defs::DirectiveRequestType::RESUME_AD_SERVICE:
+                case DirectiveRequestType::RESUME_AD_SERVICE:
                     // E30 to E34
                     if (suspendState == Defs::SuspendVariableState::NOT_SUSPENDED) {
                         eventCode = 30;
                         directiveNotificationSignalQueue.push(
-                            Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                        Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                            DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                        directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                     } else {
                         eventCode = 30 + static_cast<uint8_t>(suspendState);
                         switch (state) {
                             case Defs::FOPState::INITIAL:
                                 directiveNotificationSignalQueue.push(
-                                    Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                                Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                    DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                                DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                                directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                                 resume();
                                 directiveNotificationSignalQueue.push(
-                                    Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                                Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                    DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                                DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                                directiveNotificationSignalQueueUser.push(
+                                    DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                                 state = static_cast<Defs::FOPState>(suspendState);
                                 break;
                             default:
@@ -770,7 +833,7 @@ namespace CCSDSDataLinkLayer {
                         }
                     }
                     break;
-                case Defs::DirectiveRequestType::SET_NEW_VS:
+                case DirectiveRequestType::SET_NEW_VS:
                     if (!directiveRequestSignal.directiveQualifier) {
                         fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                         break;
@@ -780,22 +843,31 @@ namespace CCSDSDataLinkLayer {
                     eventCode = 35;
                     if ((state == Defs::FOPState::INITIAL) && (suspendState == Defs::SuspendVariableState::NOT_SUSPENDED)) {
                         directiveNotificationSignalQueue.push(
-                            Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                        Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                            DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                        directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                         transmitterFrameSeqNumber = static_cast<uint8_t>(directiveRequestSignal.directiveQualifier.
                             value());
                         expectedAcknowledgementSeqNumber = static_cast<uint8_t>(directiveRequestSignal.
                             directiveQualifier.value());
                         directiveNotificationSignalQueue.push(
-                            Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                        Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                            DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                        DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                        directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                     } else {
                         directiveNotificationSignalQueue.push(
-                            Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                        Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                            DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                        directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                     }
                     break;
-                case Defs::DirectiveRequestType::SET_FOP_SLIDING_WINDOW_WIDTH:
+                case DirectiveRequestType::SET_FOP_SLIDING_WINDOW_WIDTH:
                     if (!directiveRequestSignal.directiveQualifier) {
                         fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                         break;
@@ -804,14 +876,20 @@ namespace CCSDSDataLinkLayer {
                 // E36
                     eventCode = 36;
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                     fopSlidingWindowWidth = static_cast<uint8_t>(directiveRequestSignal.directiveQualifier.value());
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                     break;
-                case Defs::DirectiveRequestType::SET_T1_INITIAL:
+                case DirectiveRequestType::SET_T1_INITIAL:
                     if (!directiveRequestSignal.directiveQualifier) {
                         fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                         break;
@@ -820,14 +898,20 @@ namespace CCSDSDataLinkLayer {
                 // E37
                     eventCode = 37;
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                     tiInitial = directiveRequestSignal.directiveQualifier.value();
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                     break;
-                case Defs::DirectiveRequestType::SET_TRANSMISSION_LIMIT:
+                case DirectiveRequestType::SET_TRANSMISSION_LIMIT:
                     if (!directiveRequestSignal.directiveQualifier) {
                         fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                         break;
@@ -836,14 +920,20 @@ namespace CCSDSDataLinkLayer {
                 // E38
                     eventCode = 38;
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                            DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                        DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                     transmissionLimit = static_cast<uint8_t>(directiveRequestSignal.directiveQualifier.value());
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                     break;
-                case Defs::DirectiveRequestType::SET_TIMEOUT_TYPE:
+                case DirectiveRequestType::SET_TIMEOUT_TYPE:
                     if (!directiveRequestSignal.directiveQualifier) {
                         fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
                         break;
@@ -852,53 +942,63 @@ namespace CCSDSDataLinkLayer {
                 // E39
                     eventCode = 39;
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
                     timeoutType = static_cast<bool>(directiveRequestSignal.directiveQualifier.value());
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
                     break;
                 default: // invalid directive
                     // E40
                     eventCode = 40;
                     directiveNotificationSignalQueue.push(
-                        Defs::DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
-                                                    Defs::DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                        DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
+                                                    DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
+                    directiveNotificationSignalQueueUser.push(
+                                        DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
+                                                                    DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE));
                     break;
             }
         }
 
         // Return if an event was detected, or something went wrong
         if (fopNotification != FOPNotification::NO_FOP_EVENT || eventCode != 0) {
+            signalQueueMutex.unlock();
             return std::make_pair(fopNotification, eventCode);
         }
 
         /** Response from lower layers **/
         if (!lowerLayerResponseSignalQueue.empty()) {
-            Defs::LowerLayerResponseSignal lowerLayerResponseSignal = lowerLayerResponseSignalQueue.front();
+            LowerLayerResponseSignal lowerLayerResponseSignal = lowerLayerResponseSignalQueue.front();
             lowerLayerResponseSignalQueue.pop();
 
             switch (lowerLayerResponseSignal) {
-                case Defs::LowerLayerResponseSignal::AD_REJECT:
+                case LowerLayerResponseSignal::AD_REJECT:
                     // E42
                     eventCode = 42;
-                    alert(Defs::AlertEvent::ALRT_LLIF);
+                    alert(AlertEvent::ALRT_LLIF);
                     state = Defs::FOPState::INITIAL;
                     break;
-                case Defs::LowerLayerResponseSignal::BC_REJECT:
+                case LowerLayerResponseSignal::BC_REJECT:
                     // E44
                     eventCode = 44;
-                    alert(Defs::AlertEvent::ALRT_LLIF);
+                    alert(AlertEvent::ALRT_LLIF);
                     state = Defs::FOPState::INITIAL;
                     break;
-                case Defs::LowerLayerResponseSignal::BD_REJECT:
+                case LowerLayerResponseSignal::BD_REJECT:
                     // E46
                     eventCode = 46;
-                    alert(Defs::AlertEvent::ALRT_LLIF);
+                    alert(AlertEvent::ALRT_LLIF);
                     state = Defs::FOPState::INITIAL;
                     break;
-                case Defs::LowerLayerResponseSignal::AD_ACCEPT:
+                case LowerLayerResponseSignal::AD_ACCEPT:
                     // E41
                     eventCode = 41;
                     adOut = true;
@@ -907,7 +1007,7 @@ namespace CCSDSDataLinkLayer {
                         fopNotification = lookForFdu();
                     }
                     break;
-                case Defs::LowerLayerResponseSignal::BC_ACCEPT:
+                case LowerLayerResponseSignal::BC_ACCEPT:
                     // E43
                     eventCode = 43;
                     bcOut = true;
@@ -916,7 +1016,7 @@ namespace CCSDSDataLinkLayer {
                         fopNotification = lookForDirective();
                     }
                     break;
-                case Defs::LowerLayerResponseSignal::BD_ACCEPT:
+                case LowerLayerResponseSignal::BD_ACCEPT:
                     // E45
                     eventCode = 45;
                     bdOut = true;
@@ -927,6 +1027,7 @@ namespace CCSDSDataLinkLayer {
             }
         }
 
+        signalQueueMutex.unlock();
         return std::make_pair(fopNotification, eventCode);
     }
 #endif // INCLUDE_GROUND_SEGMENT_CODE

@@ -17,9 +17,10 @@ namespace CCSDSDataLinkLayer {
     class MAPChannelBase {
     public:
         MAPChannelBase(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
-                       const uint16_t associatedSdlsSPI, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity, const uint16_t typeBdPacketCapacity)
-            : mapid(mapid & 0x3FU), parentVcid(parentVcid & 0x3FU), parentScid(parentScid), blocking(blocking), segmentation(segmentation),
-              frameCapacity(frameCapacity),  typeAdPacketCapacity(typeAdPacketCapacity), typeBdPacketCapacity(typeBdPacketCapacity), channelMutex(Mutex()) {
+                       const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity, const uint16_t typeBdPacketCapacity)
+            : channelMutex(Mutex()), mapid(mapid & 0x3FU), parentVcid(parentVcid & 0x3FU), parentScid(parentScid), blocking(blocking),
+              segmentation(segmentation),  dataFieldContent(dataFieldContent), frameCapacity(frameCapacity), typeAdPacketCapacity(typeAdPacketCapacity),
+              typeBdPacketCapacity(typeBdPacketCapacity){
             if (associatedSdlsSPI != 0) {
                 this->associatedSdlsSPI = etl::optional(associatedSdlsSPI);
             }
@@ -42,11 +43,11 @@ namespace CCSDSDataLinkLayer {
             return parentScid;
         }
 
-        [[nodiscard]] bool getBlockingTC() const {
+        [[nodiscard]] bool getBlocking() const {
             return blocking;
         }
 
-        [[nodiscard]] bool getSegmentationTC() const {
+        [[nodiscard]] bool getSegmentation() const {
             return segmentation;
         }
 
@@ -64,6 +65,10 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] uint16_t getTypeBdPacketCapacity() const {
             return typeBdPacketCapacity;
+        }
+
+        [[nodiscard]] Defs::DataFieldContent getDataFieldContent() const {
+            return dataFieldContent;
         }
 
     protected:
@@ -106,6 +111,11 @@ namespace CCSDSDataLinkLayer {
         etl::optional<uint16_t> associatedSdlsSPI;
 
         /**
+         * @brief Whether Packets or VCA_SDUs are used
+         */
+        const Defs::DataFieldContent dataFieldContent;
+
+        /**
          * @brief States how many frames this channel should support (used during the memory pool allocation process).
          */
         const uint16_t frameCapacity;
@@ -129,9 +139,9 @@ namespace CCSDSDataLinkLayer {
         friend class SpaceSegmentTcDataHandling;
     public:
         MAPChannelSs(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
-            const uint16_t associatedSdlsSPI, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
+            const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
             const uint16_t typeBdPacketCapacity)
-            : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, frameCapacity,
+            : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity,
                 typeAdPacketCapacity, typeBdPacketCapacity) {}
 
         void initializeContainers(const etl::span<TransferFrameTC*>& framesAfterProcessSdlsSecurityBuff) {
@@ -162,9 +172,9 @@ namespace CCSDSDataLinkLayer {
         friend class GroundSegmentTcDataHandling;
     public:
         MAPChannelGs(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
-            const uint16_t associatedSdlsSPI, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
+            const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
             const uint16_t typeBdPacketCapacity)
-            : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, frameCapacity,
+            : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity,
                 typeAdPacketCapacity, typeBdPacketCapacity) {}
 
         void initializeContainers(const etl::span<uint16_t>& packetLengthsTypeADBuff,
