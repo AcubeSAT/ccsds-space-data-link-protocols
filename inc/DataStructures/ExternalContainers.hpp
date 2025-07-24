@@ -14,123 +14,250 @@ namespace CCSDSDataLinkLayer {
     template<typename T>
     class Queue {
     public:
-        explicit Queue(etl::span<T> buffer);
+        explicit Queue(etl::span<T> buffer)
+            : buf(buffer.data()), capacity(buffer.size()), head(0), tail(0), full(false) {}
+
         Queue() = default;
 
-        T& getFront();
-        T& getBack();
-        void push(const T& item);
-        void push(T&& item);
-        void pop();
+        T& getFront() { return buf[tail]; }
+        T& getBack() { return buf[(head + capacity - 1) % capacity]; }
 
-        [[nodiscard]] bool isEmpty() const;
-        [[nodiscard]] bool isFull() const;
-        [[nodiscard]] uint32_t currentSize() const;
-        [[nodiscard]] uint32_t maxSize() const;
-        [[nodiscard]] uint32_t remainingCapacity() const;
+        void push(const T &item) {
+            buf[head] = item;
+            head = (head + 1) % capacity;
+            full = (head == tail);
+        }
 
-        void reset();
+        void push(T &&item) {
+            buf[head] = std::move(item);
+            head = (head + 1) % capacity;
+            full = (head == tail);
+        }
+
+        void pop() {
+            full = false;
+            tail = (tail + 1) % capacity;
+        }
+
+        [[nodiscard]] bool isEmpty() const { return (!full && head == tail); }
+        [[nodiscard]] bool isFull() const { return full; }
+
+        [[nodiscard]] uint32_t currentSize() const {
+            if (full) return capacity;
+            if (head >= tail) return head - tail;
+            return capacity + head - tail;
+        }
+
+        [[nodiscard]] uint32_t maxSize() const { return capacity; }
+        [[nodiscard]] uint32_t remainingCapacity() const { return maxSize() - currentSize(); }
+
+        void reset() {
+            head = tail = 0;
+            full = false;
+        }
 
     private:
-        T*      buf = nullptr;
-        uint32_t  capacity = 0;
-        uint32_t  head = 0;
-        uint32_t  tail = 0;
-        bool    full = false;
+        T* buf = nullptr;
+        uint32_t capacity = 0;
+        uint32_t head = 0;
+        uint32_t tail = 0;
+        bool full = false;
     };
 
     // Double-ended queue (deque)
     template<typename T>
     class Dequeue {
     public:
-        explicit Dequeue(etl::span<T> buffer);
+        explicit Dequeue(etl::span<T> buffer)
+            : buf(buffer.data()), capacity(buffer.size()), head(0), tail(0), full(false) {}
+
         Dequeue() = default;
 
-        T& getFront();
-        T& getBack();
+        T& getFront() { return buf[tail]; }
 
-        void pushBack(const T& item);
-        void pushBack(T&& item);
-        void pushFront(const T& item);
-        void pushFront(T&& item);
+        T& getBack() {
+            uint32_t idx = (head + capacity - 1) % capacity;
+            return buf[idx];
+        }
 
-        void popFront();
-        void popBack();
+        void pushBack(const T& item) {
+            buf[head] = item;
+            head = (head + 1) % capacity;
+            full = (head == tail);
+        }
 
-        [[nodiscard]] bool isEmpty() const;
-        [[nodiscard]] bool isFull() const;
-        [[nodiscard]] uint32_t currentSize() const;
-        [[nodiscard]] uint32_t maxSize() const;
-        [[nodiscard]] uint32_t remainingCapacity() const;
+        void pushBack(T&& item) {
+            buf[head] = std::move(item);
+            head = (head + 1) % capacity;
+            full = (head == tail);
+        }
 
-        void reset();
+        void pushFront(const T& item) {
+            tail = (tail + capacity - 1) % capacity;
+            buf[tail] = item;
+            full = (head == tail);
+        }
+
+        void pushFront(T&& item) {
+            tail = (tail + capacity - 1) % capacity;
+            buf[tail] = std::move(item);
+            full = (head == tail);
+        }
+
+        void popFront() {
+            full = false;
+            tail = (tail + 1) % capacity;
+        }
+
+        void popBack() {
+            full = false;
+            head = (head + capacity - 1) % capacity;
+        }
+
+        [[nodiscard]] bool isEmpty() const { return (!full && head == tail); }
+        [[nodiscard]] bool isFull() const { return full; }
+
+        [[nodiscard]] uint32_t currentSize() const {
+            if (full) return capacity;
+            if (head >= tail) return head - tail;
+            return capacity + head - tail;
+        }
+
+        [[nodiscard]] uint32_t maxSize() const { return capacity; }
+        [[nodiscard]] uint32_t remainingCapacity() const { return maxSize() - currentSize(); }
+
+        void reset() {
+            head = tail = 0;
+            full = false;
+        }
 
     private:
-        T*      buf = nullptr;
-        uint32_t  capacity = 0;
-        uint32_t  head = 0;
-        uint32_t  tail = 0;
-        bool    full = false;
+        T* buf = nullptr;
+        uint32_t capacity = 0;
+        uint32_t head = 0;
+        uint32_t tail = 0;
+        bool full = false;
     };
 
     // Circular buffer (overwrites oldest data when full)
     template<typename T>
     class CircularBuffer {
     public:
-        explicit CircularBuffer(etl::span<T> buffer);
+        explicit CircularBuffer(etl::span<T> buffer)
+            : buf(buffer.data()), capacity(buffer.size()), head(0), tail(0), full(false) {}
+
         CircularBuffer() = default;
 
-        T& getFront();
-        T& getBack();
+        T& getFront() { return buf[tail]; }
 
-        void push(const T& item);
-        void push(T&& item);
-        void pop();
+        T& getBack() {
+            uint32_t idx = (head + capacity - 1) % capacity;
+            return buf[idx];
+        }
 
-        [[nodiscard]] bool isEmpty() const;
-        [[nodiscard]] bool isFull() const;
-        [[nodiscard]] uint32_t currentSize() const;
-        [[nodiscard]] uint32_t maxSize() const;
-        [[nodiscard]] uint32_t remainingCapacity() const;
+        void push(const T& item) {
+            buf[head] = item;
+            if (full) tail = (tail + 1) % capacity;
+            head = (head + 1) % capacity;
+            full = (head == tail);
+        }
 
-        void reset();
+        void push(T&& item) {
+            buf[head] = std::move(item);
+            if (full) tail = (tail + 1) % capacity;
+            head = (head + 1) % capacity;
+            full = (head == tail);
+        }
+
+        void pop() {
+            full = false;
+            tail = (tail + 1) % capacity;
+        }
+
+        [[nodiscard]] bool isEmpty() const { return (!full && head == tail); }
+        [[nodiscard]] bool isFull() const { return full; }
+
+        [[nodiscard]] uint32_t currentSize() const {
+            if (full) return capacity;
+            if (head >= tail) return head - tail;
+            return capacity + head - tail;
+        }
+
+        [[nodiscard]] uint32_t maxSize() const { return capacity; }
+        [[nodiscard]] uint32_t remainingCapacity() const { return maxSize() - currentSize(); }
+
+        void reset() {
+            head = tail = 0;
+            full = false;
+        }
 
     private:
-        T*      buf = nullptr;
-        uint32_t  capacity = 0;
-        uint32_t  head = 0;
-        uint32_t  tail = 0;
-        bool    full = false;
+        T* buf = nullptr;
+        uint32_t capacity = 0;
+        uint32_t head = 0;
+        uint32_t tail = 0;
+        bool full = false;
     };
 
-    // Stable pool
+    // Stable unordered pool
     template<typename T>
     class UnorderedPool {
     public:
-        explicit UnorderedPool(etl::span<T> buffer, etl::span<uint32_t> freeIndices);
+        explicit UnorderedPool(etl::span<T> buffer, etl::span<uint32_t> freeIndices)
+            : buf(buffer.data()), capacity(buffer.size()), sz(0),
+              freeIndices(freeIndices.data()), freeCount(buffer.size()) {
+            for (uint32_t i = 0; i < capacity; ++i) {
+                this->freeIndices[i] = i;
+            }
+        }
+
         UnorderedPool() = default;
 
-        T* push(const T& item);
-        T* push(T&& item);
+        T* push(const T& item) {
+            uint32_t index = freeIndices[--freeCount];
+            buf[index] = item;
+            ++sz;
+            return &buf[index];
+        }
 
-        bool erase(T* item);
+        T* push(T&& item) {
+            uint32_t index = freeIndices[--freeCount];
+            buf[index] = std::move(item);
+            ++sz;
+            return &buf[index];
+        }
 
-        [[nodiscard]] bool   isEmpty()     const;
-        [[nodiscard]] bool   isFull()      const;
-        [[nodiscard]] uint32_t currentSize() const;
-        [[nodiscard]] uint32_t maxSize()     const;
-        [[nodiscard]] uint32_t remainingCapacity() const;
+        bool erase(T* item) {
+            if (!item || item < buf || item >= buf + capacity) {
+                return false;
+            }
+            uint32_t index = item - buf;
+            freeIndices[freeCount++] = index;
+            --sz;
+            return true;
+        }
 
-        void reset();
+        [[nodiscard]] bool isEmpty() const { return sz == 0; }
+        [[nodiscard]] bool isFull() const { return freeCount == 0; }
+
+        [[nodiscard]] uint32_t currentSize() const { return sz; }
+        [[nodiscard]] uint32_t maxSize() const { return capacity; }
+        [[nodiscard]] uint32_t remainingCapacity() const { return maxSize() - currentSize(); }
+
+        void reset() {
+            sz = 0;
+            freeCount = capacity;
+            for (uint32_t i = 0; i < capacity; ++i) {
+                freeIndices[i] = i;
+            }
+        }
 
     private:
-        T*      buf = nullptr;
-        uint32_t  capacity = 0;
-        uint32_t  sz = 0;
-
-        // Free list as array of indices
+        T* buf = nullptr;
+        uint32_t capacity = 0;
+        uint32_t sz = 0;
         uint32_t* freeIndices = nullptr;
-        uint32_t  freeCount = 0;
+        uint32_t freeCount = 0;
     };
 
-} // CCSDSDataLinkLayer
+} // namespace CCSDSDataLinkLayer

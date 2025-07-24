@@ -142,23 +142,48 @@ namespace CCSDSDataLinkLayer {
             const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
             const uint16_t typeBdPacketCapacity)
             : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity,
-                typeAdPacketCapacity, typeBdPacketCapacity) {}
+                typeAdPacketCapacity, typeBdPacketCapacity), segmentedPacketConstructor(Defs::SegmentedPacketConstructorTc()) {}
 
-        void initializeContainers(const etl::span<TransferFrameTC*>& framesAfterProcessSdlsSecurityBuff) {
-            framesAfterProcessSdlsSecurity = Queue(framesAfterProcessSdlsSecurityBuff);
+        void initializeContainers(
+            const etl::span<TransferFrameTC*>& framesAfterProcessSdlsSecurityTypeADBuff,
+            const etl::span<TransferFrameTC*>& framesAfterProcessSdlsSecurityTypeBDBuff) {
+            framesAfterProcessSDLSSecurityTypeAD = Queue(framesAfterProcessSdlsSecurityTypeADBuff);
+            framesAfterProcessSDLSSecurityTypeBD = Queue(framesAfterProcessSdlsSecurityTypeBDBuff);
         }
 
     private:
         /**
-         * @brief Stores pointers to TC frames after security processing
+         * @brief Stores pointers to Type-AD TC frame pointers after security processing and before packet extraction
          */
-        Queue<TransferFrameTC*> framesAfterProcessSdlsSecurity;
+        Queue<TransferFrameTC*> framesAfterProcessSDLSSecurityTypeAD;
+
+        /**
+         * @brief Stores pointers to Type-BD TC frame pointers after security processing and before packet extraction
+         */
+        Queue<TransferFrameTC*> framesAfterProcessSDLSSecurityTypeBD;
+
+        /**
+         * @brief Used to build segmented packets and contain information about the previous extracted packet/packet piece
+         */
+        Defs::SegmentedPacketConstructorTc segmentedPacketConstructor;
 
         // give the user access while debugging/testing
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
         Queue<TransferFrameTC*>& getFramesAfterProcessSdlsSecurity()  {
             return framesAfterProcessSdlsSecurity;
+        }
+
+        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeAD() {
+            return framesAfterProcessSDLSSecurityTypeAD;
+        }
+
+        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeBD() {
+            return framesAfterProcessSDLSSecurityTypeBD;
+        }
+
+        Defs::SegmentedPacketConstructorTc& getSegmentedPacketConstructor() {
+            return segmentedPacketConstructor;
         }
 #endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
@@ -174,8 +199,8 @@ namespace CCSDSDataLinkLayer {
         MAPChannelGs(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
             const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
             const uint16_t typeBdPacketCapacity)
-            : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity,
-                typeAdPacketCapacity, typeBdPacketCapacity) {}
+            : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent,
+                frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) {}
 
         void initializeContainers(const etl::span<uint16_t>& packetLengthsTypeADBuff,
             const etl::span<uint8_t>& packetOctetsTypeADBuff,

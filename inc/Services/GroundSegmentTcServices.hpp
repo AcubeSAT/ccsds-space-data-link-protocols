@@ -25,7 +25,7 @@ namespace CCSDSDataLinkLayer {
     class GroundSegmentTcServices {
     public:
         /**
-         * @details The MAP Channel Packet (MAPPP) Service transfers a sequence of variable-length,
+         * @details The MAP Channel Packet (MAPP) Service transfers a sequence of variable-length,
          *          delimited, octet-aligned service data units known as Packets across a space link. The Packets
          *          transferred by this service must have a Packet Version Number (PVN) authorized by CCSDS.
          *
@@ -40,6 +40,7 @@ namespace CCSDSDataLinkLayer {
          * @param mapChanName MAP Channel Name, as defined in CCSDSDataLink.def
          * @param packet The raw packet bytes. Note that the length of the packet is determined by the appropriate
          *                space packet length field, not the size of the span itself.
+         * @param serviceType Sent either a Type-AD packet (is subject to COP-1) or a Type-BD (expedited)
          *
          * @returns TODO
          */
@@ -62,6 +63,8 @@ namespace CCSDSDataLinkLayer {
          * @param vcaSdu The raw sdu bytes. Note that the length of the sdu is determined by the size of the span.
          *               The function returns an error if this size is larger than that of maximum transfer frame data
          *               field length
+         * @param serviceType Sent either a Type-AD vca sdu (is subject to COP-1) or a Type-BD (expedited)
+         *
          * @returns TODO
          */
         static etl::expected<void, ServiceChannelNotification> mapChannelAccessServiceRequest(
@@ -85,10 +88,12 @@ namespace CCSDSDataLinkLayer {
          * @param vcChanName Virtual Channel Name, as defined in CCSDSDataLink.def
          * @param packet The raw packet bytes. Note that the length of the packet is determined by the appropriate
          *                space packet length field, not the size of the span itself.
+         * @param serviceType Sent either a Type-AD packet (is subject to COP-1) or a Type-BD (expedited)
          *
          * @returns TODO
          */
-        static etl::expected<void, ServiceChannelNotification> virtualChannelPacketServiceRequest(Objects::VirtualChannelTmName vcChanName,
+        static etl::expected<void, ServiceChannelNotification> virtualChannelPacketServiceRequest(
+            Objects::VirtualChannelTmName vcChanName,
             etl::span<uint8_t> packet,
             Defs::ServiceType serviceType);
 
@@ -106,6 +111,8 @@ namespace CCSDSDataLinkLayer {
          * @param vcaSdu The raw sdu bytes. Note that the length of the sdu is determined by the size of the span.
          *               The function returns an error if this size is larger than that of maximum transfer frame data
          *               field length
+         * @param serviceType Sent either a Type-AD vca sdu (is subject to COP-1) or a Type-BD (expedited)
+         *
          * @returns TODO
          */
         static etl::expected<void, ServiceChannelNotification> virtualChannelAccessServiceRequest(
@@ -126,20 +133,20 @@ namespace CCSDSDataLinkLayer {
          *  TODO
          *
          */
-        static etl::expected<void, ServiceChannelNotification> spaceSegmentTcProcessing(
-            Objects::MasterChannelTcName mcChanName);
+        static etl::expected<void, ServiceChannelNotification> groundSegmentTcProcessing(
+            Objects::PhysicalChannelName physicalChannelName);
 
         /**
          * @details Get a frame that is ready for delivery to the Channel Coding and Synchronization Sublayer.
          *
-         * @param mcChanName Master Channel Name, as defined in CCSDSDataLink.def
+         * @param physicalChannelName Physical Channel Name, as defined in CCSDSDataLink.def
          * @param packetDestination A user provided buffer to copy the frame. Ensure its length is at least
          *                          equal to that of the maximum transfer frame length
          *
          * @return TODO
          */
         static etl::expected<void, ServiceChannelNotification> getReadyFrameForTransmission(
-            Objects::MasterChannelTcName mcChanName,
+            Objects::PhysicalChannelName physicalChannelName,
             uint8_t* packetDestination);
 
         /**
@@ -179,12 +186,12 @@ namespace CCSDSDataLinkLayer {
             );
 
         /**
-         * @brief Send a clcws to all FOPs of a specific virtual channel
+         * @brief Send a clcws to all FOPs of a specific physical channel
          *
-         * @param mcChanName Master Channel Name, as defined in CCSDSDataLink.def
+         * @param physicalChannelName Physical Channel Name, as defined in CCSDSDataLink.def
          */
         static etl::expected<void, ServiceChannelNotification> copManagementServicePushCLCW(
-            Objects::MasterChannelTcName mcChanName,
+            Objects::PhysicalChannelName physicalChannelName,
             uint32_t clcw
             );
 
@@ -195,18 +202,19 @@ namespace CCSDSDataLinkLayer {
         using FopOutputData = etl::tuple<Defs::VcidScidKey, FOPNotification, Defs::FOPState, uint8_t>;
 
         /**
-         * @brief Calls the state machines of all FOPs of a specific master channel
+         * @brief Calls the state machines of all FOPs of a specific physical channel
          *
          * @details Implementation in a process/thread: This function should be called inside a dedicated process/thread,
          *          in a while loop. A blocking delay can be used between consecutive calls to control the processing
          *          frequency
          *
-         * @param fopDataVector: If supplied, then the function will return information about the fop state machines.
-         *                       Ensure size of span is large enough to accommodate all FOPs.
+         * @param physicalChannelName Physical Channel Name, as defined in CCSDSDataLink.def
+         * @param fopDataVector If supplied, then the function will return information about the fop state machines.
+         *                      Ensure size of span is large enough to accommodate all FOPs.
          *
          */
         static etl::expected<void, ServiceChannelNotification> executeFopStateMachines(
-            Objects::MasterChannelTcName mcChanName,
+            Objects::PhysicalChannelName physicalChannelName,
             etl::optional<etl::span<FopOutputData>> fopDataVector);
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE

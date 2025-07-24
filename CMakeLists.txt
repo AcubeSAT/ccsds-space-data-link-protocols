@@ -46,8 +46,6 @@ add_library(common OBJECT
         src/DataHandlingFunctions/GroundSegmentTmDataHandlingFunctions.cpp
         src/DataHandlingFunctions/SpaceSegmentTcDataHandlingFunctions.cpp
         src/DataHandlingFunctions/SpaceSegmentTmDataHandlingFunctions.cpp
-        src/DataStructures/ExternalContainers.cpp
-        src/DataStructures/MemoryPool.cpp
         src/NotificationAndLoggingUtilities/Logger.cpp
         src/NotificationAndLoggingUtilities/logOperators.cpp
         src/NotificationAndLoggingUtilities/FramePrintingFunctions.cpp
@@ -72,6 +70,7 @@ add_executable(ccsds_data_link_yamcs_connection
         src/Platform/x86/FrameMaker.cpp
         src/Platform/x86/FrameSender.cpp
         src/Platform/x86/main.cpp
+        src/Platform/x86/Logger.cpp
         )
 target_compile_definitions(ccsds_data_link_yamcs_connection PRIVATE ENABLE_CHANNEL_ACCESS)
 add_dependencies(ccsds_data_link_yamcs_connection TinyCryptLib) # ensure "TinyCryptLib" target is built first
@@ -85,6 +84,7 @@ IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
     add_subdirectory(lib/Catch2)
     add_executable(ccsds_data_link_catch2_unit_tests
             $<TARGET_OBJECTS:common>
+            src/Platform/x86/Logger.cpp
            # ${test_main_SRC}
            # ${test_SRC}
     )

@@ -6,8 +6,7 @@
 #pragma once
 
 #include <cstdint>
-#include "etl/tuple.h"
-#include "etl/optional.h"
+#include <etl/vector.h>
 #include "etl/span.h"
 
 namespace CCSDSDataLinkLayer {
@@ -85,10 +84,10 @@ namespace CCSDSDataLinkLayer::Defs {
      * @brief Indicates whether a TC frame carries a segmented packet.
      */
     enum class SequenceFlag : uint8_t {
-        SegmentationMiddle = 0x0,
-        SegmentationStart = 0x1,
-        SegmentationEnd = 0x2,
-        NoSegmentation = 0x3
+        SEGMENTATION_MIDDLE = 0x0,
+        SEGMENTATION_START = 0x1,
+        SEGMENTATION_END = 0x2,
+        NO_SEGMENTATION = 0x3
     };
 
     /**
@@ -187,26 +186,52 @@ namespace CCSDSDataLinkLayer::Defs {
         ENCAPSULATION_PACKET = 0x07,
     };
 
-    static constexpr uint16_t MaxExpectedSpacePacketSize = 128;
-    static constexpr uint8_t SpacePacketPrimaryHeaderLength = 6;
-    static constexpr uint8_t SpacePacketDataLengthFieldPosition = 5; // 5th and 6th bytes constitute the data field length
+    /**
+     * General space packet constants
+     */
+    inline constexpr uint16_t MaxExpectedSpacePacketSize = 128;
+    inline constexpr uint16_t MaxExpectedEncapsulationPacketSize = 128;
+    inline constexpr uint16_t MaxExpectedPacketSize = etl::max(MaxExpectedSpacePacketSize, MaxExpectedEncapsulationPacketSize);
+    inline constexpr uint8_t SpacePacketPrimaryHeaderLength = 6;
+    inline constexpr uint8_t SpacePacketDataLengthFieldPosition = 5; // 5th and 6th bytes constitute the data field length
 
     /**
      * Idle space packet constants
      */
-    static constexpr bool TypeTelemetryPacket = false;
-    static constexpr bool IdleSpacePacketSecondaryHeaderFlag = false; // Must always be false for idle packets
-    static constexpr uint16_t IdleSpacePacketAPID = 0x7FF; // Reserved value for idle packets
-    static constexpr uint8_t UnsegmentedDataSeqFlag = 0x3; // Unsegmented data
-    // @TODO This should NOT be constant. After the ECSS integration with the comms repo, ensure that it takes correct values
-    static constexpr uint16_t SpacePacketSequenceCount = 0x0;
-    static constexpr uint8_t IdleSpacePacketPrimaryHeader[SpacePacketPrimaryHeaderLength] = {
-        (static_cast<uint8_t>(PacketVersionNumber::SPACE_PACKET) << 5) | (TypeTelemetryPacket << 4) | (
-            IdleSpacePacketSecondaryHeaderFlag << 3) | (IdleSpacePacketAPID >> 8),
-        static_cast<uint8_t>(IdleSpacePacketAPID),
-        (UnsegmentedDataSeqFlag << 6) | (SpacePacketSequenceCount >> 8),
-        static_cast<uint8_t>(SpacePacketSequenceCount)
+    inline constexpr bool IdleSpPacketType = false;          // 0/false is for telemetry
+    inline constexpr bool IdleSpSecondaryHeaderFlag = false; // Must always be false for idle packets
+    inline constexpr uint16_t IdleSpAPID = 0x7FF;            // Reserved value for idle packets
+    inline constexpr uint8_t IdleSPUnsegmentedDataSeqFlag = 0x3; // Unsegmented data
+    inline constexpr uint16_t IdleSpSequenceCount = 0x0;     // The receiver will not pass idle packets to the upper layer, so this value does not need to be managed
+    inline constexpr uint8_t IdleSpPrimaryHeader[SpacePacketPrimaryHeaderLength] = {
+        (static_cast<uint8_t>(PacketVersionNumber::SPACE_PACKET) << 5) | (IdleSpPacketType << 4) | (
+            IdleSpSecondaryHeaderFlag << 3) | (IdleSpAPID >> 8),
+        static_cast<uint8_t>(IdleSpAPID),
+        (IdleSPUnsegmentedDataSeqFlag << 6) | (IdleSpSequenceCount >> 8),
+        static_cast<uint8_t>(IdleSpSequenceCount)
     };
+
+    /**
+     * @brief Encapsulation packets have multiple optional fields, making the packet header have a variable length.
+     *        The user should specify whether:
+     *        - The "User Defined" and "Encapsulation protocol ID extension fields exist" (1 octet)
+     *        - The "CCSDS Defined" field exists (2 octets)
+     *
+     * @see figure 4-2 and table 4-2 of ENCAPSULATION PACKET PROTOCOL CCSDS
+     */
+
+    inline constexpr bool EpUserDefinedAndExtentionFieldsPresent = true;
+    inline constexpr bool EpCcsdsFieldPresent = true;
+
+    inline constexpr uint8_t EpMandatoryFieldsLength = 1; // all lengths refer to octets
+    inline constexpr uint8_t EpCcsdsFieldLength = 2;
+    inline constexpr uint8_t EpUserDefinedAndExtentionFieldsLength = 1;
+    inline constexpr uint8_t MaximumEppPacketLengthFieldSize = 4;
+
+    inline constexpr uint8_t EpTotalOffet =
+        EpMandatoryFieldsLength +
+        EpUserDefinedAndExtentionFieldsPresent * MaximumEppPacketLengthFieldSize +
+        EpCcsdsFieldPresent * EpCcsdsFieldLength;
 
     /**
      * @}
@@ -419,7 +444,52 @@ namespace CCSDSDataLinkLayer::Defs {
      *  @{
      */
     inline constexpr uint32_t MutexDelayMs = 200;
+    inline constexpr uint8_t MaxNumberOfMasterChannelsUnderVirtualChannel = 2;
 
+    /**
+     * Utility struct for constructing segmented packets
+     */
+    struct SegmentedPacketConstructorTc {
+        SegmentedPacketConstructorTc() : previousFrameSeqFlag(SequenceFlag::NO_SEGMENTATION), segmentedPacketRejectionMode(false),
+        currentLength(0) {}
+
+        bool addNextSegementedPacketPiece(etl::span<uint8_t> packetPiece) {
+            if (currentLength > MaxExpectedPacketSize) {
+                return false;
+            }
+            memcpy(segmentedPacket + currentLength, packetPiece.data(), packetPiece.size());
+            return true;
+        }
+
+        bool extractPacket(uint8_t* destBuffer) {
+            if (currentLength == 0) {
+                return false;
+            }
+            memcpy(destBuffer, segmentedPacket, currentLength);
+            currentLength = 0;
+            return true;
+        }
+
+        /**
+         * @brief Used to reset buffer in case of fault
+         */
+        bool resetPacket() {
+            currentLength = 0;
+        }
+
+        SequenceFlag previousFrameSeqFlag;
+
+        /**
+         * @brief Is set to true if a wrong sequence flag is encountered mid-packet construction, or
+         *        packet exceeded max expected length. Is set back to false again, when a SEGMENTATION_START or
+         *        NO_SEGMENTATION flag has arrived
+         */
+        bool segmentedPacketRejectionMode;
+
+    private:
+        uint8_t segmentedPacket[MaxExpectedPacketSize];
+        uint16_t currentLength;
+    };
     /**
      * @}
      */

@@ -16,7 +16,7 @@ namespace CCSDSDataLinkLayer {
 
         TransferFrame(Defs::FrameType t, uint16_t transferFrameLength, uint8_t *frameData, uint16_t firstEmptyOctet = 0)
                 : type(t), transferFrameLength(transferFrameLength), transferFrameData(frameData),
-                  timesSequentiallyTransmitted(0), firstDataFieldEmptyOctet(firstEmptyOctet) {}
+                  timesSequentiallyTransmitted(0), firstDataFieldEmptyOctet(firstEmptyOctet), nextPacketIndex(0) {}
 
         [[nodiscard]] uint16_t getFrameLength() const {
             return transferFrameLength;
@@ -40,6 +40,14 @@ namespace CCSDSDataLinkLayer {
 
         void incrementTimesSequentiallyTransmitted() {
             timesSequentiallyTransmitted++;
+        }
+
+        [[nodiscard]] uint16_t getNextPacketIndex() const {
+            return nextPacketIndex;
+        }
+
+        void incrementNextPacketIndex(const uint16_t amount) {
+            nextPacketIndex += amount;
         }
 
         /**
@@ -89,6 +97,12 @@ namespace CCSDSDataLinkLayer {
          *  A value equal of the data field size shall indicate a filled frame.
          */
         uint16_t firstDataFieldEmptyOctet;
+
+        /**
+         * @brief Auxiliary variable that is used during packet extraction. The value 0 corresponds to the first
+         *        data field octet.
+         */
+        uint16_t nextPacketIndex;
 
     };
 } // namespace CCSDSDataLinkLayer

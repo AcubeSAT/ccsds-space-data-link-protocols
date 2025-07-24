@@ -76,16 +76,14 @@ namespace CCSDSDataLinkLayer {
          *
          * @note It is evident that at least one virtual channel needs to have an operational control field for the
          *       service to function.
-         * @note This service is already utilized by FARM to send generated CLCWs. To multiplex user defined OCF_SDUs
-         *        set their "Control Word Type" bit as 1 (@see p. 4.2.1.2 of TC SPACE DATA LINK CCSDS).
          *
-         * @param mcChanName Master Channel Name, as defined in CCSDSDataLink.def
+         * @param physicalChannelName Physical Channel Name, as defined in CCSDSDataLink.def
          * @param ocfSdu 4 byte service data unit (user defined, needs to have "Control Word Type" == 1)
          *
-         *  @returns TODO
+         * @returns TODO
          */
         static etl::expected<void, ServiceChannelNotification> virtualChannelOperationalControlFieldServiceRequest(
-            Objects::MasterChannelTmName mcChanName,
+            Objects::PhysicalChannelName physicalChannelName,
             uint32_t ocfSdu);
 
         /**
@@ -104,20 +102,20 @@ namespace CCSDSDataLinkLayer {
          *
          */
         static etl::expected<void, ServiceChannelNotification> spaceSegmentTmProcessing(
-            Objects::MasterChannelTmName mcChanName);
+            Objects::PhysicalChannelName physicalChannelName);
 
         /**
          * @details Get a frame that is ready for delivery to the Channel Coding and Synchronization Sublayer.
          *
-         * @param mcChanName Master Channel Name, as defined in CCSDSDataLink.def
-         * @param packetDestination A user provided buffer to copy the frame. Ensure its length is at least
+         * @param physicalChannelName Physical Channel Name, as defined in CCSDSDataLink.def
+         * @param frameDestination A user provided buffer to copy the frame. Ensure its length is at least
          *                          equal to that of a transfer frame.
          *
          * @return TODO
          */
         static etl::expected<void, ServiceChannelNotification> getReadyFrameForTransmission(
-            Objects::MasterChannelTmName mcChanName,
-            uint8_t* packetDestination);
+            Objects::PhysicalChannelName physicalChannelName,
+            uint8_t* frameDestination);
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // CCSDSDataLinkLayer

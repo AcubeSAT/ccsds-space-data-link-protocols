@@ -24,13 +24,13 @@ namespace CCSDSDataLinkLayer::Objects {
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity)
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid)
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity)
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity))
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
-#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth, clcwReportInterval)
+#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval)
 #define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, enryptionAlgorithm, authKey)
 
 /** Calculate channel counts
- *  Note: Each "channel" is constituted of a space and ground segment, with the exception of the physical channel.
+ *  Note: Each "channel" is constituted of a space and ground segment, except the physical channel.
  *        Therefore, 3 TC virtual channels actually result in the construction of 6 virtual channel objects (assuming
  *        both space and ground segment code are compiled)
  */
@@ -60,10 +60,10 @@ namespace CCSDSDataLinkLayer::Objects {
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity)
 
     inline constexpr uint8_t VirtualChannelTcCount = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)) + 1
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) + 1
 #include "CCSDSDataLink.def"
     );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity))
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
     inline constexpr uint8_t MapChannelCount = (0
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) +1
@@ -72,10 +72,10 @@ namespace CCSDSDataLinkLayer::Objects {
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
     inline constexpr uint8_t cop1Count = (0
-#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth, clcwReportInterval) +1
+#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval) +1
 #include "CCSDSDataLink.def"
     );
-#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth, clcwReportInterval)
+#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval)
 
     inline constexpr uint8_t saCount = (0
 #define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, encryptionAlgorithm, authKey) +1
@@ -90,7 +90,7 @@ namespace CCSDSDataLinkLayer::Objects {
         SentinelValue
     };
 
-    inline etl::flat_map<uint8_t, PhysicalChannel, PhysicalChannelCount> physicalChannelMap = {
+    inline etl::flat_map<uint8_t, PhysicalChannel, (PhysicalChannelCount == 0) ? 1 : PhysicalChannelCount> physicalChannelMap = {
 #define PHYSICAL_CHANNEL(physicalChannelName, pcid, tfvn, maxTcLength, tmLength, maxFramesPdu, maxPduLength, maximumBitRate, fecPresent) \
     { \
     static_cast<uint8_t>(pcid), \
@@ -100,7 +100,7 @@ namespace CCSDSDataLinkLayer::Objects {
     maxTcLength,                \
     tmLength,                   \
     maxPduLength,               \
-    maximumBitRate,                    \
+    maximumBitRate,             \
     fecPresent                  \
     )                           \
     },
@@ -116,7 +116,7 @@ namespace CCSDSDataLinkLayer::Objects {
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, MasterChannelSsTm, MasterChannelTmCount> masterChannelSsTmMap = {
+    inline etl::flat_map<uint16_t, MasterChannelSsTm, MasterChannelTmCount == 0 ? 1 : MasterChannelTmCount> masterChannelSsTmMap = {
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity) \
     { \
     static_cast<uint16_t>(scid), \
@@ -139,7 +139,7 @@ namespace CCSDSDataLinkLayer::Objects {
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, MasterChannelSsTc, MasterChannelTcCount> masterChannelSsTcMap = {
+    inline etl::flat_map<uint16_t, MasterChannelSsTc, MasterChannelTcCount == 0 ? 1 : MasterChannelTcCount> masterChannelSsTcMap = {
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid) \
     { \
     static_cast<uint16_t>(scid), \
@@ -153,7 +153,7 @@ namespace CCSDSDataLinkLayer::Objects {
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, MasterChannelGsTc, MasterChannelTcCount> masterChannelGsTcMap = {
+    inline etl::flat_map<uint16_t, MasterChannelGsTc, MasterChannelTcCount == 0 ? 1 : MasterChannelTcCount> masterChannelGsTcMap = {
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid) \
     { \
     static_cast<uint16_t>(scid), \
@@ -176,7 +176,7 @@ namespace CCSDSDataLinkLayer::Objects {
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<Defs::VcidScidKey, VirtualChannelSsTm, VirtualChannelTmCount> virtualChannelSsTmMap = {
+    inline etl::flat_map<Defs::VcidScidKey, VirtualChannelSsTm, VirtualChannelTmCount == 0 ? 1 : VirtualChannelTmCount>  virtualChannelSsTmMap = {
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity) \
     { \
     Defs::constructVcidScidKey(vcid, parentScid), \
@@ -200,15 +200,15 @@ namespace CCSDSDataLinkLayer::Objects {
 
     /** Construct Virtual channel TC Space Segment objects **/
     enum class VirtualChannelTcName : Defs::VcidScidKey {
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)) \
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) \
     virtualChannelName = Defs::constructVcidScidKey(vcid, parentScid),
 #include "CCSDSDataLink.def"
         SentinelValue
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<Defs::VcidScidKey, VirtualChannelSsTc, VirtualChannelTcCount> virtualChannelSsTcMap = {
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)) \
+    inline etl::flat_map<Defs::VcidScidKey, VirtualChannelSsTc, VirtualChannelTcCount == 0 ? 1 : VirtualChannelTcCount> virtualChannelSsTcMap = {
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) \
     { \
     Defs::constructVcidScidKey(vcid, parentScid), \
     VirtualChannelSsTc(         \
@@ -229,8 +229,8 @@ namespace CCSDSDataLinkLayer::Objects {
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    inline etl::flat_map<Defs::VcidScidKey, VirtualChannelGsTc, VirtualChannelTcCount> virtualChannelGsTcMap = {
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)) \
+    inline etl::flat_map<Defs::VcidScidKey, VirtualChannelGsTc, VirtualChannelTcCount == 0 ? 1 : VirtualChannelTcCount> virtualChannelGsTcMap = {
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) \
     { \
     Defs::constructVcidScidKey(vcid, parentScid), \
     VirtualChannelGsTc(         \
@@ -251,7 +251,7 @@ namespace CCSDSDataLinkLayer::Objects {
 #include "CCSDSDataLink.def"
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity))
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
     /** Construct MAP channel objects **/
    enum class MapChannelName : Defs::MapidVcidScidKey {
@@ -262,7 +262,7 @@ namespace CCSDSDataLinkLayer::Objects {
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<Defs::MapidVcidScidKey, MAPChannelSs, MapChannelCount> mapChannelSsMap = {
+    inline etl::flat_map<Defs::MapidVcidScidKey, MAPChannelSs, MapChannelCount == 0 ? 1 : MapChannelCount> mapChannelSsMap = {
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) \
     { \
     Defs::constructscidVcidScidKey(vcid, parentVcid, parentScid), \
@@ -283,7 +283,7 @@ namespace CCSDSDataLinkLayer::Objects {
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    inline etl::flat_map<Defs::MapidVcidScidKey, MAPChannelGs, MapChannelCount> mapChannelGsMap = {
+    inline etl::flat_map<Defs::MapidVcidScidKey, MAPChannelGs, MapChannelCount == 0 ? 1 : MapChannelCount> mapChannelGsMap = {
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) \
     { \
     Defs::constructscidVcidScidKey(vcid, parentVcid, parentScid), \
@@ -306,8 +306,8 @@ namespace CCSDSDataLinkLayer::Objects {
 
 /** Construct FARM and FOP Objects (COP-1) **/
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    inline etl::flat_map<Defs::VcidScidKey, FrameOperationProcedure, cop1Count> fopMap = {
-#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth, clcwReportInterval) \
+    inline etl::flat_map<Defs::VcidScidKey, FrameOperationProcedure, cop1Count == 0 ? 1 : cop1Count> fopMap = {
+#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval) \
     {                           \
     Defs::constructVcidScidKey(vcid, parentScid), \
     FrameOperationProcedure(    \
@@ -323,22 +323,21 @@ namespace CCSDSDataLinkLayer::Objects {
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<Defs::VcidScidKey, FrameAcceptanceReporting, cop1Count> farmMap = {
-#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth, clcwReportInterval) \
+    inline etl::flat_map<Defs::VcidScidKey, FrameAcceptanceReporting, cop1Count == 0 ? 1 : cop1Count> farmMap = {
+#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval) \
     {                           \
     Defs::constructVcidScidKey(vcid, parentScid), \
     FrameAcceptanceReporting(   \
     vcid,                       \
     farmSlidingWindowWidth,     \
-    farmPositiveWindowWidth,    \
-    farmNegativeWindowWidth,    \
     clcwReportInterval,         \
+    transmissionLimit,          \
     )                           \
     },
 #include "CCSDSDataLink.def"
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
-#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth, clcwReportInterval)
+#define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval)
 
 /** Construct Security Association Objects **/
 #define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, encryptionAlgorithm, authKey) \
@@ -354,13 +353,13 @@ namespace CCSDSDataLinkLayer::Objects {
 // The sender and receiver use the same object, but due to some shared variables, separate
 // instances are required
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, SecurityAssociation, saCount> saSpaceSegmentMap = {
+    inline etl::flat_map<uint16_t, SecurityAssociation, saCount == 0 ? 1 : saCount> saSpaceSegmentMap = {
 #include "CCSDSDataLink.def"
     };
 #endif// INCLUDE_SPACE_SEGMENT_CODE
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, SecurityAssociation, saCount> saGroundSegmentMap = {
+    inline etl::flat_map<uint16_t, SecurityAssociation, saCount == 0 ? 1 : saCount> saGroundSegmentMap = {
 #include "CCSDSDataLink.def"
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
@@ -380,10 +379,10 @@ namespace CCSDSDataLinkLayer::Objects {
 
 // Calculate total frame capacity for virtual and map channels
     inline constexpr uint16_t TotalVirtualChannelTcFrameCapacity = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)) +frameCapacity
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) +frameCapacity
 #include "CCSDSDataLink.def"
 );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity))
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
     inline constexpr uint16_t TotalVirtualChannelTmFrameCapacity = (0
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity) +frameCapacity
@@ -419,10 +418,10 @@ namespace CCSDSDataLinkLayer::Objects {
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
     inline constexpr uint16_t TotalVirtualChannelTypeAdCapacity = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)) +typeAdPacketCapacity
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) +typeAdPacketCapacity
 #include "CCSDSDataLink.def"
     );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity))
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
     inline constexpr uint16_t TotalMapChannelTypeBdPacketCapacity = (0
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) +typeBdPacketCapacity
@@ -431,10 +430,10 @@ namespace CCSDSDataLinkLayer::Objects {
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
     inline constexpr uint16_t TotalVirtualChannelTypeBdCapacity = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)) +typeBdPacketCapacity
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) +typeBdPacketCapacity
 #include "CCSDSDataLink.def"
     );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity))
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
 #undef PHYSICAL_CHANNEL
 #undef MASTER_CHANNEL_TM
@@ -445,17 +444,17 @@ namespace CCSDSDataLinkLayer::Objects {
 #undef COP1
 #undef SECURITY_ASSOCIATION
 
-// Calculate amount of slots each type of data structure needed
-// Note1: The required capacity for a master channel is the sum of the capacities of its virtual channels
-// Note2: For a TC virtual channel that has map channels, it's frame capacity was defined as 0 in the .def file,
-//       since the actual capacity is the sum of said map channels. Therefore, the TotalVirtualChannelFrameCapacity
-//       variable actually contains capacities of virtual channels that DO NOT contain map channels. The total capacity
-//       required for virtual channel WITH map channels is the TotalMapChannelFrameCapacity
+    // Calculate amount of slots each type of data structure needed
+    // Note1: The required capacity for a master channel is the sum of the capacities of its virtual channels
+    // Note2: For a TC virtual channel that has map channels, it's frame capacity was defined as 0 in the .def file,
+    //       since the actual capacity is the sum of said map channels. Therefore, the TotalVirtualChannelFrameCapacity
+    //       variable actually contains capacities of virtual channels that DO NOT contain map channels. The total capacity
+    //       required for virtual channel WITH map channels is the TotalMapChannelFrameCapacity
 
     inline constexpr uint16_t TotalTransferFrameTcSlots = (IncludeGroundCode + IncludeSpaceCode) *
         (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity);
 
-    // MapChannelSs: 1 queue -> TotalMapChannelFrameCapacity
+    // MapChannelSs: 2 queues -> 2 * TotalMapChannelFrameCapacity
     // VirtualChannelSsTc: 5 queues ->  5 * (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity)
     // MasterChannelSsTc: No queues
     // MapChannelGsTc: No queues
@@ -464,7 +463,7 @@ namespace CCSDSDataLinkLayer::Objects {
     inline constexpr uint16_t TotalTransferFrameTcPtrSlots =
         IncludeSpaceCode * (
             5 * (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity) +
-            TotalMapChannelFrameCapacity
+            2 * TotalMapChannelFrameCapacity
         ) +
         IncludeGroundCode * (
             3 * (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity)

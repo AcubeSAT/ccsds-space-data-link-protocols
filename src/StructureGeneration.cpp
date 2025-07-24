@@ -3,6 +3,8 @@
 
 namespace CCSDSDataLinkLayer::Objects {
     bool initializeChannelContainers() {
+        // TODO sanity checks for the user's configuration
+
         uint32_t transferFrameTcArrayIndex = 0;
         const uint32_t transferFrameTcArrayMaxSize = TotalTransferFrameTcSlots;
 
@@ -21,7 +23,7 @@ namespace CCSDSDataLinkLayer::Objects {
         uint32_t packetOctetsArrayIndex = 0;
         const uint32_t packetOctetsArrayMaxSize =
                 (TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots) *
-                Defs::MaxExpectedSpacePacketSize;
+                Defs::MaxExpectedPacketSize;
 
         uint32_t indicesArrayIndex = 0;
         const uint32_t indicesArrayMaxSize = TotalTransferFrameTcSlots + TotalTransferFrameTmSlots;
@@ -32,7 +34,7 @@ namespace CCSDSDataLinkLayer::Objects {
             // packetLengths dequeue (uint16_t)
             // packetOctets dequeue (uint8_t)
             if (packetLengthsArrayIndex + pair.second.getPacketCapacity() > packetLengthsArrayMaxSize ||
-                packetOctetsArrayIndex + pair.second.getPacketCapacity() * Defs::MaxExpectedSpacePacketSize >
+                packetOctetsArrayIndex + pair.second.getPacketCapacity() * Defs::MaxExpectedPacketSize >
                 packetOctetsArrayMaxSize) {
                 return false;
             }
@@ -41,12 +43,12 @@ namespace CCSDSDataLinkLayer::Objects {
                 etl::span{packetLengthsArray + packetLengthsArrayIndex, pair.second.getPacketCapacity()},
                 etl::span{
                     packetOctetsArray + packetOctetsArrayIndex,
-                    pair.second.getPacketCapacity() * Defs::MaxExpectedSpacePacketSize
+                    pair.second.getPacketCapacity() * Defs::MaxExpectedPacketSize
                 }
             );
 
             packetLengthsArrayIndex += pair.second.getPacketCapacity();
-            packetOctetsArrayIndex += pair.second.getPacketCapacity() * Defs::MaxExpectedSpacePacketSize;
+            packetOctetsArrayIndex += pair.second.getPacketCapacity() * Defs::MaxExpectedPacketSize;
 
             // increment frame capacity of the relevant master channel, so at the end of the for
             // loop, we know how much space it requires
@@ -89,14 +91,14 @@ namespace CCSDSDataLinkLayer::Objects {
         // MapChannelSs
         for (auto &pair: mapChannelSsMap) {
             // framesAfterProcessSdlsSecurity queue (TransferFrameTC*)
-            if (transferFrameTcPtrArrayIndex + pair.second.getFrameCapacity() > transferFrameTcPtrArrayMaxSize) {
+            if (transferFrameTcPtrArrayIndex + 2 * pair.second.getFrameCapacity() > transferFrameTcPtrArrayMaxSize) {
                 return false;
             }
 
-            pair.second.initializeContainers(etl::span{
-                transferFrameTcPtrArray + transferFrameTcPtrArrayIndex, pair.second.getFrameCapacity()
-            });
-            transferFrameTcPtrArrayIndex += pair.second.getFrameCapacity();
+            pair.second.initializeContainers(
+                etl::span{transferFrameTcPtrArray + transferFrameTcPtrArrayIndex, pair.second.getFrameCapacity()},
+                etl::span{transferFrameTcPtrArray + transferFrameTcPtrArrayIndex + pair.second.getFrameCapacity(), pair.second.getFrameCapacity()});
+            transferFrameTcPtrArrayIndex += 2 * pair.second.getFrameCapacity();
 
             // increment frame and packet capacities of the relevant virtual channel, so at the end of the for
             // loop, we know how much space it requires
@@ -182,7 +184,7 @@ namespace CCSDSDataLinkLayer::Objects {
                 > packetLengthsArrayMaxSize ||
                 packetOctetsArrayIndex + (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity())
                 *
-                Defs::MaxExpectedSpacePacketSize > packetOctetsArrayMaxSize) {
+                Defs::MaxExpectedPacketSize > packetOctetsArrayMaxSize) {
                 return false;
             }
 
@@ -190,7 +192,7 @@ namespace CCSDSDataLinkLayer::Objects {
                 etl::span{packetLengthsArray + packetLengthsArrayIndex, pair.second.getTypeAdPacketCapacity()},
                 etl::span{
                     packetOctetsArray + packetOctetsArrayIndex, pair.second.getTypeAdPacketCapacity() *
-                                                                Defs::MaxExpectedSpacePacketSize
+                                                                Defs::MaxExpectedPacketSize
                 },
                 etl::span{
                     packetLengthsArray + packetLengthsArrayIndex + pair.second.getTypeAdPacketCapacity(),
@@ -198,14 +200,14 @@ namespace CCSDSDataLinkLayer::Objects {
                 },
                 etl::span{
                     packetOctetsArray + packetOctetsArrayIndex + pair.second.getTypeAdPacketCapacity() *
-                    Defs::MaxExpectedSpacePacketSize,
-                    pair.second.getTypeBdPacketCapacity() * Defs::MaxExpectedSpacePacketSize
+                    Defs::MaxExpectedPacketSize,
+                    pair.second.getTypeBdPacketCapacity() * Defs::MaxExpectedPacketSize
                 }
             );
 
             packetLengthsArrayIndex += pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity();
             packetOctetsArrayIndex += (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity()) *
-                    Defs::MaxExpectedSpacePacketSize;
+                    Defs::MaxExpectedPacketSize;
 
             // increment frame and packet capacities of the relevant virtual channel, so at the end of the for
             // loop, we know how much space it requires
@@ -230,7 +232,7 @@ namespace CCSDSDataLinkLayer::Objects {
                                            getTypeBdPacketCapacity()) > packetLengthsArrayMaxSize ||
                 packetOctetsArrayIndex + (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity())
                 *
-                Defs::MaxExpectedSpacePacketSize > packetOctetsArrayMaxSize ||
+                Defs::MaxExpectedPacketSize > packetOctetsArrayMaxSize ||
                 transferFrameTcPtrArrayIndex + 2 * pair.second.getFrameCapacity() > transferFrameTcPtrArrayMaxSize) {
                 return false;
             }
@@ -239,7 +241,7 @@ namespace CCSDSDataLinkLayer::Objects {
                 etl::span{packetLengthsArray + packetLengthsArrayIndex, pair.second.getTypeAdPacketCapacity()},
                 etl::span{
                     packetOctetsArray + packetOctetsArrayIndex,
-                    pair.second.getTypeAdPacketCapacity() * Defs::MaxExpectedSpacePacketSize
+                    pair.second.getTypeAdPacketCapacity() * Defs::MaxExpectedPacketSize
                 },
                 etl::span{
                     packetLengthsArray + packetLengthsArrayIndex + pair.second.getTypeAdPacketCapacity(),
@@ -247,8 +249,8 @@ namespace CCSDSDataLinkLayer::Objects {
                 },
                 etl::span{
                     packetOctetsArray + packetOctetsArrayIndex + pair.second.getTypeAdPacketCapacity() *
-                    Defs::MaxExpectedSpacePacketSize,
-                    pair.second.getTypeBdPacketCapacity() * Defs::MaxExpectedSpacePacketSize
+                    Defs::MaxExpectedPacketSize,
+                    pair.second.getTypeBdPacketCapacity() * Defs::MaxExpectedPacketSize
                 },
                 etl::span{transferFrameTcPtrArray + transferFrameTcPtrArrayIndex, pair.second.getFrameCapacity()},
                 etl::span{
@@ -259,7 +261,7 @@ namespace CCSDSDataLinkLayer::Objects {
 
             packetLengthsArrayIndex += pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity();
             packetOctetsArrayIndex += (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity()) *
-                    Defs::MaxExpectedSpacePacketSize;
+                    Defs::MaxExpectedPacketSize;
             transferFrameTcPtrArrayIndex += 2 * pair.second.getFrameCapacity();
 
             // increment frame capacity of the relevant master channel, so at the end of the for
@@ -293,6 +295,44 @@ namespace CCSDSDataLinkLayer::Objects {
             indicesArrayIndex += frameCapacity;
         }
 #endif // INCLUDE_GROUND_SEGMENT_CODE
+
+        // register master channels to physical channels
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &mcChanPair: masterChannelSsTcMap) {
+            for (auto &phyChanPair: physicalChannelMap) {
+                if (mcChanPair.second.getParentPcid() == phyChanPair.first) {
+                    phyChanPair.second.registerTcMasterChannel(mcChanPair.first);
+                }
+            }
+        }
+
+        for (auto &mcChanPair: masterChannelSsTmMap) {
+            for (auto &phyChanPair: physicalChannelMap) {
+                if (mcChanPair.second.getParentPcid() == phyChanPair.first) {
+                    phyChanPair.second.registerTmMasterChannel(mcChanPair.first);
+                }
+            }
+        }
+#elif
+        for (auto &mcChanPair: masterChannelGsTcMap) {
+            for (auto &phyChanPair: physicalChannelMap) {
+                if (mcChanPair.second.getParentPcid() == phyChanPair.first) {
+                    phyChanPair.second.registerTcMasterChannel(mcChanPair.first);
+                }
+            }
+        }
+
+        for (auto &mcChanPair: masterChannelGsTmMap) {
+            for (auto &phyChanPair: physicalChannelMap) {
+                if (mcChanPair.second.getParentPcid() == phyChanPair.first) {
+                    phyChanPair.second.registerTmMasterChannel(mcChanPair.first);
+                }
+            }
+        }
+#else
+        return false;
+#endif
         return true;
     }
+
 } // CCSDSDataLinkLayer::Objects

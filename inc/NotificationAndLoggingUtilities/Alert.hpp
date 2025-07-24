@@ -39,7 +39,7 @@ namespace CCSDSDataLinkLayer {
         INVALID_SECURITY_PARAMETER_INDEX = 0x12,
         INVALID_MAC = 0x13,
         FRAME_REPLAY_ATTEMPT = 0x14,
-        SLDS_ERROR = 0x15,
+        SLDS_CALCULATION_ERROR = 0x15,
         OCF_SDU_QUEUE_EMPTY = 0x16,
         INVALID_PACKET_PVN = 0x17,
         NO_SERVICE_EVENT = 0x18,
@@ -54,6 +54,12 @@ namespace CCSDSDataLinkLayer {
         NO_PENDING_NOTIFICATION = 0x21,
         DIRECTIVE_QUEUE_FULL = 0x22,
         NO_FOP_SIGNALS_TO_PROCESS = 0x23,
+        UNAUTHORIZED_SENDER = 0x24,
+        ERRONEOUS_PACKET = 0x25,
+        CURRENTLY_REJECTING_ERRONEOUS_SEGMENTED_PACKET = 0x26,
+        CURRENTLY_CONSTRUCTING_SEGMENTED_PACKET = 0x27,
+        PACKET_TOO_LONG = 0x28,
+        NO_CLCW_AVAILABLE = 0x29,
     };
 
     enum class MapChannelAlert : uint8_t {
@@ -117,5 +123,6 @@ namespace CCSDSDataLinkLayer {
         FARM_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT = 0x02,
         FARM_UNEXPECTED_VALUE = 0x03,
         FARM_HIGH_LAYER_AD_BUFFER_FULL = 0x04,
+        FAILED_TO_LOCK_MUTEX = 0x05,
     };
 } // namespace CCSDSDataLInkLayer

@@ -4,6 +4,7 @@
 
 #pragma once
 #include "CcsdsDefinitions.hpp"
+#include "etl/tuple.h"
 
 namespace CCSDSDataLinkLayer {
     inline Defs::VcidScidKey constructVcidScidKey(const uint8_t vcid, const uint16_t scid) {
@@ -35,7 +36,7 @@ namespace CCSDSDataLinkLayer {
      * @brief Return the packet version number of a packet, if it is defined in the enumeration.
      */
     inline etl::optional<Defs::PacketVersionNumber> getPacketVersionNumber(uint8_t firstPacketOctet) {
-        const uint8_t packetVersion = firstPacketOctet >> 5
+        const uint8_t packetVersion = firstPacketOctet >> 5;
         if (packetVersion == static_cast<uint8_t>(Defs::PacketVersionNumber::SPACE_PACKET)) {
             return Defs::PacketVersionNumber::SPACE_PACKET;
         } else if (packetVersion == static_cast<uint8_t>(Defs::PacketVersionNumber::ENCAPSULATION_PACKET)) {
@@ -54,11 +55,28 @@ namespace CCSDSDataLinkLayer {
                (static_cast<uint16_t>(packetSource[Defs::SpacePacketDataLengthFieldPosition])) + Defs:: SpacePacketPrimaryHeaderLength + 1;
     }
 
-    /**
-     * TODO
-     */
-    inline uint32_t getEncapsulationPacketLength(const uint8_t *packetSource) {
 
+    /**
+     * @brief Returns the total length of an encapsulation packer (as defined in CCSDS Encapsulation Packet Protocol).
+     */
+    inline uint32_t getEncapsulationPacketLength(const etl::span<uint8_t>& packetSource) {
+        uint8_t lengthOfLengths = packetSource[0] & 0x03;
+        if (lengthOfLengths == 0) {
+            // no data field is present, total length is determined by packet header
+        } else if (lengthOfLengths == 1) {
+            // 1 octet length field
+            return packetSource[Defs::EpTotalOffet];
+        } else if (lengthOfLengths == 2) {
+            // 2 octets length field
+            return (static_cast<uint64_t>(packetSource[Defs::EpTotalOffet]) << 8) +
+                packetSource[Defs::EpTotalOffet + 1];
+        } else {
+            // 4 octets length field
+            return (static_cast<uint64_t>(packetSource[Defs::EpTotalOffet]) << 24) +
+                (static_cast<uint64_t>(packetSource[Defs::EpTotalOffet + 1]) << 16) +
+                (static_cast<uint64_t>(packetSource[Defs::EpTotalOffet + 2]) << 8) +
+                packetSource[Defs::EpTotalOffet + 3];
+        }
     }
 
     /**

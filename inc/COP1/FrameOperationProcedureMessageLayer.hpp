@@ -7,7 +7,6 @@
 
 #pragma once
 #include "TransferFrameTC.hpp"
-#include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE

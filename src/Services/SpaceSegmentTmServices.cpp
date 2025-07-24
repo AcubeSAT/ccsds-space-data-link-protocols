@@ -3,20 +3,22 @@
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::virtualChannelPacketServiceRequest(Objects::VirtualChannelTmName vcChanName,
-                etl::span<uint8_t> packet) {
+    etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::virtualChannelPacketServiceRequest(
+        Objects::VirtualChannelTmName vcChanName,
+        etl::span<uint8_t> packet) {
 
         const Defs::VcidScidKey key = static_cast<Defs::VcidScidKey>(vcChanName);
-        if (!Objects::virtualChannelSsTmMap.contains(key)) {
+        const auto it = Objects::virtualChannelSsTmMap.find(key);
+        if (it == Objects::virtualChannelSsTmMap.end()) {
             return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
         }
+        VirtualChannelSsTm &vcChan = it->second;
 
-        VirtualChannelSsTm &vcChan = Objects::virtualChannelSsTmMap.at(key);
         if (vcChan.getSynchronization() != Defs::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED) {
             return etl::unexpected(ServiceChannelNotification::UNSUPPORTED_SERVICE);
         }
 
-        return SpaceSegmentTmDataHandling::storePacket(Objects::virtualChannelSsTmMap.at(key), packet);
+        return SpaceSegmentTmDataHandling::storePacket(vcChan, packet);
     }
 
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::virtualChannelAccessServiceRequest(
@@ -26,11 +28,12 @@ namespace CCSDSDataLinkLayer {
         const uint8_t segmentLengthIdentifier) {
 
         const Defs::VcidScidKey key = static_cast<Defs::VcidScidKey>(vcChanName);
-        if (!Objects::virtualChannelSsTmMap.contains(key)) {
+        const auto it = Objects::virtualChannelSsTmMap.find(key);
+        if (it == Objects::virtualChannelSsTmMap.end()) {
             return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
         }
+        VirtualChannelSsTm &vcChan = it->second;
 
-        VirtualChannelSsTm &vcChan = Objects::virtualChannelSsTmMap.at(key);
         if (vcChan.getSynchronization() != Defs::SynchronizationFlag::VCA_SDU) {
             return etl::unexpected(ServiceChannelNotification::UNSUPPORTED_SERVICE);
         }
@@ -41,15 +44,16 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::virtualChannelOperationalControlFieldServiceRequest(
-        Objects::MasterChannelTmName mcChanName,
+        Objects::PhysicalChannelName physicalChannelName,
         const uint32_t ocfSdu) {
 
-        const uint16_t key = static_cast<uint16_t>(mcChanName);
-        if (!Objects::masterChannelSsTmMap.contains(key)) {
+        const auto it = Objects::physicalChannelMap.find(static_cast<uint8_t>(physicalChannelName));
+        if (it == Objects::physicalChannelMap.end()) {
             return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
         }
+        const PhysicalChannel& phyChan = it->second;
+        MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(phyChan.getScidTm());
 
-        MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(key);
         if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
         }
@@ -65,16 +69,15 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::spaceSegmentTmProcessing(
-            Objects::MasterChannelTmName mcChanName) {
+            Objects::PhysicalChannelName physicalChannelName) {
         //TODO maybe notify the user if many consecutive congestions occur
 
-        const uint16_t key = static_cast<uint16_t>(mcChanName);
-        if (!Objects::masterChannelSsTmMap.contains(key)) {
+        const auto it = Objects::physicalChannelMap.find(static_cast<uint8_t>(physicalChannelName));
+        if (it == Objects::physicalChannelMap.end()) {
             return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
         }
-
-        MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(key);
-        const PhysicalChannel& phyChan = Objects::physicalChannelMap.at(mcChan.getParentPcid());
+        const PhysicalChannel& phyChan = it->second;
+        MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(phyChan.getScidTm());
 
         etl::expected<void, ServiceChannelNotification> status;
         for (auto &pair : Objects::virtualChannelSsTmMap) {
@@ -120,11 +123,8 @@ namespace CCSDSDataLinkLayer {
             status = SpaceSegmentTmDataHandling::masterChannelGeneration(phyChan, mcChan);
         } while (status.has_value());
 
-        if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
-            return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
-        }
-
-        if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX || status.error() == ServiceChannelNotification::DISCARDED_FRAME) {
+        if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX ||
+            status.error() == ServiceChannelNotification::DISCARDED_FRAME) {
             return status;
         }
 
@@ -132,17 +132,17 @@ namespace CCSDSDataLinkLayer {
     }
 
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::getReadyFrameForTransmission(
-        Objects::MasterChannelTmName mcChanName,
-        uint8_t* packetDestination) {
+        Objects::PhysicalChannelName physicalChannelName,
+        uint8_t* frameDestination) {
 
-        const uint16_t key = static_cast<uint16_t>(mcChanName);
-        if (!Objects::masterChannelSsTmMap.contains(key)) {
+        const auto it = Objects::physicalChannelMap.find(static_cast<uint8_t>(physicalChannelName));
+        if (it == Objects::physicalChannelMap.end()) {
             return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
         }
+        const PhysicalChannel& phyChan = it->second;
+        MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(phyChan.getScidTm());
 
-        MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(key);
-        const PhysicalChannel& phyChan = Objects::physicalChannelMap.at(mcChan.getParentPcid());
-        return SpaceSegmentTmDataHandling::allFramesGeneration(phyChan, mcChan, packetDestination);
+        return SpaceSegmentTmDataHandling::allFramesGeneration(phyChan, mcChan, frameDestination);
     }
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // CCSDSDataLinkLayer

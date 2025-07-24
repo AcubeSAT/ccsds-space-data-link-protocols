@@ -22,7 +22,7 @@ namespace CCSDSDataLinkLayer {
             if ((clcw.getControlWordType() != Defs::ControlWordTypeCLCW) ||
                 (clcw.getClcwVersion() != Defs::ClcwVersionNumber) ||
                 (clcw.getCopInEffect() != Defs::CopInEffect) ||
-                (clcw.getVcId() != vcChan->getVcid())) {
+                (clcw.getVcId() != vcChan.getVcid())) {
                 // E15
                 eventCode = 15;
                 switch (state) {
@@ -552,8 +552,8 @@ namespace CCSDSDataLinkLayer {
             FduTransferSignal fduTransferSignal = transferFduSignalQueue.front();
             transferNotificationSignalQueue.pop();
 
-            if (fduTransferSignal.serviceType != Defs::ServiceType::TYPE_AD &&
-                fduTransferSignal.serviceType != Defs::ServiceType::TYPE_BD) {
+            if (fduTransferSignal.frame->getServiceType() != Defs::ServiceType::TYPE_AD &&
+                fduTransferSignal.frame->getServiceType() != Defs::ServiceType::TYPE_BD) {
                 fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
             }
 
@@ -562,7 +562,7 @@ namespace CCSDSDataLinkLayer {
                 fopNotification = FOPNotification::FOP_UNEXPECTED_VALUE;
             }
 
-            if (fduTransferSignal.serviceType == Defs::ServiceType::TYPE_AD) {
+            if (fduTransferSignal.frame->getServiceType() == Defs::ServiceType::TYPE_AD) {
                 if (waitQueueFOP.empty()) {
                     // E19
                     eventCode = 19;

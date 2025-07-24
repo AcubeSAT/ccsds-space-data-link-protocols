@@ -5,7 +5,6 @@
 #pragma once
 #include <cstdint>
 #include "CcsdsDefinitions.hpp"
-#include "etl/span.h"
 
 namespace CCSDSDataLinkLayer {
     /**
@@ -75,6 +74,28 @@ namespace CCSDSDataLinkLayer {
             return frameErrorControlFieldPresent;
         }
 
+        /**
+         * @brief Used during channel generation
+         */
+        void registerTcMasterChannel(const uint16_t scid) {
+            this->tcMasterChannelScid = scid;
+        }
+
+        /**
+         * @brief Used during channel generation
+         */
+        void registerTmMasterChannel(const uint16_t scid) {
+            this->tmMasterChannelScid = scid;
+        }
+
+        [[nodiscard]] uint16_t getScidTc() const {
+            return tcMasterChannelScid;
+        }
+
+        [[nodiscard]] uint16_t getScidTm() const {
+            return tmMasterChannelScid;
+        }
+
     private:
         const Defs::TransferFrameVersionNumber tfvn;
         const uint8_t pcid; // Physical channel id. Not part of the standard, added for consistency with the other channels
@@ -84,5 +105,7 @@ namespace CCSDSDataLinkLayer {
         const uint16_t maxPDULength;
         const uint32_t bitrate;
         const bool frameErrorControlFieldPresent;
+        uint16_t tcMasterChannelScid; // This implementation supports a single tc master channel per physical channel
+        uint16_t tmMasterChannelScid; // This implementation supports a single tm master channel per physical channel
     };
 } // namespace CCSDSDataLinkLayer

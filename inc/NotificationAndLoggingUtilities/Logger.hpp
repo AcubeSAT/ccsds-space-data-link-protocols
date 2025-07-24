@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "etl/String.hpp"
 #include "etl/to_string.h"
-#include "DefinitionsAndUtilities.hpp"
+#include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
 #if defined LOGLEVEL_TRACE
@@ -89,7 +89,7 @@ namespace CCSDSDataLinkLayer {
          * @internal
          */
         struct LogEntry {
-            String <LoggerMaxMessageSize> message; ///< The current log message itself, starting from a blank slate
+            String <Defs::LoggerMaxMessageSize> message; ///< The current log message itself, starting from a blank slate
             LogLevel level; ///< The log level of this message
 
             explicit LogEntry(LogLevel level); ///< Create a new LogEntry

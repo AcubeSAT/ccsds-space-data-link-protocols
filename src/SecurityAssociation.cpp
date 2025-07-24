@@ -71,8 +71,8 @@ namespace CCSDSDataLinkLayer {
 
                     // compute MAC
                     if (!computeHMAC(
-                        etl::span{authenticationPayload, securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength},
-                        etl::span{authenticationKey.data(), authenticationKey.size()},
+                        etl::span{reinterpret_cast<const uint8_t*>(authenticationPayload), securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength},
+                        etl::span{reinterpret_cast<const uint8_t*>(authenticationKey.data()), authenticationKey.size()},
                         mac)) {
                         return etl::unexpected(SDLSVerificationError::MAC_CALCULATION_ERROR);
                     }
@@ -139,8 +139,8 @@ namespace CCSDSDataLinkLayer {
 
                     // compute MAC
                     if (!computeHMAC(
-                        etl::span{authenticationPayload, securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength},
-                        etl::span{authenticationKey.data(), authenticationKey.size()},
+                        etl::span{reinterpret_cast<const uint8_t*>(authenticationPayload), securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength},
+                        etl::span{reinterpret_cast<const uint8_t*>(authenticationKey.data()), authenticationKey.size()},
                         mac)) {
                         return etl::unexpected(SDLSVerificationError::MAC_CALCULATION_ERROR);
                     }

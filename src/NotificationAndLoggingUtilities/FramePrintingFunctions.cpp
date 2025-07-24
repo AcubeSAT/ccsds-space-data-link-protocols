@@ -201,7 +201,7 @@ namespace CCSDSDataLinkLayer {
         return;
 #endif
         const bool eccPresent = Objects::physicalChannelMap.at(pcid).getFrameErrorControlFieldPresent();
-        const bool segHeaderPresent = vcChan.getsegmentHeaderPresent();
+        const bool segHeaderPresent = vcChan.getSegmentHeaderPresent();
         uint16_t securityHeaderLength = 0;
         uint16_t securityTrailerLength = 0;
         if (vcChan.getAssociatedSdlsSPI().has_value()) {

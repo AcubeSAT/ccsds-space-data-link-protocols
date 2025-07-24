@@ -20,6 +20,14 @@ namespace CCSDSDataLinkLayer {
          * @brief Attempt to lock the mutex for timeMs milliseconds. The process is blocked during that time
          * @param timeMs Maximum time to wait for the lock, in milliseconds
          * @return true if the lock was acquired within the timeout, false otherwise
+         *
+         * @warning To avoid deadlocks, a strict lock hierarchy is used:
+         * 1. cop-1 mutexes
+         * 2. map channel mutexes
+         * 3. virtual channel mutexes
+         * 4. master channel mutexes
+         * 5. frameOctetPool mutex
+
          */
         bool tryLockFor(uint32_t timeMs) {
             return mutex.try_lock_for(std::chrono::milliseconds(timeMs));
@@ -27,6 +35,13 @@ namespace CCSDSDataLinkLayer {
 
         /**
          * @brief Unlock the mutex
+         *
+         * @warning To avoid deadlocks, a strict unlocking hierarchy is used (the reverse of the locking hierarchy):
+         * 1. frameOctetPool mutex
+         * 2. master channel mutexes
+         * 3. virtual channel mutexes
+         * 4. map channel mutexes
+         * 5. cop-1 mutexes
          */
         void unlock() {
             mutex.unlock();

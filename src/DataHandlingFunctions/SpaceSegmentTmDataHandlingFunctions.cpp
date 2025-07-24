@@ -22,15 +22,21 @@ namespace CCSDSDataLinkLayer {
         	}
 
         	length = getSpacePacketLength(packetSource);
-
-        	if (packetSource.size() < length ||
-        		length > Defs::MaxExpectedSpacePacketSize) {
+        } else { // Encapsulation packet
+        	if (packetSource.size() < Defs::EpTotalOffet) {
         		return etl::unexpected(ServiceChannelNotification::INVALID_LENGTH);
         	}
-        } else if (pvn.value() == Defs::PacketVersionNumber::ENCAPSULATION_PACKET) {
-            // TODO
-            return {};
+
+        	length = getEncapsulationPacketLength(packetSource);
         }
+
+    	if (packetSource.size() < length) {
+    		return etl::unexpected(ServiceChannelNotification::INVALID_LENGTH);
+    	}
+
+    	if (length > Defs::MaxExpectedEncapsulationPacketSize) {
+    		return etl::unexpected(ServiceChannelNotification::PACKET_TOO_LONG);
+    	}
 
     	if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
@@ -300,7 +306,7 @@ namespace CCSDSDataLinkLayer {
 
         // Static primary header fields
         for (uint8_t i = 0; i < Defs::SpacePacketPrimaryHeaderLength - 2; ++i) {
-            tmpData[i] = Defs::IdleSpacePacketPrimaryHeader[i];
+            tmpData[i] = Defs::IdleSpPrimaryHeader[i];
         }
 
         // Data length field
@@ -340,11 +346,18 @@ namespace CCSDSDataLinkLayer {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
 
+    	if (!Objects::frameOctetPool.poolMutex.tryLockFor(Defs::MutexDelayMs)) {
+    		mcChan.channelMutex.unlock();
+    		vcChan.channelMutex.unlock();
+    		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+    	}
+
     	// Return immediately if there are no packets available
     	if (vcChan.packetLengths.isEmpty()) {
-    		vcChan.channelMutex.unlock();
-    		mcChan.channelMutex.unlock();
-    		return etl::unexpected(ServiceChannelNotification::PACKET_QUEUE_EMPTY);
+    		Objects::frameOctetPool.poolMutex.unlock();
+		    mcChan.channelMutex.unlock();
+		    vcChan.channelMutex.unlock();
+		    return etl::unexpected(ServiceChannelNotification::PACKET_QUEUE_EMPTY);
     	}
 
     	// Handle simple case, where channel transfers vca sdu instead of packets
@@ -359,15 +372,17 @@ namespace CCSDSDataLinkLayer {
     		// check if there is enough space for a new frame
     		if (mcChan.frameMasterCopies.isFull() ||
 				Objects::frameOctetPool.findFit(frameLength).second == MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL) {
-    			vcChan.channelMutex.unlock();
-    			mcChan.channelMutex.unlock();
-    			return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
+    			Objects::frameOctetPool.poolMutex.unlock();
+			    mcChan.channelMutex.unlock();
+			    vcChan.channelMutex.unlock();
+			    return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
 			}
 
     		if (mcChan.framesAfterVcGeneration.isFull()) {
-    			vcChan.channelMutex.unlock();
-    			mcChan.channelMutex.unlock();
-    			return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
+    			Objects::frameOctetPool.poolMutex.unlock();
+			    mcChan.channelMutex.unlock();
+			    vcChan.channelMutex.unlock();
+			    return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
     		}
 
     		const bool packetOrderFlag = vcChan.packetLengths.getFront() >> 2;
@@ -399,9 +414,10 @@ namespace CCSDSDataLinkLayer {
     		// push a frame pointer to the queue
     		mcChan.framesAfterVcGeneration.push(frameTmPtr);
 
-    		vcChan.channelMutex.unlock();
-    		mcChan.channelMutex.unlock();
-    		return {};
+    		Objects::frameOctetPool.poolMutex.unlock();
+		    mcChan.channelMutex.unlock();
+		    vcChan.channelMutex.unlock();
+		    return {};
     	}
 
     	// Packets
@@ -415,15 +431,17 @@ namespace CCSDSDataLinkLayer {
 
     		if (!opResult.has_value()) {
     			// Not enough space for new frames.
-    			vcChan.channelMutex.unlock();
-    			mcChan.channelMutex.unlock();
-    			return etl::unexpected(opResult.error());
+    			Objects::frameOctetPool.poolMutex.unlock();
+			    mcChan.channelMutex.unlock();
+			    vcChan.channelMutex.unlock();
+			    return etl::unexpected(opResult.error());
     		}
 
     		if (finishedOperationsFlag) {
-    			vcChan.channelMutex.unlock();
-    			mcChan.channelMutex.unlock();
-    			return {};
+    			Objects::frameOctetPool.poolMutex.unlock();
+			    mcChan.channelMutex.unlock();
+			    vcChan.channelMutex.unlock();
+			    return {};
     		}
 
 		    if (segmentationData.has_value()) {
@@ -431,9 +449,10 @@ namespace CCSDSDataLinkLayer {
 			    opResult = segmentationTM(phyChan, mcChan, vcChan, segmentationData.value().first,
 			                   segmentationData.value().second);
 		    	if (!opResult.has_value()) {
-		    		vcChan.channelMutex.unlock();
-		    		mcChan.channelMutex.unlock();
-		    		return  etl::unexpected(opResult.error());
+		    		Objects::frameOctetPool.poolMutex.unlock();
+				    mcChan.channelMutex.unlock();
+				    vcChan.channelMutex.unlock();
+				    return  etl::unexpected(opResult.error());
 		    	}
 		    	segmentationData = etl::nullopt;
 		    }
@@ -454,19 +473,27 @@ namespace CCSDSDataLinkLayer {
     		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     	}
 
+    	if (!Objects::frameOctetPool.poolMutex.tryLockFor(Defs::MutexDelayMs)) {
+    		mcChan.channelMutex.unlock();
+    		vcChan.channelMutex.unlock();
+    		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+    	}
+
     	// check if there is enough space for an OID frame
         const uint16_t frameLength = phyChan.getTMFrameLength();
     	if (mcChan.frameMasterCopies.isFull() ||
 			Objects::frameOctetPool.findFit(frameLength).second == MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL) {
-    		return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
-    		vcChan.channelMutex.unlock();
+			Objects::frameOctetPool.poolMutex.unlock();
     		mcChan.channelMutex.unlock();
+		    vcChan.channelMutex.unlock();
+		    return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
 		}
 
     	if (mcChan.framesAfterVcGeneration.isFull()) {
-    		vcChan.channelMutex.unlock();
+    		Objects::frameOctetPool.poolMutex.unlock();
     		mcChan.channelMutex.unlock();
-    		return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
+		    vcChan.channelMutex.unlock();
+		    return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
     	}
 
         const uint16_t transferFrameDataFieldLength =
@@ -496,9 +523,10 @@ namespace CCSDSDataLinkLayer {
         vcChan.incrementVirtualChannelFrameCount();
         mcChan.framesAfterVcGeneration.push(oidFramePtr);
 
-    	vcChan.channelMutex.unlock();
-    	mcChan.channelMutex.unlock();
-    	return {};
+    	Objects::frameOctetPool.poolMutex.unlock();
+	    mcChan.channelMutex.unlock();
+	    vcChan.channelMutex.unlock();
+	    return {};
     }
 
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmDataHandling::masterChannelGeneration(
@@ -533,13 +561,13 @@ namespace CCSDSDataLinkLayer {
     	// frames in framesAfterVcGeneration queue
 	    if (!mcChan.framesAfterVcGeneration.isEmpty()) {
     		frameTmPtr = mcChan.framesAfterVcGeneration.getFront();
-    		mcChan.framesAfterVcGeneration.pop();
 
     		if (frameTmPtr->getOperationalControlFieldFlag()) {
 			    if (!mcChan.ocfSduQueue.isEmpty()) {
 			    	// ocf sdu exists
 			    	frameTmPtr->setOperationalControlField(mcChan.ocfSduQueue.getFront());
 			    	mcChan.ocfSduQueue.pop();
+			    	mcChan.framesAfterVcGeneration.pop();
 					mcChan.framesAfterMcGeneration.push(frameTmPtr);
 			    	mcChan.channelMutex.unlock();
 					return {};
@@ -549,15 +577,23 @@ namespace CCSDSDataLinkLayer {
     			bool discardedFrame = false;
 				if (mcChan.waitingBuffer.isFull()) {
 					// if the circular buffer is full, we first need to discard the frame in the front
+					if (!Objects::frameOctetPool.poolMutex.tryLockFor(Defs::MutexDelayMs)) {
+						mcChan.channelMutex.unlock();
+						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+					}
+
 					discardedFrame = true;
 					TransferFrameTM* frameToDiscard = mcChan.waitingBuffer.getFront();
 					Objects::frameOctetPool.deleteBlock(frameToDiscard->getFrameData(), phyChan.getTMFrameLength());
 					mcChan.frameMasterCopies.erase(frameToDiscard);
+
+					Objects::frameOctetPool.poolMutex.unlock();
 				}
     			mcChan.waitingBuffer.push(frameTmPtr);
 
     			// if a frame is discarded, then notify about it (it is implied that an ocf sdu was
     			// not available)
+    			mcChan.framesAfterVcGeneration.pop();
     			mcChan.channelMutex.unlock();
     			if (discardedFrame) {
     				return etl::unexpected(ServiceChannelNotification::DISCARDED_FRAME);
@@ -565,6 +601,7 @@ namespace CCSDSDataLinkLayer {
     			return etl::unexpected(ServiceChannelNotification::OCF_SDU_QUEUE_EMPTY);
     		} else {
     			// Next frame in queue has no ocf field, just push to the next queue
+    			mcChan.framesAfterVcGeneration.pop();
     			mcChan.framesAfterMcGeneration.push(frameTmPtr);
     			mcChan.channelMutex.unlock();
     			return {};
@@ -584,8 +621,14 @@ namespace CCSDSDataLinkLayer {
 	        return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
 	    }
 
+    	if (!Objects::frameOctetPool.poolMutex.tryLockFor(Defs::MutexDelayMs)) {
+    		mcChan.channelMutex.unlock();
+    		return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+    	}
+
 	    // ensure there is at least one frame to send
 	    if (mcChan.framesAfterMcGeneration.isEmpty()) {
+	    	Objects::frameOctetPool.poolMutex.unlock();
 	        mcChan.channelMutex.unlock();
 	        return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_EMPTY);
 	    }
@@ -605,6 +648,7 @@ namespace CCSDSDataLinkLayer {
 
 	        // if queue is empty, return
 	        if (mcChan.framesAfterMcGeneration.isEmpty()) {
+	        	Objects::frameOctetPool.poolMutex.unlock();
 	            mcChan.channelMutex.unlock();
 	            return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_EMPTY);
 	        }
@@ -621,6 +665,7 @@ namespace CCSDSDataLinkLayer {
 
 	    // increment repetition count and return
 	    frameTmPtr->incrementTimesSequentiallyTransmitted();
+    	Objects::frameOctetPool.poolMutex.unlock();
 	    mcChan.channelMutex.unlock();
 	    return {};
 	}

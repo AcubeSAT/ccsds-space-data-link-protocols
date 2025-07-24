@@ -34,7 +34,7 @@ namespace CCSDSDataLinkLayer {
          */
         static etl::expected<void, ServiceChannelNotification> storePacket(
             const PhysicalChannel& phyChan,
-            etl::variant<VirtualChannelGsTc&, MAPChannelGs&>& chanVariant,
+            etl::variant<etl::reference_wrapper<VirtualChannelGsTc>, etl::reference_wrapper<MAPChannelGs>> chanVariant,
             etl::span<uint8_t> packetSource,
             Defs::ServiceType serviceType);
 
@@ -54,7 +54,7 @@ namespace CCSDSDataLinkLayer {
          */
         static etl::expected<void, ServiceChannelNotification> storeVcaSdu(
             const PhysicalChannel& phyChan,
-            etl::variant<VirtualChannelGsTc&, MAPChannelGs&>& chanVariant,
+            etl::variant<etl::reference_wrapper<VirtualChannelGsTc>, etl::reference_wrapper<MAPChannelGs>> chanVariant,
             etl::span<uint8_t> vcaSduSource,
             Defs::ServiceType serviceType);
 
@@ -77,7 +77,7 @@ namespace CCSDSDataLinkLayer {
         static etl::expected<void, ServiceChannelNotification> packetProcessing(
             const PhysicalChannel& phyChan,
             MasterChannelGsTc& mcChan,
-            etl::variant<VirtualChannelGsTc&, MAPChannelGs&>& chanVariant,
+            etl::variant<etl::reference_wrapper<VirtualChannelGsTc>, etl::reference_wrapper<MAPChannelGs>> chanVariant,
             Defs::ServiceType serviceType);
 
         /**
@@ -89,7 +89,8 @@ namespace CCSDSDataLinkLayer {
             VirtualChannelGsTc& vcChan);
 
         /**
-         * @brief Handles message exchange of a virtual channel with the respective FOP-1 module
+         * @brief Handles message exchange of a virtual channel with the respective FOP-1 module. If cop-1
+         *        is inactive in this virtual channel, then the frame just gets passed down to the next queue.
          */
         static etl::expected<void, ServiceChannelNotification> virtualChannelGeneration(
             MasterChannelGsTc& mcChan,

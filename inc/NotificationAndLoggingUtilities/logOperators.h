@@ -1,10 +1,6 @@
 #pragma once
-
-#include <cstdint>
-#include <map>
 #include <string>
 #include "Alert.hpp"
-#include "../CoreDataStructures/TransferFrameTC.hpp"
 
 namespace CCSDSDataLinkLayer {
     std::ostream &operator<<(std::ostream &out, const TxRx value);

@@ -1,5 +1,7 @@
 #include "logOperators.h"
+#include "SpaceSegmentTcDataHandlingFunctions.hpp"
 #include "Alert.hpp"
+#include "map"
 
 namespace CCSDSDataLinkLayer {
     std::ostream &operator<<(std::ostream &out, const TxRx value) {
@@ -52,7 +54,7 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::INVALID_SECURITY_PARAMETER_INDEX);
         INSERT_ELEMENT(ServiceChannelNotification::INVALID_MAC);
         INSERT_ELEMENT(ServiceChannelNotification::FRAME_REPLAY_ATTEMPT);
-        INSERT_ELEMENT(ServiceChannelNotification::SLDS_ERROR);
+        INSERT_ELEMENT(ServiceChannelNotification::SLDS_CALCULATION_ERROR);
         INSERT_ELEMENT(ServiceChannelNotification::OCF_SDU_QUEUE_EMPTY);
         INSERT_ELEMENT(ServiceChannelNotification::INVALID_PACKET_PVN);
         INSERT_ELEMENT(ServiceChannelNotification::NO_SERVICE_EVENT);
@@ -67,6 +69,12 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::NO_PENDING_NOTIFICATION);
         INSERT_ELEMENT(ServiceChannelNotification::DIRECTIVE_QUEUE_FULL);
         INSERT_ELEMENT(ServiceChannelNotification::NO_FOP_SIGNALS_TO_PROCESS);
+        INSERT_ELEMENT(ServiceChannelNotification::UNAUTHORIZED_SENDER);
+        INSERT_ELEMENT(ServiceChannelNotification::ERRONEOUS_PACKET);
+        INSERT_ELEMENT(ServiceChannelNotification::CURRENTLY_REJECTING_ERRONEOUS_SEGMENTED_PACKET);
+        INSERT_ELEMENT(ServiceChannelNotification::CURRENTLY_CONSTRUCTING_SEGMENTED_PACKET);
+        INSERT_ELEMENT(ServiceChannelNotification::PACKET_TOO_LONG);
+        INSERT_ELEMENT(ServiceChannelNotification::NO_CLCW_AVAILABLE);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
@@ -100,6 +108,7 @@ namespace CCSDSDataLinkLayer {
             INSERT_ELEMENT(FARMNotification::FARM_NON_APPLICABLE_COMBINATION_OF_STATE_AND_EVENT);
             INSERT_ELEMENT(FARMNotification::FARM_UNEXPECTED_VALUE);
             INSERT_ELEMENT(FARMNotification::FARM_HIGH_LAYER_AD_BUFFER_FULL);
+            INSERT_ELEMENT(FARMNotification::FAILED_TO_LOCK_MUTEX);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];

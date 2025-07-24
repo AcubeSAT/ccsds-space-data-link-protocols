@@ -16,6 +16,7 @@ namespace CCSDSDataLinkLayer {
     class GroundSegmentTcDataHandling;
     class SpaceSegmentTmServices;
     class FrameOperationProcedure;
+    class FrameAcceptanceReporting;
 
     /**
      * Base virtual channel class containing parameters common among space and ground segment code
@@ -78,12 +79,12 @@ namespace CCSDSDataLinkLayer {
             const etl::span<TransferFrameTM*>& framesAfterMcGenerationBuff,
             const etl::span<TransferFrameTM*>& waitingBufferBuff,
             const etl::span<TransferFrameTM>& frameMasterCopiesBuff,
-            const etl::span<size_t>& frameMasterCopiesIndicesBuff,
+            const etl::span<uint32_t>& frameMasterCopiesIndicesBuff,
             const etl::span<uint32_t>& ocfSduQueueBuff) {
             framesAfterVcGeneration = Queue(framesAfterVcGenerationBuff);
             framesAfterMcGeneration = Queue(framesAfterMcGenerationBuff);
             waitingBuffer = CircularBuffer(waitingBufferBuff);
-            frameMasterCopies = UnorderedPool<TransferFrameTM>(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
+            frameMasterCopies = UnorderedPool(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
             ocfSduQueue = Queue(ocfSduQueueBuff);
         }
 
@@ -166,14 +167,31 @@ namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class MasterChannelSsTc : public MasterChannelBase {
         friend class SpaceSegmentTcDataHandling;
+        friend class FrameAcceptanceReporting;
     public:
         explicit  MasterChannelSsTc(const uint16_t mscid, const uint8_t parentPcid)
-             : MasterChannelBase(mscid, parentPcid) {}
+             : MasterChannelBase(mscid, parentPcid), noRfAvailable(false), noBitLock(false) {}
 
         void initializeContainers(
             const etl::span<TransferFrameTC>& frameMasterCopiesBuff,
-            const etl::span<size_t>& frameMasterCopiesIndicesBuff) {
+            const etl::span<uint32_t>& frameMasterCopiesIndicesBuff) {
             frameMasterCopies = UnorderedPool(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
+        }
+
+        [[nodiscard]] bool getNoRfAvailable() const {
+            return noRfAvailable;
+        }
+
+        void setNoRfAvailable(const bool noRfAvailable) {
+            this->noRfAvailable = noRfAvailable;
+        }
+
+        [[nodiscard]] bool getNoBitLock() const {
+            return noBitLock;
+        }
+
+        void setNoBitLock(const bool noBitLock) {
+            this->noBitLock = noBitLock;
         }
 
     private:
@@ -181,6 +199,13 @@ namespace CCSDSDataLinkLayer {
          * @brief Buffer that stores the actual TC transfer frame objects under this master channel
          */
         UnorderedPool<TransferFrameTC> frameMasterCopies;
+
+        /**
+         * @brief Used by all FARMs under this master channel to fill the "No Rf available" and "No bit lock" fields.
+         *        Updated by the user, using the respective service.
+         */
+        bool noRfAvailable;
+        bool noBitLock;
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
@@ -202,7 +227,7 @@ namespace CCSDSDataLinkLayer {
         void initializeContainers(
             const etl::span<TransferFrameTC*>& framesAfterVcGenerationBuff,
             const etl::span<TransferFrameTC>& frameMasterCopiesBuff,
-            const etl::span<size_t>& frameMasterCopiesIndicesBuff) {
+            const etl::span<uint32_t>& frameMasterCopiesIndicesBuff) {
             framesAfterVcGeneration = Queue(framesAfterVcGenerationBuff);
             frameMasterCopies = UnorderedPool(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
         }

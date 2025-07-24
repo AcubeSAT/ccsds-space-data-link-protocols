@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <iomanip>
-#include "../../lib/etl/include/etl/basic_string.h"
 #include "logOperators.h"
 #include "Logger.hpp"
 
@@ -22,7 +21,7 @@ namespace CCSDSDataLinkLayer {
 
     template<class CCSDSNotification>
     void ccsdsLogNotice(TxRx txRx, NotificationType notificationType, CCSDSNotification Notif) {
-        switch (logVerbose) {
+        switch (Defs::logVerbose) {
             case 0:
                 LOG_NOTICE << static_cast<uint16_t>(txRx) << ":" << static_cast<uint16_t>(notificationType) << ":" <<
                 static_cast<uint16_t>(Notif);

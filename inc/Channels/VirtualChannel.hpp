@@ -23,8 +23,8 @@ namespace CCSDSDataLinkLayer {
     public:
         explicit VirtualChannelBase(const uint8_t vcid, const uint16_t parentScid,
                            const uint16_t associatedSdlsSPI, const uint16_t frameCapacity)
-            : vcid(vcid & 0x3FU), parentScid(parentScid & 0x03FFU), associatedSdlsSPI(associatedSdlsSPI),
-              frameCapacity(frameCapacity), channelMutex(Mutex()) {
+            : channelMutex(Mutex()), vcid(vcid & 0x3FU), parentScid(parentScid & 0x03FFU),
+              associatedSdlsSPI(associatedSdlsSPI), frameCapacity(frameCapacity) {
             if (associatedSdlsSPI != 0) {
                 this->associatedSdlsSPI = etl::optional(associatedSdlsSPI);
             }
@@ -218,6 +218,7 @@ namespace CCSDSDataLinkLayer {
     class VirtualChannelSsTc : public VirtualChannelBase {
        friend class FrameAcceptanceReporting;
        friend class SpaceSegmentTcDataHandling;
+
     public:
         explicit VirtualChannelSsTc(const uint8_t vcid, const uint16_t parentScid,
                                      const bool segmentHeaderPresent, const bool blocking,
@@ -230,7 +231,8 @@ namespace CCSDSDataLinkLayer {
             : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity),
               segmentHeaderPresent(segmentHeaderPresent), blocking(blocking), copInEffect(copInEffect),
               dataFieldContent(dataFieldContent), typeAdPacketCapacity(typeAdPacketCapacity),
-              typeBdPacketCapacity(typeBdPacketCapacity) {}
+              typeBdPacketCapacity(typeBdPacketCapacity), segmentedPacketConstructor(Defs::SegmentedPacketConstructorTc()),
+              clcwStatusField(0) {}
 
         void initializeContainers(const etl::span<TransferFrameTC *> &framesAfterAllFramesReceptionBuff,
                                   const etl::span<TransferFrameTC *> &framesAfterVcReceptionTypeADBuff,
@@ -239,7 +241,7 @@ namespace CCSDSDataLinkLayer {
                                   const etl::span<TransferFrameTC *> &framesAfterProcessSDLSSecurityTypeBDBuff) {
             framesAfterAllFramesReception = Queue(framesAfterAllFramesReceptionBuff);
             framesAfterVcReceptionTypeAD = Queue(framesAfterVcReceptionTypeADBuff);
-            framesAfterVcReceptionTypeBD = Queue(framesAfterVcReceptionTypeBDBuff);
+            framesAfterVcReceptionTypeBD = CircularBuffer(framesAfterVcReceptionTypeBDBuff);
             framesAfterProcessSDLSSecurityTypeAD = Queue(framesAfterProcessSDLSSecurityTypeADBuff);
             framesAfterProcessSDLSSecurityTypeBD = Queue(framesAfterProcessSDLSSecurityTypeBDBuff);
         }
@@ -260,7 +262,7 @@ namespace CCSDSDataLinkLayer {
             this->typeBdPacketCapacity += amount;
         }
 
-        [[nodiscard]] bool getsegmentHeaderPresent() const {
+        [[nodiscard]] bool getSegmentHeaderPresent() const {
             return segmentHeaderPresent;
         }
 
@@ -274,6 +276,14 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] Defs::DataFieldContent getDataFieldContent() const {
             return dataFieldContent;
+        }
+
+        [[nodiscard]] uint8_t getClcwStatusField() const {
+            return clcwStatusField;
+        }
+
+        void setClcwStatusField(const uint8_t clcwStatusField) {
+            this->clcwStatusField = clcwStatusField;
         }
 
     private:
@@ -321,9 +331,12 @@ namespace CCSDSDataLinkLayer {
         Queue<TransferFrameTC*> framesAfterVcReceptionTypeAD;
 
         /**
-         * @brief Stores pointers to Type-AD TC frame pointers after vc reception and before security processing
+         * @brief Stores pointers to Type-BD TC frame pointers after vc reception and before security processing.
+         *        Due to type BD frames being expedited, this buffer is circular, meaning oldest frames are deleted
+         *        in case of congestion.
+         *
          */
-        Queue<TransferFrameTC*> framesAfterVcReceptionTypeBD;
+        CircularBuffer<TransferFrameTC*> framesAfterVcReceptionTypeBD;
 
         /**
          * @brief Stores pointers to Type-AD TC frame pointers after security processing and before packet extraction
@@ -338,6 +351,18 @@ namespace CCSDSDataLinkLayer {
          *        channel (segmentHeaderPresent == false)
          */
         Queue<TransferFrameTC*> framesAfterProcessSDLSSecurityTypeBD;
+
+        /**
+         * @brief Used to build segmented packets and contain information about the previous extracted packet/packet piece
+         */
+        Defs::SegmentedPacketConstructorTc segmentedPacketConstructor;
+
+       /**
+        * @brief Ued by FARM to fill the status field when generating CLCWs. Updated by the user, using
+        *        the respective service.
+        */
+       uint8_t clcwStatusField;
+
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
         Queue<TransferFrameTC*>& getFramesAfterAllFramesReception() const {
@@ -359,6 +384,10 @@ namespace CCSDSDataLinkLayer {
         Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeBD() const {
             return framesAfterProcessSDLSSecurityTypeBD;
         }
+
+        Defs::SegmentedPacketConstructorTc& getSegmentedPacketConstructor() {
+            return segmentedPacketConstructor;
+        }
 #endif
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
@@ -369,7 +398,7 @@ namespace CCSDSDataLinkLayer {
         friend class GroundSegmentTcDataHandling;
     public:
         explicit VirtualChannelGsTc(const uint8_t vcid, const uint16_t parentScid,
-                                    const uint8_t vcRepetitionsTypeAD, const uint8_t vcRepetitionsTypeBD,
+                                    const uint8_t vcRepetitionsTypeAD, const uint8_t vcRepetitionsTypeBC,
                                     const bool segmentHeaderPresent, const bool blocking,
                                     const bool copInEffect,
                                     const uint16_t associatedSdlsSPI,
@@ -421,7 +450,7 @@ namespace CCSDSDataLinkLayer {
             return vcRepetitionsTypeBC;
         }
 
-        [[nodiscard]] bool getsegmentHeaderPresent() const {
+        [[nodiscard]] bool getSegmentHeaderPresent() const {
             return segmentHeaderPresent;
         }
 

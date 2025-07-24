@@ -17,7 +17,6 @@
 #include "CcsdsDefinitions.hpp"
 #include "CLCW.hpp"
 #include "CountdownTimer.hpp"
-#include "StructureGeneration.hpp"
 #include "AddressingAndParsingUtilities.hpp"
 #include "FrameOperationProcedureMessageLayer.hpp"
 
@@ -152,8 +151,8 @@ namespace CCSDSDataLinkLayer {
          */
         Mutex signalQueueMutex;
 
-        VirtualChannelGsTc* vcChan;
-        MasterChannelGsTc* mcChan;
+        VirtualChannelGsTc& vcChan;
+        MasterChannelGsTc& mcChan;
 
         CountdownTimer timer;
 
@@ -306,16 +305,7 @@ namespace CCSDSDataLinkLayer {
     public:
         FrameOperationProcedure(const uint16_t scid, const uint8_t vcid, const uint16_t tiInitial,
                                 const uint16_t transmissionLimit,
-                                const uint8_t fopSlidingWindowWidth)
-            : state(Defs::FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(true),
-              bdOut(true), bcOut(true), expectedAcknowledgementSeqNumber(0),
-              tiInitial(tiInitial), transmissionLimit(transmissionLimit), transmissionCount(1),
-              fopSlidingWindowWidth(fopSlidingWindowWidth), timeoutType(false),
-              suspendState(Defs::SuspendVariableState::NOT_SUSPENDED),
-              signalQueueMutex(Mutex()), timer(CountdownTimer()) {
-             vcChan = &Objects::virtualChannelGsTcMap.at(constructVcidScidKey(vcid, scid));
-             mcChan = &Objects::masterChannelGsTcMap.at(scid);
-        }
+                                const uint8_t fopSlidingWindowWidth);
 
         Defs::FOPState getCurrentState() const {
             return state;

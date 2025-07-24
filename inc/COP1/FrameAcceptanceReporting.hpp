@@ -6,18 +6,17 @@
 #pragma once
 #include <cstdint>
 #include "etl/queue.h"
-#include "etl/list.h"
 #include "etl/optional.h"
 #include "CountdownTimer.hpp"
 #include "CLCW.hpp"
 #include "Alert.hpp"
 #include "CcsdsDefinitions.hpp"
 #include "VirtualChannel.hpp"
-#include "StructureGeneration.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    class SpaceSegmentTmDataHandling;
+    class SpaceSegmentTcServices;
+    class SpaceSegmentTcDataHandling;
 
     /**
      * @see p. 6.1.2 from COP-1 CCSDS
@@ -46,7 +45,8 @@ namespace CCSDSDataLinkLayer {
      * FARM-1 is implemented as a state machine.
      */
     class FrameAcceptanceReporting {
-        friend class SpaceSegmentTmDataHandling;
+        friend class SpaceSegmentTcServices;
+        friend class SpaceSegmentTcDataHandling;
     private:
         /** FARM-1 Variables **/
 
@@ -94,9 +94,6 @@ namespace CCSDSDataLinkLayer {
          * The amount of time (in milliseconds) that must elapse before another CLCW report is
          * pushed. It is not required by the protocol to have a constant CLCW data rate, therefore a
          * simple countdown timer can be used (send a CLCW once it has elapsed).
-         *
-         * // TODO For now, the x86 countdown timer from fop is used.
-         *         Create a countdown timer implementation using freertos.
          */
         const uint16_t clcwReportInterval;
         CountdownTimer timer;
@@ -109,10 +106,10 @@ namespace CCSDSDataLinkLayer {
 
         /** Implementation specific variables **/
 
-        /**
-         * virtual channel parameters passed upon construction
-         */
-        const uint8_t vcid;
+        Mutex clcwBufferMutex;
+
+        VirtualChannelSsTc& vcChan;
+
 
         /** FARM-1 actions **/
 
@@ -122,14 +119,14 @@ namespace CCSDSDataLinkLayer {
          *
          * @see p. 6.2.2 of COP-1 CCSDS
          */
-        static FARMNotification accept(TransferFrameTC *frame, Defs::ServiceType serviceType);
+        FARMNotification accept(TransferFrameTC *frame);
 
         /**
          * Deletes frame master copy and octets.
          *
          * @see p. 6.2.3 of COP-1 CCSDS
          */
-        static void discard(TransferFrameTC *frame);
+        FARMNotification discard(TransferFrameTC *frame);
 
         /**
          * Creates a CLCW report based on the current state machine variable values and
@@ -138,7 +135,7 @@ namespace CCSDSDataLinkLayer {
          *
          * @see p. 6.2.4 of COP-1 CCSDS
          */
-        void report() const;
+        FARMNotification report();
 
         /** Implementation specific methods **/
 
@@ -157,25 +154,13 @@ namespace CCSDSDataLinkLayer {
          * @returns The occurred event code. An event code of 0 means no event was
          *          detected.
          */
-        std::pair<FARMNotification, uint8_t> applyFarmStateTable();
+        etl::pair<FARMNotification, uint8_t> applyFarmStateTable();
 
     public:
         FrameAcceptanceReporting(const uint8_t vcid,
                                  const uint8_t farmSlidingWinWidth,
-                                 const uint8_t farmPositiveWinWidth,
-                                 const uint8_t farmNegativeWinWidth,
-                                 const uint16_t clcwReportInterval)
-            : state(FARMState::OPEN), lockout(false), wait(false),
-              retransmit(false),
-              farmBCount(0),
-              receiverFrameSeqNumber(0),
-              farmSlidingWinWidth(farmSlidingWinWidth),
-              farmPositiveWinWidth(farmPositiveWinWidth), farmNegativeWidth(farmNegativeWinWidth),
-              clcwReportInterval(clcwReportInterval),
-              timer(CountdownTimer()),
-              vcid(vcid),
-              clcwBuffer(etl::nullopt)
-              {}
+                                 const uint16_t clcwReportInterval,
+                                 const uint8_t fopTransmissionLimit);
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

@@ -20,7 +20,7 @@ namespace CCSDSDataLinkLayer {
                         const uint16_t scid, const uint16_t frameLength,
                         const bool segHdrPresent,
                         Defs::SequenceFlag sequenceFlag =
-                                Defs::SequenceFlag::NoSegmentation, const uint8_t mapId = 0,
+                                Defs::SequenceFlag::NO_SEGMENTATION, const uint8_t mapId = 0,
                         const uint16_t firstEmptyOctet = 0)
             : TransferFrame(Defs::FrameType::TC, frameLength, frameData, firstEmptyOctet),
               toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
@@ -196,11 +196,8 @@ namespace CCSDSDataLinkLayer {
             return etl::nullopt;
         }
 
-        [[nodiscard]] etl::optional<Defs::SequenceFlag> getSequenceFlag() const {
-            if (segmentationHeaderPresent) {
-                return static_cast<Defs::SequenceFlag>((transferFrameData[5] >> 6U) & 0x03);
-            }
-            return etl::nullopt;
+        [[nodiscard]] Defs::SequenceFlag getSequenceFlag() const {
+            return static_cast<Defs::SequenceFlag>((transferFrameData[5] >> 6U) & 0x03);
         }
 
         [[nodiscard]] etl::optional<bool> getToBeRetransmittedFlag() const {

@@ -2,9 +2,22 @@
 #include "LoggerImpl.h"
 #include "AddressingAndParsingUtilities.hpp"
 #include "Mutex.hpp"
+#include "StructureGeneration.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
+    FrameOperationProcedure::FrameOperationProcedure(const uint16_t scid, const uint8_t vcid, const uint16_t tiInitial,
+                        const uint16_t transmissionLimit,
+                        const uint8_t fopSlidingWindowWidth)
+    : state(Defs::FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(true),
+      bdOut(true), bcOut(true), expectedAcknowledgementSeqNumber(0),
+      tiInitial(tiInitial), transmissionLimit(transmissionLimit), transmissionCount(1),
+      fopSlidingWindowWidth(fopSlidingWindowWidth), timeoutType(false),
+      suspendState(Defs::SuspendVariableState::NOT_SUSPENDED),
+      signalQueueMutex(Mutex()), vcChan(Objects::virtualChannelGsTcMap.at(constructVcidScidKey(vcid, scid))),
+      mcChan(Objects::masterChannelGsTcMap.at(scid)),
+      timer(CountdownTimer()) {}
+
     /** FOP-1 actions **/
     FOPNotification FrameOperationProcedure::purgeSentQueue() {
         etl::ilist<TransferFrameTC *>::iterator sent_queue_it = sentQueueFOP.begin();
@@ -126,12 +139,17 @@ namespace CCSDSDataLinkLayer {
             return FOPNotification::SIGNAL_QUEUE_FULL;
         }
 
-        if (!mcChan->channelMutex.tryLockFor(Defs::MutexDelayMs)) {
+        if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
+            return FOPNotification::FAILED_TO_LOCK_MUTEX;
+        }
+
+        if (!Objects::frameOctetPool.poolMutex.tryLockFor(Defs::MutexDelayMs)) {
+            mcChan.channelMutex.unlock();
             return FOPNotification::FAILED_TO_LOCK_MUTEX;
         }
 
         // bc frames do not have a segmentation header, security header or security trailer
-        bool errorControlFieldPresent = Objects::physicalChannelMap.at(mcChan->getParentPcid()).getFrameErrorControlFieldPresent();
+        bool errorControlFieldPresent = Objects::physicalChannelMap.at(mcChan.getParentPcid()).getFrameErrorControlFieldPresent();
         const uint8_t dataFieldSize = (directiveSignal.directiveType == DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK)
                                     ? Defs::UnlockCommandSize
                                     : Defs::SetVrCommandSize;
@@ -139,14 +157,15 @@ namespace CCSDSDataLinkLayer {
             Defs::ErrorControlFieldSize;
 
 
-        if (mcChan->frameMasterCopies.isFull() ||
-            Objects::frameOctetPool.findFit(bcFrameLen) != MasterChannelAlert::NO_MC_ALERT) {
-            ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL);
+        if (mcChan.frameMasterCopies.isFull() ||
+            Objects::frameOctetPool.findFit(bcFrameLen).second != MasterChannelAlert::NO_MC_ALERT) {
+            Objects::frameOctetPool.poolMutex.unlock();
+            mcChan.channelMutex.unlock();
             return FOPNotification::FOP_MEMORY_POOL_OR_MASTER_COPY_BUFFER_FULL;
         }
 
         // allocate a block for the frame data in the memory pool
-        uint8_t *frameData = Objects::frameOctetPool.allocateBlock(bcFrameLen);
+        uint8_t *frameData = Objects::frameOctetPool.allocateBlock(bcFrameLen, nullptr);
 
         if (directiveSignal.directiveType == DirectiveRequestType::INITIATE_AD_SERVICE_WITH_UNLOCK) {
             frameData[Defs::TcPrimaryHeaderSize] = Defs::UnlockCommandOctet;
@@ -158,19 +177,19 @@ namespace CCSDSDataLinkLayer {
         }
 
         // create and store frame master copy
-        TransferFrameTC* frameTcPtr = mcChan->frameMasterCopies.push(
+        TransferFrameTC* frameTcPtr = mcChan.frameMasterCopies.push(
             TransferFrameTC(
                 frameData,
                 Defs::ServiceType::TYPE_BC,
-                vcChan->getVcid(),
-                mcChan->getScid(),
+                vcChan.getVcid(),
+                mcChan.getScid(),
                 bcFrameLen,
                 false,
-                Defs::SequenceFlag::NoSegmentation));
+                Defs::SequenceFlag::NO_SEGMENTATION));
 
 
         frameTcPtr->setTransferFrameSequenceNumber(0); /// @see p. 4.2.1.8 of TC Data Link
-        mcChan->channelMutex.unlock();
+        mcChan.channelMutex.unlock();
         
         // store to sent queue
         sentQueueFOP.push_back(frameTcPtr);
@@ -182,10 +201,10 @@ namespace CCSDSDataLinkLayer {
         bcOut = false;
 
         fopToLowerLayerRequestSignalQueue.push(
-            FopToLowerLayerRequestSignal(LowerLayerRequestType::LOW_LAYER_TRANSMIT,
-                                         Defs::ServiceType::TYPE_BC, frameTcPtr));
+            FopToLowerLayerRequestSignal(LowerLayerRequestType::LOW_LAYER_TRANSMIT, frameTcPtr));
 
-        ccsdsLogNotice(TxRx::Tx, NotificationType::TypeFOPNotif, FOPNotification::NO_FOP_EVENT);
+        Objects::frameOctetPool.poolMutex.unlock();
+        mcChan.channelMutex.unlock();
         return FOPNotification::NO_FOP_EVENT;
     }
 

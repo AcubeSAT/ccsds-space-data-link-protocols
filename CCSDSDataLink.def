@@ -112,7 +112,6 @@
 //                      repetitionsTypeAD,
 //                      repetitionsTypeBC,
 //                      dataFieldContent,
-//                      frameCapacity,
 //                      typeAdPacketCapacity,
 //                      typeBdPacketCapacity)
 //   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel
@@ -141,9 +140,6 @@
 //                         that frames in this channel are not encrypted, nor authenticated. Superseded in the scenario
 //                         that map channels exist under this virtual channel. Ensure that a SECURITY_ASSOCIATION()
 //                         with this associatedSdls exists.
-//   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size)
-//                     WARNING: If map channels exist under this virtual channel this value MUST be set to 0.
-//                              Otherwise, an excess amount of memory will be allocated
 //   -- typeAdPacketCapacity, typeBdPacketCapacity: Amount of packets this channel can support (affects memory
 //                     allocation size). Type AD packets are subject to the COP-1 process, while Type BD are expedited
 //                     (a similar analogy with internet protocols is TCP segments vs UDP datagrams). The value
@@ -160,7 +156,6 @@
 //               segmentation,
 //               associatedSdlsSPI,
 //               dataFieldContent,
-//               frameCapacity,
 //               typeAdPacketCapacity,
 //               typeBdPacketCapacity)
 //   -- mapChannelName: A name that can be used to uniquely identify this map channel
@@ -179,14 +174,11 @@
 //                        "Encapsulation Packets"). If it has a different structure, enter
 //                        "DataFieldContent::VCA_SDU". VCA_SDUs can have variable length, but need to be contained
 //                        within the maximum frame data field length.
-//   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size)
 //   -- typeAdPacketCapacity, typeBdPacketCapacity: Amount of packets this channel can support (affects memory
 //                     allocation size). Type AD packets are subject to the COP-1 process, while Type BD are expedited
 //                     (a similar analogy with internet protocols is TCP segments vs UDP datagrams). The value
 //                     typeAdPacketCapacity is ignored if copInEffect == 0, and type-AD packets will not be accepted by
 //                     this channel.
-//                     WARNING: If map channels exist under this virtual channel those values MUST be set to 0.
-//                              Otherwise, an excess amount of memory will be allocated.
 //
 // - COP1(scid,
 //        vcid,
@@ -195,18 +187,17 @@
 //        fopSlidingWindowWidth,
 //        timeoutType,
 //        farmSlidingWindowWidth,
-//        farmPositiveWindowWidth,
-//        farmNegativeWindowWidth,
 //        clcwReportInterval)
 //   -- vcid: A 6 bit that associates this COP1 object with a specific virtual channel
 //   -- tiInitial: A reverse countdown timer value in milliseconds. The ground segment will wait for this amount of
 //                 time before retransmitting a TC frame
 //   -- transmissionLimit: Amount of retransmissions, before the ground segment announces a break in the link
 //   -- fopSlidingWindowWidth: Limits the amount of TC frames the ground segment can transmit ahead of the last
-//                             acknowledged frame
+//                             acknowledged frame.
 //   -- timeoutType: Determines type of action when the transmission limit is reached and the timer is expired
-//   -- farmSlidingWindowWidth, farmPositiveWindowWidth, farmNegativeWindowWidth: Determine the range of
-//      allowed sequence numbers the space segment can accept
+//   -- farmSlidingWindowWidth: Determines the amount of frames that the space segment can accept before entering
+//                              "lockout mode". The behavior is different depending on the value of the transmission
+//                              limit. It's functionality is better understood by reading p. 6.1.8 of COP-1 CCSDS
 //   -- clcwReportInterval: CLCW generation period by the space segment (in milliseconds) CLCWs are carried by TM
 //                          frames and are used by the ground segment to assess the status of accepted TCs by the
 //                          space segment
@@ -224,5 +215,3 @@
 //   NOTE: When the authentication service is enabled, an authentication key is required. This key should be placed in
 //         AuthenticationKey.hpp
 
-
-PHYSICAL_CHANNEL(TestPhysicalChannel, TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1, 1024, 1024, 1, 1, 1000, 1, 1)
