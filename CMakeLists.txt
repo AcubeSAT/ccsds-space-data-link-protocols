@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30.5)
+cmake_minimum_required(VERSION 3.25.1)
 project(ccsds_tm_packets)
 
 # Set C++ version to c++17
