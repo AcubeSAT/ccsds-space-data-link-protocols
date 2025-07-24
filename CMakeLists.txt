@@ -60,6 +60,7 @@ add_library(common OBJECT
 # Specify the .cpp files for the executables
 add_executable(ccsds_data_link_default
         $<TARGET_OBJECTS:common>
+        src/Platform/x86/Logger.cpp
         src/main.cpp
         )
 add_dependencies(ccsds_data_link_default TinyCryptLib) # ensure "TinyCryptLib" target is built first
