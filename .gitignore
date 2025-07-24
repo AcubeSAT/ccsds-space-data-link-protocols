@@ -74,6 +74,3 @@ venv/**
 
 # IDEs
 .vscode
-
-# Authentication key
-AuthenticationKey.hpp
