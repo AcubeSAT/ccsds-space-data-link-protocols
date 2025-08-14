@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
     struct CLCW {
@@ -10,11 +11,11 @@ namespace CCSDSDataLinkLayer {
 
         CLCW(const bool controlWordType, const uint8_t clcwVersion, const uint8_t statusField,
              const uint8_t copInEffect,
-             const uint8_t vcId, const uint8_t spare, const bool noRfAvailable, const bool noBitLock,
+             const Defs::Vcid vcid, const uint8_t spare, const bool noRfAvailable, const bool noBitLock,
              const bool lockout,
              const bool wait, const bool retransmit, const uint8_t farmBCounter, bool spare2, uint8_t reportValue)
                 : clcw(
-                controlWordType << 31U | clcwVersion << 29U | statusField << 26U | copInEffect << 24U | vcId << 18U |
+                controlWordType << 31U | clcwVersion << 29U | statusField << 26U | copInEffect << 24U | vcid << 18U |
                 noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U | retransmit << 11U |
                 farmBCounter << 9U | reportValue) {};
 
@@ -64,7 +65,7 @@ namespace CCSDSDataLinkLayer {
          * with which this COP report is associated).
          * @see p. 4.2.1.6 from TC SPACE DATA LINK PROTOCOL
          */
-        [[nodiscard]] const uint8_t getVcId() const {
+        [[nodiscard]] const Defs::Vcid getVcId() const {
             return (clcw >> 18U) & 0x3F;
         }
 

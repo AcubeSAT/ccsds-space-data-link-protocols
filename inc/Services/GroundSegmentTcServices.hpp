@@ -216,6 +216,11 @@ namespace CCSDSDataLinkLayer {
         static etl::expected<void, ServiceChannelNotification> executeFopStateMachines(
             Objects::PhysicalChannelName physicalChannelName,
             etl::optional<etl::span<FopOutputData>> fopDataVector);
+
+        /**
+         * Reset all channels under a specific physical channel to their initial state
+         */
+        static etl::expected<void, ServiceChannelNotification> resetChain(Objects::PhysicalChannelName physicalChannelName);
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // CCSDSDataLinkLayer

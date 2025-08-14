@@ -116,6 +116,11 @@ namespace CCSDSDataLinkLayer {
         static etl::expected<void, ServiceChannelNotification> getReadyFrameForTransmission(
             Objects::PhysicalChannelName physicalChannelName,
             uint8_t* frameDestination);
+
+        /**
+         * Reset all channels under a specific physical channel to their initial state
+         */
+        static etl::expected<void, ServiceChannelNotification> resetChain(Objects::PhysicalChannelName physicalChannelName);
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // CCSDSDataLinkLayer

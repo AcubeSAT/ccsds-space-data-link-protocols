@@ -18,6 +18,16 @@ namespace CCSDSDataLinkLayer {
 		friend class SpaceSegmentTmServices;
 
 		/**
+		 * Reset the state of a Virtual Channel (also deletes the frame master copies)
+		*/
+		static void resetVirtualChannel(VirtualChannelSsTm& vcChan);
+
+		/**
+		 * Reset the state of a Master Channel (also deletes the frame master copies)
+		 */
+		static void resetMasterChannel(MasterChannelSsTm& mcChan);
+
+		/**
 		 * Serves as the main entry point from the upper layers, by storing
 		 * octet synchronized and forward ordered packets along with their length so they can be later inserted to
 		 * transfer frames, and transmitted.

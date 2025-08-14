@@ -90,10 +90,10 @@ namespace CCSDSDataLinkLayer::Objects {
         SentinelValue
     };
 
-    inline etl::flat_map<uint8_t, PhysicalChannel, (PhysicalChannelCount == 0) ? 1 : PhysicalChannelCount> physicalChannelMap = {
+    inline etl::flat_map<Defs::Pcid, PhysicalChannel, (PhysicalChannelCount == 0) ? 1 : PhysicalChannelCount> physicalChannelMap = {
 #define PHYSICAL_CHANNEL(physicalChannelName, pcid, tfvn, maxTcLength, tmLength, maxFramesPdu, maxPduLength, maximumBitRate, fecPresent) \
     { \
-    static_cast<uint8_t>(pcid), \
+    static_cast<Defs::Pcid>(pcid), \
     PhysicalChannel(            \
     pcid,                       \
     tfvn,                       \
@@ -116,10 +116,10 @@ namespace CCSDSDataLinkLayer::Objects {
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, MasterChannelSsTm, MasterChannelTmCount == 0 ? 1 : MasterChannelTmCount> masterChannelSsTmMap = {
+    inline etl::flat_map<Defs::Scid, MasterChannelSsTm, MasterChannelTmCount == 0 ? 1 : MasterChannelTmCount> masterChannelSsTmMap = {
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity) \
     { \
-    static_cast<uint16_t>(scid), \
+    static_cast<Defs::Scid>(scid), \
     MasterChannelSsTm(           \
     scid,                        \
     parentPcid,                  \
@@ -139,10 +139,10 @@ namespace CCSDSDataLinkLayer::Objects {
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, MasterChannelSsTc, MasterChannelTcCount == 0 ? 1 : MasterChannelTcCount> masterChannelSsTcMap = {
+    inline etl::flat_map<Defs::Scid, MasterChannelSsTc, MasterChannelTcCount == 0 ? 1 : MasterChannelTcCount> masterChannelSsTcMap = {
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid) \
     { \
-    static_cast<uint16_t>(scid), \
+    static_cast<Defs::Scid>(scid), \
     MasterChannelSSTc(           \
     scid,                        \
     parentPcid                   \
@@ -153,10 +153,10 @@ namespace CCSDSDataLinkLayer::Objects {
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    inline etl::flat_map<uint16_t, MasterChannelGsTc, MasterChannelTcCount == 0 ? 1 : MasterChannelTcCount> masterChannelGsTcMap = {
+    inline etl::flat_map<Defs::Scid, MasterChannelGsTc, MasterChannelTcCount == 0 ? 1 : MasterChannelTcCount> masterChannelGsTcMap = {
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid) \
     { \
-    static_cast<uint16_t>(scid), \
+    static_cast<Defs::Scid>(scid), \
     MasterChannelGSTc(           \
     scid,                        \
     parentPcid                   \

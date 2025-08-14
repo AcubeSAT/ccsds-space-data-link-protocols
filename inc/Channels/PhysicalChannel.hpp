@@ -12,7 +12,7 @@ namespace CCSDSDataLinkLayer {
      */
     class PhysicalChannel {
     public:
-        PhysicalChannel(const uint8_t pcid, const Defs::TransferFrameVersionNumber tfvn,
+        PhysicalChannel(const Defs::Pcid pcid, const Defs::TransferFrameVersionNumber tfvn,
                         const uint16_t maxTcFrameLength, const uint16_t tmFrameLength,
                         const uint16_t maxFramesPdu, const uint16_t maxPduLength,
                         const uint32_t bitrate, const bool frameErrorControlFieldPresent)
@@ -28,7 +28,7 @@ namespace CCSDSDataLinkLayer {
             return tfvn;
         }
 
-        [[nodiscard]] uint8_t getPcid() const {
+        [[nodiscard]] Defs::Pcid getPcid() const {
             return pcid;
         }
 
@@ -77,35 +77,35 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Used during channel generation
          */
-        void registerTcMasterChannel(const uint16_t scid) {
+        void registerTcMasterChannel(const Defs::Scid scid) {
             this->tcMasterChannelScid = scid;
         }
 
         /**
          * @brief Used during channel generation
          */
-        void registerTmMasterChannel(const uint16_t scid) {
+        void registerTmMasterChannel(const Defs::Scid scid) {
             this->tmMasterChannelScid = scid;
         }
 
-        [[nodiscard]] uint16_t getScidTc() const {
+        [[nodiscard]] Defs::Scid getScidTc() const {
             return tcMasterChannelScid;
         }
 
-        [[nodiscard]] uint16_t getScidTm() const {
+        [[nodiscard]] Defs::Scid getScidTm() const {
             return tmMasterChannelScid;
         }
 
     private:
         const Defs::TransferFrameVersionNumber tfvn;
-        const uint8_t pcid; // Physical channel id. Not part of the standard, added for consistency with the other channels
+        const Defs::Pcid pcid; // Physical channel id. Not part of the standard, added for consistency with the other channels
         const uint16_t maxTcFrameLength;
         const uint16_t tmFrameLength;
         const uint16_t maxFramePdu;
         const uint16_t maxPDULength;
         const uint32_t bitrate;
         const bool frameErrorControlFieldPresent;
-        uint16_t tcMasterChannelScid; // This implementation supports a single tc master channel per physical channel
-        uint16_t tmMasterChannelScid; // This implementation supports a single tm master channel per physical channel
+        Defs::Scid tcMasterChannelScid; // This implementation supports a single tc master channel per physical channel
+        Defs::Scid tmMasterChannelScid; // This implementation supports a single tm master channel per physical channel
     };
 } // namespace CCSDSDataLinkLayer

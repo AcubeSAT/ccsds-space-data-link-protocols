@@ -21,8 +21,8 @@ namespace CCSDSDataLinkLayer {
      */
     class VirtualChannelBase {
     public:
-        explicit VirtualChannelBase(const uint8_t vcid, const uint16_t parentScid,
-                           const uint16_t associatedSdlsSPI, const uint16_t frameCapacity)
+        explicit VirtualChannelBase(const Defs::Vcid vcid, const Defs::Scid parentScid,
+                           const Defs::Spi associatedSdlsSPI, const uint16_t frameCapacity)
             : channelMutex(Mutex()), vcid(vcid & 0x3FU), parentScid(parentScid & 0x03FFU),
               associatedSdlsSPI(associatedSdlsSPI), frameCapacity(frameCapacity) {
             if (associatedSdlsSPI != 0) {
@@ -35,15 +35,15 @@ namespace CCSDSDataLinkLayer {
          */
         Mutex channelMutex;
 
-        [[nodiscard]] uint32_t getVcid() const {
+        [[nodiscard]] Defs::Vcid getVcid() const {
             return vcid;
         }
 
-        [[nodiscard]] uint16_t getParentScid() const {
+        [[nodiscard]] Defs::Scid getParentScid() const {
             return parentScid;
         }
 
-        [[nodiscard]] etl::optional<uint16_t> getAssociatedSdlsSPI() const {
+        [[nodiscard]] etl::optional<Defs::Spi> getAssociatedSdlsSPI() const {
             return associatedSdlsSPI;
         }
 
@@ -61,19 +61,19 @@ namespace CCSDSDataLinkLayer {
          * @details 6 bit identifier for this virtual channel
          * @see p. 2.1.3 of CCSDS TC SPACE DATA LINK PROTOCOL
          */
-        const uint8_t vcid;
+        const Defs::Vcid vcid;
 
         /**
          * @brief scid of parent master channel
          */
-        const uint16_t parentScid;
+        const Defs::Scid parentScid;
 
         /**
          * @brief The presence of an SDLS SPI (Security Parameter Index) shall indicate that this virtual channel
          *        instance is associated with a specific SecurityAssociation, therefore the according authentication
          *        and encryption services will be applied to its frames.
          */
-        etl::optional<uint16_t> associatedSdlsSPI;
+        etl::optional<Defs::Spi> associatedSdlsSPI;
 
         /**
          * @brief States how many frames this channel should support (used during the memory pool allocation process).
@@ -88,11 +88,11 @@ namespace CCSDSDataLinkLayer {
     class VirtualChannelSsTm : public VirtualChannelBase {
         friend class SpaceSegmentTmDataHandling;
     public:
-        explicit VirtualChannelSsTm(const uint8_t vcid, const uint16_t parentScid, const uint8_t vcRepetitions,
+        explicit VirtualChannelSsTm(const Defs::Vcid vcid, const Defs::Scid parentScid, const uint8_t vcRepetitions,
                                      const bool secondaryHeaderPresent, const uint8_t secondaryHeaderLength,
                                      const bool operationalControlFieldPresent,
                                      const Defs::SynchronizationFlag synchronization,
-                                     const uint16_t associatedSdlsSPI, const uint16_t frameCapacity,
+                                     const Defs::Spi associatedSdlsSPI, const uint16_t frameCapacity,
                                      const uint16_t packetCapacity)
             : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity), vcRepetitions(vcRepetitions),
               operationalControlFieldPresent(operationalControlFieldPresent),
@@ -220,10 +220,10 @@ namespace CCSDSDataLinkLayer {
        friend class SpaceSegmentTcDataHandling;
 
     public:
-        explicit VirtualChannelSsTc(const uint8_t vcid, const uint16_t parentScid,
+        explicit VirtualChannelSsTc(const Defs::Vcid vcid, const Defs::Scid parentScid,
                                      const bool segmentHeaderPresent, const bool blocking,
                                      const bool copInEffect,
-                                     const uint16_t associatedSdlsSPI,
+                                     const Defs::Spi associatedSdlsSPI,
                                      const Defs::DataFieldContent dataFieldContent,
                                      const uint16_t frameCapacity,
                                      const uint16_t typeAdPacketCapacity,
@@ -397,11 +397,11 @@ namespace CCSDSDataLinkLayer {
         friend class FrameOperationProcedure;
         friend class GroundSegmentTcDataHandling;
     public:
-        explicit VirtualChannelGsTc(const uint8_t vcid, const uint16_t parentScid,
+        explicit VirtualChannelGsTc(const Defs::Vcid vcid, const Defs::Scid parentScid,
                                     const uint8_t vcRepetitionsTypeAD, const uint8_t vcRepetitionsTypeBC,
                                     const bool segmentHeaderPresent, const bool blocking,
                                     const bool copInEffect,
-                                    const uint16_t associatedSdlsSPI,
+                                    const Defs::Spi associatedSdlsSPI,
                                     const Defs::DataFieldContent dataFieldContent,
                                     const uint16_t frameCapacity,
                                     const uint16_t typeAdPacketCapacity,

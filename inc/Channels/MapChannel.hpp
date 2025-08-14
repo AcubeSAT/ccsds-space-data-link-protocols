@@ -16,8 +16,8 @@ namespace CCSDSDataLinkLayer {
      */
     class MAPChannelBase {
     public:
-        MAPChannelBase(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
-                       const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity, const uint16_t typeBdPacketCapacity)
+        MAPChannelBase(const Defs::Mapid mapid, const Defs::Vcid parentVcid, const Defs::Scid parentScid, const bool blocking, const bool segmentation,
+                       const Defs::Spi associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity, const uint16_t typeBdPacketCapacity)
             : channelMutex(Mutex()), mapid(mapid & 0x3FU), parentVcid(parentVcid & 0x3FU), parentScid(parentScid), blocking(blocking),
               segmentation(segmentation),  dataFieldContent(dataFieldContent), frameCapacity(frameCapacity), typeAdPacketCapacity(typeAdPacketCapacity),
               typeBdPacketCapacity(typeBdPacketCapacity){
@@ -31,15 +31,15 @@ namespace CCSDSDataLinkLayer {
          */
         Mutex channelMutex;
 
-        [[nodiscard]] uint32_t getMapid() const {
+        [[nodiscard]] Defs::Mapid getMapid() const {
             return mapid;
         }
 
-        [[nodiscard]] uint8_t getParentVcid() const {
+        [[nodiscard]] Defs::Vcid getParentVcid() const {
             return parentVcid;
         }
 
-        [[nodiscard]] uint16_t getParentScid() const {
+        [[nodiscard]] Defs::Scid getParentScid() const {
             return parentScid;
         }
 
@@ -51,7 +51,7 @@ namespace CCSDSDataLinkLayer {
             return segmentation;
         }
 
-        [[nodiscard]] etl::optional<uint16_t> getAssociatedSdlsSPI() const {
+        [[nodiscard]] etl::optional<Defs::Spi> getAssociatedSdlsSPI() const {
             return associatedSdlsSPI;
         }
 
@@ -77,19 +77,19 @@ namespace CCSDSDataLinkLayer {
          * @details 6 bit identifier for this MAP channel
          * @see p. 2.1.3 of CCSDS TC SPACE DATA LINK PROTOCOL
          */
-        const uint8_t mapid;
+        const Defs::Mapid mapid;
 
         /**
          * @brief vcid of parent virtual channel
          */
-        const uint8_t parentVcid;
+        const Defs::Vcid parentVcid;
 
         /**
          * @brief Scid of master channel. This needs to be stored here, since there might
          *        be 2 map channels with that belong to virtual channels with the same vcid,
          *        where each virtual channel belongs to a different master channel
          */
-        const uint16_t parentScid;
+        const Defs::Scid parentScid;
 
         /**
          * @brief Determines whether smaller data units can be combined into a single TC transfer frame
@@ -108,7 +108,7 @@ namespace CCSDSDataLinkLayer {
          *        instance is associated with a specific SecurityAssociation, therefore the according authentication
          *        and encryption services will be applied to its frames.
          */
-        etl::optional<uint16_t> associatedSdlsSPI;
+        etl::optional<Defs::Spi> associatedSdlsSPI;
 
         /**
          * @brief Whether Packets or VCA_SDUs are used
@@ -138,8 +138,8 @@ namespace CCSDSDataLinkLayer {
     class MAPChannelSs : public MAPChannelBase {
         friend class SpaceSegmentTcDataHandling;
     public:
-        MAPChannelSs(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
-            const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
+        MAPChannelSs(const Defs::Mapid mapid, const Defs::Vcid parentVcid, const Defs::Scid parentScid, const bool blocking, const bool segmentation,
+            const Defs::Spi associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
             const uint16_t typeBdPacketCapacity)
             : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity,
                 typeAdPacketCapacity, typeBdPacketCapacity), segmentedPacketConstructor(Defs::SegmentedPacketConstructorTc()) {}
@@ -196,8 +196,8 @@ namespace CCSDSDataLinkLayer {
     class MAPChannelGs : public MAPChannelBase{
         friend class GroundSegmentTcDataHandling;
     public:
-        MAPChannelGs(const uint8_t mapid, const uint8_t parentVcid, const uint16_t parentScid, const bool blocking, const bool segmentation,
-            const uint16_t associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
+        MAPChannelGs(const Defs::Mapid mapid, const Defs::Vcid parentVcid, const Defs::Scid parentScid, const bool blocking, const bool segmentation,
+            const Defs::Spi associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
             const uint16_t typeBdPacketCapacity)
             : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent,
                 frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) {}

@@ -157,10 +157,12 @@ namespace CCSDSDataLinkLayer {
         etl::pair<FARMNotification, uint8_t> applyFarmStateTable();
 
     public:
-        FrameAcceptanceReporting(const uint8_t vcid,
+        FrameAcceptanceReporting(const Defs::Vcid vcid,
                                  const uint8_t farmSlidingWinWidth,
                                  const uint16_t clcwReportInterval,
                                  const uint8_t fopTransmissionLimit);
+
+        void resetFARM();
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

@@ -116,7 +116,7 @@ namespace CCSDSDataLinkLayer {
                 return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
             }
             const PhysicalChannel& phyChan = it->second;
-            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTm());
+            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTc());
 
             etl::expected<void, ServiceChannelNotification> status;
             for (auto &pair : Objects::mapChannelGsMap) {
@@ -198,7 +198,7 @@ namespace CCSDSDataLinkLayer {
                 return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
             }
             const PhysicalChannel& phyChan = it->second;
-            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTm());
+            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTc());
 
             return GroundSegmentTcDataHandling::allFramesGeneration(phyChan, mcChan, packetDestination);
         }
@@ -306,7 +306,7 @@ namespace CCSDSDataLinkLayer {
                 return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
             }
             const PhysicalChannel& phyChan = it->second;
-            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTm());
+            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTc());
 
             auto clcwObj = CLCW(clcw);
             if (clcwObj.getControlWordType() != Defs::ControlWordTypeCLCW ||
@@ -341,7 +341,7 @@ namespace CCSDSDataLinkLayer {
                 return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
             }
             const PhysicalChannel& phyChan = it->second;
-            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTm());
+            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTc());
 
             FopOutputData* fopDataPtr;
             if (fopDataVector.has_value()) {
@@ -369,5 +369,27 @@ namespace CCSDSDataLinkLayer {
             return {};
         }
 
+        etl::expected<void, ServiceChannelNotification> GroundSegmentTcServices::resetChain(Objects::PhysicalChannelName physicalChannelName) {
+            const auto it = Objects::physicalChannelMap.find(static_cast<uint8_t>(physicalChannelName));
+            if (it == Objects::physicalChannelMap.end()) {
+                return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
+            }
+            const PhysicalChannel& phyChan = it->second;
+            MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTc());
+
+            GroundSegmentTcDataHandling::resetMasterChannel(mcChan);
+
+            for (auto& vcChan : Objects::virtualChannelGsTcMap) {
+                if (etl::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
+                    GroundSegmentTcDataHandling::resetVirtualChannel(vcChan.second);
+                }
+            }
+
+            for (auto& mapChan : Objects::mapChannelGsMap) {
+                if (etl::get<1>(extractVcidScid(mapChan.first)) == mcChan.getScid()) {
+                    GroundSegmentTcDataHandling::resetMapChannel(mapChan.second);
+                }
+            }
+        }
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // CCSDSDataLinkLayer

@@ -12,7 +12,7 @@ namespace CCSDSDataLinkLayer {
         return macFieldLength;
     }
 
-    uint16_t SecurityAssociation::getSecurityParameterIndex() const {
+    Defs::Spi SecurityAssociation::getSecurityParameterIndex() const {
         return securityParameterIndex;
     }
 

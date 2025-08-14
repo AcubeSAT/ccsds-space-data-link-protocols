@@ -17,6 +17,22 @@ namespace CCSDSDataLinkLayer {
         friend class GroundSegmentTcServices;
 
         /**
+         * Reset the state of a MAP Channel (also deletes the frame master copies)
+         */
+        static void resetMapChannel(MAPChannelGs& mapChan);
+
+        /**
+         * Reset the state of a Virtual Channel as well as the corresponding FOP,
+         * if it exists for that Virtual Channel (also deletes the frame master copies)
+         */
+        static void resetVirtualChannel(VirtualChannelGsTc& vcChan);
+
+        /**
+         * Reset the state of a Master Channel (also deletes the frame master copies)
+         */
+        static void resetMasterChannel(MasterChannelGsTc& mcChan);
+
+        /**
          * Serves as the main entry point from the upper layers, by storing
          * octet synchronized and forward ordered packets along with their length so they can be later inserted to
          * transfer frames, and transmitted.

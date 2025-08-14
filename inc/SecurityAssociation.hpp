@@ -40,7 +40,7 @@ namespace CCSDSDataLinkLayer {
 */
     class SecurityAssociation {
     public:
-        SecurityAssociation(const uint16_t securityParameterIndex,
+        SecurityAssociation(const Defs::Spi securityParameterIndex,
                             Defs::AuthenticationAlgorithm authenticationAlgorithm,
                             Defs::EncryptionAlgorithm encryptionAlgorithm)
             : securityParameterIndex(securityParameterIndex),
@@ -91,7 +91,7 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] uint8_t getSecurityTrailerLength() const;
 
-        [[nodiscard]] uint16_t getSecurityParameterIndex() const;
+        [[nodiscard]] Defs::Spi getSecurityParameterIndex() const;
 
         void resetSequenceNumber();
 
@@ -141,7 +141,7 @@ namespace CCSDSDataLinkLayer {
          * frame with this SA
          * @see p. 4.1.1.2
          */
-        uint16_t securityParameterIndex;
+        Defs::Spi securityParameterIndex;
 
         /**
          * @}

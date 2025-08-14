@@ -23,7 +23,7 @@ namespace CCSDSDataLinkLayer {
      */
     class MasterChannelBase {
     public:
-        explicit MasterChannelBase(const uint16_t scid, const uint8_t parentPcid)
+        explicit MasterChannelBase(const Defs::Scid scid, const Defs::Pcid parentPcid)
         : channelMutex(Mutex()), scid(scid & 0x03FFU), parentPcid(parentPcid), frameCapacity(0) {}
 
         /**
@@ -31,11 +31,11 @@ namespace CCSDSDataLinkLayer {
          */
         Mutex channelMutex;
 
-        [[nodiscard]] uint16_t getScid() const {
+        [[nodiscard]] Defs::Scid getScid() const {
             return scid;
         }
 
-        [[nodiscard]] uint8_t getParentPcid() const {
+        [[nodiscard]] Defs::Pcid getParentPcid() const {
             return parentPcid;
         }
 
@@ -52,12 +52,12 @@ namespace CCSDSDataLinkLayer {
          *  @details 10 bits identifier for this master channel (assigned by CCSDS)
          *  @see p. 2.1.3 from CCSDS TC SPACE DATA LINK PROTOCOL
          */
-        const uint16_t scid;
+        const Defs::Scid scid;
 
         /**
          * @brief Id of parent physical channel
          */
-        const uint8_t parentPcid;
+        const Defs::Pcid parentPcid;
 
         /**
          * @brief States how many frames this channel should support (used during the memory pool allocation process).
@@ -70,7 +70,7 @@ namespace CCSDSDataLinkLayer {
         friend class SpaceSegmentTmDataHandling;
         friend class SpaceSegmentTmServices;
     public:
-        explicit  MasterChannelSsTm(const uint16_t mcid, const uint8_t parentPcid, const uint16_t ocfSduCapacity)
+        explicit  MasterChannelSsTm(const uint16_t mcid, const Defs::Pcid parentPcid, const uint16_t ocfSduCapacity)
             : MasterChannelBase(mcid, parentPcid),
               masterChannelFrameCount(0), ocfSduCapacity(ocfSduCapacity) {}
 
@@ -134,11 +134,11 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief The operational control field service places the OCF_SDUs here
          */
-        uint16_t ocfSduCapacity;
+        const uint16_t ocfSduCapacity;
         Queue<uint32_t> ocfSduQueue;
 
         /**
-         * @brief Frames that have an ocf field, but no clcw could be found for them, wait here
+         * @brief Frames that have an ocf field, but no clcw could be found for them, are waiting here
          */
         CircularBuffer<TransferFrameTM*> waitingBuffer;
 
@@ -169,8 +169,8 @@ namespace CCSDSDataLinkLayer {
         friend class SpaceSegmentTcDataHandling;
         friend class FrameAcceptanceReporting;
     public:
-        explicit  MasterChannelSsTc(const uint16_t mscid, const uint8_t parentPcid)
-             : MasterChannelBase(mscid, parentPcid), noRfAvailable(false), noBitLock(false) {}
+        explicit  MasterChannelSsTc(const Defs::Scid scid, const Defs::Pcid parentPcid)
+             : MasterChannelBase(scid, parentPcid), noRfAvailable(false), noBitLock(false) {}
 
         void initializeContainers(
             const etl::span<TransferFrameTC>& frameMasterCopiesBuff,
@@ -221,8 +221,8 @@ namespace CCSDSDataLinkLayer {
         friend class GroundSegmentTcDataHandling;
         friend class FrameOperationProcedure;
     public:
-        explicit  MasterChannelGsTc(const uint16_t mscid, const uint8_t parentPcid)
-        : MasterChannelBase(mscid, parentPcid) {}
+        explicit  MasterChannelGsTc(const Defs::Scid scid, const Defs::Pcid parentPcid)
+        : MasterChannelBase(scid, parentPcid) {}
 
         void initializeContainers(
             const etl::span<TransferFrameTC*>& framesAfterVcGenerationBuff,

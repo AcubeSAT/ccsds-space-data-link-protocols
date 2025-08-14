@@ -103,7 +103,7 @@ namespace CCSDSDataLinkLayer {
                 return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
             }
             PhysicalChannel& phyChan = it->second;
-            uint16_t scid = phyChan.getScidTc();
+            Defs::Scid scid = phyChan.getScidTc();
 
             for (auto &pair : Objects::virtualChannelSsTcMap) {
                 // only act on channels that belong to this master channel
@@ -166,7 +166,7 @@ namespace CCSDSDataLinkLayer {
             if (it == Objects::physicalChannelMap.end()) {
                 return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
             }
-            uint16_t scid = it->second.getScidTc();
+            Defs::Scid scid = it->second.getScidTc();
 
             for (auto &pair : Objects::farmMap) {
                 // extract a clcw only from FARMs that belong to this physical channel
@@ -238,6 +238,29 @@ namespace CCSDSDataLinkLayer {
                         vcChan.channelMutex.unlock();
                     }
                     statusFieldVectorPtr++;
+                }
+            }
+        }
+
+        etl::expected<void, ServiceChannelNotification> SpaceSegmentTcServices::resetChain(Objects::PhysicalChannelName physicalChannelName) {
+            const auto it = Objects::physicalChannelMap.find(static_cast<uint8_t>(physicalChannelName));
+            if (it == Objects::physicalChannelMap.end()) {
+                return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
+            }
+            const PhysicalChannel& phyChan = it->second;
+            MasterChannelSsTc& mcChan = Objects::masterChannelSsTcMap.at(phyChan.getScidTc());
+
+            SpaceSegmentTcDataHandling::resetMasterChannel(mcChan);
+
+            for (auto& vcChan : Objects::virtualChannelSsTcMap) {
+                if (etl::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
+                    SpaceSegmentTcDataHandling::resetVirtualChannel(vcChan.second);
+                }
+            }
+
+            for (auto& mapChan : Objects::mapChannelSsMap) {
+                if (etl::get<1>(extractVcidScid(mapChan.first)) == mcChan.getScid()) {
+                    SpaceSegmentTcDataHandling::resetMapChannel(mapChan.second);
                 }
             }
         }

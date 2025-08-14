@@ -99,6 +99,14 @@ namespace CCSDSDataLinkLayer::Defs {
      *  ===============================================
      *  @{
      */
+    using Pcid = uint8_t; // not defined by ccsds standards, used for easier addressing
+
+    using Mapid = uint8_t; // actual size is 6 bits
+
+    using Vcid = uint8_t; // actual size is 6 bits
+
+    using Scid = uint16_t; // actual size is 10 bits
+
     // These types will be used as keys in maps, so that every virtual and map channel can be uniquely identified
     // Master channels can be uniquely identified by their scid, since by design, they are unique (CCSDS assigns scids)
 
@@ -398,6 +406,9 @@ namespace CCSDSDataLinkLayer::Defs {
      *  ======================
      *  @{
      */
+
+    using Spi = uint16_t; // The security parameter index is a 2 byte id, uniquely identifying a security association
+
     inline constexpr uint8_t securityParameterIndexLength = 2;
     inline constexpr uint8_t MaxAuthenticationKeyLength = 64;
     inline constexpr uint8_t MaxInitializationVectorLength = 32;

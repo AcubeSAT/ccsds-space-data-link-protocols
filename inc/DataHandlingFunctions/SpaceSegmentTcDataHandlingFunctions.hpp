@@ -17,6 +17,22 @@ namespace CCSDSDataLinkLayer {
         friend class SpaceSegmentTcServices;
 
         /**
+         * Reset the state of a MAP Channel (also deletes the frame master copies)
+         */
+        static void resetMapChannel(MAPChannelSs& mapChan);
+
+        /**
+         * Reset the state of a Virtual Channel as well as the corresponding FARM,
+         * if it exists for that Virtual Channel (also deletes the master frame copies)
+         */
+        static void resetVirtualChannel(VirtualChannelSsTc& vcChan);
+
+        /**
+         * Reset the state of a Master Channel
+         */
+        static void resetMasterChannel(MasterChannelSsTc& mcChan);
+
+        /**
          * The  All  Frames  Generation  Function  shall  be  used  to  perform  error  control
          * encoding defined by this Recommendation, along with other standard checks. Serves as an entry point
          * for frames.

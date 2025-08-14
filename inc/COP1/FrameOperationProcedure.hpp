@@ -303,13 +303,15 @@ namespace CCSDSDataLinkLayer {
         std::pair<FOPNotification, uint8_t> applyFopStateTable();
 
     public:
-        FrameOperationProcedure(const uint16_t scid, const uint8_t vcid, const uint16_t tiInitial,
+        FrameOperationProcedure(const Defs::Scid scid, const Defs::Vcid vcid, const uint16_t tiInitial,
                                 const uint16_t transmissionLimit,
                                 const uint8_t fopSlidingWindowWidth);
 
         Defs::FOPState getCurrentState() const {
             return state;
         }
+
+        void resetFOP();
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

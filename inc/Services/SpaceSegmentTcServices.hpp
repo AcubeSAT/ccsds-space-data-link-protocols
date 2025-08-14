@@ -171,6 +171,11 @@ namespace CCSDSDataLinkLayer {
             etl::optional<bool> noRfAvailable,
             etl::optional<bool> noBitLock);
 
+        /**
+         * Reset all channels under a specific physical channel to their initial state
+         */
+        static etl::expected<void, ServiceChannelNotification> resetChain(Objects::PhysicalChannelName physicalChannelName);
+
     private:
         static etl::expected<void, ServiceChannelNotification> mapChannelHelperFunc(
             Objects::MapChannelName mapChanName,

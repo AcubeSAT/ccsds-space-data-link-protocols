@@ -5,7 +5,7 @@
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    FrameAcceptanceReporting::FrameAcceptanceReporting(const uint8_t vcid,
+    FrameAcceptanceReporting::FrameAcceptanceReporting(const Defs::Vcid vcid,
                          const uint8_t farmSlidingWinWidth,
                          const uint16_t clcwReportInterval,
                          const uint8_t fopTransmissionLimit)
@@ -22,6 +22,16 @@ namespace CCSDSDataLinkLayer {
       clcwBufferMutex(Mutex()),
       vcChan(Objects::virtualChannelSsTcMap.at(vcid)){}
 
+    void FrameAcceptanceReporting::resetFARM() {
+        state = FARMState::OPEN;
+        lockout = false;
+        wait = false;
+        retransmit = false;
+        farmBCount = 0;
+        receiverFrameSeqNumber = 0;
+        timer.stopTimer();
+        clcwBuffer.reset();
+    }
 
     FARMNotification FrameAcceptanceReporting::accept(TransferFrameTC *frame) {
         // push frame to higher layer buffer

@@ -2,6 +2,85 @@
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
 namespace CCSDSDataLinkLayer {
+	void SpaceSegmentTcDataHandling::resetMapChannel(MAPChannelSs& mapChan) {
+		MasterChannelSsTc& mcChan = Objects::masterChannelSsTcMap.at(mapChan.getParentScid());
+
+		TransferFrameTC* frameTcPtr;
+		while (!mapChan.framesAfterProcessSDLSSecurityTypeAD.isEmpty()) {
+			frameTcPtr = mapChan.framesAfterProcessSDLSSecurityTypeAD.getFront();
+			mapChan.framesAfterProcessSDLSSecurityTypeAD.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		while (!mapChan.framesAfterProcessSDLSSecurityTypeBD.isEmpty()) {
+			frameTcPtr = mapChan.framesAfterProcessSDLSSecurityTypeBD.getFront();
+			mapChan.framesAfterProcessSDLSSecurityTypeBD.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		mapChan.segmentedPacketConstructor.resetPacket();
+		mapChan.segmentedPacketConstructor.previousFrameSeqFlag = Defs::SequenceFlag::NO_SEGMENTATION;
+		mapChan.segmentedPacketConstructor.segmentedPacketRejectionMode = false;
+	}
+
+	void SpaceSegmentTcDataHandling::resetVirtualChannel(VirtualChannelSsTc& vcChan) {
+		MasterChannelSsTc& mcChan = Objects::masterChannelSsTcMap.at(vcChan.getParentScid());
+
+		TransferFrameTC* frameTcPtr;
+		while (!vcChan.framesAfterAllFramesReception.isEmpty()) {
+			frameTcPtr = vcChan.framesAfterAllFramesReception.getFront();
+			vcChan.framesAfterAllFramesReception.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		while (!vcChan.framesAfterVcReceptionTypeAD.isEmpty()) {
+			frameTcPtr = vcChan.framesAfterVcReceptionTypeAD.getFront();
+			vcChan.framesAfterVcReceptionTypeAD.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		while (!vcChan.framesAfterVcReceptionTypeBD.isEmpty()) {
+			frameTcPtr = vcChan.framesAfterVcReceptionTypeBD.getFront();
+			vcChan.framesAfterVcReceptionTypeBD.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		while (!vcChan.framesAfterProcessSDLSSecurityTypeAD.isEmpty()) {
+			frameTcPtr = vcChan.framesAfterProcessSDLSSecurityTypeAD.getFront();
+			vcChan.framesAfterProcessSDLSSecurityTypeAD.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		while (!vcChan.framesAfterProcessSDLSSecurityTypeBD.isEmpty()) {
+			frameTcPtr = vcChan.framesAfterProcessSDLSSecurityTypeBD.getFront();
+			vcChan.framesAfterProcessSDLSSecurityTypeBD.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		vcChan.segmentedPacketConstructor.resetPacket();
+		vcChan.segmentedPacketConstructor.previousFrameSeqFlag = Defs::SequenceFlag::NO_SEGMENTATION;
+		vcChan.segmentedPacketConstructor.segmentedPacketRejectionMode = false;
+
+		vcChan.setClcwStatusField(0);
+
+		if (vcChan.getCopInEffect()) {
+			FrameAcceptanceReporting& farm = Objects::farmMap.at(constructVcidScidKey(vcChan.getVcid(), vcChan.getParentScid()));
+			farm.resetFARM();
+		}
+	}
+
+	void SpaceSegmentTcDataHandling::resetMasterChannel(MasterChannelSsTc& mcChan) {
+		mcChan.setNoRfAvailable(false);
+		mcChan.setNoBitLock(false);
+	}
+
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTcDataHandling::allFramesReception(
         const PhysicalChannel& phyChan,
         etl::span<uint8_t> frameSource) {

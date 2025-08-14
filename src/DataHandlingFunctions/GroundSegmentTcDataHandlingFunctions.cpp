@@ -4,6 +4,53 @@
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
+
+	void GroundSegmentTcDataHandling::resetMapChannel(MAPChannelGs& mapChan) {
+		mapChan.packetLengthsTypeAD.reset();
+		mapChan.packetOctetsTypeAD.reset();
+		mapChan.packetLengthsTypeBD.reset();
+		mapChan.packetOctetsTypeBD.reset();
+	}
+
+	void GroundSegmentTcDataHandling::resetVirtualChannel(VirtualChannelGsTc& vcChan) {
+		vcChan.packetLengthsTypeAD.reset();
+		vcChan.packetOctetsTypeAD.reset();
+		vcChan.packetLengthsTypeBD.reset();
+		vcChan.packetOctetsTypeBD.reset();
+
+		MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(vcChan.getParentScid());
+
+		TransferFrameTC* frameTcPtr;
+		while (!vcChan.framesAfterPacketProcessing.isEmpty()) {
+			frameTcPtr = vcChan.framesAfterPacketProcessing.getFront();
+			vcChan.framesAfterPacketProcessing.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		while (!vcChan.framesAfterApplySDLSSecurity.isEmpty()) {
+			frameTcPtr = vcChan.framesAfterApplySDLSSecurity.getFront();
+			vcChan.framesAfterApplySDLSSecurity.popFront();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+
+		if (vcChan.getCopInEffect()) {
+			FrameOperationProcedure& fop = Objects::fopMap.at(constructVcidScidKey(vcChan.getVcid(), vcChan.getParentScid()));
+			fop.resetFOP();
+		}
+	}
+
+	void GroundSegmentTcDataHandling::resetMasterChannel(MasterChannelGsTc& mcChan) {
+		TransferFrameTC* frameTcPtr;
+		while (!mcChan.framesAfterVcGeneration.isEmpty()) {
+			frameTcPtr = mcChan.framesAfterVcGeneration.getFront();
+			mcChan.framesAfterVcGeneration.pop();
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTcPtr);
+		}
+	}
+
     etl::expected<void, ServiceChannelNotification> GroundSegmentTcDataHandling::storePacket(
     	const PhysicalChannel& phyChan,
         etl::variant<etl::reference_wrapper<VirtualChannelGsTc>, etl::reference_wrapper<MAPChannelGs>> chanVariant,
@@ -217,8 +264,8 @@ namespace CCSDSDataLinkLayer {
     	uint16_t securityHeaderLength = 0;
     	uint16_t securityTrailerLength = 0;
     	Defs::DataFieldContent dataFieldContent;
-    	uint8_t vcid;
-    	uint8_t mapid = 0;
+    	Defs::Vcid vcid;
+    	Defs::Mapid mapid = 0;
 
     	// fetch all necessary parameters
     	if (chanVariant.is_type<etl::reference_wrapper<VirtualChannelGsTc>>()) {
@@ -487,7 +534,7 @@ namespace CCSDSDataLinkLayer {
     	etl::optional<uint16_t> associatedSdlsSpi;
     	if (vcChan.getSegmentHeaderPresent()) {
     		// check for association with the relevant map channel
-    		const uint8_t mapid = frameTcPtr->getMapId().value();
+    		const Defs::Mapid mapid = frameTcPtr->getMapId().value();
     		const Defs::MapidVcidScidKey key = constructMapidVcidScidKey(mapid, vcChan.getVcid(), vcChan.getParentScid());
     		MAPChannelGs& mapChan = Objects::mapChannelGsMap.at(key);
 

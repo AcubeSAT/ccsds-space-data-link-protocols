@@ -7,28 +7,28 @@
 #include "etl/tuple.h"
 
 namespace CCSDSDataLinkLayer {
-    inline Defs::VcidScidKey constructVcidScidKey(const uint8_t vcid, const uint16_t scid) {
+    inline Defs::VcidScidKey constructVcidScidKey(const Defs::Vcid vcid, const Defs::Scid scid) {
         return static_cast<Defs::VcidScidKey>(vcid) << 10 | scid;
     }
 
-    inline Defs::MapidVcidScidKey constructMapidVcidScidKey(const uint8_t mapid,
-                                                      const uint8_t vcid,
-                                                      const uint16_t scid) {
+    inline Defs::MapidVcidScidKey constructMapidVcidScidKey(const Defs::Mapid mapid,
+                                                      const Defs::Vcid vcid,
+                                                      const Defs::Scid scid) {
         return (static_cast<Defs::MapidVcidScidKey>(mapid) << (6 + 10))
              | (static_cast<Defs::MapidVcidScidKey>(vcid) << 10)
              | scid;
     }
 
-    inline etl::tuple<uint8_t, uint16_t> extractVcidScid(Defs::VcidScidKey key) {
-        uint8_t vcid = static_cast<uint8_t>(key >> 10);   // top 6 bits
-        uint16_t scid = static_cast<uint16_t>(key & 0x03FFU);
+    inline etl::tuple<Defs::Vcid, Defs::Scid> extractVcidScid(Defs::VcidScidKey key) {
+        Defs::Vcid vcid = static_cast<uint8_t>(key >> 10);   // top 6 bits
+        Defs::Scid scid = static_cast<uint16_t>(key & 0x03FFU);
         return {vcid, scid};
     }
 
-    inline etl::tuple<uint8_t, uint8_t, uint16_t> extractMapidVcidScidKey(Defs::MapidVcidScidKey key) {
-        uint8_t mapid = static_cast<uint8_t>(key >> (6 + 10));
-        uint8_t vcid  = static_cast<uint8_t>((key >> 10) & 0x3FU);
-        uint16_t scid = static_cast<uint16_t>(key & 0x03FFU);
+    inline etl::tuple<Defs::Mapid, Defs::Vcid, Defs::Scid> extractMapidVcidScidKey(Defs::MapidVcidScidKey key) {
+        Defs::Mapid mapid = static_cast<uint8_t>(key >> (6 + 10));
+        Defs::Vcid vcid  = static_cast<uint8_t>((key >> 10) & 0x3FU);
+        Defs::Scid scid = static_cast<uint16_t>(key & 0x03FFU);
         return {mapid, vcid, scid};
     }
 

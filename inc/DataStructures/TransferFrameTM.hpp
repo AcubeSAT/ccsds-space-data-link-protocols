@@ -17,7 +17,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Constructor for frame creation within the data link (operational control field remains uninitialized).
          */
-        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const uint8_t vcid, const uint16_t scid,
+        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const Defs::Vcid vcid, const Defs::Scid scid,
                         const bool operationalControlFieldPresent,
                         const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
                         const Defs::SynchronizationFlag syncFlag, const bool packetOrder,
@@ -48,7 +48,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Constructor for frame creation within the data link (operational control field is initialized).
          */
-        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const uint16_t vcid, const uint16_t scid,
+        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const Defs::Vcid vcid, const Defs::Scid scid,
                         const uint32_t operationalControlField,
                         const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
                         Defs::SynchronizationFlag syncFlag, const bool packetOrder,

@@ -6,7 +6,7 @@
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    FrameOperationProcedure::FrameOperationProcedure(const uint16_t scid, const uint8_t vcid, const uint16_t tiInitial,
+    FrameOperationProcedure::FrameOperationProcedure(const Defs::Scid scid, const Defs::Vcid vcid, const uint16_t tiInitial,
                         const uint16_t transmissionLimit,
                         const uint8_t fopSlidingWindowWidth)
     : state(Defs::FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(true),
@@ -17,6 +17,55 @@ namespace CCSDSDataLinkLayer {
       signalQueueMutex(Mutex()), vcChan(Objects::virtualChannelGsTcMap.at(constructVcidScidKey(vcid, scid))),
       mcChan(Objects::masterChannelGsTcMap.at(scid)),
       timer(CountdownTimer()) {}
+
+    void FrameOperationProcedure::resetFOP() {
+        state = Defs::FOPState::INITIAL;
+        transmitterFrameSeqNumber = 0;
+        adOut = true;
+        bdOut = true;
+        bcOut = true;
+        expectedAcknowledgementSeqNumber = 0;
+        transmissionCount = 0;
+        timer.stopTimer();
+        directiveRequestSignalQueue.clear();
+        transferFduSignalQueue.clear();
+        lowerLayerResponseSignalQueue.clear();
+        directiveRequestSignalQueue.clear();
+        directiveNotificationSignalQueueUser.clear();
+        asynchronousNotificationSignalQueue.clear();
+        transferFduSignalQueue.clear();
+        fopToLowerLayerRequestSignalQueue.clear();
+        initiateWithClcwCheckId.reset();
+        initiateWithBcFrameId.reset();
+
+        // clear frame master copies
+        TransferFrameTC* frameTcPtr;
+        if (!waitQueueFOP.empty()) {
+            frameTcPtr = waitQueueFOP.front();
+            waitQueueFOP.pop_front();
+
+            for (auto frameTc : mcChan.frameMasterCopies) {
+                if (&frameTc == frameTcPtr) {
+                    Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+                    mcChan.frameMasterCopies.erase(frameTcPtr);
+                    break;
+                }
+            }
+        }
+
+        while (!sentQueueFOP.empty()) {
+            frameTcPtr = sentQueueFOP.front();
+            sentQueueFOP.pop_front();
+
+            for (auto frameTc : mcChan.frameMasterCopies) {
+                if (&frameTc == frameTcPtr) {
+                    Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+                    mcChan.frameMasterCopies.erase(frameTcPtr);
+                    break;
+                }
+            }
+        }
+    }
 
     /** FOP-1 actions **/
     FOPNotification FrameOperationProcedure::purgeSentQueue() {

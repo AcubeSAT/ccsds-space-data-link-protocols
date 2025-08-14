@@ -16,11 +16,11 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Constructor for frame creation within the data link.
          */
-        TransferFrameTC(uint8_t *frameData, const Defs::ServiceType serviceType, const uint8_t vid,
-                        const uint16_t scid, const uint16_t frameLength,
+        TransferFrameTC(uint8_t *frameData, const Defs::ServiceType serviceType, const Defs::Vcid vcid,
+                        const Defs::Scid scid, const uint16_t frameLength,
                         const bool segHdrPresent,
                         Defs::SequenceFlag sequenceFlag =
-                                Defs::SequenceFlag::NO_SEGMENTATION, const uint8_t mapId = 0,
+                                Defs::SequenceFlag::NO_SEGMENTATION, const Defs::Mapid mapId = 0,
                         const uint16_t firstEmptyOctet = 0)
             : TransferFrame(Defs::FrameType::TC, frameLength, frameData, firstEmptyOctet),
               toBeRetransmitted(false), segmentationHeaderPresent(segHdrPresent) {
@@ -38,7 +38,7 @@ namespace CCSDSDataLinkLayer {
                            (bypassFlag << 5U) | (ctrlCmdFlag << 4U) | 0 |
                            static_cast<uint8_t>((scid & 0x300) >> 8U);
             frameData[1] = static_cast<uint8_t>(scid & 0xFF);
-            frameData[2] = ((vid & 0x3F) << 2U) | static_cast<uint8_t>((frameLength & 0x300) >> 8U);
+            frameData[2] = ((vcid & 0x3F) << 2U) | static_cast<uint8_t>((frameLength & 0x300) >> 8U);
             frameData[3] = static_cast<uint8_t>(frameLength & 0xFF);
 
             if (segHdrPresent) {

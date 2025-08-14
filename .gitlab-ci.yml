@@ -102,7 +102,7 @@ tests:
     - cd $CI_PROJECT_DIR
     - mkdir build
     - cd build
-    - cmake .. -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make tests -j$(nproc)
+    - cmake .. -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make ccsds_data_link_catch2_unit_tests -j$(nproc)
     - lcov -q --capture --initial --directory . -o coverage_base
     - ./tests --colour-mode ansi
     - lcov -q --capture --directory . -o coverage_tests

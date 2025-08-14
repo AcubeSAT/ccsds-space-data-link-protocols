@@ -3,6 +3,34 @@
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
+	void SpaceSegmentTmDataHandling::resetVirtualChannel(VirtualChannelSsTm& vcChan) {
+		vcChan.packetLengths.reset();
+		vcChan.packetOctets.reset();
+
+		vcChan.virtualChannelFrameCount = 0;
+	}
+
+	void SpaceSegmentTmDataHandling::resetMasterChannel(MasterChannelSsTm& mcChan) {
+		TransferFrameTM* frameTmPtr;
+		while (!mcChan.framesAfterVcGeneration.isEmpty()) {
+			frameTmPtr = mcChan.framesAfterVcGeneration.getFront();
+			mcChan.framesAfterVcGeneration.pop();
+			Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData(), frameTmPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTmPtr);
+		}
+
+		while (!mcChan.framesAfterMcGeneration.isEmpty()) {
+			frameTmPtr = mcChan.framesAfterMcGeneration.getFront();
+			mcChan.framesAfterMcGeneration.pop();
+			Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData(), frameTmPtr->getFrameLength());
+			mcChan.frameMasterCopies.erase(frameTmPtr);
+		}
+
+		mcChan.masterChannelFrameCount = 0;
+		mcChan.ocfSduQueue.reset();
+		mcChan.waitingBuffer.reset();
+	}
+
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmDataHandling::storePacket(
         VirtualChannelSsTm& vcChan,
         etl::span<uint8_t> packetSource) {

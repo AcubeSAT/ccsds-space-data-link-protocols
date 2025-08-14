@@ -144,5 +144,22 @@ namespace CCSDSDataLinkLayer {
 
         return SpaceSegmentTmDataHandling::allFramesGeneration(phyChan, mcChan, frameDestination);
     }
+
+    etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::resetChain(Objects::PhysicalChannelName physicalChannelName) {
+        const auto it = Objects::physicalChannelMap.find(static_cast<uint8_t>(physicalChannelName));
+        if (it == Objects::physicalChannelMap.end()) {
+            return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
+        }
+        const PhysicalChannel& phyChan = it->second;
+        MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(phyChan.getScidTm());
+
+        SpaceSegmentTmDataHandling::resetMasterChannel(mcChan);
+
+        for (auto& vcChan : Objects::virtualChannelSsTmMap) {
+            if (etl::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
+                SpaceSegmentTmDataHandling::resetVirtualChannel(vcChan.second);
+            }
+        }
+    }
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // CCSDSDataLinkLayer
