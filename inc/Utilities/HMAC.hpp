@@ -15,7 +15,7 @@ namespace CCSDSDataLinkLayer {
      * @brief Compute HMAC of payload and authentication key. Ensure that the length of the macOutput buffer
      *        is at least 32 bytes in length. Returns true if operation is successful.
      */
-    inline bool computeHMAC(etl::span<const uint8_t> payload,
+    __attribute__((weak)) inline bool computeHMAC(etl::span<const uint8_t> payload,
                      etl::span<const uint8_t> authenticationKey,
                      uint8_t* macOutputBuffer) {
         // According to tiny crypt documentation, successful operation returns 1

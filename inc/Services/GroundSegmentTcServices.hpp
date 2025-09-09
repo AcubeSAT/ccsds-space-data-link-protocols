@@ -16,8 +16,7 @@
  */
 
 #pragma once
-#include "FrameOperationProcedure.hpp"
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
 #include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
@@ -199,7 +198,7 @@ namespace CCSDSDataLinkLayer {
         /**
          * {Key to identify FOP, State machine notification, State after state machine execution, Occurred event}
          */
-        using FopOutputData = etl::tuple<Defs::VcidScidKey, FOPNotification, Defs::FOPState, uint8_t>;
+        using FopOutputData = std::tuple<Defs::VcidScidKey, FOPNotification, Defs::FOPState, uint8_t>;
 
         /**
          * @brief Calls the state machines of all FOPs of a specific physical channel

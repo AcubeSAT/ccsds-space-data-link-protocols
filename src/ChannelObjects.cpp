@@ -1,7 +1,9 @@
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
 #include "AddressingAndParsingUtilities.hpp"
 
 namespace CCSDSDataLinkLayer::Objects {
+    using namespace GeneratedChannels;
+
     bool initializeChannelContainers() {
         // TODO sanity checks for the user's configuration
 
@@ -313,7 +315,9 @@ namespace CCSDSDataLinkLayer::Objects {
                 }
             }
         }
-#elif
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
         for (auto &mcChanPair: masterChannelGsTcMap) {
             for (auto &phyChanPair: physicalChannelMap) {
                 if (mcChanPair.second.getParentPcid() == phyChanPair.first) {
@@ -322,15 +326,13 @@ namespace CCSDSDataLinkLayer::Objects {
             }
         }
 
-        for (auto &mcChanPair: masterChannelGsTmMap) {
-            for (auto &phyChanPair: physicalChannelMap) {
-                if (mcChanPair.second.getParentPcid() == phyChanPair.first) {
-                    phyChanPair.second.registerTmMasterChannel(mcChanPair.first);
-                }
-            }
-        }
-#else
-        return false;
+        // for (auto &mcChanPair: masterChannelGsTmMap) {
+        //     for (auto &phyChanPair: physicalChannelMap) {
+        //         if (mcChanPair.second.getParentPcid() == phyChanPair.first) {
+        //             phyChanPair.second.registerTmMasterChannel(mcChanPair.first);
+        //         }
+        //     }
+        // }
 #endif
         return true;
     }

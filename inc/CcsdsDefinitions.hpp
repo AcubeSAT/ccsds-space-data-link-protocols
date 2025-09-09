@@ -439,10 +439,6 @@ namespace CCSDSDataLinkLayer::Defs {
      *  ========================
      *  @{
      */
-    inline constexpr uint16_t TmHelperFuncMaxMessageSize = MaxTmTransferFrameLength * 6 + 500;
-    inline constexpr uint16_t TcHelperFuncMaxMessageSize = MaxTcTransferFrameLength * 6 + 330;
-    inline constexpr uint16_t LoggerMaxMessageSize = TmHelperFuncMaxMessageSize;
-
     inline constexpr uint8_t logVerbose = 0;
 
     /**

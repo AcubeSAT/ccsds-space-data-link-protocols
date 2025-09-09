@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Alert.hpp"
+#include "DataLinkNotifications.hpp"
 
 namespace CCSDSDataLinkLayer {
     std::ostream &operator<<(std::ostream &out, const TxRx value);

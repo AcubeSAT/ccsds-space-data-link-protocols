@@ -7,10 +7,9 @@
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
 namespace CCSDSDataLinkLayer {
-    class GroundSegmentTmServices;
 
     class GsTmDataHandling {
-        friend class GroundSegmentTmServices;
+    public:
     };
 } // CCSDSDataLinkLayer
 #endif // INCLUDE_GROUND_SEGMENT_CODE

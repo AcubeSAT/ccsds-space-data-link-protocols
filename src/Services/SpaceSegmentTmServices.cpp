@@ -1,5 +1,6 @@
 #include "SpaceSegmentTmServices.hpp"
 #include "SpaceSegmentTmDataHandlingFunctions.hpp"
+#include "AddressingAndParsingUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -156,7 +157,7 @@ namespace CCSDSDataLinkLayer {
         SpaceSegmentTmDataHandling::resetMasterChannel(mcChan);
 
         for (auto& vcChan : Objects::virtualChannelSsTmMap) {
-            if (etl::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
+            if (std::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
                 SpaceSegmentTmDataHandling::resetVirtualChannel(vcChan.second);
             }
         }

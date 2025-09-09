@@ -1,7 +1,7 @@
 #include "FrameAcceptanceReporting.hpp"
 #include "LoggerImpl.h"
 #include "AddressingAndParsingUtilities.hpp"
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE

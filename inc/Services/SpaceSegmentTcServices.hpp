@@ -13,7 +13,7 @@
  */
 
 #pragma once
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
 #include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {

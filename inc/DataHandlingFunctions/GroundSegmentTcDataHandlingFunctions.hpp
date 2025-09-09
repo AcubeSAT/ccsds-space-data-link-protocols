@@ -5,17 +5,16 @@
 
 #pragma once
 #include "etl/expected.h"
-#include "Alert.hpp"
+#include "etl/variant.h"
+#include "DataLinkNotifications.hpp"
 #include "CcsdsDefinitions.hpp"
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
+#include "AddressingAndParsingUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    class GroundSegmentTcServices;
-
     class GroundSegmentTcDataHandling {
-        friend class GroundSegmentTcServices;
-
+    public:
         /**
          * Reset the state of a MAP Channel (also deletes the frame master copies)
          */

@@ -252,6 +252,29 @@ namespace CCSDSDataLinkLayer {
             }
         }
 
+        class Iterator {
+        public:
+            explicit Iterator(T* ptr) : ptr(ptr) {}
+
+            T& operator*() const { return *ptr; }
+            T* operator->() const { return ptr; }
+
+            Iterator& operator++() {
+                ++ptr;
+                return *this;
+            }
+
+            bool operator!=(const Iterator& other) const {
+                return ptr != other.ptr;
+            }
+
+        private:
+            T* ptr;
+        };
+
+        Iterator begin() { return Iterator(buf); }
+        Iterator end() { return Iterator(buf + sz); }
+
     private:
         T* buf = nullptr;
         uint32_t capacity = 0;

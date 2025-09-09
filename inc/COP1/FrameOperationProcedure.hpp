@@ -13,11 +13,10 @@
 #include "VirtualChannel.hpp"
 #include "Mutex.hpp"
 #include "TransferFrameTC.hpp"
-#include "Alert.hpp"
+#include "DataLinkNotifications.hpp"
 #include "CcsdsDefinitions.hpp"
 #include "CLCW.hpp"
 #include "CountdownTimer.hpp"
-#include "AddressingAndParsingUtilities.hpp"
 #include "FrameOperationProcedureMessageLayer.hpp"
 
 namespace CCSDSDataLinkLayer {

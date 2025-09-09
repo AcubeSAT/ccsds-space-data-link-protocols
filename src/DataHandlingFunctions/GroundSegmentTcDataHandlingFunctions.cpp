@@ -95,7 +95,7 @@ namespace CCSDSDataLinkLayer {
     	uint16_t securityHeaderLength = 0;
     	uint16_t securityTrailerLength = 0;
 
-        if (chanVariant.is_type<etl::reference_wrapper<VirtualChannelGsTc>>()) {
+        if (etl::holds_alternative<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant)) {
             VirtualChannelGsTc& vcChan = etl::get<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant).get();
             channelMutex = &vcChan.channelMutex;
         	segmentHeaderPresent = false; // frames can only be inserted directly to the virtual channel if no
@@ -176,7 +176,7 @@ namespace CCSDSDataLinkLayer {
         uint16_t securityHeaderLength = 0;
         uint16_t securityTrailerLength = 0;
 
-        if (chanVariant.is_type<etl::reference_wrapper<VirtualChannelGsTc>>()) {
+        if (etl::holds_alternative<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant)) {
             VirtualChannelGsTc& vcChan = etl::get<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant).get();
             channelMutex = &vcChan.channelMutex;
             segmentHeaderPresent = false; // frames can only be inserted directly to the virtual channel if no
@@ -268,7 +268,7 @@ namespace CCSDSDataLinkLayer {
     	Defs::Mapid mapid = 0;
 
     	// fetch all necessary parameters
-    	if (chanVariant.is_type<etl::reference_wrapper<VirtualChannelGsTc>>()) {
+    	if (etl::holds_alternative<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant)) {
     		VirtualChannelGsTc& vcChan = etl::get<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant).get();
     		channelMutex = &vcChan.channelMutex;
     		segmentHeaderPresent = false; // frames can only be inserted directly to the virtual channel if no

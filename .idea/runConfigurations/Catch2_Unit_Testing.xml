@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Catch2 Unit Testing" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="ccsds-data-link-layer" TARGET_NAME="catch2_unit_testing" CONFIG_NAME="Debug - Unit Testing" RUN_TARGET_PROJECT_NAME="ccsds-data-link-layer" RUN_TARGET_NAME="catch2_unit_testing">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

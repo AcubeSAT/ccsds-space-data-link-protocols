@@ -354,7 +354,7 @@ namespace CCSDSDataLinkLayer {
             for (auto& keyFopPair : Objects::fopMap) {
                 const Defs::VcidScidKey key = keyFopPair.first;
 
-                if (etl::get<1>(extractVcidScid(key)) == mcChan.getScid()) {
+                if (std::get<1>(extractVcidScid(key)) == mcChan.getScid()) {
                     // found FOP that belongs to this master channel
                     etl::pair<FOPNotification, uint8_t> status = keyFopPair.second.applyFopStateTable();
 
@@ -380,13 +380,13 @@ namespace CCSDSDataLinkLayer {
             GroundSegmentTcDataHandling::resetMasterChannel(mcChan);
 
             for (auto& vcChan : Objects::virtualChannelGsTcMap) {
-                if (etl::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
+                if (std::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
                     GroundSegmentTcDataHandling::resetVirtualChannel(vcChan.second);
                 }
             }
 
             for (auto& mapChan : Objects::mapChannelGsMap) {
-                if (etl::get<1>(extractVcidScid(mapChan.first)) == mcChan.getScid()) {
+                if (std::get<1>(extractVcidScid(mapChan.first)) == mcChan.getScid()) {
                     GroundSegmentTcDataHandling::resetMapChannel(mapChan.second);
                 }
             }

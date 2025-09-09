@@ -8,7 +8,7 @@
 #include "etl/expected.h"
 #include "etl/string.h"
 #include "CcsdsDefinitions.hpp"
-#include "NotificationAndLoggingUtilities/Alert.hpp"
+#include "DataLinkNotifications.hpp"
 #include "AuthenticationKey.hpp"
 
 namespace CCSDSDataLinkLayer {

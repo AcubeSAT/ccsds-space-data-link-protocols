@@ -1,97 +1,177 @@
 cmake_minimum_required(VERSION 3.18.4)
-project(ccsds_tm_packets)
-
-# Set C++ version to c++17
+project(ccsds-data-link-layer LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
-# Specify the directories for #includes
-include_directories("${PROJECT_SOURCE_DIR}"
-                    "${PROJECT_SOURCE_DIR}/inc"
-                    "${PROJECT_SOURCE_DIR}/inc/CCSDSUtilities"
-                    "${PROJECT_SOURCE_DIR}/inc/Channels"
-                    "${PROJECT_SOURCE_DIR}/inc/COP1"
-                    "${PROJECT_SOURCE_DIR}/inc/DataStructures"
-                    "${PROJECT_SOURCE_DIR}/inc/DataHandlingFunctions"
-                    "${PROJECT_SOURCE_DIR}/inc/Services"
-                    "${PROJECT_SOURCE_DIR}/inc/NotificationAndLoggingUtilities"
-                    "${PROJECT_SOURCE_DIR}/lib/etl/include"
-                    "${PROJECT_SOURCE_DIR}/inc/Platform/x86"
-                    "${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include"
-                    )
+# ======================================== Compiler flags ========================================
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    # This flag makes the compiler give warnings about variable length arrays. Example:
+    # void foo(int n) {
+    #   int arr[n];  // Dangerous for large n, due to stack overflow concerns in embedded systems
+    # }
+    add_compile_options(-Wvla)
 
-add_compile_options(-Wvla)
-add_compile_definitions(LOGLEVEL_TRACE) # Lowest possible log level for Logger.hpp (logs every message)
-add_compile_definitions(INCLUDE_SPACE_SEGMENT_CODE)
-add_compile_definitions(INCLUDE_GROUND_SEGMENT_CODE)
+    # Uncomment to throw error instead
+    # add_compile_options(-Werror=vla)
+endif()
 
-add_custom_target(check
-        COMMAND ./cppcheck.sh
-        COMMAND ./vera.sh
-        COMMAND ./clang-tidy.sh
-        COMMAND ./cppcheck-misra.sh
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/ci")
+# ======================================== Build options ========================================
+option(BUILD_SPACE_SEGMENT  "Build the space segment library" OFF)
+option(BUILD_GROUND_SEGMENT "Build the ground segment library" OFF)
+option(BUILD_UNIT_TESTS     "Build the unit tests" OFF)
+option(BUILD_x86            "Include x86 files" ON)
+option(FRAME_PRINTING_FUNCTIONS "Include functions that print frame fields" OFF)
+set(PLATFORM_DEFINITIONS_PATH "" CACHE PATH "Path for platform-specific implementations")
+set(CHANNEL_CONFIG            "" CACHE PATH "Path for channel configuration file")
 
-add_custom_target(
-        TinyCryptLib ALL
-        COMMAND make ENABLE_TESTS='false' OBJS='hmac.o hmac_prng.o sha256.o utils.o'
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/lib/tinycrypt
-)
+# ======================================== CI ========================================
+# TODO
+#add_custom_target(check
+#        COMMAND ./cppcheck.sh
+#        COMMAND ./vera.sh
+#        COMMAND ./clang-tidy.sh
+#        COMMAND ./cppcheck-misra.sh
+#        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/ci")
 
-# Specify the .cpp files common across all targets
-add_library(common OBJECT
-        src/COP1/FopStateTable.cpp
-        src/COP1/FrameAcceptanceReporting.cpp
-        src/COP1/FrameOperationProcedure.cpp
-        src/DataHandlingFunctions/GroundSegmentTcDataHandlingFunctions.cpp
-        src/DataHandlingFunctions/GroundSegmentTmDataHandlingFunctions.cpp
-        src/DataHandlingFunctions/SpaceSegmentTcDataHandlingFunctions.cpp
-        src/DataHandlingFunctions/SpaceSegmentTmDataHandlingFunctions.cpp
-        src/NotificationAndLoggingUtilities/Logger.cpp
-        src/NotificationAndLoggingUtilities/logOperators.cpp
-        src/NotificationAndLoggingUtilities/FramePrintingFunctions.cpp
-        src/Services/SpaceSegmentTcServices.cpp
-        src/Services/SpaceSegmentTmServices.cpp
-        src/Services/GroundSegmentTcServices.cpp
-        src/Services/GroundSegmentTmServices.cpp
-        src/SecurityAssociation.cpp
-        src/StructureGeneration.cpp
-        )
+# # ======================================== Packages ========================================
+find_package(etl CONFIG REQUIRED)
+find_package(logger CONFIG REQUIRED COMPONENTS log_common log_x86)
+find_package(Catch2 CONFIG COMPONENTS Catch2::Catch2WithMain)
 
-# Specify the .cpp files for the executables
-add_executable(ccsds_data_link_default
-        $<TARGET_OBJECTS:common>
-        src/Platform/x86/Logger.cpp
-        src/main.cpp
-        )
-add_dependencies(ccsds_data_link_default TinyCryptLib) # ensure "TinyCryptLib" target is built first
-target_link_libraries(ccsds_data_link_default PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
+# set logger level (LOGLEVEL_TRACE shows all logs)
+add_compile_definitions(LOGLEVEL_TRACE)
 
-#add_executable(ccsds_data_link_yamcs_connection
-#        $<TARGET_OBJECTS:common>
-#        src/Platform/x86/FrameMaker.cpp
-#        src/Platform/x86/FrameSender.cpp
-#        src/Platform/x86/main.cpp
-#        src/Platform/x86/Logger.cpp
-#        )
-#target_compile_definitions(ccsds_data_link_yamcs_connection PRIVATE ENABLE_CHANNEL_ACCESS)
-#add_dependencies(ccsds_data_link_yamcs_connection TinyCryptLib) # ensure "TinyCryptLib" target is built first
-#target_link_libraries(ccsds_data_link_yamcs_connection PRIVATE ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
+# tinycrypt uses make and does not accept a build output directory flag, so if make is called, it builds on source
+# the generated library (.a) needs to be copied on build and then all the objects need to be removed from source
 
-IF (EXISTS "${PROJECT_SOURCE_DIR}/lib/Catch2/CMakeLists.txt")
-    # Gather all the .cpp files corresponding to tests
-    file(GLOB test_main_SRC "test/*.cpp")
-    file(GLOB test_SRC "test/**/*.cpp")
+set(TINYCRYPT_SRC_DIR ${CMAKE_SOURCE_DIR}/lib/tinycrypt)
 
-    add_subdirectory(lib/Catch2)
-    add_executable(ccsds_data_link_catch2_unit_tests
-            $<TARGET_OBJECTS:common>
-            src/Platform/x86/Logger.cpp
-           # ${test_main_SRC}
-           # ${test_SRC}
+#   - File that will need to be copied
+set(TINYCRYPT_LIB_NAME libtinycrypt.a)
+
+add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/lib/${TINYCRYPT_LIB_NAME}  # File that will be produced
+        COMMAND ${CMAKE_MAKE_PROGRAM} CC=${CMAKE_C_COMPILER} OBJS='hmac.o hmac_prng.o sha256.o utils.o' ENABLE_TESTS=false # Run make
+        COMMAND ${CMAKE_COMMAND} -E copy           # copy .a file from src dir to build dir
+        ${TINYCRYPT_SRC_DIR}/lib/libtinycrypt.a ${CMAKE_BINARY_DIR}/lib/${TINYCRYPT_LIB_NAME}
+        COMMAND make clean                         # run make clean on source to delete build artifacts
+        WORKING_DIRECTORY ${TINYCRYPT_SRC_DIR}
+        COMMENT "Building TinyCrypt library")
+
+add_custom_target(tinycrypt_build DEPENDS ${CMAKE_BINARY_DIR}/lib/${TINYCRYPT_LIB_NAME}) # this is needed to trigger the custom command above
+
+#   - Now expose it as an imported library
+add_library(tinycrypt STATIC IMPORTED)
+set_target_properties(tinycrypt PROPERTIES
+        IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/lib/${TINYCRYPT_LIB_NAME}
+        INTERFACE_INCLUDE_DIRECTORIES ${TINYCRYPT_SRC_DIR}/lib/include)
+
+#   - Make tinycrypt_build target run before anyone links tinycrypt
+add_dependencies(tinycrypt tinycrypt_build)
+
+# ==================================== Collect headers, sources, configs ====================================
+# Specify include directories common for every target
+set(COMMON_INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/Channels"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/COP1"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/DataHandlingFunctions"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/DataStructures"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/NotificationAndLoggingUtilities"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/Services"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/Utilities")
+
+# Specify sources common for every target
+file(GLOB COMMON_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/COP1/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/DataHandlingFunctions/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/NotificationAndLoggingUtilities/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Services/*.cpp")
+
+# Unit test sources
+file(GLOB UNIT_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp")
+
+# Platform directories and sources
+if(BUILD_x86)
+    message("Using x86 platform definitions")
+    set(PLATFORM_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/inc/Platform/x86")
+    file(GLOB_RECURSE PLATFORM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/x86/*.cpp")
+else()
+    message("Using user provided platform definitions path: ${PLATFORM_DEFINITIONS_PATH}")
+    set(PLATFORM_INCLUDE_DIRS "${PLATFORM_DEFINITIONS_PATH}" "${PLATFORM_DEFINITIONS_PATH}/inc")
+    file(GLOB_RECURSE PLATFORM_SOURCES "${PLATFORM_DEFINITIONS_PATH}/*.cpp")
+endif()
+
+# Channel configuration
+if(BUILD_UNIT_TESTS)
+    # Use unit test channel config
+    message("Using unit testing channel configuration")
+    set(CHANNEL_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/test/CCSDSDataLink.def)
+else()
+    if("${CHANNEL_CONFIG}" STREQUAL "")
+        # User did not provide a channel configuration, fallback to a default one
+        message("Using default channel configuration")
+        set(CHANNEL_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/inc/Platform/CCSDSDataLink.def)
+    else()
+        # Check if user provided config is valid
+        if(CHANNEL_CONFIG MATCHES "CCSDSDataLink\\.def$")
+            message("Using provided channel configuration: ${CHANNEL_CONFIG}")
+        else()
+            message(FATAL_ERROR "Provided channel configuration is invalid: ${CHANNEL_CONFIG}")
+        endif()
+    endif()
+endif()
+
+# ======================================== Build targets ========================================
+
+# Function that performs common actions for every target
+function(common_actions target)
+    # depending on the CHANNEL_CONFIG provided, create the ChannelGeneration header
+    configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc/ChannelGeneration.hpp.in
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc/ChannelGeneration.hpp
+            @ONLY
     )
-    target_compile_definitions(ccsds_data_link_catch2_unit_tests PRIVATE ENABLE_CHANNEL_QUEUE_ACCESS)
-    add_dependencies(ccsds_data_link_catch2_unit_tests TinyCryptLib) # ensure "TinyCryptLib" target is built first
-    target_link_libraries(ccsds_data_link_catch2_unit_tests Catch2::Catch2WithMain  ${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/libtinycrypt.a)
-ENDIF ()
-set_target_properties(common PROPERTIES COMPILE_DEFINITIONS LOGLEVEL_TRACE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ")
+    target_link_libraries(${target} PUBLIC etl::etl tinycrypt log_common)
+    target_include_directories(${target} PUBLIC ${COMMON_INCLUDE_DIRS} ${PLATFORM_INCLUDE_DIRS})
+    target_sources(${target} PRIVATE ${COMMON_SOURCES} ${PLATFORM_SOURCES})
+    if(BUILD_x86)
+        target_link_libraries(${target} PRIVATE log_x86)
+    endif()
+endfunction()
+
+# include libs, headers and sources for each target
+if(BUILD_SPACE_SEGMENT)
+    add_library(space_segment_lib STATIC)
+    target_compile_definitions(space_segment_lib PRIVATE INCLUDE_SPACE_SEGMENT_CODE)
+    if(FRAME_PRINTING_FUNCTIONS)
+        target_compile_definitions(space_segment_lib PUBLIC INCLUDE_FRAME_PRINTING_FUNCTIONS)
+    endif()
+    common_actions(space_segment_lib)
+    install(TARGETS space_segment_lib)
+endif()
+
+if(BUILD_GROUND_SEGMENT)
+    add_library(ground_segment_lib STATIC)
+    target_compile_definitions(ground_segment_lib PUBLIC INCLUDE_GROUND_SEGMENT_CODE)
+    if(FRAME_PRINTING_FUNCTIONS)
+        target_compile_definitions(ground_segment_lib PUBLIC INCLUDE_FRAME_PRINTING_FUNCTIONS)
+    endif()
+    common_actions(ground_segment_lib)
+    install(TARGETS ground_segment_lib)
+endif()
+
+if(BUILD_UNIT_TESTS)
+    if (NOT TARGET Catch2::Catch2WithMain)
+        message(FATAL_ERROR "BUILD_UNIT_TESTS=ON but Catch2::Catch2WithMain not found")
+    endif()
+
+    add_executable(catch2_unit_testing)
+    target_compile_definitions(catch2_unit_testing PUBLIC INCLUDE_SPACE_SEGMENT_CODE
+                                                          INCLUDE_GROUND_SEGMENT_CODE
+                                                          INCLUDE_FRAME_PRINTING_FUNCTIONS
+                                                          ENABLE_CHANNEL_QUEUE_ACCESS)
+    target_link_libraries(catch2_unit_testing PRIVATE Catch2::Catch2WithMain)
+    target_sources(catch2_unit_testing PRIVATE ${UNIT_TESTS})
+    common_actions(catch2_unit_testing)
+endif()

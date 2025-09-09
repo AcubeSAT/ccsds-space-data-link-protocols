@@ -5,18 +5,15 @@
 
 #pragma once
 #include "etl/expected.h"
-#include "Alert.hpp"
+#include "DataLinkNotifications.hpp"
 #include "CcsdsDefinitions.hpp"
 #include "TransferFrameTM.hpp"
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
-	class SpaceSegmentTmServices;
-
 	class SpaceSegmentTmDataHandling {
-		friend class SpaceSegmentTmServices;
-
+	public:
 		/**
 		 * Reset the state of a Virtual Channel (also deletes the frame master copies)
 		*/

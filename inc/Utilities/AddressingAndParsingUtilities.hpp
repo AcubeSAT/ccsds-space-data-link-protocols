@@ -4,7 +4,7 @@
 
 #pragma once
 #include "CcsdsDefinitions.hpp"
-#include "etl/tuple.h"
+#include <tuple>
 
 namespace CCSDSDataLinkLayer {
     inline Defs::VcidScidKey constructVcidScidKey(const Defs::Vcid vcid, const Defs::Scid scid) {
@@ -19,13 +19,13 @@ namespace CCSDSDataLinkLayer {
              | scid;
     }
 
-    inline etl::tuple<Defs::Vcid, Defs::Scid> extractVcidScid(Defs::VcidScidKey key) {
+    inline std::tuple<Defs::Vcid, Defs::Scid> extractVcidScid(Defs::VcidScidKey key) {
         Defs::Vcid vcid = static_cast<uint8_t>(key >> 10);   // top 6 bits
         Defs::Scid scid = static_cast<uint16_t>(key & 0x03FFU);
         return {vcid, scid};
     }
 
-    inline etl::tuple<Defs::Mapid, Defs::Vcid, Defs::Scid> extractMapidVcidScidKey(Defs::MapidVcidScidKey key) {
+    inline std::tuple<Defs::Mapid, Defs::Vcid, Defs::Scid> extractMapidVcidScidKey(Defs::MapidVcidScidKey key) {
         Defs::Mapid mapid = static_cast<uint8_t>(key >> (6 + 10));
         Defs::Vcid vcid  = static_cast<uint8_t>((key >> 10) & 0x3FU);
         Defs::Scid scid = static_cast<uint16_t>(key & 0x03FFU);

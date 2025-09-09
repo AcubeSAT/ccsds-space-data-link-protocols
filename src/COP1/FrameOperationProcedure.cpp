@@ -2,7 +2,7 @@
 #include "LoggerImpl.h"
 #include "AddressingAndParsingUtilities.hpp"
 #include "Mutex.hpp"
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE

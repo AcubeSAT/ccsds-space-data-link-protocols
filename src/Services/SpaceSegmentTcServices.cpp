@@ -1,5 +1,7 @@
 #include "SpaceSegmentTcServices.hpp"
+#include "etl/expected.h"
 #include "SpaceSegmentTcDataHandlingFunctions.hpp"
+#include "AddressingAndParsingUtilities.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -107,7 +109,7 @@ namespace CCSDSDataLinkLayer {
 
             for (auto &pair : Objects::virtualChannelSsTcMap) {
                 // only act on channels that belong to this master channel
-                if (etl::get<1>(extractVcidScid(pair.first)) == scid) {
+                if (std::get<1>(extractVcidScid(pair.first)) == scid) {
                     // Possible return notifications and actions
                     // NO_SERVICE_EVENT -> no errors encountered, no action
                     // FARM_ERROR -> // TODO
@@ -170,7 +172,7 @@ namespace CCSDSDataLinkLayer {
 
             for (auto &pair : Objects::farmMap) {
                 // extract a clcw only from FARMs that belong to this physical channel
-                if (etl::get<1>(extractVcidScid(pair.first))  == scid) {
+                if (std::get<1>(extractVcidScid(pair.first))  == scid) {
                     FrameAcceptanceReporting& farm = pair.second;
 
                     if (!farm.clcwBufferMutex.tryLockFor(Defs::MutexDelayMs)) {
@@ -253,13 +255,13 @@ namespace CCSDSDataLinkLayer {
             SpaceSegmentTcDataHandling::resetMasterChannel(mcChan);
 
             for (auto& vcChan : Objects::virtualChannelSsTcMap) {
-                if (etl::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
+                if (std::get<1>(extractVcidScid(vcChan.first)) == mcChan.getScid()) {
                     SpaceSegmentTcDataHandling::resetVirtualChannel(vcChan.second);
                 }
             }
 
             for (auto& mapChan : Objects::mapChannelSsMap) {
-                if (etl::get<1>(extractVcidScid(mapChan.first)) == mcChan.getScid()) {
+                if (std::get<1>(extractVcidScid(mapChan.first)) == mcChan.getScid()) {
                     SpaceSegmentTcDataHandling::resetMapChannel(mapChan.second);
                 }
             }

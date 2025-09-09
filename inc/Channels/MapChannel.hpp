@@ -170,10 +170,6 @@ namespace CCSDSDataLinkLayer {
         // give the user access while debugging/testing
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
-        Queue<TransferFrameTC*>& getFramesAfterProcessSdlsSecurity()  {
-            return framesAfterProcessSdlsSecurity;
-        }
-
         Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeAD() {
             return framesAfterProcessSDLSSecurityTypeAD;
         }

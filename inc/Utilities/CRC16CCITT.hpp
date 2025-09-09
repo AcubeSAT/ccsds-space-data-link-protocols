@@ -35,7 +35,7 @@ namespace CCSDSDataLinkLayer {
      * @brief Utility function for calculating the CRC-16 code of a data sequence.
      * @see p. 4.1.4.2 from TC SPACE DATA LINK PROTOCOL
      */
-    inline uint16_t calculateCRC16CCITT(etl::span<uint8_t> data) {
+    __attribute__((weak)) inline uint16_t calculateCRC16CCITT(etl::span<uint8_t> data) {
         uint16_t crc = 0xFFFF;
 
         // calculate remainder of binary polynomial division

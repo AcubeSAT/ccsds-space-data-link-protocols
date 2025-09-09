@@ -1,6 +1,6 @@
 #include "logOperators.h"
 #include "SpaceSegmentTcDataHandlingFunctions.hpp"
-#include "Alert.hpp"
+#include "DataLinkNotifications.hpp"
 #include "map"
 
 namespace CCSDSDataLinkLayer {

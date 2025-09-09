@@ -12,7 +12,7 @@
 #pragma once
 #include <cstdint>
 #include "etl/span.h"
-#include "StructureGeneration.hpp"
+#include "ChannelObjects.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE

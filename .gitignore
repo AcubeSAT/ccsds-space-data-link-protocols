@@ -1,7 +1,11 @@
 # Build files
-build
-cmake-build-debug
-docs
+/build/
+/test_package/build/
+/cmake-build-debug/
+/docs/
+
+# Files generated from templates
+/inc/ChannelGeneration.hpp
 
 # Dump and continuous integration files
 *.dump
@@ -55,6 +59,12 @@ __pycache__
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+
+# Keep the project name, cmake and run/debug configurations
+!.idea
+!.idea/.name
+!.idea/cmake.xml
+!.idea/runConfigurations/
 
 # Generated files
 .idea/**/contentModel.xml

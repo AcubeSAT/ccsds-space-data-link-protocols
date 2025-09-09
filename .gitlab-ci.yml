@@ -88,7 +88,7 @@ ikos:
     - cd $CI_PROJECT_DIR/ikos-report
     - ikos-scan cmake ..
     - ikos-scan make
-    - ikos-report -o=ikos-report.txt ccsds_tm_packets.db
+    - ikos-report -o=ikos-report.txt ccsds_data_link_layer.db
   artifacts:
     paths:
       - ./ikos-report

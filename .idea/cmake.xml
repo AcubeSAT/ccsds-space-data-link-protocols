@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeSharedSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug - Unit Testing" ENABLED="true" GENERATION_DIR="build/Debug" CONFIG_NAME="Debug" GENERATION_OPTIONS="-G &quot;Unix Makefiles&quot; -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON -B build/Debug/STM32H755ZIT6_DEV -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake" />
+    </configurations>
+  </component>
+</project>

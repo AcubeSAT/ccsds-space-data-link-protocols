@@ -198,11 +198,11 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
-        Dequeue<uint16_t>& getPacketLengths() const {
+        Dequeue<uint16_t>& getPacketLengths(){
             return packetLengths;
         }
 
-        Dequeue<uint8_t>& getPacketOctets() const {
+        Dequeue<uint8_t>& getPacketOctets(){
             return packetOctets;
         }
 #endif // ENABLE_CHANNEL_QUEUE_ACCESS
@@ -365,23 +365,23 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
-        Queue<TransferFrameTC*>& getFramesAfterAllFramesReception() const {
+        Queue<TransferFrameTC*>& getFramesAfterAllFramesReception() {
             return framesAfterAllFramesReception;
         }
 
-        Queue<TransferFrameTC*>& getFramesAfterVcReceptionTypeAD() const {
+        Queue<TransferFrameTC*>& getFramesAfterVcReceptionTypeAD() {
             return framesAfterVcReceptionTypeAD;
         }
 
-        Queue<TransferFrameTC*>& getFramesAfterVcReceptionTypeBD() const {
+        CircularBuffer<TransferFrameTC*>& getFramesAfterVcReceptionTypeBD() {
             return framesAfterVcReceptionTypeBD;
         }
 
-        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeAD() const {
+        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeAD() {
             return framesAfterProcessSDLSSecurityTypeAD;
         }
 
-        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeBD() const {
+        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeBD() {
             return framesAfterProcessSDLSSecurityTypeBD;
         }
 
@@ -554,27 +554,27 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
-        Queue<uint16_t>& getPacketLengthsTypeAD() const {
+        Queue<uint16_t>& getPacketLengthsTypeAD() {
             return packetLengthsTypeAD;
         }
 
-        Queue<uint8_t>& getPacketOctetsTypeAD() const {
+        Queue<uint8_t>& getPacketOctetsTypeAD() {
             return packetOctetsTypeAD;
         }
 
-        Queue<uint16_t>& getPacketLengthsTypeBD() const {
+        Queue<uint16_t>& getPacketLengthsTypeBD() {
             return packetLengthsTypeBD;
         }
 
-        Queue<uint8_t>& getPacketOctetsTypeBD() const {
+        Queue<uint8_t>& getPacketOctetsTypeBD() {
             return packetOctetsTypeBD;
         }
 
-        Queue<TransferFrameTC*>& getFramesAfterPacketProcessing() const {
+        Queue<TransferFrameTC*>& getFramesAfterPacketProcessing() {
             return framesAfterPacketProcessing;
         }
 
-        Dequeue<TransferFrameTC*>& getFramesAfterApplySDLSSecurity() const {
+        Dequeue<TransferFrameTC*>& getFramesAfterApplySDLSSecurity() {
             return framesAfterApplySDLSSecurity;
         }
 #endif // ENABLE_CHANNEL_QUEUE_ACCESS

@@ -1,0 +1,10 @@
+{
+    "version": 4,
+    "vendor": {
+        "conan": {}
+    },
+    "include": [
+        "build/gcc-13-x86_64-gnu17-debug/generators/CMakePresets.json",
+        "build/gcc-13-x86_64-gnu17-release/generators/CMakePresets.json"
+    ]
+}

@@ -1,5 +1,5 @@
 #pragma once
-#include "Alert.hpp"
+#include "DataLinkNotifications.hpp"
 
 namespace CCSDSDataLinkLayer {
     template<class MyNotif>

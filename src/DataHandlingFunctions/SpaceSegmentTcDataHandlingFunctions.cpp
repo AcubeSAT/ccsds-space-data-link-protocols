@@ -1,4 +1,5 @@
 #include "SpaceSegmentTcDataHandlingFunctions.hpp"
+#include "AddressingAndParsingUtilities.hpp"
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
 namespace CCSDSDataLinkLayer {
@@ -136,7 +137,7 @@ namespace CCSDSDataLinkLayer {
     	if (vcChan.getSegmentHeaderPresent()) {
     		frameTc.setSegmentationHeaderPresentFlag(true);
     		const Defs::MapidVcidScidKey key = constructMapidVcidScidKey(frameTc.getMapId().value(), frameTc.getSpacecraftId(), frameTc.getSpacecraftId());
-    		if (!Objects::mapChannelGsMap.contains(key)) {
+    		if (!Objects::mapChannelSsMap.contains(key)) {
     			return etl::unexpected(ServiceChannelNotification::INVALID_MAPID);
     		}
     	}
@@ -543,7 +544,7 @@ namespace CCSDSDataLinkLayer {
     	bool segmentationAllowed = false;
 
     	// Gather information about the channel
-    	if (channel.is_type<etl::reference_wrapper<MAPChannelSs>>()) {
+    	if (etl::holds_alternative<etl::reference_wrapper<MAPChannelSs>>(channel)) {
     		MAPChannelSs& mapChan = etl::get<etl::reference_wrapper<MAPChannelSs>>(channel).get();
     		mcChan = &Objects::masterChannelSsTcMap.at(mapChan.getParentScid());
     		channelMutex = &mapChan.channelMutex;
@@ -593,7 +594,7 @@ namespace CCSDSDataLinkLayer {
     	}
 
     	const uint16_t preDataFieldLength = (Defs::TcPrimaryHeaderSize + securityHeaderLength +
-			channel.is_type<etl::reference_wrapper<MAPChannelSs>>()) ? Defs::TcSegmentHeaderSize : 0;
+			etl::holds_alternative<etl::reference_wrapper<MAPChannelSs>>(channel)) ? Defs::TcSegmentHeaderSize : 0;
 
     	// Fetch next frame
     	if (!channelMutex->tryLockFor(Defs::MutexDelayMs)) {
@@ -642,7 +643,7 @@ namespace CCSDSDataLinkLayer {
 
 		// PACKET (Space packet or Encapsulation packet)
 		switch (PacketExtractionType packetExtractionType = detectExtractionScenario(
-		channel.is_type<etl::reference_wrapper<MAPChannelSs>>(),
+		etl::holds_alternative<etl::reference_wrapper<MAPChannelSs>>(channel),
 			segmentedPacketConstructor,
 			frameTcPtr,
 			blockingAllowed,
@@ -708,7 +709,7 @@ namespace CCSDSDataLinkLayer {
 			}
 			case PacketExtractionType::INVALID_SCENARIO:
 				eraseFrame(mcChan, framesAfterSdlsProcessing, segmentedPacketConstructor);
-				if (channel.is_type<etl::reference_wrapper<MAPChannelSs>>()) {
+				if (etl::holds_alternative<etl::reference_wrapper<MAPChannelSs>>(channel)) {
 					segmentedPacketConstructor->segmentedPacketRejectionMode = true;
 				}
 				unlockMutexes();
