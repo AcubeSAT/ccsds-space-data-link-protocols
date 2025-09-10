@@ -1,0 +1,17 @@
+#include <cstdint>
+#include "etl/string.h"
+#include "etl/flat_map.h"
+#include "CcsdsDefinitions.hpp"
+
+namespace CCSDSDataLinkLayer::Generated {
+    inline constexpr uint8_t KeyCount = (0
+    #define AUTH_KEY(spi, key, keyLength) + 1
+    #include "@KEYS_CONFIG@"
+    );
+    #define AUTH_KEY(spi, key, keyLength)
+
+    inline etl::flat_map<Defs::Spi, etl::string<Defs::MaxAuthenticationKeyLength>, (KeyCount == 0) ? 1 : KeyCount> authenticationKeyMap = {
+        #define AUTH_KEY(spi, key, keyLength) {spi, key},
+        #include "@KEYS_CONFIG@"
+    };
+}

@@ -9,6 +9,7 @@ from conan.tools.files import get, chdir, mkdir
 class CCSDSDataLinkLayer(ConanFile):
     name = "ccsds-data-link-layer"
     version = "1.0"
+    # revision_mode = "scm"
 
     # Optional metadata
     license = "MIT"
@@ -24,6 +25,7 @@ class CCSDSDataLinkLayer(ConanFile):
         "fPIC": [True, False],
         "platform_definitions_path": ["ANY"],  # User specified directory for platform specific implementations (must be abs path)
         "channel_config" : ["ANY"],            # Channel configuration file (must be abs path)
+        "keys_config" : ["ANY"], # File with encryption keys for security associations (must be abs path)
         "frame_printing_functions" : ["ON", "OFF"] # Include those to have access to functions that print frame fields, at the expense of increased memory consumption
     }
     default_options = {
@@ -31,6 +33,7 @@ class CCSDSDataLinkLayer(ConanFile):
         "fPIC": False,
         "platform_definitions_path" : "",
         "channel_config" : "",
+        "keys_config" : "",
         "frame_printing_functions" : "OFF"
     }
 
@@ -55,6 +58,7 @@ class CCSDSDataLinkLayer(ConanFile):
         tc.cache_variables["BUILD_SPACE_SEGMENT"] = "ON"
         tc.cache_variables["BUILD_GROUND_SEGMENT"] = "ON"
         tc.cache_variables["CHANNEL_CONFIG"] = self.options.channel_config
+        tc.cache_variables["KEYS_CONFIG"] = self.options.keys_config
         tc.cache_variables["FRAME_PRINTING_FUNCTIONS"] = self.options.frame_printing_functions
 
         if self.settings.arch in ["x86", "x86_64"]:
@@ -82,7 +86,7 @@ class CCSDSDataLinkLayer(ConanFile):
              dst=os.path.join(dst_inc, "dataHandling"), keep_path=True)
 
         # ---- Copy headers that should not be normally used by the consumer under inc/internals ----
-        for internals_dir in ["CCSDSUtilities", "Channels", "COP1", "DataStructures", "NotificationAndLoggingUtilities", "Utilities"]:
+        for internals_dir in ["CCSDSUtilities", "Channels", "COP1", "DataStructures", "NotificationAndLoggingUtilities", "GeneratedObjects", "Utilities"]:
             copy(self, "*.h",   src=os.path.join(src_inc, internals_dir),
                  dst=os.path.join(dst_inc, "internals"), keep_path=True)
             copy(self, "*.hpp", src=os.path.join(src_inc, internals_dir),
@@ -94,8 +98,6 @@ class CCSDSDataLinkLayer(ConanFile):
         copy(self, "ChannelObjects.hpp",   src=src_inc,
              dst=os.path.join(dst_inc, "services"), keep_path=True)
 
-        copy(self, "ChannelGeneration.hpp",   src=src_inc,
-             dst=os.path.join(dst_inc, "internals"), keep_path=True)
         copy(self, "etl_profile.h",   src=src_inc,
              dst=os.path.join(dst_inc, "internals"), keep_path=True) # TODO fix this profile, works for x86 only
         copy(self, "SecurityAssociation.hpp",   src=src_inc,

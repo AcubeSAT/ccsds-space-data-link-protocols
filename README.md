@@ -56,12 +56,13 @@ def requirements(self):
         self.requires("ccsds-data-link-layer/1.0")
 ```
 
-It is necessary to add a path to a channel configuration file (must be named `CCSDSDataLink.def`). If none is
-provided, then a default configuration will be used (located under `inc/Platform`). If the project is not in x86,
-then a platform definitions directory path (of any name) must be provided, with countdown timer and mutex implementations. Look 
-under `inc/Platform/x86` for more details. All paths have to be absolute:
+It is necessary to add a path to a channel configuration file (must be named `CCSDSDataLink.def`), as well as a key configuration
+file, if SDLS is used (must be named 'CCSDSKeys.def'). If none is provided, then a default configuration will be used (located under `inc/Platform`).
+If the project is not in x86, then a platform definitions directory path (of any name) must be provided, with countdown
+timer and mutex implementations. Look under `inc/Platform/x86` for more details. All paths have to be absolute:
 ```python
 default_options = {"ccsds-data-link-layer/*:channel_config": os.path.abspath("path/to/CCSDSDataLink.def")
+                   "ccsds-data-link-layer/*:keys_config": os.path.abspath("path/to/CCSDSDataLink.def"),
                    "ccsds-data-link-layer/*:platform_definitions_path": os.path.abspath("path/to/platform")
                    "ccsds-data-link-layer/*:frame_printing_functions": "OFF"
                    }
@@ -80,8 +81,8 @@ target_link_libraries(TARGET_NAME PRIVATE ground_segment_lib) # for a spacecraft
 ```
 
 5. (Optional) For resource constrained systems the CRC and HMAC software implementations can be demanding, so they are
-    defined as weak for the user to replace them if need be. Look under `inc/Utilities` for the software implementations.  
-    Do not worry about those functions if there are no plans to use CRC or HMAC. 
+    defined as weak for the user to replace them if need be. Look under `inc/Utilities` for the software
+    implementations. Do not worry about those functions if there are no plans to use CRC or HMAC. 
 
 The user API for the library is contained under `inc/Services`. 
 

@@ -53,8 +53,6 @@ namespace CCSDSDataLinkLayer {
                     case (Defs::AuthenticationAlgorithm::HMAC_SHA256_40_BIT):
                         macFieldLength = 5; // 40 bits HMAC
 
-                        authenticationKey = AuthenticationKey;
-
                         // setup authentication mask (see p.4.2.2.6.2)
                         // mask  virtual channel id, security header, data field
                         authMaskTCLength = Defs::MaxTcTransferFrameLength;
@@ -160,11 +158,6 @@ namespace CCSDSDataLinkLayer {
         Defs::AuthenticationAlgorithm authenticationAlgorithm;
 
         /**
-         * @brief Container for given authentication key.
-         */
-        [[maybe_unused]] etl::string<Defs::MaxAuthenticationKeyLength> authenticationKey;
-
-        /**
          * @brief Container for holding calculated mac.
          */
         [[maybe_unused]] uint8_t mac[Defs::MaxMACLength];
@@ -208,8 +201,6 @@ namespace CCSDSDataLinkLayer {
          * @note The absence of a value indicates no encryption algorithm will be applied
          */
         Defs::EncryptionAlgorithm encryptionAlgorithm;
-
-        [[maybe_unused]] uint64_t encryptionKey;
 
         [[maybe_unused]] uint8_t initializationVector[Defs::MaxInitializationVectorLength];
         uint8_t initializationVectorLength;

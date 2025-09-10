@@ -1,6 +1,7 @@
 #include "SecurityAssociation.hpp"
 #include "TransferFrameTC.hpp"
 #include "HMAC.hpp"
+#include "ChannelObjects.hpp"
 
 namespace CCSDSDataLinkLayer {
     uint8_t SecurityAssociation::getSecurityHeaderLength() const {
@@ -72,7 +73,7 @@ namespace CCSDSDataLinkLayer {
                     // compute MAC
                     if (!computeHMAC(
                         etl::span{reinterpret_cast<const uint8_t*>(authenticationPayload), securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength},
-                        etl::span{reinterpret_cast<const uint8_t*>(authenticationKey.data()), authenticationKey.size()},
+                        etl::span{reinterpret_cast<const uint8_t*>(Generated::authenticationKeyMap.at(securityParameterIndex).data()), Generated::authenticationKeyMap.at(securityParameterIndex).size()},
                         mac)) {
                         return etl::unexpected(SDLSVerificationError::MAC_CALCULATION_ERROR);
                     }
@@ -130,7 +131,7 @@ namespace CCSDSDataLinkLayer {
                         return etl::unexpected(SDLSVerificationError::INVALID_SPI);
                     }
 
-                // apply authentication bitmask to get authentication payload
+                    // apply authentication bitmask to get authentication payload
                     const uint8_t securityHeaderLength = getSecurityHeaderLength();
                     for (uint16_t i = 0;
                          i < securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength; i++) {
@@ -140,7 +141,7 @@ namespace CCSDSDataLinkLayer {
                     // compute MAC
                     if (!computeHMAC(
                         etl::span{reinterpret_cast<const uint8_t*>(authenticationPayload), securityHeaderOffset + securityHeaderLength + transferFrameDataFieldLength},
-                        etl::span{reinterpret_cast<const uint8_t*>(authenticationKey.data()), authenticationKey.size()},
+                        etl::span{reinterpret_cast<const uint8_t*>(Generated::authenticationKeyMap.at(securityParameterIndex).data()), Generated::authenticationKeyMap.at(securityParameterIndex).size()},
                         mac)) {
                         return etl::unexpected(SDLSVerificationError::MAC_CALCULATION_ERROR);
                     }

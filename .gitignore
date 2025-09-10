@@ -5,7 +5,8 @@
 /docs/
 
 # Files generated from templates
-/inc/ChannelGeneration.hpp
+/inc/GeneratedObjects/ChannelGeneration.hpp
+/inc/GeneratedObjects/SecurityAssociationKeys.hpp
 
 # Dump and continuous integration files
 *.dump

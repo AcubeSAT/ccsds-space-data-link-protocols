@@ -25,7 +25,7 @@
 #include "TransferFrameTM.hpp"
 #include "MemoryPool.hpp"
 
-namespace CCSDSDataLinkLayer::GeneratedChannels {
+namespace CCSDSDataLinkLayer::Generated {
 // Initially define all macros as empty. Then selectively define some them to create different objects statically
 #define PHYSICAL_CHANNEL(physicalChannelName, pcid, tfvn, maxTcLength, tmLength, maxFramesPdu, maxPduLength, maximumBitRate, fecPresent)
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity)
@@ -501,4 +501,4 @@ namespace CCSDSDataLinkLayer::GeneratedChannels {
 
     inline MemoryPool<TotalTransferFrameTcSlots * Defs::MaxTcTransferFrameLength + TotalTransferFrameTmSlots * Defs::MaxTmTransferFrameLength,
     TotalTransferFrameTcSlots + TotalTransferFrameTmSlots> frameOctetPool;
-} // namespace CCSDSDataLinkLayer::GeneratedChannels
+} // namespace CCSDSDataLinkLayer::Generated

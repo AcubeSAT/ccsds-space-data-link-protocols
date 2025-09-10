@@ -2,7 +2,7 @@
 #include "AddressingAndParsingUtilities.hpp"
 
 namespace CCSDSDataLinkLayer::Objects {
-    using namespace GeneratedChannels;
+    using namespace Generated;
 
     bool initializeChannelContainers() {
         // TODO sanity checks for the user's configuration

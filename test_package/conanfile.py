@@ -5,7 +5,8 @@ import os
 
 class TestPackageConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    default_options = {"ccsds-data-link-layer/*:channel_config": os.path.abspath("CCSDSDataLink.def")}
+    default_options = {"ccsds-data-link-layer/*:channel_config": os.path.abspath("CCSDSDataLink.def"),
+                       "ccsds-data-link-layer/*:keys_config":    os.path.abspath("CCSDSKeys.def")}
 
     def requirements(self):
         # Use the package under test

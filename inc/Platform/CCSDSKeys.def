@@ -1,0 +1,14 @@
+// ====================================================================================================================
+// A security association requires keys in order to encrypt and/or authenticate frames. This is an example file that
+// shows how a user should define those keys. For the moment, only one type of key is supported: AUTH_KEY
+// ====================================================================================================================
+//
+// AUTH_KEY(spi, key, keyLength)
+//  - spi: Security parameter index. This is used to relate this key with a specific security association. Needs to be
+//         a positive value between 1 and 65536
+//  - key: A string, up to 64 bytes long
+//  - keyLength: The length of the key
+//
+// ====================================================================================================================
+
+AUTH_KEY(1, "fc5c789eedb1aa0abd5b9491d4b5506d", 32)

@@ -22,6 +22,7 @@ option(BUILD_x86            "Include x86 files" ON)
 option(FRAME_PRINTING_FUNCTIONS "Include functions that print frame fields" OFF)
 set(PLATFORM_DEFINITIONS_PATH "" CACHE PATH "Path for platform-specific implementations")
 set(CHANNEL_CONFIG            "" CACHE PATH "Path for channel configuration file")
+set(KEYS_CONFIG               "" CACHE PATH "Path for security association keys file")
 
 # ======================================== CI ========================================
 # TODO
@@ -78,6 +79,7 @@ set(COMMON_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/inc/DataStructures"
         "${CMAKE_CURRENT_SOURCE_DIR}/inc/NotificationAndLoggingUtilities"
         "${CMAKE_CURRENT_SOURCE_DIR}/inc/Services"
+        "${CMAKE_CURRENT_SOURCE_DIR}/inc/GeneratedObjects"
         "${CMAKE_CURRENT_SOURCE_DIR}/inc/Utilities")
 
 # Specify sources common for every target
@@ -102,11 +104,12 @@ else()
     file(GLOB_RECURSE PLATFORM_SOURCES "${PLATFORM_DEFINITIONS_PATH}/*.cpp")
 endif()
 
-# Channel configuration
+# Channel configuration and key files
 if(BUILD_UNIT_TESTS)
     # Use unit test channel config
-    message("Using unit testing channel configuration")
+    message("Using unit testing channel and key configurations")
     set(CHANNEL_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/test/CCSDSDataLink.def)
+    set(KEYS_CONFIG    ${CMAKE_CURRENT_SOURCE_DIR}/test/CCSDSKeys.def)
 else()
     if("${CHANNEL_CONFIG}" STREQUAL "")
         # User did not provide a channel configuration, fallback to a default one
@@ -120,6 +123,19 @@ else()
             message(FATAL_ERROR "Provided channel configuration is invalid: ${CHANNEL_CONFIG}")
         endif()
     endif()
+
+    if("${KEYS_CONFIG}" STREQUAL "")
+        # User did not provide keys configuration, fallback to a default one
+        message("Using default keys")
+        set(KEYS_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/inc/Platform/CCSDSKeys.def)
+    else()
+        # Check if user provided keys config is valid
+        if(KEYS_CONFIG MATCHES "CCSDSKeys\\.def$")
+            message("Using provided keys configuration: ${KEYS_CONFIG}")
+        else()
+            message(FATAL_ERROR "Provided keys configuration is invalid: ${KEYS_CONFIG}")
+        endif()
+    endif()
 endif()
 
 # ======================================== Build targets ========================================
@@ -128,10 +144,17 @@ endif()
 function(common_actions target)
     # depending on the CHANNEL_CONFIG provided, create the ChannelGeneration header
     configure_file(
-            ${CMAKE_CURRENT_SOURCE_DIR}/inc/ChannelGeneration.hpp.in
-            ${CMAKE_CURRENT_SOURCE_DIR}/inc/ChannelGeneration.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc/GeneratedObjects/ChannelGeneration.hpp.in
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc/GeneratedObjects/ChannelGeneration.hpp
             @ONLY
     )
+
+    configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc/GeneratedObjects/SecurityAssociationKeys.hpp.in
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc/GeneratedObjects/SecurityAssociationKeys.hpp
+            @ONLY
+    )
+
     target_link_libraries(${target} PUBLIC etl::etl tinycrypt log_common)
     target_include_directories(${target} PUBLIC ${COMMON_INCLUDE_DIRS} ${PLATFORM_INCLUDE_DIRS})
     target_sources(${target} PRIVATE ${COMMON_SOURCES} ${PLATFORM_SOURCES})

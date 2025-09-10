@@ -9,17 +9,18 @@
 
 #pragma once
 #include "ChannelGeneration.hpp"
+#include "SecurityAssociationKeys.hpp"
 
 namespace CCSDSDataLinkLayer::Objects {
     /**
      * Use those enumerations to access any channel by their name
      */
-    using GeneratedChannels::PhysicalChannelName;
-    using GeneratedChannels::MasterChannelTmName;
-    using GeneratedChannels::MasterChannelTcName;
-    using GeneratedChannels::VirtualChannelTmName;
-    using GeneratedChannels::VirtualChannelTcName;
-    using GeneratedChannels::MapChannelName;
+    using Generated::PhysicalChannelName;
+    using Generated::MasterChannelTmName;
+    using Generated::MasterChannelTcName;
+    using Generated::VirtualChannelTmName;
+    using Generated::VirtualChannelTcName;
+    using Generated::MapChannelName;
 
     /**
      * By casting the value of the above enums to:
@@ -29,30 +30,35 @@ namespace CCSDSDataLinkLayer::Objects {
      * and using it as a key for the maps below, every channel, farm, fop and security association
      * instance can be accessed.
      */
-    inline auto& physicalChannelMap = GeneratedChannels::physicalChannelMap;
+    inline auto& physicalChannelMap = Generated::physicalChannelMap;
 
     #ifdef INCLUDE_SPACE_SEGMENT_CODE
-    inline auto& masterChannelSsTmMap = GeneratedChannels::masterChannelSsTmMap;
-    inline auto& masterChannelSsTcMap = GeneratedChannels::masterChannelSsTcMap;
-    inline auto& virtualChannelSsTmMap = GeneratedChannels::virtualChannelSsTmMap;
-    inline auto& virtualChannelSsTcMap = GeneratedChannels::virtualChannelSsTcMap;
-    inline auto& mapChannelSsMap = GeneratedChannels::mapChannelSsMap;
-    inline auto& farmMap = GeneratedChannels::farmMap;
-    inline auto& saSpaceSegmentMap = GeneratedChannels::saSpaceSegmentMap;
+    inline auto& masterChannelSsTmMap = Generated::masterChannelSsTmMap;
+    inline auto& masterChannelSsTcMap = Generated::masterChannelSsTcMap;
+    inline auto& virtualChannelSsTmMap = Generated::virtualChannelSsTmMap;
+    inline auto& virtualChannelSsTcMap = Generated::virtualChannelSsTcMap;
+    inline auto& mapChannelSsMap = Generated::mapChannelSsMap;
+    inline auto& farmMap = Generated::farmMap;
+    inline auto& saSpaceSegmentMap = Generated::saSpaceSegmentMap;
     #endif
 
     #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    inline auto& masterChannelGsTcMap = GeneratedChannels::masterChannelGsTcMap;
-    inline auto& virtualChannelGsTcMap = GeneratedChannels::virtualChannelGsTcMap;
-    inline auto& mapChannelGsMap = GeneratedChannels::mapChannelGsMap;
-    inline auto& fopMap = GeneratedChannels::fopMap;
-    inline auto& saGroundSegmentMap = GeneratedChannels::saGroundSegmentMap;
+    inline auto& masterChannelGsTcMap = Generated::masterChannelGsTcMap;
+    inline auto& virtualChannelGsTcMap = Generated::virtualChannelGsTcMap;
+    inline auto& mapChannelGsMap = Generated::mapChannelGsMap;
+    inline auto& fopMap = Generated::fopMap;
+    inline auto& saGroundSegmentMap = Generated::saGroundSegmentMap;
     #endif
 
     /**
      * Octets of TM and TC are stored here
      */
-    inline auto& frameOctetPool = GeneratedChannels::frameOctetPool;
+    inline auto& frameOctetPool = Generated::frameOctetPool;
+
+    /**
+     * Authentication keys for security associations
+     */
+    inline auto& authenticationKeyMap = Generated::authenticationKeyMap;
 
     /**
      * @brief Allocate memory blocks for the channel containers
