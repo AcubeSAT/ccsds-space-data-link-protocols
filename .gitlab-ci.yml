@@ -15,13 +15,14 @@ check-build:
     GCC_COLORS: "error=31;1:warning=35;1:note=36;1:range1=32:range2=34:locus=39;1:quote=39;1:fixit-insert=32:fixit-delete=31:diff-filename=39;1:diff-hunk=32:diff-delete=31:diff-insert=32:type-diff=32;1"
     CLICOLOR_FORCE: 1 # Necessary for cmake to output colours
   script:
-    - mkdir build
-    - cd build
-    - cmake .. -DCMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -fdiagnostics-color=always"
-    - make -j$(nproc)
+    - conan profile detect --force
+    - conan remote add conan https://artifactory.spacedot.gr/artifactory/api/conan/conan
+    - conan install . --build=missing -s build_type=Release
+    - cmake -B build/Release -S . -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
+    - cmake --build build/Release
 
 cppcheck:
-  image: spacedot/cppcheck:2.5
+  image: spacedot/cppcheck:2.8
   stage: analyze
   before_script:
     - cppcheck --version
@@ -37,7 +38,7 @@ cppcheck:
     - mkdir cppcheck-html-report
     - cppcheck-htmlreport --source-dir=. --title=html-report --file=report.xml --report-dir=cppcheck-html-report
   artifacts:
-    when: on_failure
+    when: always
     paths:
       - ./cppcheck-html-report
 
@@ -46,8 +47,12 @@ clang-tidy:
   stage: analyze
   script:
     - cd $CI_PROJECT_DIR
-    - cmake -B ./build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-    - clang-tidy -p $CI_PROJECT_DIR/build/compile_commands.json --checks=* `find $CI_PROJECT_DIR/src -type f -regextype posix-egrep -regex '.*\.(cpp|hpp|c|h)'` >> clang-tidy-output.log
+    - conan profile detect --force
+    - conan remote add conan https://artifactory.spacedot.gr/artifactory/api/conan/conan
+    - conan install . --build=missing -s build_type=Release
+    - cmake -B build/Release -S . -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
+    - cmake --build build/Release
+    - clang-tidy -p $CI_PROJECT_DIR/build/Release --checks=* `find $CI_PROJECT_DIR/src -type f -regextype posix-egrep -regex '.*\.(cpp|hpp|c|h)'` >> clang-tidy-output.log
   after_script:
     - mkdir clang-tidy-html-report
     - clang-tidy-html clang-tidy-output.log
@@ -57,14 +62,17 @@ clang-tidy:
       - ./clang-tidy-html-report
 
 clang-analyzer:
-  image: spacedot/clang-tools:13.0.0-html-1.3.7
+  image: spacedot/clang-tools:13.0.0-html-1.4.1
   stage: analyze
   before_script:
     - mkdir scan-build-html-report
   script:
-    - cd $CI_PROJECT_DIR/scan-build-html-report
-    - scan-build cmake ../ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-    - scan-build -o ./scan-build-html-report make
+    - cd $CI_PROJECT_DIR
+    - conan profile detect --force
+    - conan remote add conan https://artifactory.spacedot.gr/artifactory/api/conan/conan
+    - conan install . --build=missing -s build_type=Release
+    - scan-build -o ./scan-build-html-report cmake -B build/Release -S . -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
+    - scan-build -o ./scan-build-html-report cmake --build build/Release
   artifacts:
     paths:
       - ./scan-build-html-report
@@ -79,52 +87,70 @@ doxygen:
     paths:
       - ./docs
 
-ikos:
-  image: spacedot/ikos:3.0
-  stage: analyze
-  before_script:
-    - mkdir ikos-report
-  script:
-    - cd $CI_PROJECT_DIR/ikos-report
-    - ikos-scan cmake ..
-    - ikos-scan make
-    - ikos-report -o=ikos-report.txt ccsds_data_link_layer.db
-  artifacts:
-    paths:
-      - ./ikos-report
 tests:
-  image: spacedot/coverage:gcovr-5.0-lcov-1.15
+  image: spacedot/coverage:gcovr-6.0-lcov-1.15.5a0
   stage: test
   when: always
   before_script:
     - mkdir gcovr
   script:
     - cd $CI_PROJECT_DIR
-    - mkdir build
-    - cd build
-    - cmake .. -DCMAKE_CXX_FLAGS="-g -O0 --coverage" && make ccsds_data_link_catch2_unit_tests -j$(nproc)
+    - conan profile detect --force
+    - conan remote add conan https://artifactory.spacedot.gr/artifactory/api/conan/conan
+    - conan install . --build=missing -s build_type=Debug
+    - cmake -B build/Debug -S . -DCMAKE_CXX_FLAGS="-g -O0 --coverage" -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
+    - cmake --build build/Debug
     - lcov -q --capture --initial --directory . -o coverage_base
-    - ./tests --colour-mode ansi
+    - ./build/Debug/catch2_unit_testing --colour-mode ansi
     - lcov -q --capture --directory . -o coverage_tests
     - lcov -q -a coverage_base -a coverage_tests -o coverage_total_unfiltered
     - lcov -q --remove coverage_total_unfiltered "${PWD}/lib/*" "${PWD}/CMakeFiles/*" "${PWD}/test/*" "${PWD}/src/main.cpp" -o coverage_total_filtered
-    - gcovr -s -p -e "^.*(test|lib|main.cpp|CMakeFiles)" --html --html-details --html-title "Code coverage ${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}" -o ../gcovr/gcovr.html
+    - gcovr -s -p -e "^.*(test|lib|main.cpp|CMakeFiles)" --html --html-details --html-title "Code coverage ${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}" -o ./gcovr/gcovr.html
     - gcovr -e "^.*(test|lib|main.cpp|CMakeFiles)"
-    - genhtml --demangle-cpp -t "${CI_COMMIT_REF_NAME}" --html-epilog ../ci/page_style/epilog.html -o ../gcovr coverage_total_filtered
+    - genhtml --demangle-cpp -t "${CI_COMMIT_REF_NAME}" --html-epilog ../ci/page_style/epilog.html -o ./gcovr coverage_total_filtered
   artifacts:
     paths:
       - ./gcovr
+
 pages:
-  image: spacedot/build-base:latest # TODO: Latest tag is temporary
+  image: spacedot/build-base:latest
   stage: deploy
+  needs:
+    - job: doxygen
+      artifacts: true
+    - job: cppcheck
+      artifacts: true
+    - job: clang-tidy
+      artifacts: true
+    - job: clang-analyzer
+      artifacts: true
+    - job: tests
+      artifacts: true
   script:
     - mkdir .public
-    - cp -r ./{docs,gcovr,ikos-report,scan-build-html-report,clang-tidy-html-report,cppcheck-html-report} ./.public/
+    - cp -r ./docs/html ./.public/docs
+    - cp -r ./{gcovr,scan-build-html-report,clang-tidy-html-report,cppcheck-html-report} ./.public/
     - ls ./.public
     - find ./.public
     - mv .public public
+  after_script:
+    - "echo Artifacts for this build: ${CI_JOB_URL}/artifacts/browse"
+    - "echo Base page for this branch: ${CI_PAGES_URL}"
   artifacts:
+    expose_as: 'build artifacts and documentation'
     paths:
-      - public # Upload the resulting website
-      #  only:
-      #    - branches # Deploy on all branches
+      - public
+
+conan-deploy:
+  image: spacedot/build-base
+  stage: deploy
+  script:
+    - conan profile detect --force
+    - cp conan-profile /root/.conan2/profiles/
+    - conan remote add conan https://artifactory.spacedot.gr/artifactory/api/conan/conan
+    - conan remote login -p $CONAN_PASSWORD conan $CONAN_USER
+    - conan create . --build=missing -pr conan-profile
+    - PACKAGE_VERSION=$(grep -E "^\s*version\s*=" conanfile.py | sed -E 's/.*version\s*=\s*["\x27]([^"\x27]+)["\x27].*/\1/')
+    - conan upload ccsds-data-link-layer/${PACKAGE_VERSION} -r conan
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
