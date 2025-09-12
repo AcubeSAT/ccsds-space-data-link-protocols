@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "ExternalContainers.hpp"
 #include "TransferFrameTC.hpp"
+#include "TransferFrameTM.hpp"
 #include "Mutex.hpp"
 
 namespace CCSDSDataLinkLayer {
@@ -87,6 +88,7 @@ namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class VirtualChannelSsTm : public VirtualChannelBase {
         friend class SpaceSegmentTmDataHandling;
+        friend class SpaceSegmentTmServices;
     public:
         explicit VirtualChannelSsTm(const Defs::Vcid vcid, const Defs::Scid parentScid, const uint8_t vcRepetitions,
                                      const bool secondaryHeaderPresent, const uint8_t secondaryHeaderLength,
@@ -101,9 +103,13 @@ namespace CCSDSDataLinkLayer {
               synchronization(synchronization), virtualChannelFrameCount(0), packetCapacity(packetCapacity) {}
 
         void initializeContainers(const etl::span<uint16_t> &packetLengthsBuff,
-                                  const etl::span<uint8_t> &packetOctetsBuff) {
+                                  const etl::span<uint8_t> &packetOctetsBuff,
+                                  const etl::span<uint8_t> &secondaryHeaderDataFieldOctetsBuff,
+                                  const etl::span<TransferFrameTM*> framesBeforeSecondaryHeaderPlacementBuff) {
             packetLengths = Dequeue(packetLengthsBuff);
             packetOctets = Dequeue(packetOctetsBuff);
+            framesBeforeSecondaryHeaderPlacement = Queue(framesBeforeSecondaryHeaderPlacementBuff);
+            secondaryHeaderDataFieldOctets = Queue(secondaryHeaderDataFieldOctetsBuff);
         }
 
         [[nodiscard]] uint16_t getPacketCapacity() const {
@@ -195,6 +201,16 @@ namespace CCSDSDataLinkLayer {
          *        by the vc generation data handling function
          */
         Dequeue<uint8_t> packetOctets;
+
+        /**
+         * @brief Queue that stores octets will eventually be appended to TM secondary header
+         */
+        Queue<uint8_t> secondaryHeaderDataFieldOctets;
+
+        /**
+         * @brief Buffer that holds pointers to TM frames already processed by the vc generation data handling function
+         */
+        Queue<TransferFrameTM*> framesBeforeSecondaryHeaderPlacement;
 
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:

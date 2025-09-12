@@ -20,6 +20,7 @@ namespace CCSDSDataLinkLayer {
         TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const Defs::Vcid vcid, const Defs::Scid scid,
                         const bool operationalControlFieldPresent,
                         const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
+                        const uint8_t transferFrameSecondaryHeaderLength,
                         const Defs::SynchronizationFlag syncFlag, const bool packetOrder,
                         const uint8_t segmentLengthIdentifier,
                         const uint16_t firstHeaderPointer, const bool eccFieldPresent,
@@ -43,6 +44,12 @@ namespace CCSDSDataLinkLayer {
                            ((segmentLengthIdentifier & 0x3) << 3U) |
                            static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8U);
             frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
+
+            if (transferFrameSecondaryHeaderPresent) {
+                // Note: The secondary header length must store the actual length, reduced my one
+                frameData[6] = (static_cast<uint8_t>(Defs::SecondaryHeaderVersionNumber::VERSION_1) << 6U) |
+                    (transferFrameSecondaryHeaderLength - Defs::TmSecondaryHeaderIdLength);
+            }
         }
 
         /**
@@ -51,6 +58,7 @@ namespace CCSDSDataLinkLayer {
         TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const Defs::Vcid vcid, const Defs::Scid scid,
                         const uint32_t operationalControlField,
                         const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
+                        const uint8_t transferFrameSecondaryHeaderLength,
                         Defs::SynchronizationFlag syncFlag, const bool packetOrder,
                         const uint8_t segmentationLengthId,
                         const uint16_t firstHeaderPointer, const bool eccFieldExists,
@@ -73,6 +81,13 @@ namespace CCSDSDataLinkLayer {
                            ((segmentationLengthId & 0x3) << 3U) |
                            static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8U);
             frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
+
+            if (transferFrameSecondaryHeaderPresent) {
+                // Note: The secondary header length must store the actual length, reduced my one
+                frameData[6] = (static_cast<uint8_t>(Defs::SecondaryHeaderVersionNumber::VERSION_1) << 6U) |
+                    (transferFrameSecondaryHeaderLength - Defs::TmSecondaryHeaderIdLength);
+            }
+
             uint8_t *ocfPointer = frameData + transferFrameLength -
                                   Defs::TmOperationalControlFieldSize
                                   - Defs::ErrorControlFieldSize * eccFieldExists;
@@ -201,6 +216,27 @@ namespace CCSDSDataLinkLayer {
             return ((static_cast<uint16_t>(((transferFrameData[4]) & 0x07)) << 8U) |
                     (static_cast<uint16_t>((transferFrameData[5]))));
         }
+
+        /**
+         * @brief The version of the secondary header. Currently, only version 1 '00' is supported.
+         * @details Bits 0-1 of the Transfer Frame Secondary Header
+         * @see p. 4.1.3.2.2 from TM SPACE DATA LINK PROTOCOL
+         */
+        [[nodiscard]] Defs::SecondaryHeaderVersionNumber getSecondaryHeaderVersionNumber() const {
+            return static_cast<Defs::SecondaryHeaderVersionNumber>(transferFrameData[Defs::TmPrimaryHeaderSize] >> 6U);
+        }
+
+        /**
+         * @details Bits 2-7 of the Transfer Frame Secondary Header
+         * @see p. 4.1.3.2.3 from TM SPACE DATA LINK PROTOCOL
+         * @note The returned result is incremented by one, since this field actually contains the length of the secondary
+         *       header, minus one.
+         */
+        [[nodiscard]] uint8_t getSecondaryHeaderLength() const {
+            return (transferFrameData[Defs::TmPrimaryHeaderSize] & 0x3F) + Defs::TmSecondaryHeaderIdLength;
+        }
+
+        [[nodiscard]] uint16_t getFirstEmptyOctet() const {}
 
         /**
          * @details Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)

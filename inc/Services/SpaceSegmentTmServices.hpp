@@ -7,6 +7,7 @@
  *      - Virtual Channel Packet Service (VCP)
  *      - Virtual Channel Access Service (VCA)
  *      - Operational Control Field Service (Hybrid of MC_OCF, VC_OCF for more flexibility, see below)
+ *      - Virtual Channel Frame Secondary Header Service (VC_FSH)
  */
 
 #pragma once
@@ -85,6 +86,20 @@ namespace CCSDSDataLinkLayer {
         static etl::expected<void, ServiceChannelNotification> virtualChannelOperationalControlFieldServiceRequest(
             Objects::PhysicalChannelName physicalChannelName,
             uint32_t ocfSdu);
+
+        /**
+         * @details The Virtual Channel Frame Secondary Header (VC_FSH) Service provides synchronous
+         *          transfer of fixed-length data units in the Transfer Frame Secondary Header (FSH) of Transfer
+         *          Frames of a Virtual Channel
+         *
+         * @param vcChanName Virtual Channel Name, as defined in CCSDSDataLink.def
+         * @param fshSdu A frame secondary header service data unit. The length must match the one defined in
+         *               CCSDSDataLink.def for the respective virtual channel.
+         * @return
+         */
+        static etl::expected<void, ServiceChannelNotification> virtualChannelFrameSecondaryHeaderServiceRequest(
+            Objects::VirtualChannelTmName vcChanName,
+            etl::span<uint8_t> fshSdu);
 
         /**
          * @brief A pipeline of data handling functions that insert packets to frames and process them. Notifications

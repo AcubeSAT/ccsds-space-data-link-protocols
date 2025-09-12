@@ -81,7 +81,7 @@ namespace CCSDSDataLinkLayer {
             const etl::span<TransferFrameTM>& frameMasterCopiesBuff,
             const etl::span<uint32_t>& frameMasterCopiesIndicesBuff,
             const etl::span<uint32_t>& ocfSduQueueBuff) {
-            framesAfterVcGeneration = Queue(framesAfterVcGenerationBuff);
+            framesAfterSecondaryHeaderPlacement = Queue(framesAfterVcGenerationBuff);
             framesAfterMcGeneration = Queue(framesAfterMcGenerationBuff);
             waitingBuffer = CircularBuffer(waitingBufferBuff);
             frameMasterCopies = UnorderedPool(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
@@ -111,9 +111,10 @@ namespace CCSDSDataLinkLayer {
         uint8_t masterChannelFrameCount;
 
         /**
-         * @brief Buffer that holds pointers to TM frames already processed by the vc generation data handling function
+         * @brief Buffer that holds pointers to TM frames already processed by the vc generation and the secondary header
+         *        placement data handling function
          */
-        Queue<TransferFrameTM*> framesAfterVcGeneration;
+        Queue<TransferFrameTM*> framesAfterSecondaryHeaderPlacement;
 
         /**
          * @brief Buffer that holds pointers to TM frames already processed by the mc generation data handling function
@@ -145,7 +146,7 @@ namespace CCSDSDataLinkLayer {
 #ifdef ENABLE_CHANNEL_QUEUE_ACCESS
     public:
         Queue<TransferFrameTM*>& getFramesAfterVcGeneration()  {
-            return framesAfterVcGeneration;
+            return framesAfterSecondaryHeaderPlacement;
         }
 
         Queue<TransferFrameTM*>& getFramesAfterMcGeneration()  {

@@ -75,6 +75,8 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::CURRENTLY_CONSTRUCTING_SEGMENTED_PACKET);
         INSERT_ELEMENT(ServiceChannelNotification::PACKET_TOO_LONG);
         INSERT_ELEMENT(ServiceChannelNotification::NO_CLCW_AVAILABLE);
+        INSERT_ELEMENT(ServiceChannelNotification::NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE);
+        INSERT_ELEMENT(ServiceChannelNotification::FSH_SDU_QUEUE_FULL);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];

@@ -442,6 +442,13 @@ namespace CCSDSDataLinkLayer::Generated {
     );
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity)
 
+// Calculate total capacity for secondary header octets (sum of queue capacity * {length of secondary header-1}, for all ss tm channels)
+    inline constexpr uint16_t TotalSecondaryHeaderOctetCapacity = (0
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity) + (secondaryHeaderLength - Defs::TmSecondaryHeaderIdLength)
+#include "@CHANNEL_CONFIG@"
+    ) * Defs::SecondaryHeaderFieldCapacity * IncludeSpaceCode;
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity)
+
 #undef PHYSICAL_CHANNEL
 #undef MASTER_CHANNEL_TM
 #undef MASTER_CHANNEL_TC
@@ -479,23 +486,23 @@ namespace CCSDSDataLinkLayer::Generated {
     inline constexpr uint16_t TotalTransferFrameTmSlots = IncludeSpaceCode *
         TotalVirtualChannelTmFrameCapacity;
 
-    // VirtualChannelSsTm: No queues
+    // VirtualChannelSsTm: 1 queue
     // MasterChannelSsTm: 2 queues, 1 circular buffer
     // VirtualChannelGsTm: Unimplemented
     // MasterChannelGsTm: Unimplemented
     inline constexpr uint16_t TotalTransferFrameTmPtrSlots = IncludeSpaceCode *
-        3 * TotalVirtualChannelTmFrameCapacity;
+        4 * TotalVirtualChannelTmFrameCapacity;
 
     inline constexpr uint16_t TotalTypeAdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeAdCapacity + TotalMapChannelTypeAdPacketCapacity);
     inline constexpr uint16_t TotalTypeBdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeBdCapacity + TotalMapChannelTypeBdPacketCapacity);
-    inline constexpr uint16_t TotalTmPacketSlots = TotalTmPacketCapacity;
+    inline constexpr uint16_t TotalTmPacketSlots = TotalTmPacketCapacity; // We add the secondary header octets here as well
 
     inline TransferFrameTC transferFrameTcArray[TotalTransferFrameTcSlots];
     inline TransferFrameTC* transferFrameTcPtrArray[TotalTransferFrameTcPtrSlots];
     inline TransferFrameTM transferFrameTmArray[TotalTransferFrameTmSlots];
     inline TransferFrameTM* transferFrameTmPtrArray[TotalTransferFrameTmPtrSlots];
     inline uint16_t packetLengthsArray[TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots];
-    inline uint8_t packetOctetsArray[(TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots) * Defs::MaxExpectedSpacePacketSize];
+    inline uint8_t packetOctetsArray[(TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots) * Defs::MaxExpectedSpacePacketSize + TotalSecondaryHeaderOctetCapacity]; // also holds the memory of secondary header octets
     inline uint32_t indicesArray[TotalTransferFrameTcSlots + TotalTransferFrameTmSlots
         + TotalOcfSduCapacity]; // also holds the memory of the ocfSdu queue in masterChannelSsTm
 

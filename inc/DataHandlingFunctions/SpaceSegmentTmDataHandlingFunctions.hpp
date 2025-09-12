@@ -120,13 +120,27 @@ namespace CCSDSDataLinkLayer {
 		 *          pseudorandom noise.
 		 *
 		 * @details OID frames are offered as a way to keep a constant frame rate, in the absence of frames that carry
-		 *          actual information. If generated in a virtual channel with an operational control field, it can also
-		 *          ensure that the CLCW flow is not interrupted
+		 *          actual information. If generated in a virtual channel with an operational control field and/or secondary header,
+		 *          it can also ensure that the ocf sdu and/or secondary header data field flow is not interrupted
 		 */
 		static etl::expected<void, ServiceChannelNotification> generateOidFrame(
 			const PhysicalChannel &phyChan,
 			MasterChannelSsTm& mcChan,
 			VirtualChannelSsTm& vcChan);
+
+		/**
+		 * @brief Add a secondary header data field to a frame. If the secondary header field is not present for this
+		 *        virtual channel, then the frame is simply passed to the next stage
+		 *
+		 * @note If this function attempts to process frames with a secondary header field, but it cannot
+		 *       find any secondary header data field in the queue of the respective virtual channel,
+		 *       then the operation will be aborted (@see p. 4.1.3.1.5 from TM SPACE DATA LINK PROTOCOL).
+		 *       This means that if the secondary header data field rate is low or non existent, a congestion will be
+		 *       created in this virtual channel.
+		 */
+		static etl::expected<void, ServiceChannelNotification> appendSecondaryHeaderDataField(
+			VirtualChannelSsTm &vcChan,
+			MasterChannelSsTm &mcChan);
 
 		/**
 		 * @brief The Master Channel Generation Service shall be used to insert Transfer Frame

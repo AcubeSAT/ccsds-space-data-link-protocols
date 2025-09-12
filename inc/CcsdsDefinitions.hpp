@@ -91,6 +91,16 @@ namespace CCSDSDataLinkLayer::Defs {
     };
 
     /**
+     * @brief The version of the TM frame secondary header. Currently, only one version is defined
+     */
+    enum class SecondaryHeaderVersionNumber : uint8_t {
+        VERSION_1 = 0x0,
+        RESERVED_1 = 0x1,
+        RESERVED_2 = 0x2,
+        RESERVED_3 = 0x3,
+    };
+
+    /**
      * @}
      */
 
@@ -133,6 +143,7 @@ namespace CCSDSDataLinkLayer::Defs {
     inline constexpr uint8_t ErrorControlFieldSize = 2;
 
     inline constexpr uint8_t TmPrimaryHeaderSize = 6;
+    inline constexpr uint8_t TmSecondaryHeaderIdLength = 1;
     inline constexpr uint8_t TmOperationalControlFieldSize = 4;
     inline constexpr uint16_t TmOIDFrameFirstHeaderPointer = 0x7FE;
     inline constexpr uint16_t TmNoPacketStartFirstHeaderPointerVal = 0x7FF;
@@ -172,6 +183,11 @@ namespace CCSDSDataLinkLayer::Defs {
      * Maximum TM transfer frame length.
      */
     inline constexpr uint16_t MaxTmTransferFrameLength = 1024;
+
+    /**
+     * How many secondary header fields an ss tm virtual channel can store
+     */
+    inline constexpr uint16_t SecondaryHeaderFieldCapacity = 5;
 
     /**
      * @}

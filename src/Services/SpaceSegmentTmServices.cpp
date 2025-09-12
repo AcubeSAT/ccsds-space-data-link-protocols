@@ -69,6 +69,40 @@ namespace CCSDSDataLinkLayer {
         return {};
     }
 
+    etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::virtualChannelFrameSecondaryHeaderServiceRequest(
+    Objects::VirtualChannelTmName vcChanName,
+    etl::span<uint8_t> fshSdu) {
+        const Defs::VcidScidKey key = static_cast<Defs::VcidScidKey>(vcChanName);
+        const auto it = Objects::virtualChannelSsTmMap.find(key);
+        if (it == Objects::virtualChannelSsTmMap.end()) {
+            return etl::unexpected(ServiceChannelNotification::INVALID_CHANNEL_NAME);
+        }
+        VirtualChannelSsTm &vcChan = it->second;
+
+        if (!vcChan.getSecondaryHeaderPresent()) {
+            return etl::unexpected(ServiceChannelNotification::UNSUPPORTED_SERVICE);
+        }
+
+        uint8_t fshSduLength = fshSdu.size();
+        if (fshSduLength != vcChan.getSecondaryHeaderLength() - Defs::TmSecondaryHeaderIdLength) {
+            return etl::unexpected(ServiceChannelNotification::INVALID_LENGTH);
+        }
+
+        if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
+            return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+        }
+
+        if (vcChan.secondaryHeaderDataFieldOctets.remainingCapacity() < fshSduLength) {
+            return etl::unexpected(ServiceChannelNotification::FSH_SDU_QUEUE_FULL);
+        }
+
+        uint8_t* fshSdu_data = fshSdu.data();
+        for (uint8_t i = 0; i < fshSduLength; i++) {
+            vcChan.secondaryHeaderDataFieldOctets.push(fshSdu_data[i]);
+        }
+        return {};
+    }
+
     etl::expected<void, ServiceChannelNotification> SpaceSegmentTmServices::spaceSegmentTmProcessing(
             Objects::PhysicalChannelName physicalChannelName) {
         //TODO maybe notify the user if many consecutive congestions occur
@@ -110,6 +144,15 @@ namespace CCSDSDataLinkLayer {
                         }
                     }
                 }
+
+                // Possible return notifications and actions
+                // FAILED_TO_LOCK_MUTEX -> return to notify user
+                // FRAME_QUEUE_EMPTY -> this should not be possible to occur, since at least an OID frame was generated from above
+                // FRAME_QUEUE_FULL -> there is congestion in the channel, no action to be taken
+                // NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE -> No action to be taken
+                do {
+                   status = SpaceSegmentTmDataHandling::appendSecondaryHeaderDataField(pair.second, mcChan);
+                } while (status.has_value());
             }
         }
 

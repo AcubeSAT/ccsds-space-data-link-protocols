@@ -60,6 +60,8 @@ namespace CCSDSDataLinkLayer {
         CURRENTLY_CONSTRUCTING_SEGMENTED_PACKET = 0x27,
         PACKET_TOO_LONG = 0x28,
         NO_CLCW_AVAILABLE = 0x29,
+        NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE = 0x2A,
+        FSH_SDU_QUEUE_FULL = 0x2B,
     };
 
     enum class MapChannelAlert : uint8_t {
