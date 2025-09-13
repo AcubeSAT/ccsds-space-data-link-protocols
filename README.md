@@ -82,7 +82,8 @@ target_link_libraries(TARGET_NAME PRIVATE ground_segment_lib) # for a spacecraft
 
 5. (Optional) For resource constrained systems the CRC and HMAC software implementations can be demanding, so they are
     defined as weak for the user to replace them if need be. Look under `inc/Utilities` for the software
-    implementations. Do not worry about those functions if there are no plans to use CRC or HMAC. 
+    implementations. Do not worry about those functions if there are no plans to use CRC or HMAC. The Idle data generator
+    is also defined as weak.
 
 The user API for the library is contained under `inc/Services`. 
 

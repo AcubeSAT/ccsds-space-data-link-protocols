@@ -1,5 +1,6 @@
 #include "SpaceSegmentTmDataHandlingFunctions.hpp"
 #include "AddressingAndParsingUtilities.hpp"
+#include "OID_GENERATOR.hpp"
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -352,7 +353,7 @@ namespace CCSDSDataLinkLayer {
 
         // Data field (idle data)
         for (uint16_t i = 0; i < idlePacketDataFieldLength; i++) {
-            tmpData[i + Defs::SpacePacketPrimaryHeaderLength] = Defs::idle_data[i];
+            tmpData[i + Defs::SpacePacketPrimaryHeaderLength] = getNextOidByte();
         }
 
         if (vcChan.packetLengths.isFull() ||
@@ -543,7 +544,7 @@ namespace CCSDSDataLinkLayer {
         uint8_t* frameData = Objects::frameOctetPool.allocateBlock(frameLength, nullptr);
 
     	for (uint16_t i = 0; i < transferFrameDataFieldLength; i++) {
-    		frameData[i + Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength()] = Defs::idle_data[i];
+    		frameData[i + Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength()] = getNextOidByte();
     	}
 
         TransferFrameTM* oidFramePtr = mcChan.frameMasterCopies.push(TransferFrameTM(frameData,
