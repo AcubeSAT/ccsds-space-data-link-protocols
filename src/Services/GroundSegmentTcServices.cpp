@@ -315,7 +315,7 @@ namespace CCSDSDataLinkLayer {
             }
 
             for (auto& pair : Objects::fopMap) {
-                if (pair.second.vcChan.getVcid() != clcwObj.getVcId()) {
+                if (pair.second.getVcid() != clcwObj.getVcId()) {
                     continue;
                 }
 

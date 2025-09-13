@@ -145,7 +145,7 @@ namespace CCSDSDataLinkLayer {
     	// If this virtual channel does not have cop-1 active, then type BC frames should not arrive. Also ensure
     	// that the service type is not "Type_Reserved"
     	if (frameTc.getServiceType() == Defs::ServiceType::TYPE_RESERVED ||
-    		(!vcChan.copInEffect && frameTc.getServiceType() == Defs::ServiceType::TYPE_RESERVED)) {
+    		(!vcChan.getCopInEffect() && frameTc.getServiceType() == Defs::ServiceType::TYPE_RESERVED)) {
 			return etl::unexpected(ServiceChannelNotification::INVALID_FRAME_SERVICE_TYPE);
     	}
 
@@ -278,9 +278,9 @@ namespace CCSDSDataLinkLayer {
     	if (vcChan.getSegmentHeaderPresent()) {
     		mapChan = &Objects::mapChannelSsMap.at(
 					constructMapidVcidScidKey(frameTcPtr->getMapId().value(), vcChan.getVcid(), vcChan.getParentScid()));
-    		associatedSlsSpi = mapChan->associatedSdlsSPI;
+    		associatedSlsSpi = mapChan->getAssociatedSdlsSPI().value();
     	} else {
-    		associatedSlsSpi = vcChan.associatedSdlsSPI;
+    		associatedSlsSpi = vcChan.getAssociatedSdlsSPI().value();
     	}
 
     	// Lock channel mutexes and check if there is enough space in the output buffer

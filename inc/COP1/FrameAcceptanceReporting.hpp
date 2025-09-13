@@ -45,8 +45,30 @@ namespace CCSDSDataLinkLayer {
      * FARM-1 is implemented as a state machine.
      */
     class FrameAcceptanceReporting {
-        friend class SpaceSegmentTcServices;
-        friend class SpaceSegmentTcDataHandling;
+    public:
+        FrameAcceptanceReporting(const Defs::Vcid vcid,
+                                 const uint8_t farmSlidingWinWidth,
+                                 const uint16_t clcwReportInterval,
+                                 const uint8_t fopTransmissionLimit);
+
+        /**
+         * Applies the FARM-1 state table.
+         * @see table 6-1 from COP-1 CCSDS
+         *
+         * @returns The occurred event code. An event code of 0 means no event was
+         *          detected.
+         */
+        etl::pair<FARMNotification, uint8_t> applyFarmStateTable();
+
+        void resetFARM();
+
+        /**
+         * Generated CLCWs are placed here. Since we only care about the most recent state of farm, this is a length
+         * one buffer.
+         */
+        etl::optional<CLCW> clcwBuffer;
+        Mutex clcwBufferMutex;
+
     private:
         /** FARM-1 Variables **/
 
@@ -98,18 +120,7 @@ namespace CCSDSDataLinkLayer {
         const uint16_t clcwReportInterval;
         CountdownTimer timer;
 
-        /**
-         * Generated CLCWs are placed here. Since we only care about the most recent state of farm, this is a length
-         * one buffer.
-         */
-        etl::optional<CLCW> clcwBuffer;
-
-        /** Implementation specific variables **/
-
-        Mutex clcwBufferMutex;
-
         VirtualChannelSsTc& vcChan;
-
 
         /** FARM-1 actions **/
 
@@ -146,23 +157,6 @@ namespace CCSDSDataLinkLayer {
          * @see figure 6-1 of COP-1 CCSDS
          */
         [[nodiscard]] Window getWindow(uint8_t frameSeqNumber) const;
-
-        /**
-         * Applies the FARM-1 state table.
-         * @see table 6-1 from COP-1 CCSDS
-         *
-         * @returns The occurred event code. An event code of 0 means no event was
-         *          detected.
-         */
-        etl::pair<FARMNotification, uint8_t> applyFarmStateTable();
-
-    public:
-        FrameAcceptanceReporting(const Defs::Vcid vcid,
-                                 const uint8_t farmSlidingWinWidth,
-                                 const uint16_t clcwReportInterval,
-                                 const uint8_t fopTransmissionLimit);
-
-        void resetFARM();
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

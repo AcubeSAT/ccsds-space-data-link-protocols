@@ -50,8 +50,59 @@ namespace CCSDSDataLinkLayer {
      * 2. lower layer response <- lower layer request    Send a new frame to lower layers
      */
     class FrameOperationProcedure {
-        friend class GroundSegmentTcDataHandling;
-        friend class GroundSegmentTcServices;
+    public:
+        FrameOperationProcedure(const Defs::Scid scid, const Defs::Vcid vcid, const uint16_t tiInitial,
+                        const uint16_t transmissionLimit,
+                        const uint8_t fopSlidingWindowWidth);
+
+        /**
+         * This is the core process of FOP-1. By examining incoming signals, CLCWs and internal variables,
+         * an event is detected, then appropriate actions are taken based on that event, and the current state.
+         * @see p. 5.3 from COP-1 CCSDS
+         *
+         * Any output signals can be collected using the pop signal methods. Each time applyFopStateTable() is
+         * executed, the output signal queues are cleared.
+         *
+         * @returns The event code detected. An event code of 0 means no event.
+         *
+         */
+        std::pair<FOPNotification, uint8_t> applyFopStateTable();
+
+        Defs::FOPState getCurrentState() const {
+            return state;
+        }
+
+        Defs::Vcid getVcid() const {
+            return vcChan.getVcid();
+        }
+
+        void resetFOP();
+
+        /**
+         * Guard against multiple access to FOP-1 queues
+         */
+        Mutex signalQueueMutex;
+
+        /**
+         * Queues for storing incoming signals and clcws
+         */
+        etl::queue<DirectiveRequestSignal, Defs::DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
+        etl::optional<CLCW> clcwBuffer; // size 1, since we only care about the most recent state of farm
+
+        etl::queue<FduTransferSignal, Defs::FduTransferSignalQueueSize> transferFduSignalQueue;
+        etl::queue<LowerLayerResponseSignal, Defs::LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
+
+        /**
+         * Queues for storing output signals
+         */
+        // Directive notifications are pushed to vcGeneration as well, since some of them generate type BC frames
+        etl::queue<DirectiveNotificationSignal, Defs::DirectiveNotificationSignalQueueSize> directiveNotificationSignalQueue;
+        etl::queue<DirectiveNotificationSignalUser, Defs::DirectiveNotificationSignalQueueSize> directiveNotificationSignalQueueUser;
+
+        etl::queue<AsynchronousNotificationSignal, Defs::AsynchronousNotificationSignalQueueSize> asynchronousNotificationSignalQueue;
+
+        etl::queue<TransferNotificationSignal, Defs::TransferNotificationSignalQueueSize> transferNotificationSignalQueue;
+        etl::queue<FopToLowerLayerRequestSignal, Defs::FopToLowerLayerRequestSignalQueueSize> fopToLowerLayerRequestSignalQueue;
 
     private:
         /** FOP-1 VARIABLES **/
@@ -144,38 +195,10 @@ namespace CCSDSDataLinkLayer {
         Defs::SuspendVariableState suspendState;
 
         /** Implementation Specific variables **/
-
-        /**
-         * Guard against multiple access to FOP-1 queues
-         */
-        Mutex signalQueueMutex;
-
         VirtualChannelGsTc& vcChan;
         MasterChannelGsTc& mcChan;
 
         CountdownTimer timer;
-
-        /**
-         * Queues for storing incoming signals and clcws
-         */
-        etl::queue<DirectiveRequestSignal, Defs::DirectiveRequestSignalQueueSize> directiveRequestSignalQueue;
-        etl::optional<CLCW> clcwBuffer; // size 1, since we only care about the most recent state of farm
-
-        etl::queue<FduTransferSignal, Defs::FduTransferSignalQueueSize> transferFduSignalQueue;
-        etl::queue<LowerLayerResponseSignal, Defs::LowerLayerResponseSignalQueueSize> lowerLayerResponseSignalQueue;
-
-
-        /**
-         * Queues for storing output signals
-         */
-        // Directive notifications are pushed to vcGeneration as well, since some of them generate type BC frames
-        etl::queue<DirectiveNotificationSignal, Defs::DirectiveNotificationSignalQueueSize> directiveNotificationSignalQueue;
-        etl::queue<DirectiveNotificationSignalUser, Defs::DirectiveNotificationSignalQueueSize> directiveNotificationSignalQueueUser;
-
-        etl::queue<AsynchronousNotificationSignal, Defs::AsynchronousNotificationSignalQueueSize> asynchronousNotificationSignalQueue;
-
-        etl::queue<TransferNotificationSignal, Defs::TransferNotificationSignalQueueSize> transferNotificationSignalQueue;
-        etl::queue<FopToLowerLayerRequestSignal, Defs::FopToLowerLayerRequestSignalQueueSize> fopToLowerLayerRequestSignalQueue;
 
         /**
          * There are 3 directives that will not receive confirmation immediately upon processing:
@@ -284,33 +307,7 @@ namespace CCSDSDataLinkLayer {
          * @note This function literally does nothing. It is added to explicitly
          *       indicate the "ignore" action in the state table.
          */
-        static inline void ignore() {}
-
-        /** Implementation specific FOP-1 methods (for usage inside vcGeneration service)**/
-
-        /**
-         * This is the core process of FOP-1. By examining incoming signals, CLCWs and internal variables,
-         * an event is detected, then appropriate actions are taken based on that event, and the current state.
-         * @see p. 5.3 from COP-1 CCSDS
-         *
-         * Any output signals can be collected using the pop signal methods. Each time applyFopStateTable() is
-         * executed, the output signal queues are cleared.
-         *
-         * @returns The event code detected. An event code of 0 means no event.
-         *
-         */
-        std::pair<FOPNotification, uint8_t> applyFopStateTable();
-
-    public:
-        FrameOperationProcedure(const Defs::Scid scid, const Defs::Vcid vcid, const uint16_t tiInitial,
-                                const uint16_t transmissionLimit,
-                                const uint8_t fopSlidingWindowWidth);
-
-        Defs::FOPState getCurrentState() const {
-            return state;
-        }
-
-        void resetFOP();
+        static void ignore() {}
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

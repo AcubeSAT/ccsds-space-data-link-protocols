@@ -9,7 +9,7 @@ namespace CCSDSDataLinkLayer {
 		vcChan.secondaryHeaderDataFieldOctets.reset();
 		vcChan.framesBeforeSecondaryHeaderPlacement.reset();
 
-		vcChan.virtualChannelFrameCount = 0;
+		vcChan.resetVirtualChannelFrameCount();
 	}
 
 	void SpaceSegmentTmDataHandling::resetMasterChannel(MasterChannelSsTm& mcChan) {
@@ -28,7 +28,7 @@ namespace CCSDSDataLinkLayer {
 			mcChan.frameMasterCopies.erase(frameTmPtr);
 		}
 
-		mcChan.masterChannelFrameCount = 0;
+		mcChan.resetMasterChannelFrameCount();
 		mcChan.ocfSduQueue.reset();
 		mcChan.waitingBuffer.reset();
 	}
@@ -593,7 +593,7 @@ namespace CCSDSDataLinkLayer {
 		}
 
 		TransferFrameTM* frameTmPtr = vcChan.framesBeforeSecondaryHeaderPlacement.getFront();
-		if (vcChan.secondaryHeaderPresent) {
+		if (vcChan.getSecondaryHeaderPresent()) {
 			if (vcChan.secondaryHeaderDataFieldOctets.currentSize() < vcChan.getSecondaryHeaderLength() - Defs::TmSecondaryHeaderIdLength) {
 				mcChan.channelMutex.unlock();
 				vcChan.channelMutex.unlock();

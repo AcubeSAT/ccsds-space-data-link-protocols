@@ -87,8 +87,6 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class VirtualChannelSsTm : public VirtualChannelBase {
-        friend class SpaceSegmentTmDataHandling;
-        friend class SpaceSegmentTmServices;
     public:
         explicit VirtualChannelSsTm(const Defs::Vcid vcid, const Defs::Scid parentScid, const uint8_t vcRepetitions,
                                      const bool secondaryHeaderPresent, const uint8_t secondaryHeaderLength,
@@ -144,10 +142,39 @@ namespace CCSDSDataLinkLayer {
             virtualChannelFrameCount++;
         }
 
+        void resetVirtualChannelFrameCount() {
+            virtualChannelFrameCount = 0;
+        }
+
+        /**
+         * @brief If the channel supports Packets, this is a queue that stores lengths of packets that will eventually
+         *        be concatenated to TM transfer frames by the vc generation data handling function. If the virtual
+         *        channel supports VCA SDU, then it stores the user defined fields 'packet order flag' and
+         *        'segment length identifier'. The format is the following:
+         *
+         *        | (13 bits) empty | (1 bit) packet order flag | (2 bits) segment length identifier |
+         */
+        Dequeue<uint16_t> packetLengths;
+
+        /**
+         * @brief Queue that stores octets of packets that will eventually be concatenated to TM transfer frames
+         *        by the vc generation data handling function
+         */
+        Dequeue<uint8_t> packetOctets;
+
+        /**
+         * @brief Queue that stores octets will eventually be appended to TM secondary header
+         */
+        Queue<uint8_t> secondaryHeaderDataFieldOctets;
+
+        /**
+         * @brief Buffer that holds pointers to TM frames already processed by the vc generation data handling function
+         */
+        Queue<TransferFrameTM*> framesBeforeSecondaryHeaderPlacement;
+
     private:
         /**
          * @brief Determines the number of times a frame will be repeated in transmission to the Channel Coding Layer.
-         * TODO ??
          */
         const uint8_t vcRepetitions;
 
@@ -185,43 +212,6 @@ namespace CCSDSDataLinkLayer {
          * @brief States how many packets this channel should support (used during the memory pool allocation process).
          */
         const uint16_t packetCapacity;
-
-        /**
-         * @brief If the channel supports Packets, this is a queue that stores lengths of packets that will eventually
-         *        be concatenated to TM transfer frames by the vc generation data handling function. If the virtual
-         *        channel supports VCA SDU, then it stores the user defined fields 'packet order flag' and
-         *        'segment length identifier'. The format is the following:
-         *
-         *        | (13 bits) empty | (1 bit) packet order flag | (2 bits) segment length identifier |
-         */
-        Dequeue<uint16_t> packetLengths;
-
-        /**
-         * @brief Queue that stores octets of packets that will eventually be concatenated to TM transfer frames
-         *        by the vc generation data handling function
-         */
-        Dequeue<uint8_t> packetOctets;
-
-        /**
-         * @brief Queue that stores octets will eventually be appended to TM secondary header
-         */
-        Queue<uint8_t> secondaryHeaderDataFieldOctets;
-
-        /**
-         * @brief Buffer that holds pointers to TM frames already processed by the vc generation data handling function
-         */
-        Queue<TransferFrameTM*> framesBeforeSecondaryHeaderPlacement;
-
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        Dequeue<uint16_t>& getPacketLengths(){
-            return packetLengths;
-        }
-
-        Dequeue<uint8_t>& getPacketOctets(){
-            return packetOctets;
-        }
-#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
@@ -232,9 +222,6 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class VirtualChannelSsTc : public VirtualChannelBase {
-       friend class FrameAcceptanceReporting;
-       friend class SpaceSegmentTcDataHandling;
-
     public:
         explicit VirtualChannelSsTc(const Defs::Vcid vcid, const Defs::Scid parentScid,
                                      const bool segmentHeaderPresent, const bool blocking,
@@ -302,40 +289,6 @@ namespace CCSDSDataLinkLayer {
             this->clcwStatusField = clcwStatusField;
         }
 
-    private:
-        /**
-         * @brief Determines whether the Segment Header field is present if TC transfer frames
-         * (enables MAP services for Type-AD/BD packets).
-         */
-        const bool segmentHeaderPresent;
-
-        /**
-         * @brief Determines whether smaller data units can be combined into a single TC transfer frame.
-         * @note Applies for Type-AD/BD frames in case MAP services are disabled (segmentHeaderPresent == false)
-         */
-        const bool blocking;
-
-        /**
-         * @brief Determines whether FARM procedures will apply for frames in this virtual channel (should be set to
-         *        true if a FARM instance is created)
-         */
-        const bool copInEffect;
-
-        /**
-         * @brief Whether Packets or VCA_SDUs are used
-         */
-        const Defs::DataFieldContent dataFieldContent;
-
-        /**
-         * @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
-         */
-        uint16_t typeAdPacketCapacity;
-
-        /**
-         *  @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
-         */
-        uint16_t typeBdPacketCapacity;
-
         /**
          * @brief Stores pointers to TC frame pointers after all frames reception and before vcReception
          */
@@ -373,45 +326,50 @@ namespace CCSDSDataLinkLayer {
          */
         Defs::SegmentedPacketConstructorTc segmentedPacketConstructor;
 
-       /**
-        * @brief Ued by FARM to fill the status field when generating CLCWs. Updated by the user, using
-        *        the respective service.
-        */
-       uint8_t clcwStatusField;
+        /**
+         * @brief Ued by FARM to fill the status field when generating CLCWs. Updated by the user, using
+         *        the respective service.
+         */
+        uint8_t clcwStatusField;
 
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        Queue<TransferFrameTC*>& getFramesAfterAllFramesReception() {
-            return framesAfterAllFramesReception;
-        }
+    private:
+        /**
+         * @brief Determines whether the Segment Header field is present if TC transfer frames
+         * (enables MAP services for Type-AD/BD packets).
+         */
+        const bool segmentHeaderPresent;
 
-        Queue<TransferFrameTC*>& getFramesAfterVcReceptionTypeAD() {
-            return framesAfterVcReceptionTypeAD;
-        }
+        /**
+         * @brief Determines whether smaller data units can be combined into a single TC transfer frame.
+         * @note Applies for Type-AD/BD frames in case MAP services are disabled (segmentHeaderPresent == false)
+         */
+        const bool blocking;
 
-        CircularBuffer<TransferFrameTC*>& getFramesAfterVcReceptionTypeBD() {
-            return framesAfterVcReceptionTypeBD;
-        }
+        /**
+         * @brief Determines whether FARM procedures will apply for frames in this virtual channel (should be set to
+         *        true if a FARM instance is created)
+         */
+        const bool copInEffect;
 
-        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeAD() {
-            return framesAfterProcessSDLSSecurityTypeAD;
-        }
+        /**
+         * @brief Whether Packets or VCA_SDUs are used
+         */
+        const Defs::DataFieldContent dataFieldContent;
 
-        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeBD() {
-            return framesAfterProcessSDLSSecurityTypeBD;
-        }
+        /**
+         * @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
+         */
+        uint16_t typeAdPacketCapacity;
 
-        Defs::SegmentedPacketConstructorTc& getSegmentedPacketConstructor() {
-            return segmentedPacketConstructor;
-        }
-#endif
+        /**
+         *  @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
+         */
+        uint16_t typeBdPacketCapacity;
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     class VirtualChannelGsTc : public VirtualChannelBase {
-        friend class FrameOperationProcedure;
-        friend class GroundSegmentTcDataHandling;
     public:
         explicit VirtualChannelGsTc(const Defs::Vcid vcid, const Defs::Scid parentScid,
                                     const uint8_t vcRepetitionsTypeAD, const uint8_t vcRepetitionsTypeBC,
@@ -481,6 +439,48 @@ namespace CCSDSDataLinkLayer {
         [[nodiscard]] Defs::DataFieldContent getDataFieldContent() const {
             return dataFieldContent;
         }
+
+         /**
+         * @brief Queue that stores lengths of Type-AD packets that will eventually be concatenated to Type-AD TC
+         *        transfer frames, by the packet processing data handling function
+         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
+         *        channel (segmentHeaderPresent == false)
+         */
+        Queue<uint16_t> packetLengthsTypeAD;
+
+        /**
+         * @brief Queue that stores octets of Type-AD packets that will eventually be concatenated to Type-AD TC
+         *        transfer frames, by the packet processing data handling function
+         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
+         *        channel (segmentHeaderPresent == false)
+         */
+        Queue<uint8_t> packetOctetsTypeAD;
+
+        /**
+         * @brief Queue that stores lengths of Type-BD packets that will eventually be concatenated to Type-BD TC
+         *        transfer frames, by the packet processing data handling function
+         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
+         *        channel (segmentHeaderPresent == false)
+         */
+        Queue<uint16_t> packetLengthsTypeBD;
+
+        /**
+         * @brief Queue that stores octets of Type-BD packets that will eventually be concatenated to Type-BD TC
+         *        transfer frames, by the packet processing data handling function
+         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
+         *        channel (segmentHeaderPresent == false)
+         */
+        Queue<uint8_t> packetOctetsTypeBD;
+
+        /**
+         * @brief Stores pointers to TC frame pointers after packet processing and before security processing
+         */
+        Queue<TransferFrameTC*> framesAfterPacketProcessing;
+
+        /**
+         * @brief Stores pointers to TC frame pointers after security processing and before vc generation
+         */
+        Dequeue<TransferFrameTC*> framesAfterApplySDLSSecurity;
     private:
         /**
          * @brief Determines the number of times a Type-AD frame will be repeated in transmission to Channel Coding Layer.
@@ -525,75 +525,6 @@ namespace CCSDSDataLinkLayer {
          *  @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
          */
         uint16_t typeBdPacketCapacity;
-
-        /**
-         * @brief Queue that stores lengths of Type-AD packets that will eventually be concatenated to Type-AD TC
-         *        transfer frames, by the packet processing data handling function
-         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
-         *        channel (segmentHeaderPresent == false)
-         */
-        Queue<uint16_t> packetLengthsTypeAD;
-
-        /**
-         * @brief Queue that stores octets of Type-AD packets that will eventually be concatenated to Type-AD TC
-         *        transfer frames, by the packet processing data handling function
-         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
-         *        channel (segmentHeaderPresent == false)
-         */
-        Queue<uint8_t> packetOctetsTypeAD;
-
-        /**
-         * @brief Queue that stores lengths of Type-BD packets that will eventually be concatenated to Type-BD TC
-         *        transfer frames, by the packet processing data handling function
-         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
-         *        channel (segmentHeaderPresent == false)
-         */
-        Queue<uint16_t> packetLengthsTypeBD;
-
-        /**
-         * @brief Queue that stores octets of Type-BD packets that will eventually be concatenated to Type-BD TC
-         *        transfer frames, by the packet processing data handling function
-         * @note  This queue is used only in the scenario where MAP channels do not exist under this virtual
-         *        channel (segmentHeaderPresent == false)
-         */
-        Queue<uint8_t> packetOctetsTypeBD;
-
-        /**
-         * @brief Stores pointers to TC frame pointers after packet processing and before security processing
-         */
-        Queue<TransferFrameTC*> framesAfterPacketProcessing;
-
-        /**
-         * @brief Stores pointers to TC frame pointers after security processing and before vc generation
-         */
-        Dequeue<TransferFrameTC*> framesAfterApplySDLSSecurity;
-
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        Queue<uint16_t>& getPacketLengthsTypeAD() {
-            return packetLengthsTypeAD;
-        }
-
-        Queue<uint8_t>& getPacketOctetsTypeAD() {
-            return packetOctetsTypeAD;
-        }
-
-        Queue<uint16_t>& getPacketLengthsTypeBD() {
-            return packetLengthsTypeBD;
-        }
-
-        Queue<uint8_t>& getPacketOctetsTypeBD() {
-            return packetOctetsTypeBD;
-        }
-
-        Queue<TransferFrameTC*>& getFramesAfterPacketProcessing() {
-            return framesAfterPacketProcessing;
-        }
-
-        Dequeue<TransferFrameTC*>& getFramesAfterApplySDLSSecurity() {
-            return framesAfterApplySDLSSecurity;
-        }
-#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

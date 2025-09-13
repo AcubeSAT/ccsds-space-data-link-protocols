@@ -136,7 +136,6 @@ namespace CCSDSDataLinkLayer {
      */
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class MAPChannelSs : public MAPChannelBase {
-        friend class SpaceSegmentTcDataHandling;
     public:
         MAPChannelSs(const Defs::Mapid mapid, const Defs::Vcid parentVcid, const Defs::Scid parentScid, const bool blocking, const bool segmentation,
             const Defs::Spi associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
@@ -151,7 +150,6 @@ namespace CCSDSDataLinkLayer {
             framesAfterProcessSDLSSecurityTypeBD = Queue(framesAfterProcessSdlsSecurityTypeBDBuff);
         }
 
-    private:
         /**
          * @brief Stores pointers to Type-AD TC frame pointers after security processing and before packet extraction
          */
@@ -166,22 +164,6 @@ namespace CCSDSDataLinkLayer {
          * @brief Used to build segmented packets and contain information about the previous extracted packet/packet piece
          */
         Defs::SegmentedPacketConstructorTc segmentedPacketConstructor;
-
-        // give the user access while debugging/testing
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeAD() {
-            return framesAfterProcessSDLSSecurityTypeAD;
-        }
-
-        Queue<TransferFrameTC*>& getFramesAfterProcessSDLSSecurityTypeBD() {
-            return framesAfterProcessSDLSSecurityTypeBD;
-        }
-
-        Defs::SegmentedPacketConstructorTc& getSegmentedPacketConstructor() {
-            return segmentedPacketConstructor;
-        }
-#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
@@ -190,7 +172,6 @@ namespace CCSDSDataLinkLayer {
      */
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     class MAPChannelGs : public MAPChannelBase{
-        friend class GroundSegmentTcDataHandling;
     public:
         MAPChannelGs(const Defs::Mapid mapid, const Defs::Vcid parentVcid, const Defs::Scid parentScid, const bool blocking, const bool segmentation,
             const Defs::Spi associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
@@ -208,7 +189,6 @@ namespace CCSDSDataLinkLayer {
             packetOctetsTypeBD = Queue(packetOctetsTypeBDBuff);
         }
 
-    private:
         /**
          * @brief Queue that stores lengths of packets that will eventually be concatenated to Type-AD
          * transfer frame data by packetProcessing.
@@ -232,26 +212,6 @@ namespace CCSDSDataLinkLayer {
          * transfer frame data by packetProcessing.
          */
         Queue<uint8_t> packetOctetsTypeBD;
-
-        // give the user access while debugging/testing
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        Queue<uint16_t>& getPacketLengthsTypeAD()  {
-            return packetLengthsTypeAD;
-        }
-
-        Queue<uint8_t>& getPacketOctetsTypeAD()  {
-            return packetOctetsTypeAD;
-        }
-
-        Queue<uint16_t>& getPacketLengthsTypeBD()  {
-            return packetLengthsTypeBD;
-        }
-
-        Queue<uint8_t>& getPacketOctetsTypeBD()  {
-            return packetOctetsTypeBD;
-        }
-#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

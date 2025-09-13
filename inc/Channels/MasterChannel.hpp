@@ -67,8 +67,6 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class MasterChannelSsTm : public MasterChannelBase {
-        friend class SpaceSegmentTmDataHandling;
-        friend class SpaceSegmentTmServices;
     public:
         explicit  MasterChannelSsTm(const uint16_t mcid, const Defs::Pcid parentPcid, const uint16_t ocfSduCapacity)
             : MasterChannelBase(mcid, parentPcid),
@@ -96,19 +94,18 @@ namespace CCSDSDataLinkLayer {
             masterChannelFrameCount++;
         }
 
+        void resetMasterChannelFrameCount() {
+            masterChannelFrameCount = 0;
+        }
+
         uint16_t getOcfSduCapacity() const {
             return ocfSduCapacity;
         }
 
-    private:
         /**
-         * @brief A counter that keeps track the number of TM transfer frames transmitted from this master channel. The
-         * master channel frame count is carried by TM transfer frames, hence the receiving side can deduce if frames
-         * were lost.
-         *
-         * @details The initial value of this counter should be zero.
+         * @brief Protects frameMasterCopies and framesAfterMcGeneration from concurrent access
          */
-        uint8_t masterChannelFrameCount;
+        Mutex frameMasterCopiesAndAfterMcGenerationMutex;
 
         /**
          * @brief Buffer that holds pointers to TM frames already processed by the vc generation and the secondary header
@@ -128,14 +125,8 @@ namespace CCSDSDataLinkLayer {
         UnorderedPool<TransferFrameTM> frameMasterCopies;
 
         /**
-         * @brief Protects frameMasterCopies and framesAfterMcGeneration from concurrent access
-         */
-        Mutex frameMasterCopiesAndAfterMcGenerationMutex;
-
-        /**
          * @brief The operational control field service places the OCF_SDUs here
          */
-        const uint16_t ocfSduCapacity;
         Queue<uint32_t> ocfSduQueue;
 
         /**
@@ -143,20 +134,16 @@ namespace CCSDSDataLinkLayer {
          */
         CircularBuffer<TransferFrameTM*> waitingBuffer;
 
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        Queue<TransferFrameTM*>& getFramesAfterVcGeneration()  {
-            return framesAfterSecondaryHeaderPlacement;
-        }
-
-        Queue<TransferFrameTM*>& getFramesAfterMcGeneration()  {
-            return framesAfterMcGeneration;
-        }
-
-        UnorderedPool<TransferFrameTM>& getFrameMasterCopies() {
-            return frameMasterCopies;
-        }
-#endif // ENABLE_CHANNEL_QUEUE_ACCESS
+    private:
+        /**
+         * @brief A counter that keeps track the number of TM transfer frames transmitted from this master channel. The
+         * master channel frame count is carried by TM transfer frames, hence the receiving side can deduce if frames
+         * were lost.
+         *
+         * @details The initial value of this counter should be zero.
+         */
+        uint8_t masterChannelFrameCount;
+        const uint16_t ocfSduCapacity;
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 
@@ -167,8 +154,6 @@ namespace CCSDSDataLinkLayer {
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class MasterChannelSsTc : public MasterChannelBase {
-        friend class SpaceSegmentTcDataHandling;
-        friend class FrameAcceptanceReporting;
     public:
         explicit  MasterChannelSsTc(const Defs::Scid scid, const Defs::Pcid parentPcid)
              : MasterChannelBase(scid, parentPcid), noRfAvailable(false), noBitLock(false) {}
@@ -195,32 +180,23 @@ namespace CCSDSDataLinkLayer {
             this->noBitLock = noBitLock;
         }
 
-    private:
         /**
          * @brief Buffer that stores the actual TC transfer frame objects under this master channel
          */
         UnorderedPool<TransferFrameTC> frameMasterCopies;
 
+    private:
         /**
          * @brief Used by all FARMs under this master channel to fill the "No Rf available" and "No bit lock" fields.
          *        Updated by the user, using the respective service.
          */
         bool noRfAvailable;
         bool noBitLock;
-
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        UnorderedPool<TransferFrameTC>& getFrameMasterCopies() {
-            return frameMasterCopies;
-        }
-#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif //INCLUDE_SPACE_SEGMENT_CODE
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     class MasterChannelGsTc : public MasterChannelBase {
-        friend class GroundSegmentTcDataHandling;
-        friend class FrameOperationProcedure;
     public:
         explicit  MasterChannelGsTc(const Defs::Scid scid, const Defs::Pcid parentPcid)
         : MasterChannelBase(scid, parentPcid) {}
@@ -233,7 +209,6 @@ namespace CCSDSDataLinkLayer {
             frameMasterCopies = UnorderedPool(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
         }
 
-    private:
         /**
          * @brief Buffer that holds pointers to TC frames already processed by the vc generation data handling function
          */
@@ -243,17 +218,6 @@ namespace CCSDSDataLinkLayer {
          * @brief Buffer that stores the actual TC transfer frame objects under this master channel
          */
         UnorderedPool<TransferFrameTC> frameMasterCopies;
-
-#ifdef ENABLE_CHANNEL_QUEUE_ACCESS
-    public:
-        Queue<TransferFrameTC*>& getFramesAfterVcGeneration()  {
-            return framesAfterVcGeneration;
-        }
-
-        UnorderedPool<TransferFrameTC>& getFrameMasterCopies() {
-            return frameMasterCopies;
-        }
-#endif // ENABLE_CHANNEL_QUEUE_ACCESS
     };
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

@@ -192,8 +192,7 @@ if(BUILD_UNIT_TESTS)
     add_executable(catch2_unit_testing)
     target_compile_definitions(catch2_unit_testing PUBLIC INCLUDE_SPACE_SEGMENT_CODE
                                                           INCLUDE_GROUND_SEGMENT_CODE
-                                                          INCLUDE_FRAME_PRINTING_FUNCTIONS
-                                                          ENABLE_CHANNEL_QUEUE_ACCESS)
+                                                          INCLUDE_FRAME_PRINTING_FUNCTIONS)
     target_link_libraries(catch2_unit_testing PRIVATE Catch2::Catch2WithMain)
     target_sources(catch2_unit_testing PRIVATE ${UNIT_TESTS})
     common_actions(catch2_unit_testing)
