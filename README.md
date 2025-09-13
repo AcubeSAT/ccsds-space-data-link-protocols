@@ -33,7 +33,7 @@ as well as [Tinycrypt](https://github.com/intel/tinycrypt) for HMAC calculations
 - `inc/DataHandlingFunctions`: Core functions for frame processing
 - `inc/DataStructures`: Elementary data structures like queue, and memory pool, as well as Transfer Frames and CLCWs
 - `inc/NotificationAndLoggingUtilities`: Definitions for function notifications/errors and frame printing functions
-- `inc/Platform`: Platform specific utility functions
+- `inc/Platform`: Platform specific utility functions and etl library configuration
 - `inc/Services`: A collection of methods that use the data handling functions and constitute the user API 
 - `inc/Utilities`: Different utility functions. Most notable are the CRC and HMAC calculation functions (software implementation).
 - `test`: Catch2 unit tests
@@ -59,7 +59,7 @@ def requirements(self):
 It is necessary to add a path to a channel configuration file (must be named `CCSDSDataLink.def`), as well as a key configuration
 file, if SDLS is used (must be named 'CCSDSKeys.def'). If none is provided, then a default configuration will be used (located under `inc/Platform`).
 If the project is not in x86, then a platform definitions directory path (of any name) must be provided, with countdown
-timer and mutex implementations. Look under `inc/Platform/x86` for more details. All paths have to be absolute:
+timer and mutex implementations, as well as an etl configuration file. Look under `inc/Platform/x86` for more details. All paths have to be absolute:
 ```python
 default_options = {"ccsds-data-link-layer/*:channel_config": os.path.abspath("path/to/CCSDSDataLink.def")
                    "ccsds-data-link-layer/*:keys_config": os.path.abspath("path/to/CCSDSDataLink.def"),

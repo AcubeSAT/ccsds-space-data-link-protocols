@@ -95,11 +95,10 @@ class CCSDSDataLinkLayer(ConanFile):
         # ---- Headers directly under inc: Some need to be visible to services, others must be hidden in internals ----
         copy(self, "CcsdsDefinitions.hpp",   src=src_inc,
              dst=os.path.join(dst_inc, "services"), keep_path=True)
+
         copy(self, "ChannelObjects.hpp",   src=src_inc,
              dst=os.path.join(dst_inc, "services"), keep_path=True)
 
-        copy(self, "etl_profile.h",   src=src_inc,
-             dst=os.path.join(dst_inc, "internals"), keep_path=True) # TODO fix this profile, works for x86 only
         copy(self, "SecurityAssociation.hpp",   src=src_inc,
              dst=os.path.join(dst_inc, "internals"), keep_path=True)
 
