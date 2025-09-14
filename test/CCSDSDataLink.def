@@ -90,7 +90,7 @@
 //                      frameCapacity,
 //                      packetCapacity)
 //   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel
-//   -- vcid: A 6 bit id (unique for all TM virtual channels under a specific TM master channel)
+//   -- vcid: A 3 bit id (unique for all TM virtual channels under a specific TM master channel)
 //   -- parentScid: Associates this virtual channel with a specific master channel
 //   -- associatedSdls: Security parameter index associated with this virtual channel. Unimplemented for TM frames
 //                      (unimplemented, this value is ignored)

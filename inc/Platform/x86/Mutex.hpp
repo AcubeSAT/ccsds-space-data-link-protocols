@@ -26,7 +26,8 @@ namespace CCSDSDataLinkLayer {
          * 2. map channel mutexes
          * 3. virtual channel mutexes
          * 4. master channel mutexes
-         * 5. frameOctetPool mutex
+         * 5. security association mutexes
+         * 6. frameOctetPool mutex
 
          */
         bool tryLockFor(uint32_t timeMs) {
@@ -38,10 +39,11 @@ namespace CCSDSDataLinkLayer {
          *
          * @warning To avoid deadlocks, a strict unlocking hierarchy is used (the reverse of the locking hierarchy):
          * 1. frameOctetPool mutex
-         * 2. master channel mutexes
-         * 3. virtual channel mutexes
-         * 4. map channel mutexes
-         * 5. cop-1 mutexes
+         * 2. security association mutexes
+         * 3. master channel mutexes
+         * 4. virtual channel mutexes
+         * 5. map channel mutexes
+         * 6. cop-1 mutexes
          */
         void unlock() {
             mutex.unlock();

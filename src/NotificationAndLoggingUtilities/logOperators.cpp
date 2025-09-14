@@ -77,6 +77,8 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::NO_CLCW_AVAILABLE);
         INSERT_ELEMENT(ServiceChannelNotification::NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE);
         INSERT_ELEMENT(ServiceChannelNotification::FSH_SDU_QUEUE_FULL);
+        INSERT_ELEMENT(ServiceChannelNotification::SA_ALREADY_PAUSED);
+        INSERT_ELEMENT(ServiceChannelNotification::SA_ALREADY_RUNNING);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];
@@ -177,6 +179,7 @@ namespace CCSDSDataLinkLayer {
             INSERT_ELEMENT(SDLSVerificationError::MAC_VERIFICATION_FAILURE);
             INSERT_ELEMENT(SDLSVerificationError::ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE);
             INSERT_ELEMENT(SDLSVerificationError::PADDING_ERROR);
+            INSERT_ELEMENT(SDLSVerificationError::SA_PAUSED);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];

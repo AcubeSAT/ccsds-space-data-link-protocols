@@ -62,6 +62,8 @@ namespace CCSDSDataLinkLayer {
         NO_CLCW_AVAILABLE = 0x29,
         NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE = 0x2A,
         FSH_SDU_QUEUE_FULL = 0x2B,
+        SA_ALREADY_PAUSED = 0x2C,
+        SA_ALREADY_RUNNING= 0x2D,
     };
 
     enum class MapChannelAlert : uint8_t {
@@ -103,7 +105,8 @@ namespace CCSDSDataLinkLayer {
         MAC_CALCULATION_ERROR = 0x04,
         MAC_VERIFICATION_FAILURE = 0x05,
         ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE = 0x06,
-        PADDING_ERROR = 0x07
+        PADDING_ERROR = 0x07,
+        SA_PAUSED = 0x08,
     };
 
     enum class FOPNotification : uint8_t {

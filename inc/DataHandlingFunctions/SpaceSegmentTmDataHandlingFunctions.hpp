@@ -139,8 +139,16 @@ namespace CCSDSDataLinkLayer {
 		 *       created in this virtual channel.
 		 */
 		static etl::expected<void, ServiceChannelNotification> appendSecondaryHeaderDataField(
-			VirtualChannelSsTm &vcChan,
-			MasterChannelSsTm &mcChan);
+			VirtualChannelSsTm &vcChan);
+
+		/**
+		 * @brief Apply security services for TM frames (if the frame is not associated with any security association,
+		 * then it gets pushed to the next stage)
+		 */
+		static etl::expected<void, ServiceChannelNotification> applySDLSSecurity(
+			const PhysicalChannel& phyChan,
+			MasterChannelSsTm& mcChan,
+			VirtualChannelSsTm& vcChan);
 
 		/**
 		 * @brief The Master Channel Generation Service shall be used to insert Transfer Frame

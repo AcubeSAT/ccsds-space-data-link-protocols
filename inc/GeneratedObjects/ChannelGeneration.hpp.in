@@ -480,12 +480,12 @@ namespace CCSDSDataLinkLayer::Generated {
     inline constexpr uint16_t TotalTransferFrameTmSlots = IncludeSpaceCode *
         TotalVirtualChannelTmFrameCapacity;
 
-    // VirtualChannelSsTm: 1 queue
+    // VirtualChannelSsTm: 2 queues
     // MasterChannelSsTm: 2 queues, 1 circular buffer
     // VirtualChannelGsTm: Unimplemented
     // MasterChannelGsTm: Unimplemented
     inline constexpr uint16_t TotalTransferFrameTmPtrSlots = IncludeSpaceCode *
-        4 * TotalVirtualChannelTmFrameCapacity;
+        5 * TotalVirtualChannelTmFrameCapacity;
 
     inline constexpr uint16_t TotalTypeAdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeAdCapacity + TotalMapChannelTypeAdPacketCapacity);
     inline constexpr uint16_t TotalTypeBdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeBdCapacity + TotalMapChannelTypeBdPacketCapacity);

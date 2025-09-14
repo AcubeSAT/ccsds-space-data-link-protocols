@@ -73,13 +73,13 @@ namespace CCSDSDataLinkLayer {
               masterChannelFrameCount(0), ocfSduCapacity(ocfSduCapacity) {}
 
         void initializeContainers(
-            const etl::span<TransferFrameTM*>& framesAfterVcGenerationBuff,
+            const etl::span<TransferFrameTM*>& framesAfterSecurityProcessingBuff,
             const etl::span<TransferFrameTM*>& framesAfterMcGenerationBuff,
             const etl::span<TransferFrameTM*>& waitingBufferBuff,
             const etl::span<TransferFrameTM>& frameMasterCopiesBuff,
             const etl::span<uint32_t>& frameMasterCopiesIndicesBuff,
             const etl::span<uint32_t>& ocfSduQueueBuff) {
-            framesAfterSecondaryHeaderPlacement = Queue(framesAfterVcGenerationBuff);
+            framesAfterSecurityProcessing = Queue(framesAfterSecurityProcessingBuff);
             framesAfterMcGeneration = Queue(framesAfterMcGenerationBuff);
             waitingBuffer = CircularBuffer(waitingBufferBuff);
             frameMasterCopies = UnorderedPool(frameMasterCopiesBuff, frameMasterCopiesIndicesBuff);
@@ -108,10 +108,9 @@ namespace CCSDSDataLinkLayer {
         Mutex frameMasterCopiesAndAfterMcGenerationMutex;
 
         /**
-         * @brief Buffer that holds pointers to TM frames already processed by the vc generation and the secondary header
-         *        placement data handling function
+         * @brief Buffer that holds pointers to TM frames that have already been processed by sdls and before mc generation
          */
-        Queue<TransferFrameTM*> framesAfterSecondaryHeaderPlacement;
+        Queue<TransferFrameTM*> framesAfterSecurityProcessing;
 
         /**
          * @brief Buffer that holds pointers to TM frames already processed by the mc generation data handling function

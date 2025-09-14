@@ -8,16 +8,17 @@ namespace CCSDSDataLinkLayer {
 		vcChan.packetLengths.reset();
 		vcChan.packetOctets.reset();
 		vcChan.secondaryHeaderDataFieldOctets.reset();
-		vcChan.framesBeforeSecondaryHeaderPlacement.reset();
+		vcChan.framesAfterVcGeneration.reset();
+		vcChan.framesAfterSecondaryHeaderPlacement.reset();
 
 		vcChan.resetVirtualChannelFrameCount();
 	}
 
 	void SpaceSegmentTmDataHandling::resetMasterChannel(MasterChannelSsTm& mcChan) {
 		TransferFrameTM* frameTmPtr;
-		while (!mcChan.framesAfterSecondaryHeaderPlacement.isEmpty()) {
-			frameTmPtr = mcChan.framesAfterSecondaryHeaderPlacement.getFront();
-			mcChan.framesAfterSecondaryHeaderPlacement.pop();
+		while (!mcChan.framesAfterSecurityProcessing.isEmpty()) {
+			frameTmPtr = mcChan.framesAfterSecurityProcessing.getFront();
+			mcChan.framesAfterSecurityProcessing.pop();
 			Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData(), frameTmPtr->getFrameLength());
 			mcChan.frameMasterCopies.erase(frameTmPtr);
 		}
@@ -143,7 +144,7 @@ namespace CCSDSDataLinkLayer {
                 return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
             }
 
-            if (vcChan.framesBeforeSecondaryHeaderPlacement.isFull()) {
+            if (vcChan.framesAfterVcGeneration.isFull()) {
                 return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
             }
 
@@ -166,7 +167,7 @@ namespace CCSDSDataLinkLayer {
             frameTmPtr->setFirstDataFieldEmptyOctet(0);
 
             // push a frame pointer to the queue
-            vcChan.framesBeforeSecondaryHeaderPlacement.push(frameTmPtr);
+            vcChan.framesAfterVcGeneration.push(frameTmPtr);
         }
 
         const uint16_t transferFrameDataFieldLength =
@@ -269,7 +270,7 @@ namespace CCSDSDataLinkLayer {
             return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
         }
 
-        if (vcChan.framesBeforeSecondaryHeaderPlacement.remainingCapacity() < numberOfNewTransferFrames) {
+        if (vcChan.framesAfterVcGeneration.remainingCapacity() < numberOfNewTransferFrames) {
             vcChan.packetLengths.pushBack(packetLength);
             return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
         }
@@ -321,7 +322,7 @@ namespace CCSDSDataLinkLayer {
                                     phyChan.getFrameErrorControlFieldPresent()));
             frameTmPtr->setFirstDataFieldEmptyOctet((i == numberOfNewTransferFrames - 1) ? firstHeaderPointer : frameLength);
             vcChan.incrementVirtualChannelFrameCount();
-            vcChan.framesBeforeSecondaryHeaderPlacement.push(frameTmPtr);
+            vcChan.framesAfterVcGeneration.push(frameTmPtr);
 
             remainingPacketSegmentLength -= transferFrameDataFieldLength;
         }
@@ -415,7 +416,7 @@ namespace CCSDSDataLinkLayer {
 			    return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
 			}
 
-    		if (vcChan.framesBeforeSecondaryHeaderPlacement.isFull()) {
+    		if (vcChan.framesAfterVcGeneration.isFull()) {
     			Objects::frameOctetPool.poolMutex.unlock();
 			    mcChan.channelMutex.unlock();
 			    vcChan.channelMutex.unlock();
@@ -450,7 +451,7 @@ namespace CCSDSDataLinkLayer {
     		vcChan.incrementVirtualChannelFrameCount();
 
     		// push a frame pointer to the queue
-    		vcChan.framesBeforeSecondaryHeaderPlacement.push(frameTmPtr);
+    		vcChan.framesAfterVcGeneration.push(frameTmPtr);
 
     		Objects::frameOctetPool.poolMutex.unlock();
 		    mcChan.channelMutex.unlock();
@@ -527,7 +528,7 @@ namespace CCSDSDataLinkLayer {
 		    return etl::unexpected(ServiceChannelNotification::NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL);
 		}
 
-    	if (vcChan.framesBeforeSecondaryHeaderPlacement.isFull()) {
+    	if (vcChan.framesAfterVcGeneration.isFull()) {
     		Objects::frameOctetPool.poolMutex.unlock();
     		mcChan.channelMutex.unlock();
 		    vcChan.channelMutex.unlock();
@@ -561,7 +562,7 @@ namespace CCSDSDataLinkLayer {
                                             Defs::TmOIDFrameFirstHeaderPointer,
                                             phyChan.getFrameErrorControlFieldPresent()));
         vcChan.incrementVirtualChannelFrameCount();
-        vcChan.framesBeforeSecondaryHeaderPlacement.push(oidFramePtr);
+        vcChan.framesAfterVcGeneration.push(oidFramePtr);
 
     	Objects::frameOctetPool.poolMutex.unlock();
 	    mcChan.channelMutex.unlock();
@@ -570,33 +571,24 @@ namespace CCSDSDataLinkLayer {
     }
 
 	etl::expected<void, ServiceChannelNotification> SpaceSegmentTmDataHandling::appendSecondaryHeaderDataField(
-		VirtualChannelSsTm &vcChan,
-		MasterChannelSsTm &mcChan) {
+		VirtualChannelSsTm &vcChan) {
 		if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
 			return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
 		}
 
-		if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
-			vcChan.channelMutex.unlock();
-			return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
-		}
-
-		if (vcChan.framesBeforeSecondaryHeaderPlacement.isEmpty()) {
-			mcChan.channelMutex.unlock();
+		if (vcChan.framesAfterVcGeneration.isEmpty()) {
 			vcChan.channelMutex.unlock();
 			return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_EMPTY);
 		}
 
-		if (mcChan.framesAfterSecondaryHeaderPlacement.isFull()) {
-			mcChan.channelMutex.unlock();
+		if (vcChan.framesAfterSecondaryHeaderPlacement.isFull()) {
 			vcChan.channelMutex.unlock();
 			return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
 		}
 
-		TransferFrameTM* frameTmPtr = vcChan.framesBeforeSecondaryHeaderPlacement.getFront();
+		TransferFrameTM* frameTmPtr = vcChan.framesAfterVcGeneration.getFront();
 		if (vcChan.getSecondaryHeaderPresent()) {
 			if (vcChan.secondaryHeaderDataFieldOctets.currentSize() < vcChan.getSecondaryHeaderLength() - Defs::TmSecondaryHeaderIdLength) {
-				mcChan.channelMutex.unlock();
 				vcChan.channelMutex.unlock();
 				return etl::unexpected(ServiceChannelNotification::NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE);
 			}
@@ -609,8 +601,76 @@ namespace CCSDSDataLinkLayer {
 		}
 
 		//push to the next stage
-		vcChan.framesBeforeSecondaryHeaderPlacement.pop();
-		mcChan.framesAfterSecondaryHeaderPlacement.push(frameTmPtr);
+		vcChan.framesAfterVcGeneration.pop();
+		vcChan.framesAfterSecondaryHeaderPlacement.push(frameTmPtr);
+
+		vcChan.channelMutex.unlock();
+		return {};
+	}
+
+	etl::expected<void, ServiceChannelNotification> SpaceSegmentTmDataHandling::applySDLSSecurity(
+		const PhysicalChannel &phyChan,
+		MasterChannelSsTm &mcChan,
+		VirtualChannelSsTm &vcChan) {
+		if (!vcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
+			return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+		}
+
+		if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
+			vcChan.channelMutex.unlock();
+			return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+		}
+
+		if (vcChan.framesAfterSecondaryHeaderPlacement.isEmpty()) {
+			mcChan.channelMutex.unlock();
+			vcChan.channelMutex.unlock();
+			return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_EMPTY);
+		}
+
+		if (mcChan.framesAfterSecurityProcessing.isFull()) {
+			mcChan.channelMutex.unlock();
+			vcChan.channelMutex.unlock();
+			return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
+		}
+
+		TransferFrameTM *frameTmPtr = vcChan.framesAfterSecondaryHeaderPlacement.getFront();
+
+		etl::optional<uint16_t> associatedSdlsSpi = vcChan.getAssociatedSdlsSPI();
+		if (associatedSdlsSpi.has_value()) {
+			// security processing is required for this frame
+			SecurityAssociation &sa = Objects::saSpaceSegmentMap.at(associatedSdlsSpi.value());
+
+			if (!sa.saMutex.tryLockFor(Defs::MutexDelayMs)) {
+				mcChan.channelMutex.unlock();
+				vcChan.channelMutex.unlock();
+				return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+			}
+
+			const uint16_t transferFrameDataFieldLength = frameTmPtr->getFrameLength() -
+			                                              Defs::TmPrimaryHeaderSize -
+			                                              frameTmPtr->getSecondaryHeaderLength() -
+			                                              sa.getSecurityHeaderLength() -
+			                                              sa.getSecurityTrailerLength() -
+			                                              frameTmPtr->getOperationalControlFieldFlag() *
+			                                              Defs::TmOperationalControlFieldSize -
+			                                              phyChan.getFrameErrorControlFieldPresent() *
+			                                              Defs::ErrorControlFieldSize;
+			if (sa.getSecurityAssociationStatus() == SecurityAssociationStatus::RUNNING) {
+				if (const auto status = sa.applySecurity(frameTmPtr, transferFrameDataFieldLength);
+					!status.has_value()) {
+					// because of the previous checks, MAC_CALCULATION_ERROR is the only possible error
+					sa.saMutex.unlock();
+					mcChan.channelMutex.unlock();
+					vcChan.channelMutex.unlock();
+					return etl::unexpected(ServiceChannelNotification::SLDS_CALCULATION_ERROR);
+					}
+			}
+			sa.saMutex.unlock();
+		}
+
+		// push to next stage
+		vcChan.framesAfterSecondaryHeaderPlacement.pop();
+		mcChan.framesAfterSecurityProcessing.push(frameTmPtr);
 
 		mcChan.channelMutex.unlock();
 		vcChan.channelMutex.unlock();
@@ -646,16 +706,16 @@ namespace CCSDSDataLinkLayer {
 			}
 		}
 
-    	// frames in framesAfterSecondaryHeaderPlacement queue
-	    if (!mcChan.framesAfterSecondaryHeaderPlacement.isEmpty()) {
-    		frameTmPtr = mcChan.framesAfterSecondaryHeaderPlacement.getFront();
+    	// frames in framesAfterSecurityProcessing queue
+	    if (!mcChan.framesAfterSecurityProcessing.isEmpty()) {
+    		frameTmPtr = mcChan.framesAfterSecurityProcessing.getFront();
 
     		if (frameTmPtr->getOperationalControlFieldFlag()) {
 			    if (!mcChan.ocfSduQueue.isEmpty()) {
 			    	// ocf sdu exists
 			    	frameTmPtr->setOperationalControlField(mcChan.ocfSduQueue.getFront());
 			    	mcChan.ocfSduQueue.pop();
-			    	mcChan.framesAfterSecondaryHeaderPlacement.pop();
+			    	mcChan.framesAfterSecurityProcessing.pop();
 					mcChan.framesAfterMcGeneration.push(frameTmPtr);
 			    	mcChan.channelMutex.unlock();
 					return {};
@@ -681,7 +741,7 @@ namespace CCSDSDataLinkLayer {
 
     			// if a frame is discarded, then notify about it (it is implied that an ocf sdu was
     			// not available)
-    			mcChan.framesAfterSecondaryHeaderPlacement.pop();
+    			mcChan.framesAfterSecurityProcessing.pop();
     			mcChan.channelMutex.unlock();
     			if (discardedFrame) {
     				return etl::unexpected(ServiceChannelNotification::DISCARDED_FRAME);
@@ -689,7 +749,7 @@ namespace CCSDSDataLinkLayer {
     			return etl::unexpected(ServiceChannelNotification::OCF_SDU_QUEUE_EMPTY);
     		} else {
     			// Next frame in queue has no ocf field, just push to the next queue
-    			mcChan.framesAfterSecondaryHeaderPlacement.pop();
+    			mcChan.framesAfterSecurityProcessing.pop();
     			mcChan.framesAfterMcGeneration.push(frameTmPtr);
     			mcChan.channelMutex.unlock();
     			return {};

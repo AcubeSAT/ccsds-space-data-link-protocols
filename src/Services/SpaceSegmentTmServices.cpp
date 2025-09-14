@@ -151,12 +151,34 @@ namespace CCSDSDataLinkLayer {
                 // FRAME_QUEUE_FULL -> there is congestion in the channel, no action to be taken
                 // NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE -> No action to be taken
                 do {
-                   status = SpaceSegmentTmDataHandling::appendSecondaryHeaderDataField(pair.second, mcChan);
+                   status = SpaceSegmentTmDataHandling::appendSecondaryHeaderDataField(pair.second);
                 } while (status.has_value());
+
+                if (!status.has_value()) {
+                    if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
+                        return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+                    }
+                }
+
+                // Possible return notifications and actions
+                // FAILED_TO_LOCK_MUTEX -> return to notify user
+                // FRAME_QUEUE_EMPTY
+                // FRAME_QUEUE_FULL -> there is congestion in the channel, no action to be taken
+                // SLDS_CALCULATION_ERROR -> Notify user
+                do {
+                    status = SpaceSegmentTmDataHandling::applySDLSSecurity(phyChan, mcChan, pair.second);
+                } while (status.has_value());
+
+                if (!status.has_value()) {
+                    if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
+                        return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+                    } else if (status.error() == ServiceChannelNotification::SLDS_CALCULATION_ERROR) {
+                        return etl::unexpected(ServiceChannelNotification::SLDS_CALCULATION_ERROR);
+                    }
+                }
             }
         }
 
-        status = {};
         // Possible return notifications and actions
         // FAILED_TO_LOCK_MUTEX -> return to notify user
         // DISCARDED_FRAME -> ocf sdu queue was empty for long enough that frames are starting to get discarded, return to notify user

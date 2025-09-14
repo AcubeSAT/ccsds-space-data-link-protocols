@@ -325,56 +325,71 @@ namespace CCSDSDataLinkLayer {
     		// security processing is required for this frame
     		SecurityAssociation& sa = Objects::saSpaceSegmentMap.at(associatedSlsSpi.value());
 
+    		if (!sa.saMutex.tryLockFor(Defs::MutexDelayMs)) {
+    			vcChan.channelMutex.unlock();
+    			if (vcChan.getSegmentHeaderPresent()) {
+    				mapChan->channelMutex.unlock();
+    			}
+    			return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+    		}
+
 		    const uint16_t transferFrameDataFieldLength = frameTcPtr->getFrameLength() -
 		                                            Defs::TcPrimaryHeaderSize -
 		                                            sa.getSecurityHeaderLength() -
 		                                            sa.getSecurityTrailerLength() -
 		                                            phyChan.getFrameErrorControlFieldPresent() *
 		                                            Defs::ErrorControlFieldSize;
-    		if (const auto status = sa.processSecurityTC(frameTcPtr, transferFrameDataFieldLength);
-    			!status.has_value()) {
-    			// Because of the previous checks, the only possible errors that can occur are:
-    			// INVALID_SPI
-			    // MAC_VERIFICATION_FAILURE
-			    // ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE
-			    // MAC_CALCULATION_ERROR
-    			// In case of the first 3 issues, the frame must be discarded
-				if (status.error() == SDLSVerificationError::MAC_CALCULATION_ERROR) {
-					vcChan.channelMutex.unlock();
-					if (vcChan.getSegmentHeaderPresent()) {
-						mapChan->channelMutex.unlock();
-					}
-					return etl::unexpected(ServiceChannelNotification::SLDS_CALCULATION_ERROR);
-				} else {
-					MasterChannelSsTc& mcChan = Objects::masterChannelSsTcMap.at(vcChan.getParentScid());
-					if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
-						vcChan.channelMutex.unlock();
-						if (vcChan.getSegmentHeaderPresent()) {
-							mapChan->channelMutex.unlock();
-						}
-						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
-					}
+    		if (sa.getSecurityAssociationStatus() == SecurityAssociationStatus::RUNNING) {
+    			if (const auto status = sa.processSecurity(frameTcPtr, transferFrameDataFieldLength);
+					!status.has_value()) {
+    				// Because of the previous checks, the only possible errors that can occur are:
+    				// INVALID_SPI
+    				// MAC_VERIFICATION_FAILURE
+    				// ANTI_REPLAY_SEQUENCE_NUMBER_FAILURE
+    				// MAC_CALCULATION_ERROR
+    				// In case of the first 3 issues, the frame must be discarded
+    				if (status.error() == SDLSVerificationError::MAC_CALCULATION_ERROR) {
+    					sa.saMutex.unlock();
+    					vcChan.channelMutex.unlock();
+    					if (vcChan.getSegmentHeaderPresent()) {
+    						mapChan->channelMutex.unlock();
+    					}
+    					return etl::unexpected(ServiceChannelNotification::SLDS_CALCULATION_ERROR);
+    				} else {
+    					MasterChannelSsTc& mcChan = Objects::masterChannelSsTcMap.at(vcChan.getParentScid());
+    					if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
+    						sa.saMutex.unlock();
+    						vcChan.channelMutex.unlock();
+    						if (vcChan.getSegmentHeaderPresent()) {
+    							mapChan->channelMutex.unlock();
+    						}
+    						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+    					}
 
-					if (!Objects::frameOctetPool.poolMutex.tryLockFor(Defs::MutexDelayMs)) {
-						mcChan.channelMutex.unlock();
-						vcChan.channelMutex.unlock();
-						if (vcChan.getSegmentHeaderPresent()) {
-							mapChan->channelMutex.unlock();
-						}
-						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
-					}
+    					if (!Objects::frameOctetPool.poolMutex.tryLockFor(Defs::MutexDelayMs)) {
+    						sa.saMutex.unlock();
+    						mcChan.channelMutex.unlock();
+    						vcChan.channelMutex.unlock();
+    						if (vcChan.getSegmentHeaderPresent()) {
+    							mapChan->channelMutex.unlock();
+    						}
+    						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+    					}
 
-					Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+    					Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
 
-					Objects::frameOctetPool.poolMutex.unlock();
-					mcChan.frameMasterCopies.erase(frameTcPtr);
-					vcChan.channelMutex.unlock();
-					if (vcChan.getSegmentHeaderPresent()) {
-						mapChan->channelMutex.unlock();
-					}
-					return etl::unexpected(ServiceChannelNotification::UNAUTHORIZED_SENDER);
+    					Objects::frameOctetPool.poolMutex.unlock();
+    					sa.saMutex.unlock();
+    					mcChan.frameMasterCopies.erase(frameTcPtr);
+    					vcChan.channelMutex.unlock();
+    					if (vcChan.getSegmentHeaderPresent()) {
+    						mapChan->channelMutex.unlock();
+    					}
+    					return etl::unexpected(ServiceChannelNotification::UNAUTHORIZED_SENDER);
+    				}
 				}
     		}
+    		sa.saMutex.unlock();
     	}
 
     	// push to next stage

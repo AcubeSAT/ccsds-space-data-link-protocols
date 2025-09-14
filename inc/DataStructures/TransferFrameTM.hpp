@@ -255,9 +255,6 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief Carry a report for the receiver.
          *
-         * @details In this implementation, the operational control field is occupied by the CLCW,
-         * which is defined in the TC SPACE DATA LINK PROTOCOL.
-         *
          * @see p. 4.1.5 from TM SPACE DATA LINK PROTOCOL
          */
         [[nodiscard]] etl::optional<uint32_t> getOperationalControlField() const {

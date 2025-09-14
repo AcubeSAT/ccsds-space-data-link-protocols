@@ -552,18 +552,28 @@ namespace CCSDSDataLinkLayer {
     		// security processing is required for this frame
     		SecurityAssociation& sa = Objects::saGroundSegmentMap.at(associatedSdlsSpi.value());
 
+    		if (!sa.saMutex.tryLockFor(Defs::MutexDelayMs)) {
+    			vcChan.channelMutex.unlock();
+    			return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
+    		}
+
 		    const uint16_t transferFrameDataFieldLength = frameTcPtr->getFrameLength() -
 		                                            Defs::TcPrimaryHeaderSize -
 		                                            sa.getSecurityHeaderLength() -
 		                                            sa.getSecurityTrailerLength() -
 		                                            phyChan.getFrameErrorControlFieldPresent() *
 		                                            Defs::ErrorControlFieldSize;
-    		if (const auto status = sa.processSecurityTC(frameTcPtr, transferFrameDataFieldLength);
-    			!status.has_value()) {
-    			// because of the previous checks, MAC_CALCULATION_ERROR is the only possible error
-    			vcChan.channelMutex.unlock();
-    			return etl::unexpected(ServiceChannelNotification::SLDS_CALCULATION_ERROR);
+
+    		if (sa.getSecurityAssociationStatus() == SecurityAssociationStatus::RUNNING) {
+    			if (const auto status = sa.applySecurity(frameTcPtr, transferFrameDataFieldLength);
+					!status.has_value()) {
+    				// because of the previous checks, MAC_CALCULATION_ERROR is the only possible error
+    				sa.saMutex.unlock();
+    				vcChan.channelMutex.unlock();
+    				return etl::unexpected(ServiceChannelNotification::SLDS_CALCULATION_ERROR);
+					}
     		}
+    		sa.saMutex.unlock();
     	}
 
     	// push to next stage

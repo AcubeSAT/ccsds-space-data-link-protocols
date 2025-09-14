@@ -103,10 +103,12 @@ namespace CCSDSDataLinkLayer {
         void initializeContainers(const etl::span<uint16_t> &packetLengthsBuff,
                                   const etl::span<uint8_t> &packetOctetsBuff,
                                   const etl::span<uint8_t> &secondaryHeaderDataFieldOctetsBuff,
-                                  const etl::span<TransferFrameTM*> framesBeforeSecondaryHeaderPlacementBuff) {
+                                  const etl::span<TransferFrameTM*> framesAfterVcGenerationBuff,
+                                  const etl::span<TransferFrameTM*> framesAfterSecondaryHeaderPlacementBuff) {
             packetLengths = Dequeue(packetLengthsBuff);
             packetOctets = Dequeue(packetOctetsBuff);
-            framesBeforeSecondaryHeaderPlacement = Queue(framesBeforeSecondaryHeaderPlacementBuff);
+            framesAfterVcGeneration = Queue(framesAfterVcGenerationBuff);
+            framesAfterSecondaryHeaderPlacement = Queue(framesAfterSecondaryHeaderPlacementBuff);
             secondaryHeaderDataFieldOctets = Queue(secondaryHeaderDataFieldOctetsBuff);
         }
 
@@ -169,8 +171,14 @@ namespace CCSDSDataLinkLayer {
 
         /**
          * @brief Buffer that holds pointers to TM frames already processed by the vc generation data handling function
+         *        and before secondary header is applied
          */
-        Queue<TransferFrameTM*> framesBeforeSecondaryHeaderPlacement;
+        Queue<TransferFrameTM*> framesAfterVcGeneration;
+
+        /**
+         * @brief Buffer that holds pointers to TM frames that had their secondary header placed and before SDLS processing
+         */
+        Queue<TransferFrameTM*> framesAfterSecondaryHeaderPlacement;
 
     private:
         /**
