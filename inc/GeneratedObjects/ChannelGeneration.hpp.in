@@ -94,7 +94,6 @@ namespace CCSDSDataLinkLayer::Generated {
     enum class PhysicalChannelName : uint8_t {
 #define PHYSICAL_CHANNEL(physicalChannelName, pcid, tfvn, maxTcLength, tmLength, maxFramesPdu, maxPduLength, maximumBitRate, fecPresent) physicalChannelName = pcid,
 #include "@CHANNEL_CONFIG@"
-        SentinelValue
     };
 
     inline etl::flat_map<Defs::Pcid, PhysicalChannel, (PhysicalChannelCount == 0) ? 1 : PhysicalChannelCount> physicalChannelMap = {
@@ -119,7 +118,6 @@ namespace CCSDSDataLinkLayer::Generated {
     enum class MasterChannelTmName : uint8_t {
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity) masterChannelName = scid,
 #include "@CHANNEL_CONFIG@"
-        SentinelValue
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -142,7 +140,6 @@ namespace CCSDSDataLinkLayer::Generated {
     enum class MasterChannelTcName : uint8_t {
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid) masterChannelName = scid,
 #include "@CHANNEL_CONFIG@"
-        SentinelValue
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -179,7 +176,6 @@ namespace CCSDSDataLinkLayer::Generated {
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity) \
     virtualChannelName = Defs::constructVcidScidKey(vcid, parentScid),
 #include "@CHANNEL_CONFIG@"
-        SentinelValue
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -210,7 +206,6 @@ namespace CCSDSDataLinkLayer::Generated {
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, dataFieldContent, repetitionsTypeAD, repetitionsTypeBC, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) \
     virtualChannelName = Defs::constructVcidScidKey(vcid, parentScid),
 #include "@CHANNEL_CONFIG@"
-        SentinelValue
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -265,7 +260,6 @@ namespace CCSDSDataLinkLayer::Generated {
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity) \
     mapChannelName = Defs::constructscidVcidScidKey(vcid, parentVcid, parentScid),
 #include "@CHANNEL_CONFIG@"
-        SentinelValue
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE

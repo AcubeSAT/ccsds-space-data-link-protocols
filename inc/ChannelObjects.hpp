@@ -61,10 +61,25 @@ namespace CCSDSDataLinkLayer::Objects {
     inline auto& authenticationKeyMap = Generated::authenticationKeyMap;
 
     /**
+     * @brief Perform basic checks on the user specified channel configuration
+     *
+     * @return Whether the configuration is valid. If not, then a diagnostic log is also printed
+     */
+    bool validateChannelConfiguration();
+
+    /**
      * @brief Allocate memory blocks for the channel containers
-     * @note The user must call this before attempting to use any data link service/data handling function
      *
      * @return Whether the operation was successful or not
      */
     bool initializeChannelContainers();
+
+    /**
+     * @brief Validate configuration and initialize channel containers.
+     *
+     * @details The user must call this function and ensure
+     *          the return value is true before calling any data link service. If the return value is false, something
+     *          in the configuration is possibly wrong.
+     */
+    bool initializeDataLink();
 } // CCSDSDataLinkLayer::Objects

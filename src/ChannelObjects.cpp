@@ -1,12 +1,411 @@
 #include "ChannelObjects.hpp"
 #include "AddressingAndParsingUtilities.hpp"
+#include "SecurityAssociationKeys.hpp"
 
 namespace CCSDSDataLinkLayer::Objects {
     using namespace Generated;
 
-    bool initializeChannelContainers() {
-        // TODO sanity checks for the user's configuration
+    bool validateChannelConfiguration() {
+        // Check 1: There is at least one TM MasterChannel and at least one TC Master channel per physical channel
+        for (auto &phyChanPair: physicalChannelMap) {
+            Defs::Pcid pcid = phyChanPair.second.getPcid();
 
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+            if (!etl::any_of(masterChannelSsTcMap.begin(), masterChannelSsTcMap.end(),
+                             [pcid](const auto &pair) -> bool { return pair.second.getParentPcid() == pcid; })) {
+                LOG_ERROR << "Physical channel with PCID " << pcid <<
+                        " does not contain any Space Segment TC Master Channels";
+                return false;
+            }
+
+            if (!etl::any_of(masterChannelSsTmMap.begin(), masterChannelSsTmMap.end(),
+                             [pcid](const auto &pair) -> bool { return pair.second.getParentPcid() == pcid; })) {
+                LOG_ERROR << "Physical channel with PCID " << pcid <<
+                        " does not contain any Space Segment TM Master Channels";
+                return false;
+            }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+            if (!etl::any_of(masterChannelGsTcMap.begin(), masterChannelGsTcMap.end(),
+                             [pcid](const auto &pair) -> bool { return pair.second.getParentPcid() == pcid; })) {
+                LOG_ERROR << "Physical channel with PCID " << pcid <<
+                        " does not contain any Ground Segment TC Master Channels";
+                return false;
+            }
+#endif
+        }
+
+        // Check 2: There is at least one TM (TC) Virtual Channel per TM (TC) Master channel
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &mcChanPair: masterChannelSsTcMap) {
+            Defs::Scid scid = mcChanPair.second.getScid();
+
+            if (!etl::any_of(virtualChannelSsTcMap.begin(), virtualChannelSsTcMap.end(),
+                 [scid](const auto &pair) -> bool { return pair.second.getParentScid() == scid; })) {
+                LOG_ERROR << "Space segment TC Master Channel with SCID " << scid <<
+                        " does not contain any Space Segment TC Virtual Channels";
+                return false;
+            }
+        }
+
+        for (auto &mcChanPair: masterChannelSsTmMap) {
+            Defs::Scid scid = mcChanPair.second.getScid();
+
+            if (!etl::any_of(virtualChannelSsTmMap.begin(), virtualChannelSsTmMap.end(),
+                 [scid](const auto &pair) -> bool { return pair.second.getParentScid() == scid; })) {
+                LOG_ERROR << "Space segment TM Master Channel with SCID " << scid <<
+                        " does not contain any Space Segment TM Virtual Channels";
+                return false;
+                 }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &mcChanPair: masterChannelGsTcMap) {
+            Defs::Scid scid = mcChanPair.second.getScid();
+
+            if (!etl::any_of(virtualChannelGsTcMap.begin(), virtualChannelGsTcMap.end(),
+                 [scid](const auto &pair) -> bool { return pair.second.getParentScid() == scid; })) {
+                LOG_ERROR << "Ground segment TC Master Channel with SCID " << scid <<
+                        " does not contain any Ground Segment TC Virtual Channels";
+                return false;
+                 }
+        }
+#endif
+
+
+        // Check 3: There is at least one MAP Channel per TC Virtual Channel with segmentation header present
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &vcChanPair: virtualChannelSsTcMap) {
+            if (vcChanPair.second.getSegmentHeaderPresent()) {
+                Defs::Vcid vcid = vcChanPair.second.getVcid();
+                Defs::Scid scid = vcChanPair.second.getParentScid();
+                if (!etl::any_of(mapChannelSsMap.begin(), mapChannelSsMap.end(),
+                     [vcid, scid](const auto &pair) -> bool { return (pair.second.getParentVcid() == vcid) && (pair.second.getParentScid() == scid);})) {
+                    LOG_ERROR << "Space segment TC Virtual Channel with VCID-SCID " << vcid << "-" << scid <<
+                            " does not contain any Space Segment MAP Channels, despite having a segmentation header present";
+                    return false;
+                }
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &vcChanPair: virtualChannelGsTcMap) {
+            if (vcChanPair.second.getSegmentHeaderPresent()) {
+                Defs::Vcid vcid = vcChanPair.second.getVcid();
+                Defs::Scid scid = vcChanPair.second.getParentScid();
+                Defs::VcidScidKey key = constructVcidScidKey(vcid, scid);
+                if (!etl::any_of(mapChannelGsMap.begin(), mapChannelGsMap.end(),
+                     [vcid, scid](const auto &pair) -> bool { return (pair.second.getParentVcid() == vcid) && (pair.second.getParentScid() == scid);})) {
+                    LOG_ERROR << "Ground segment TC Virtual Channel with VCID-SCID " << vcid << "-" << scid <<
+                            " does not contain any Ground Segment MAP Channels, despite having a segmentation header present";
+                    return false;
+                }
+            }
+        }
+#endif
+
+        // Check 4: All Master Channels have a Physical Channel ancestor
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &mcChanPair: masterChannelSsTcMap) {
+            Defs::Pcid pcid = mcChanPair.second.getParentPcid();
+            if (!etl::any_of(physicalChannelMap.begin(), physicalChannelMap.end(), [pcid](const auto& pair) -> bool { return (pair.second.getPcid() == pcid);})) {
+                LOG_ERROR << "Space Segment TC Master Channel with SCID: " << mcChanPair.second.getScid() <<
+                    " does not belong in any Physical Channel";
+                return false;
+            }
+        }
+
+        for (auto &mcChanPair: masterChannelSsTmMap) {
+            Defs::Pcid pcid = mcChanPair.second.getParentPcid();
+            if (!etl::any_of(physicalChannelMap.begin(), physicalChannelMap.end(), [pcid](const auto& pair) -> bool { return (pair.second.getPcid() == pcid);})) {
+                LOG_ERROR << "Space Segment TM Master Channel with SCID: " << mcChanPair.second.getScid() <<
+                    " does not belong in any Physical Channel";
+                return false;
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &mcChanPair: masterChannelGsTcMap) {
+            Defs::Pcid pcid = mcChanPair.second.getParentPcid();
+            if (!etl::any_of(physicalChannelMap.begin(), physicalChannelMap.end(), [pcid](const auto& pair) -> bool { return (pair.second.getPcid() == pcid);})) {
+                LOG_ERROR << "Ground Segment TC Master Channel with SCID: " << mcChanPair.second.getScid() <<
+                    " does not belong in any Physical Channel";
+                return false;
+            }
+        }
+#endif
+
+        // Check 5: All Virtual Channels have a Master Channel ancestor
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &vcChanPair: virtualChannelSsTcMap) {
+            Defs::Scid scid = vcChanPair.second.getParentScid();
+            if (!etl::any_of(masterChannelSsTcMap.begin(), masterChannelSsTcMap.end(), [scid](const auto& pair) -> bool { return (pair.second.getScid() == scid);})) {
+                LOG_ERROR << "Space Segment TC Virtual Channel with VCID-SCID: " << vcChanPair.second.getVcid() << "-" << scid <<
+                    " does not belong in any Master Channel";
+                return false;
+            }
+        }
+
+        for (auto &vcChanPair: virtualChannelSsTmMap) {
+            Defs::Scid scid = vcChanPair.second.getParentScid();
+            if (!etl::any_of(masterChannelSsTmMap.begin(), masterChannelSsTmMap.end(), [scid](const auto& pair) -> bool { return (pair.second.getScid() == scid);})) {
+                LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcChanPair.second.getVcid() << "-" << scid <<
+                    " does not belong in any Master Channel";
+                return false;
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &vcChanPair: virtualChannelGsTcMap) {
+            Defs::Scid scid = vcChanPair.second.getParentScid();
+            if (!etl::any_of(masterChannelGsTcMap.begin(), masterChannelGsTcMap.end(), [scid](const auto& pair) -> bool { return (pair.second.getScid() == scid);})) {
+                LOG_ERROR << "Ground Segment TC Virtual Channel with VCID-SCID: " << vcChanPair.second.getVcid() << "-" << scid <<
+                    " does not belong in any Master Channel";
+                return false;
+            }
+        }
+#endif
+
+        // Check 6: All MAP Channels have a Virtual Channel ancestor with segmentation header present
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &mapChanPair: mapChannelSsMap) {
+            Defs::Vcid vcid = mapChanPair.second.getParentVcid();
+            Defs::Scid scid = mapChanPair.second.getParentScid();
+            Defs::VcidScidKey key = constructVcidScidKey(vcid, scid);
+            if (!etl::any_of(virtualChannelSsTcMap.begin(), virtualChannelSsTcMap.end(),
+                [key](const auto& pair) -> bool { return pair.second.getSegmentHeaderPresent() && (pair.first == key);})) {
+                LOG_ERROR << "Space Segment MAP Channel with VCID-SCID: " << vcid << "-" << scid <<
+                    " does not belong in any Virtual Channel";
+                return false;
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &mapChanPair: mapChannelGsMap) {
+            Defs::Vcid vcid = mapChanPair.second.getParentVcid();
+            Defs::Scid scid = mapChanPair.second.getParentScid();
+            Defs::VcidScidKey key = constructVcidScidKey(vcid, scid);
+            if (!etl::any_of(virtualChannelGsTcMap.begin(), virtualChannelGsTcMap.end(),
+                [key](const auto& pair) -> bool { return pair.second.getSegmentHeaderPresent() && (pair.first == key);})) {
+                LOG_ERROR << "Ground Segment MAP Channel with VCID-SCID: " << vcid << "-" << scid <<
+                    " does not belong in any Virtual Channel";
+                return false;
+            }
+        }
+#endif
+
+        // Check 7: For every Virtual Channel with COP-1 enabled, the corresponding COP-1 object exists
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto& vcChanPair: virtualChannelSsTcMap) {
+            if (vcChanPair.second.getCopInEffect()) {
+                Defs::Vcid vcid = vcChanPair.second.getVcid();
+                Defs::Scid scid = vcChanPair.second.getParentScid();
+                Defs::VcidScidKey key = constructVcidScidKey(vcid, scid);
+                if (!etl::any_of(farmMap.begin(), farmMap.end(),
+                    [key](const auto& pair) -> bool { return pair.first == key;})) {
+                    LOG_ERROR << "Space Segment TC Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                    " has COP-1 enabled, but no FOP object found";
+                    return false;
+                }
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto& vcChanPair: virtualChannelGsTcMap) {
+            if (vcChanPair.second.getCopInEffect()) {
+                Defs::Vcid vcid = vcChanPair.second.getVcid();
+                Defs::Scid scid = vcChanPair.second.getParentScid();
+                Defs::VcidScidKey key = constructVcidScidKey(vcid, scid);
+                if (!etl::any_of(fopMap.begin(), fopMap.end(),
+                    [key](const auto& pair) -> bool { return pair.first == key;})) {
+                    LOG_ERROR << "Ground Segment TC Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                    " has COP-1 enabled, but no FARM object found";
+                    return false;
+                }
+            }
+        }
+#endif
+
+        // Check 8: There is no Security Association with an SPI value of 0 (this value used for indicating that there is
+        //          no sa association)
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        if (etl::any_of(saSpaceSegmentMap.begin(), saSpaceSegmentMap.end(),
+            [](const auto &pair){return pair.second.getSecurityParameterIndex() == 0;})) {
+            LOG_ERROR << "Space Segment Security Association has an Security Parameter Index value of 0";
+            return false;
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        if (etl::any_of(saGroundSegmentMap.begin(), saGroundSegmentMap.end(),
+            [](const auto &pair){return pair.second.getSecurityParameterIndex() == 0;})) {
+            LOG_ERROR << "Ground Segment Security Association has an Security Parameter Index value of 0";
+            return false;
+        }
+#endif
+
+        // Check 9: For every Virtual or Map Channel with non-zero Security Parameter index, the corresponding Security Association exists
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto& vcChanPair: virtualChannelSsTcMap) {
+            if (vcChanPair.second.getAssociatedSdlsSPI().has_value()) {
+                Defs::Spi spi = vcChanPair.second.getAssociatedSdlsSPI().value();
+                if (!etl::any_of(saSpaceSegmentMap.begin(), saSpaceSegmentMap.end(),
+                    [spi](const auto& pair) -> bool { return pair.second.getSecurityParameterIndex() == spi;})) {
+                    Defs::Vcid vcid = vcChanPair.second.getVcid();
+                    Defs::Scid scid = vcChanPair.second.getParentScid();
+                    LOG_ERROR << "Space Segment TC Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                    " has an invalid Security Parameter Index";
+                    return false;
+                }
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto& vcChanPair: virtualChannelGsTcMap) {
+            if (vcChanPair.second.getAssociatedSdlsSPI().has_value()) {
+                Defs::Spi spi = vcChanPair.second.getAssociatedSdlsSPI().value();
+                if (!etl::any_of(saGroundSegmentMap.begin(), saGroundSegmentMap.end(),
+                    [spi](const auto& pair) -> bool { return pair.second.getSecurityParameterIndex() == spi;})) {
+                    Defs::Vcid vcid = vcChanPair.second.getVcid();
+                    Defs::Scid scid = vcChanPair.second.getParentScid();
+                    LOG_ERROR << "Ground Segment TC Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                    " has an invalid Security Parameter Index";
+                    return false;
+                }
+            }
+        }
+#endif
+
+        // Check 10: For every Security Association with an encryption algorithm enabled, the corresponding authentication key exists
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto& saPair: saSpaceSegmentMap) {
+            Defs::Spi spi = saPair.second.getSecurityParameterIndex();
+            if (!etl::any_of(authenticationKeyMap.begin(), authenticationKeyMap.end(),
+                [spi](const auto &pair) -> bool {return pair.first == spi;})) {
+                LOG_ERROR << "No authentication key found for Space Segment Security Association with SPI: " << spi;
+                return false;
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto& saPair: saGroundSegmentMap) {
+            Defs::Spi spi = saPair.second.getSecurityParameterIndex();
+            if (!etl::any_of(authenticationKeyMap.begin(), authenticationKeyMap.end(),
+                [spi](const auto &pair) -> bool {return pair.first == spi;})) {
+                LOG_ERROR << "No authentication key found for Ground Segment Security Association with SPI: " << spi;
+                return false;
+            }
+        }
+#endif
+
+        // Check 11: If none of the virtual channels of a TM master channel use the ocf service, then the ocf sdu capacity is 0
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto& mcChanPair: masterChannelSsTmMap) {
+            Defs::Scid scid = mcChanPair.second.getScid();
+            if (mcChanPair.second.getOcfSduCapacity() != 0) {
+                if (!etl::any_of(virtualChannelSsTmMap.begin(), virtualChannelSsTmMap.end(),
+                    [scid](const auto &pair) -> bool {return pair.second.getParentScid() == scid && pair.second.getOperationalControlFieldPresent();})) {
+                    LOG_ERROR << "Space Segment TM Master Channel with SCID: " << mcChanPair.second.getScid() <<
+                        " has non zero ocf sdu capacity specified, but none of its Virtual Channels supports the ocf sdu service";
+                    return false;
+                }
+            }
+        }
+#endif
+
+        // Check 12: The maxTcFrameLength and tmFrameLength values of every physical channel are equal or less to the maximum definitions
+        for (auto &phyChanPair : physicalChannelMap) {
+            if (phyChanPair.second.getMaxTcFrameLength() > Defs::MaxTcTransferFrameLength) {
+                LOG_ERROR << "Physical channel with PCID: " << phyChanPair.second.getPcid() <<
+                    " has a larger maximum TC frame length than the allowed one";
+                return false;
+            }
+
+            if (phyChanPair.second.getTMFrameLength() > Defs::MaxTmTransferFrameLength) {
+                LOG_ERROR << "Physical channel with PCID: " << phyChanPair.second.getPcid() <<
+                    " has a larger TM frame length than the allowed one";
+                return false;
+            }
+        }
+
+        // Check 13: In Virtual Channels with no secondary header present, the secondary header length is zero
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &vcChanPair : virtualChannelSsTmMap) {
+            Defs::Vcid vcid = vcChanPair.second.getVcid();
+            Defs::Scid scid = vcChanPair.second.getParentScid();
+
+            if (!vcChanPair.second.getSecondaryHeaderPresent()) {
+                if (vcChanPair.second.getSecondaryHeaderLength() != 0) {
+                    LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " does not have a secondary header, but the specified length is non zero";
+                    return false;
+                }
+            } else {
+                if (vcChanPair.second.getSecondaryHeaderLength() == 0) {
+                    LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " has a secondary header, but the specified length is zero";
+                    return false;
+                }
+            }
+        }
+#endif
+
+        // Check 14: In Virtual Channels that contain MAP channels, the typeAdPacketCapacity, typeBdPacketCapacity are 0
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &vcChanPair : virtualChannelSsTcMap) {
+            Defs::Vcid vcid = vcChanPair.second.getVcid();
+            Defs::Scid scid = vcChanPair.second.getParentScid();
+
+            if (vcChanPair.second.getSegmentHeaderPresent()) {
+                if ((vcChanPair.second.getTypeAdPacketCapacity() != 0) || (vcChanPair.second.getTypeBdPacketCapacity() != 0)) {
+                    LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " has MAP channels and one or both of the specified packets lengths are non zero";
+                    return false;
+                }
+            } else {
+                if ((vcChanPair.second.getTypeAdPacketCapacity() == 0) && (vcChanPair.second.getTypeBdPacketCapacity() == 0)) {
+                    LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " does not have MAP channels, and both of the specified lengths are zero";
+                    return false;
+                }
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &vcChanPair : virtualChannelGsTcMap) {
+            Defs::Vcid vcid = vcChanPair.second.getVcid();
+            Defs::Scid scid = vcChanPair.second.getParentScid();
+
+            if (vcChanPair.second.getSegmentHeaderPresent()) {
+                if ((vcChanPair.second.getTypeAdPacketCapacity() != 0) || (vcChanPair.second.getTypeBdPacketCapacity() != 0)) {
+                    LOG_ERROR << "Ground Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " has MAP channels and one or both of the specified packets lengths are non zero";
+                    return false;
+                }
+            } else {
+                if ((vcChanPair.second.getTypeAdPacketCapacity() == 0) && (vcChanPair.second.getTypeBdPacketCapacity() == 0)) {
+                    LOG_ERROR << "Ground Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " does not have MAP channels, and both of the specified lengths are zero";
+                    return false;
+                }
+            }
+        }
+#endif
+        // All checks passed
+        return true;
+    }
+
+    bool initializeChannelContainers() {
         uint32_t transferFrameTcArrayIndex = 0;
         const uint32_t transferFrameTcArrayMaxSize = TotalTransferFrameTcSlots;
 
@@ -345,4 +744,15 @@ namespace CCSDSDataLinkLayer::Objects {
         return true;
     }
 
+    bool initializeDataLink() {
+        if (!validateChannelConfiguration()) {
+            return false;
+        }
+
+        if (!initializeChannelContainers()) {
+            return false;
+        }
+
+        return true;
+    }
 } // CCSDSDataLinkLayer::Objects

@@ -193,8 +193,6 @@
 //                     (an internet protocol analogy is TCP segments vs UDP datagrams). In the scenario that COP-11 is
 //                     not active for this virtual channel, TYPE-AD frames are not subject to checks, but compared to
 //                     TYPE-BD, they can be transmitted multiple times (depending on the repetitionsTypeAD parameter).
-//                     **WARNING**: If map channels exist under this virtual channel those values MUST be set to 0.
-//                                  Otherwise, an excess amount of memory will be allocated.
 //
 // =====================================================================================================================
 //

@@ -2,6 +2,7 @@
 #include "etl/string.h"
 #include "etl/flat_map.h"
 #include "CcsdsDefinitions.hpp"
+#pragma once
 
 namespace CCSDSDataLinkLayer::Generated {
     inline constexpr uint8_t KeyCount = (0
