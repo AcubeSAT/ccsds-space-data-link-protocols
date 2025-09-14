@@ -107,9 +107,10 @@ namespace CCSDSDataLinkLayer {
             PhysicalChannel& phyChan = it->second;
             Defs::Scid scid = phyChan.getScidTc();
 
-            for (auto &pair : Objects::virtualChannelSsTcMap) {
+            for (auto &vcidScidKey : Objects::virtualChannelSsTcPrioritySortedKeys) {
                 // only act on channels that belong to this master channel
-                if (std::get<1>(extractVcidScid(pair.first)) == scid) {
+                VirtualChannelSsTc& vcChan = Objects::virtualChannelSsTcMap.at(vcidScidKey);
+                if (std::get<1>(extractVcidScid(vcidScidKey)) == scid) {
                     // Possible return notifications and actions
                     // NO_SERVICE_EVENT -> no errors encountered, no action
                     // FARM_ERROR -> // TODO
@@ -118,7 +119,7 @@ namespace CCSDSDataLinkLayer {
                     // FRAME_QUEUE_FULL -> there is congestion in the channel, no action
                     etl::pair<ServiceChannelNotification, uint8_t> vcReceptionStatus;
                     do {
-                        vcReceptionStatus = SpaceSegmentTcDataHandling::virtualChannelReception(pair.second);
+                        vcReceptionStatus = SpaceSegmentTcDataHandling::virtualChannelReception(vcChan);
                     } while (vcReceptionStatus.first == ServiceChannelNotification::NO_SERVICE_EVENT);
 
                     if (vcReceptionStatus.first == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
@@ -134,7 +135,7 @@ namespace CCSDSDataLinkLayer {
                     // FRAME_QUEUE_FULL -> there is congestion in the channel, no action
                     etl::expected<void, ServiceChannelNotification> sldsSecStatus;
                     do {
-                        sldsSecStatus = SpaceSegmentTcDataHandling::processSdlsSecurity(phyChan, pair.second, Defs::ServiceType::TYPE_AD);
+                        sldsSecStatus = SpaceSegmentTcDataHandling::processSdlsSecurity(phyChan, vcChan, Defs::ServiceType::TYPE_AD);
                     } while (sldsSecStatus.has_value());
 
                     if (!sldsSecStatus.has_value()) {
@@ -146,7 +147,7 @@ namespace CCSDSDataLinkLayer {
                     }
 
                     do {
-                        sldsSecStatus = SpaceSegmentTcDataHandling::processSdlsSecurity(phyChan, pair.second, Defs::ServiceType::TYPE_BD);
+                        sldsSecStatus = SpaceSegmentTcDataHandling::processSdlsSecurity(phyChan, vcChan, Defs::ServiceType::TYPE_BD);
                     } while (sldsSecStatus.has_value());
 
                     if (!sldsSecStatus.has_value()) {

@@ -35,17 +35,29 @@ namespace CCSDSDataLinkLayer::Objects {
     #ifdef INCLUDE_SPACE_SEGMENT_CODE
     inline auto& masterChannelSsTmMap = Generated::masterChannelSsTmMap;
     inline auto& masterChannelSsTcMap = Generated::masterChannelSsTcMap;
+
     inline auto& virtualChannelSsTmMap = Generated::virtualChannelSsTmMap;
+    inline auto& virtualChannelSsTmPrioritySortedKeys = Generated::virtualChannelSsTmPrioritySortedKeys;
+
     inline auto& virtualChannelSsTcMap = Generated::virtualChannelSsTcMap;
+    inline auto& virtualChannelSsTcPrioritySortedKeys = Generated::virtualChannelSsTcPrioritySortedKeys;
+
     inline auto& mapChannelSsMap = Generated::mapChannelSsMap;
+    inline auto& mapChannelSsPrioritySortedKeys = Generated::mapChannelSsPrioritySortedKeys;
+
     inline auto& farmMap = Generated::farmMap;
     inline auto& saSpaceSegmentMap = Generated::saSpaceSegmentMap;
     #endif
 
     #ifdef INCLUDE_GROUND_SEGMENT_CODE
     inline auto& masterChannelGsTcMap = Generated::masterChannelGsTcMap;
+
     inline auto& virtualChannelGsTcMap = Generated::virtualChannelGsTcMap;
+    inline auto& virtualChannelGsTcPrioritySortedKeys = Generated::virtualChannelGsTcPrioritySortedKeys;
+
     inline auto& mapChannelGsMap = Generated::mapChannelGsMap;
+    inline auto& mapChannelGsPrioritySortedKeys = Generated::mapChannelGsPrioritySortedKeys;
+
     inline auto& fopMap = Generated::fopMap;
     inline auto& saGroundSegmentMap = Generated::saGroundSegmentMap;
     #endif

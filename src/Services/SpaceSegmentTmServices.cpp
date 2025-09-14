@@ -115,15 +115,16 @@ namespace CCSDSDataLinkLayer {
         MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(phyChan.getScidTm());
 
         etl::expected<void, ServiceChannelNotification> status;
-        for (auto &pair : Objects::virtualChannelSsTmMap) {
+        for (auto &vcidScidKey : Objects::virtualChannelSsTmPrioritySortedKeys) {
             // act only on virtual channels that belong to this master channel
-            if (pair.second.getParentScid() == mcChan.getScid()) {
+            VirtualChannelSsTm& vcChan = Objects::virtualChannelSsTmMap.at(vcidScidKey);
+            if (vcChan.getParentScid() == mcChan.getScid()) {
                 // Possible return notifications and actions
                 // FAILED_TO_LOCK_MUTEX -> return to notify user
                 // PACKET_QUEUE_EMPTY -> no packets were available, attempt to generate an oid frame
                 // NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL, FRAME_QUEUE_FULL, NOT_ENOUGH_SPACE_IN_MEMORY_POOL ->
                 //  there is congestion in the channel, no action to be taken
-                status = SpaceSegmentTmDataHandling::virtualChannelGeneration(phyChan, mcChan, pair.second);
+                status = SpaceSegmentTmDataHandling::virtualChannelGeneration(phyChan, mcChan, vcChan);
 
                 if (!status.has_value()) {
                     if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
@@ -135,7 +136,7 @@ namespace CCSDSDataLinkLayer {
                         // FAILED_TO_LOCK_MUTEX -> return to notify user
                         // NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL, FRAME_QUEUE_FULL, NOT_ENOUGH_SPACE_IN_MEMORY_POOL ->
                         //  there is congestion in the channel, no action to be taken
-                        status = SpaceSegmentTmDataHandling::generateOidFrame(phyChan, mcChan, pair.second);
+                        status = SpaceSegmentTmDataHandling::generateOidFrame(phyChan, mcChan, vcChan);
 
                         if (!status.has_value()) {
                             if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
@@ -151,7 +152,7 @@ namespace CCSDSDataLinkLayer {
                 // FRAME_QUEUE_FULL -> there is congestion in the channel, no action to be taken
                 // NO_SECONDARY_HEADER_DATA_FIELD_AVAILABLE -> No action to be taken
                 do {
-                   status = SpaceSegmentTmDataHandling::appendSecondaryHeaderDataField(pair.second);
+                   status = SpaceSegmentTmDataHandling::appendSecondaryHeaderDataField(vcChan);
                 } while (status.has_value());
 
                 if (!status.has_value()) {
@@ -166,7 +167,7 @@ namespace CCSDSDataLinkLayer {
                 // FRAME_QUEUE_FULL -> there is congestion in the channel, no action to be taken
                 // SLDS_CALCULATION_ERROR -> Notify user
                 do {
-                    status = SpaceSegmentTmDataHandling::applySDLSSecurity(phyChan, mcChan, pair.second);
+                    status = SpaceSegmentTmDataHandling::applySDLSSecurity(phyChan, mcChan, vcChan);
                 } while (status.has_value());
 
                 if (!status.has_value()) {

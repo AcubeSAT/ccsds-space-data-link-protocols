@@ -767,6 +767,30 @@ namespace CCSDSDataLinkLayer::Objects {
         //     }
         // }
 #endif
+
+        // create sorted keys arrays
+        auto sortChannelKeys = [](auto& sortedKeys, const auto& channelMap) {
+            sortedKeys.clear();
+            for (const auto& pair : channelMap) {
+                sortedKeys.push_back(pair.first);
+            }
+            etl::sort(sortedKeys.begin(), sortedKeys.end(),
+                [&channelMap](const auto& a, const auto& b) {
+                    return channelMap.at(a).getPriorityWeight() > channelMap.at(b).getPriorityWeight();
+                });
+        };
+
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        sortChannelKeys(virtualChannelSsTcPrioritySortedKeys, virtualChannelSsTcMap);
+        sortChannelKeys(virtualChannelSsTmPrioritySortedKeys, virtualChannelSsTmMap);
+        sortChannelKeys(mapChannelSsPrioritySortedKeys, mapChannelSsMap);
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        sortChannelKeys(virtualChannelGsTcPrioritySortedKeys, virtualChannelGsTcMap);
+        sortChannelKeys(mapChannelGsPrioritySortedKeys, mapChannelGsMap);
+#endif
+
         return true;
     }
 

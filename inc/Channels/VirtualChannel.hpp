@@ -23,9 +23,10 @@ namespace CCSDSDataLinkLayer {
     class VirtualChannelBase {
     public:
         explicit VirtualChannelBase(const Defs::Vcid vcid, const Defs::Scid parentScid,
-                           const Defs::Spi associatedSdlsSPI, const uint16_t frameCapacity)
+                                    const Defs::Spi associatedSdlsSPI, const uint16_t frameCapacity,
+                                    const uint8_t priorityWeight)
             : channelMutex(Mutex()), vcid(vcid & 0x3FU), parentScid(parentScid & 0x03FFU),
-              associatedSdlsSPI(associatedSdlsSPI), frameCapacity(frameCapacity) {
+              associatedSdlsSPI(associatedSdlsSPI), frameCapacity(frameCapacity), priorityWeight(priorityWeight) {
             if (associatedSdlsSPI != 0) {
                 this->associatedSdlsSPI = etl::optional(associatedSdlsSPI);
             }
@@ -56,6 +57,10 @@ namespace CCSDSDataLinkLayer {
             this->frameCapacity += amount;
         }
 
+        [[nodiscard]] uint8_t getPriorityWeight() const {
+            return priorityWeight;
+        }
+
     protected:
         /**
          * @brief Global Virtual Channel Identifier.
@@ -83,6 +88,13 @@ namespace CCSDSDataLinkLayer {
          *        by the sum of frame capacities of the map channels)
          */
         uint16_t frameCapacity;
+
+        /**
+         * @brief In order to decide which virtual channel frames should be transferred to the master channel first,
+         *        a weighted priority scheduling policy is used. The higher the weight, the higher the priority of the
+         *        respective channel.
+         */
+        const uint8_t priorityWeight;
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
@@ -93,8 +105,9 @@ namespace CCSDSDataLinkLayer {
                                      const bool operationalControlFieldPresent,
                                      const Defs::SynchronizationFlag synchronization,
                                      const Defs::Spi associatedSdlsSPI, const uint16_t frameCapacity,
-                                     const uint16_t packetCapacity)
-            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity), vcRepetitions(vcRepetitions),
+                                     const uint16_t packetCapacity, const uint8_t priorityWeight)
+            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, priorityWeight),
+              vcRepetitions(vcRepetitions),
               operationalControlFieldPresent(operationalControlFieldPresent),
               secondaryHeaderPresent(secondaryHeaderPresent),
               secondaryHeaderLength(secondaryHeaderLength),
@@ -238,8 +251,9 @@ namespace CCSDSDataLinkLayer {
                                      const Defs::DataFieldContent dataFieldContent,
                                      const uint16_t frameCapacity,
                                      const uint16_t typeAdPacketCapacity,
-                                     const uint16_t typeBdPacketCapacity)
-            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity),
+                                     const uint16_t typeBdPacketCapacity,
+                                     const uint8_t priorityWeight)
+            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, priorityWeight),
               segmentHeaderPresent(segmentHeaderPresent), blocking(blocking), copInEffect(copInEffect),
               dataFieldContent(dataFieldContent), typeAdPacketCapacity(typeAdPacketCapacity),
               typeBdPacketCapacity(typeBdPacketCapacity), segmentedPacketConstructor(Defs::SegmentedPacketConstructorTc()),
@@ -387,8 +401,10 @@ namespace CCSDSDataLinkLayer {
                                     const Defs::DataFieldContent dataFieldContent,
                                     const uint16_t frameCapacity,
                                     const uint16_t typeAdPacketCapacity,
-                                    const uint16_t typeBdPacketCapacity)
-            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity), vcRepetitionsTypeAD(vcRepetitionsTypeAD),
+                                    const uint16_t typeBdPacketCapacity,
+                                    const uint16_t priorityWeight)
+            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, priorityWeight),
+              vcRepetitionsTypeAD(vcRepetitionsTypeAD),
               vcRepetitionsTypeBC(vcRepetitionsTypeBC),
               segmentHeaderPresent(segmentHeaderPresent),
               blocking(blocking), copInEffect(copInEffect), dataFieldContent(dataFieldContent),

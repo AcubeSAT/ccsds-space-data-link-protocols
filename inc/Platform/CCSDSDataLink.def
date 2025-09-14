@@ -88,7 +88,8 @@
 //                      synchronization,
 //                      repetitions,
 //                      frameCapacity,
-//                      packetCapacity)
+//                      packetCapacity,
+//                      priorityWeight)
 //   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel
 //   -- vcid: A 3 bit id (unique for all TM virtual channels under a specific TM master channel)
 //   -- parentScid: Associates this virtual channel with a specific master channel
@@ -113,6 +114,10 @@
 //   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size).
 //   -- packetCapacity: Maximum amount of packets this channel can support (affects memory allocation size). A packet
 //                      is defined as the data unit carried by the data field of a frame.
+//   -- priorityWeight: A non negative integer that indicates the importance of the data in this channel. A higher
+//                      weight means that the channel frames are passed to the respective master channel first (weighted
+//                      priority scheduling). To avoid starvation issues, ensure that channels with higher weights have
+//                      smaller data rates, relative to lower weight channels.
 //
 // =====================================================================================================================
 //
@@ -127,7 +132,8 @@
 //                      repetitionsTypeBC,
 //                      dataFieldContent,
 //                      typeAdPacketCapacity,
-//                      typeBdPacketCapacity)
+//                      typeBdPacketCapacity
+//                      priorityWeight)
 //   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel.
 //   -- vcid: A 6 bit id (unique for all TM virtual channels under a specific TM master channel).
 //   -- parentScid: Associates this virtual channel with a specific master channel.
@@ -160,6 +166,10 @@
 //                     TYPE-BD, they can be transmitted multiple times (depending on the repetitionsTypeAD parameter).
 //                     **WARNING**: If map channels exist under this virtual channel those values MUST be set to 0.
 //                                  Otherwise, an excess amount of memory will be allocated.
+//   -- priorityWeight: A non negative integer that indicates the importance of the data in this channel. A higher
+//                      weight means that the channel frames are passed to the respective master channel first (weighted
+//                      priority scheduling). To avoid starvation issues, ensure that channels with higher weights have
+//                      smaller data rates, relative to lower weight channels.
 //
 // =====================================================================================================================
 //
@@ -172,7 +182,8 @@
 //               associatedSdlsSPI,
 //               dataFieldContent,
 //               typeAdPacketCapacity,
-//               typeBdPacketCapacity)
+//               typeBdPacketCapacity,
+//               priorityWeight)
 //   -- mapChannelName: A name that can be used to uniquely identify this map channel.
 //   -- mapid: A 6 bit id (unique for all map channels under a specific TC virtual channel).
 //   -- parentVcid: Associates this map with a specific virtual channel.
@@ -193,6 +204,10 @@
 //                     (an internet protocol analogy is TCP segments vs UDP datagrams). In the scenario that COP-11 is
 //                     not active for this virtual channel, TYPE-AD frames are not subject to checks, but compared to
 //                     TYPE-BD, they can be transmitted multiple times (depending on the repetitionsTypeAD parameter).
+//   -- priorityWeight: A non negative integer that indicates the importance of the data in this channel. A higher
+//                      weight means that the channel frames are passed to the respective master channel first (weighted
+//                      priority scheduling). To avoid starvation issues, ensure that channels with higher weights have
+//                      smaller data rates, relative to lower weight channels.
 //
 // =====================================================================================================================
 //

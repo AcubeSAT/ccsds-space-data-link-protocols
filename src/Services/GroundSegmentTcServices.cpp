@@ -119,22 +119,23 @@ namespace CCSDSDataLinkLayer {
             MasterChannelGsTc& mcChan = Objects::masterChannelGsTcMap.at(phyChan.getScidTc());
 
             etl::expected<void, ServiceChannelNotification> status;
-            for (auto &pair : Objects::mapChannelGsMap) {
+            for (auto &mapidVcidScidKey : Objects::mapChannelGsPrioritySortedKeys) {
                 // Act only on map channels that belong to this master channel
-                if (pair.second.getParentScid() == mcChan.getScid()) {
+                MAPChannelGs& mapChan = Objects::mapChannelGsMap.at(mapidVcidScidKey);
+                if (mapChan.getParentScid() == mcChan.getScid()) {
                     // Possible return notifications and actions
                     // FAILED_TO_LOCK_MUTEX -> return to notify user
                     // PACKET_QUEUE_EMPTY -> no packets were available, no action to be taken
                     // NOT_ENOUGH_SPACE_IN_MASTER_COPY_OR_MEMORY_POOL, FRAME_QUEUE_FULL, NOT_ENOUGH_SPACE_IN_MEMORY_POOL ->
                     //  there is congestion in the channel, no action to be taken
-                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{pair.second}, Defs::ServiceType::TYPE_AD);
+                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{mapChan}, Defs::ServiceType::TYPE_AD);
                     if (!status.has_value()) {
                         if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
                             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
                         }
                     }
 
-                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{pair.second}, Defs::ServiceType::TYPE_BD);
+                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{mapChan}, Defs::ServiceType::TYPE_BD);
                     if (!status.has_value()) {
                         if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
                             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
@@ -143,18 +144,19 @@ namespace CCSDSDataLinkLayer {
                 }
             }
 
-            for (auto &pair : Objects::virtualChannelGsTcMap) {
+            for (auto &vcidScidKey : Objects::virtualChannelGsTcPrioritySortedKeys) {
                 // Act only on virtual channels that belong to this master channel. Furthermore, packet processing
                 // will be performed only on virtual channels that did not have a map channel
-                if (pair.second.getParentScid() == mcChan.getScid()) {
-                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{pair.second}, Defs::ServiceType::TYPE_AD);
+                VirtualChannelGsTc& vcChan = Objects::virtualChannelGsTcMap.at(vcidScidKey);
+                if (vcChan.getParentScid() == mcChan.getScid()) {
+                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{vcChan}, Defs::ServiceType::TYPE_AD);
                     if (!status.has_value()) {
                         if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
                             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
                         }
                     }
 
-                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{pair.second}, Defs::ServiceType::TYPE_BD);
+                    status = GroundSegmentTcDataHandling::packetProcessing(phyChan, mcChan, etl::reference_wrapper{vcChan}, Defs::ServiceType::TYPE_BD);
                     if (!status.has_value()) {
                         if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
                             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
@@ -167,7 +169,7 @@ namespace CCSDSDataLinkLayer {
                     // FRAME_QUEUE_FULL -> lower layer queue full, break loop
                     // SDLS_CALCULATION_ERROR -> failed to calculate MAC, notify user
                     do {
-                        status = GroundSegmentTcDataHandling::applySDLSSecurity(phyChan, pair.second);
+                        status = GroundSegmentTcDataHandling::applySDLSSecurity(phyChan, vcChan);
                     } while (status.has_value());
 
                     if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
@@ -177,7 +179,7 @@ namespace CCSDSDataLinkLayer {
                     }
 
                     do {
-                        status = GroundSegmentTcDataHandling::virtualChannelGeneration(mcChan, pair.second);
+                        status = GroundSegmentTcDataHandling::virtualChannelGeneration(mcChan, vcChan);
                     } while (status.has_value());
 
                     if (status.error() == ServiceChannelNotification::FAILED_TO_LOCK_MUTEX) {
