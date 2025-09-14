@@ -339,7 +339,7 @@ namespace CCSDSDataLinkLayer {
 		                                            sa.getSecurityTrailerLength() -
 		                                            phyChan.getFrameErrorControlFieldPresent() *
 		                                            Defs::ErrorControlFieldSize;
-    		if (sa.getSecurityAssociationStatus() == SecurityAssociationStatus::RUNNING) {
+    		if (sa.getSecurityAssociationStatus() == Defs::SecurityAssociationStatus::RUNNING) {
     			if (const auto status = sa.processSecurity(frameTcPtr, transferFrameDataFieldLength);
 					!status.has_value()) {
     				// Because of the previous checks, the only possible errors that can occur are:

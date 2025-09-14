@@ -40,10 +40,10 @@ namespace CCSDSDataLinkLayer {
             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
         }
 
-        if (sa.getSecurityAssociationStatus() == SecurityAssociationStatus::PAUSED) {
+        if (sa.getSecurityAssociationStatus() == Defs::SecurityAssociationStatus::PAUSED) {
             return etl::unexpected(ServiceChannelNotification::SA_ALREADY_PAUSED);
         }
-        sa.setSecurityAssociationStatus(SecurityAssociationStatus::PAUSED);
+        sa.setSecurityAssociationStatus(Defs::SecurityAssociationStatus::PAUSED);
 
         sa.saMutex.unlock();
         return {};
@@ -66,10 +66,10 @@ namespace CCSDSDataLinkLayer {
             return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
         }
 
-        if (sa.getSecurityAssociationStatus() == SecurityAssociationStatus::RUNNING) {
+        if (sa.getSecurityAssociationStatus() == Defs::SecurityAssociationStatus::RUNNING) {
             return etl::unexpected(ServiceChannelNotification::SA_ALREADY_PAUSED);
         }
-        sa.setSecurityAssociationStatus(SecurityAssociationStatus::RUNNING);
+        sa.setSecurityAssociationStatus(Defs::SecurityAssociationStatus::RUNNING);
 
         sa.saMutex.unlock();
         return {};

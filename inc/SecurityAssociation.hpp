@@ -14,11 +14,6 @@
 #include "TransferFrameTM.hpp"
 
 namespace CCSDSDataLinkLayer {
-    enum class SecurityAssociationStatus: bool {
-        PAUSED,
-        RUNNING
-    };
-
     /**
      * For cryptographic algorithm recommendations, @see CCSDS CRYPTOGRAPHIC ALGORITHMS (CCSDS 352.0-B-2)
      *
@@ -50,7 +45,7 @@ namespace CCSDSDataLinkLayer {
         SecurityAssociation(const Defs::Spi securityParameterIndex,
                             Defs::AuthenticationAlgorithm authenticationAlgorithm,
                             Defs::EncryptionAlgorithm encryptionAlgorithm)
-            : saStatus(SecurityAssociationStatus::RUNNING),
+            : saStatus(Defs::SecurityAssociationStatus::RUNNING),
               securityParameterIndex(securityParameterIndex),
               authenticationAlgorithm(authenticationAlgorithm),
               encryptionAlgorithm(encryptionAlgorithm) {
@@ -104,11 +99,11 @@ namespace CCSDSDataLinkLayer {
             }
         }
 
-        [[nodiscard]] SecurityAssociationStatus getSecurityAssociationStatus() const {
+        [[nodiscard]] Defs::SecurityAssociationStatus getSecurityAssociationStatus() const {
             return saStatus;
         }
 
-        void setSecurityAssociationStatus(SecurityAssociationStatus status) {
+        void setSecurityAssociationStatus(Defs::SecurityAssociationStatus status) {
             saStatus = status;
         }
 
@@ -117,6 +112,14 @@ namespace CCSDSDataLinkLayer {
         [[nodiscard]] uint8_t getSecurityTrailerLength() const;
 
         [[nodiscard]] Defs::Spi getSecurityParameterIndex() const;
+
+        [[nodiscard]] Defs::AuthenticationAlgorithm getAuthenticationAlgorithm() const {
+            return authenticationAlgorithm;
+        }
+
+        [[nodiscard]] Defs::EncryptionAlgorithm getEncryptionAlgorithm() const {
+            return encryptionAlgorithm;
+        }
 
         void resetSequenceNumber();
 
@@ -164,7 +167,7 @@ namespace CCSDSDataLinkLayer {
          * @brief Used to indicate if SA is currently active or not. A paused SA returns an error if the security
          *        application/processing functions are called.
          */
-        SecurityAssociationStatus saStatus;
+        Defs::SecurityAssociationStatus saStatus;
 
         /** ================================================================================
          *   @name General Parameters

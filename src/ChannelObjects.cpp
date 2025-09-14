@@ -401,6 +401,30 @@ namespace CCSDSDataLinkLayer::Objects {
             }
         }
 #endif
+
+        // Check 15: All security associations have at least an encryption or at least an authentication algorithm defined
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &saPair : saSpaceSegmentMap) {
+            if ((saPair.second.getAuthenticationAlgorithm() == Defs::AuthenticationAlgorithm::NO_AUTHENTICATION) &&
+                (saPair.second.getEncryptionAlgorithm() == Defs::EncryptionAlgorithm::NO_ENCRYPTION)) {
+                LOG_ERROR << "Space Segment Security Association with SPI: " << saPair.first <<
+                    " has supports neither authentication, nor encryption.";
+                return false;
+            }
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &saPair : saGroundSegmentMap) {
+            if ((saPair.second.getAuthenticationAlgorithm() == Defs::AuthenticationAlgorithm::NO_AUTHENTICATION) &&
+                (saPair.second.getEncryptionAlgorithm() == Defs::EncryptionAlgorithm::NO_ENCRYPTION)) {
+                LOG_ERROR << "Ground Segment Security Association with SPI: " << saPair.first <<
+                    " has supports neither authentication, nor encryption.";
+                return false;
+            }
+        }
+#endif
+
         // All checks passed
         return true;
     }

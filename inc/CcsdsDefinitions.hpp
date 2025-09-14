@@ -346,9 +346,9 @@ namespace CCSDSDataLinkLayer::Defs {
         NO_ENCRYPTION
     };
 
-    enum class SecurityAssociationUser : bool {
-        SENDER,
-        RECEIVER
+    enum class SecurityAssociationStatus: bool {
+        PAUSED,
+        RUNNING
     };
 
     /**

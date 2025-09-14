@@ -564,7 +564,7 @@ namespace CCSDSDataLinkLayer {
 		                                            phyChan.getFrameErrorControlFieldPresent() *
 		                                            Defs::ErrorControlFieldSize;
 
-    		if (sa.getSecurityAssociationStatus() == SecurityAssociationStatus::RUNNING) {
+    		if (sa.getSecurityAssociationStatus() == Defs::SecurityAssociationStatus::RUNNING) {
     			if (const auto status = sa.applySecurity(frameTcPtr, transferFrameDataFieldLength);
 					!status.has_value()) {
     				// because of the previous checks, MAC_CALCULATION_ERROR is the only possible error

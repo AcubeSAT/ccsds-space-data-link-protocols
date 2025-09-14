@@ -23,7 +23,7 @@ namespace CCSDSDataLinkLayer {
     etl::expected<void, SDLSVerificationError>
     SecurityAssociation::applySecurity(const etl::variant<TransferFrameTC *, TransferFrameTM *> frame,
                                        uint16_t transferFrameDataFieldLength) {
-        if (saStatus == SecurityAssociationStatus::PAUSED) {
+        if (saStatus == Defs::SecurityAssociationStatus::PAUSED) {
             return etl::unexpected(SDLSVerificationError::SA_PAUSED);
         }
 
@@ -126,7 +126,7 @@ namespace CCSDSDataLinkLayer {
     etl::expected<void, SDLSVerificationError>
     SecurityAssociation::processSecurity(etl::variant<TransferFrameTC *, TransferFrameTM *> frame,
                                          uint16_t transferFrameDataFieldLength) {
-        if (saStatus == SecurityAssociationStatus::PAUSED) {
+        if (saStatus == Defs::SecurityAssociationStatus::PAUSED) {
             return etl::unexpected(SDLSVerificationError::SA_PAUSED);
         }
 
