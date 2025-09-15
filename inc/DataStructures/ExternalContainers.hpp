@@ -19,8 +19,8 @@ namespace CCSDSDataLinkLayer {
 
         Queue() = default;
 
-        T& getFront() { return buf[tail]; }
-        T& getBack() { return buf[(head + capacity - 1) % capacity]; }
+        [[nodiscard]] T& getFront() { return buf[tail]; }
+        [[nodiscard]] T& getBack() { return buf[(head + capacity - 1) % capacity]; }
 
         void push(const T &item) {
             buf[head] = item;
@@ -73,9 +73,9 @@ namespace CCSDSDataLinkLayer {
 
         Dequeue() = default;
 
-        T& getFront() { return buf[tail]; }
+        [[nodiscard]] T& getFront() { return buf[tail]; }
 
-        T& getBack() {
+        [[nodiscard]] T& getBack() {
             uint32_t idx = (head + capacity - 1) % capacity;
             return buf[idx];
         }
@@ -148,9 +148,9 @@ namespace CCSDSDataLinkLayer {
 
         CircularBuffer() = default;
 
-        T& getFront() { return buf[tail]; }
+        [[nodiscard]] T& getFront() { return buf[tail]; }
 
-        T& getBack() {
+        [[nodiscard]] T& getBack() {
             uint32_t idx = (head + capacity - 1) % capacity;
             return buf[idx];
         }
@@ -213,14 +213,14 @@ namespace CCSDSDataLinkLayer {
 
         UnorderedPool() = default;
 
-        T* push(const T& item) {
+        [[nodiscard]] T* push(const T& item) {
             uint32_t index = freeIndices[--freeCount];
             buf[index] = item;
             ++sz;
             return &buf[index];
         }
 
-        T* push(T&& item) {
+        [[nodiscard]] T* push(T&& item) {
             uint32_t index = freeIndices[--freeCount];
             buf[index] = std::move(item);
             ++sz;
@@ -254,13 +254,17 @@ namespace CCSDSDataLinkLayer {
 
         class Iterator {
         public:
-            explicit Iterator(T* ptr) : ptr(ptr) {}
+            Iterator(T* buf, uint32_t* freeIndices, uint32_t freeCount, uint32_t capacity, T* ptr)
+                : buf(buf), freeIndices(freeIndices), freeCount(freeCount), capacity(capacity), ptr(ptr) {
+                skipToUsed();
+            }
 
             T& operator*() const { return *ptr; }
             T* operator->() const { return ptr; }
 
             Iterator& operator++() {
                 ++ptr;
+                skipToUsed();
                 return *this;
             }
 
@@ -269,11 +273,34 @@ namespace CCSDSDataLinkLayer {
             }
 
         private:
+            void skipToUsed() {
+                while (ptr < buf + capacity && isFree(ptr - buf)) {
+                    ++ptr;
+                }
+            }
+
+            bool isFree(uint32_t index) const {
+                for (uint32_t i = 0; i < freeCount; ++i) {
+                    if (freeIndices[i] == index) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            T* buf;
+            uint32_t* freeIndices;
+            uint32_t freeCount;
+            uint32_t capacity;
             T* ptr;
         };
 
-        Iterator begin() { return Iterator(buf); }
-        Iterator end() { return Iterator(buf + sz); }
+        [[nodiscard]] Iterator begin() {
+            return Iterator(buf, freeIndices, freeCount, capacity, buf);
+        }
+        [[nodiscard]] Iterator end() {
+            return Iterator(buf, freeIndices, freeCount, capacity, buf + capacity);
+        }
 
     private:
         T* buf = nullptr;
@@ -282,5 +309,4 @@ namespace CCSDSDataLinkLayer {
         uint32_t* freeIndices = nullptr;
         uint32_t freeCount = 0;
     };
-
 } // namespace CCSDSDataLinkLayer

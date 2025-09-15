@@ -67,7 +67,7 @@ namespace CCSDSDataLinkLayer {
             return FARMNotification::FAILED_TO_LOCK_MUTEX;
         }
 
-        Objects::frameOctetPool.deleteBlock(frame->getFrameData(), frame->getFrameLength());
+        Objects::frameOctetPool.deleteBlock(frame->getFrameData());
         mcChan.frameMasterCopies.erase(frame);
         Objects::frameOctetPool.poolMutex.unlock();
         mcChan.channelMutex.unlock();

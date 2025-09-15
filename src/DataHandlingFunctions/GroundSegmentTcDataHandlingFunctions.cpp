@@ -24,14 +24,14 @@ namespace CCSDSDataLinkLayer {
 		while (!vcChan.framesAfterPacketProcessing.isEmpty()) {
 			frameTcPtr = vcChan.framesAfterPacketProcessing.getFront();
 			vcChan.framesAfterPacketProcessing.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
 		while (!vcChan.framesAfterApplySDLSSecurity.isEmpty()) {
 			frameTcPtr = vcChan.framesAfterApplySDLSSecurity.getFront();
 			vcChan.framesAfterApplySDLSSecurity.popFront();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
@@ -46,7 +46,7 @@ namespace CCSDSDataLinkLayer {
 		while (!mcChan.framesAfterVcGeneration.isEmpty()) {
 			frameTcPtr = mcChan.framesAfterVcGeneration.getFront();
 			mcChan.framesAfterVcGeneration.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 	}
@@ -640,7 +640,7 @@ namespace CCSDSDataLinkLayer {
     						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     					}
 
-    				Objects::frameOctetPool.deleteBlock(signal.frame.value()->getFrameData(), signal.frame.value()->getFrameLength());
+    				Objects::frameOctetPool.deleteBlock(signal.frame.value()->getFrameData());
     				mcChan.frameMasterCopies.erase(signal.frame.value());
 
     				fop.transferNotificationSignalQueue.pop();
@@ -751,8 +751,7 @@ namespace CCSDSDataLinkLayer {
     						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     					}
 
-    					Objects::frameOctetPool.deleteBlock(signal.frame.value()->getFrameData(),
-							signal.frame.value()->getFrameLength());
+    					Objects::frameOctetPool.deleteBlock(signal.frame.value()->getFrameData());
     					mcChan.frameMasterCopies.erase(signal.frame.value());
 
     					fop.directiveNotificationSignalQueue.pop();
@@ -864,11 +863,11 @@ namespace CCSDSDataLinkLayer {
     			// Erase the master copy of type BD frames only. Type AD and BC frames are deleted from
     			// virtualChannelGeneration, once their arrival is confirmed
     			if (frameTcPtr->getServiceType() == Defs::ServiceType::TYPE_BD) {
-    				Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+    				Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
     				mcChan.frameMasterCopies.erase(frameTcPtr);
     			}
     		} else {
-    			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+    			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
     			mcChan.frameMasterCopies.erase(frameTcPtr);
     		}
 

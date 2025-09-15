@@ -19,14 +19,14 @@ namespace CCSDSDataLinkLayer {
 		while (!mcChan.framesAfterSecurityProcessing.isEmpty()) {
 			frameTmPtr = mcChan.framesAfterSecurityProcessing.getFront();
 			mcChan.framesAfterSecurityProcessing.pop();
-			Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData(), frameTmPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTmPtr);
 		}
 
 		while (!mcChan.framesAfterMcGeneration.isEmpty()) {
 			frameTmPtr = mcChan.framesAfterMcGeneration.getFront();
 			mcChan.framesAfterMcGeneration.pop();
-			Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData(), frameTmPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTmPtr);
 		}
 
@@ -732,7 +732,7 @@ namespace CCSDSDataLinkLayer {
 
 					discardedFrame = true;
 					TransferFrameTM* frameToDiscard = mcChan.waitingBuffer.getFront();
-					Objects::frameOctetPool.deleteBlock(frameToDiscard->getFrameData(), phyChan.getTMFrameLength());
+					Objects::frameOctetPool.deleteBlock(frameToDiscard->getFrameData());
 					mcChan.frameMasterCopies.erase(frameToDiscard);
 
 					Objects::frameOctetPool.poolMutex.unlock();
@@ -791,7 +791,7 @@ namespace CCSDSDataLinkLayer {
 	    if (frameTmPtr->getTimesSequentiallyTransmitted() >= numRepetitions) {
 	        // remove the frame from the queue and erase the master copy
 	        mcChan.framesAfterMcGeneration.pop();
-	        Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData(), phyChan.getTMFrameLength());
+	        Objects::frameOctetPool.deleteBlock(frameTmPtr->getFrameData());
 	        mcChan.frameMasterCopies.erase(frameTmPtr);
 
 	        // if queue is empty, return

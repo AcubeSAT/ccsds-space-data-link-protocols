@@ -46,7 +46,7 @@ namespace CCSDSDataLinkLayer {
 
             for (auto frameTc : mcChan.frameMasterCopies) {
                 if (&frameTc == frameTcPtr) {
-                    Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+                    Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
                     mcChan.frameMasterCopies.erase(frameTcPtr);
                     break;
                 }
@@ -59,7 +59,7 @@ namespace CCSDSDataLinkLayer {
 
             for (auto frameTc : mcChan.frameMasterCopies) {
                 if (&frameTc == frameTcPtr) {
-                    Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+                    Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
                     mcChan.frameMasterCopies.erase(frameTcPtr);
                     break;
                 }

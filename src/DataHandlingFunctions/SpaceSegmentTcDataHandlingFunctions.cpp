@@ -10,14 +10,14 @@ namespace CCSDSDataLinkLayer {
 		while (!mapChan.framesAfterProcessSDLSSecurityTypeAD.isEmpty()) {
 			frameTcPtr = mapChan.framesAfterProcessSDLSSecurityTypeAD.getFront();
 			mapChan.framesAfterProcessSDLSSecurityTypeAD.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
 		while (!mapChan.framesAfterProcessSDLSSecurityTypeBD.isEmpty()) {
 			frameTcPtr = mapChan.framesAfterProcessSDLSSecurityTypeBD.getFront();
 			mapChan.framesAfterProcessSDLSSecurityTypeBD.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
@@ -33,35 +33,35 @@ namespace CCSDSDataLinkLayer {
 		while (!vcChan.framesAfterAllFramesReception.isEmpty()) {
 			frameTcPtr = vcChan.framesAfterAllFramesReception.getFront();
 			vcChan.framesAfterAllFramesReception.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
 		while (!vcChan.framesAfterVcReceptionTypeAD.isEmpty()) {
 			frameTcPtr = vcChan.framesAfterVcReceptionTypeAD.getFront();
 			vcChan.framesAfterVcReceptionTypeAD.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
 		while (!vcChan.framesAfterVcReceptionTypeBD.isEmpty()) {
 			frameTcPtr = vcChan.framesAfterVcReceptionTypeBD.getFront();
 			vcChan.framesAfterVcReceptionTypeBD.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
 		while (!vcChan.framesAfterProcessSDLSSecurityTypeAD.isEmpty()) {
 			frameTcPtr = vcChan.framesAfterProcessSDLSSecurityTypeAD.getFront();
 			vcChan.framesAfterProcessSDLSSecurityTypeAD.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
 		while (!vcChan.framesAfterProcessSDLSSecurityTypeBD.isEmpty()) {
 			frameTcPtr = vcChan.framesAfterProcessSDLSSecurityTypeBD.getFront();
 			vcChan.framesAfterProcessSDLSSecurityTypeBD.pop();
-			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+			Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
@@ -233,7 +233,7 @@ namespace CCSDSDataLinkLayer {
     				}
 
     				TransferFrameTC* oldestFrame = vcChan.framesAfterVcReceptionTypeBD.getFront();
-    				Objects::frameOctetPool.deleteBlock(oldestFrame->getFrameData(), oldestFrame->getFrameLength());
+    				Objects::frameOctetPool.deleteBlock(oldestFrame->getFrameData());
     				mcChan.frameMasterCopies.erase(oldestFrame);
     				mcChan.channelMutex.unlock();
     			}
@@ -376,7 +376,7 @@ namespace CCSDSDataLinkLayer {
     						return etl::unexpected(ServiceChannelNotification::FAILED_TO_LOCK_MUTEX);
     					}
 
-    					Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+    					Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 
     					Objects::frameOctetPool.poolMutex.unlock();
     					sa.saMutex.unlock();
@@ -427,7 +427,7 @@ namespace CCSDSDataLinkLayer {
     	}
 
 		framesAfterSdlsProcessing->pop();
-		Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData(), frameTcPtr->getFrameLength());
+		Objects::frameOctetPool.deleteBlock(frameTcPtr->getFrameData());
 		mcChan->frameMasterCopies.erase(frameTcPtr);
 	}
 

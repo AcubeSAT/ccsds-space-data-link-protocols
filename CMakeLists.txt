@@ -91,7 +91,9 @@ file(GLOB COMMON_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Services/*.cpp")
 
 # Unit test sources
-file(GLOB UNIT_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp")
+file(GLOB UNIT_TESTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/DataStructures/*.cpp")
 
 # Platform directories and sources
 if(BUILD_x86)

@@ -3,7 +3,7 @@
  */
 
 #pragma once
-
+#include <cstring>
 #include <cstdint>
 #include "etl/map.h"
 #include "DataLinkNotifications.hpp"
@@ -29,7 +29,7 @@ namespace CCSDSDataLinkLayer {
          * @return A `MasterChannelAlert` is raised if there was not enough space for the block, else returns the index of
          * the first memory where the data will be stored.
          */
-		std::pair<uint16_t, MasterChannelAlert> findFit(const uint16_t packetLength) {
+		[[nodiscard]] std::pair<uint16_t, MasterChannelAlert> findFit(const uint16_t packetLength) {
 			std::pair<uint16_t, MasterChannelAlert> fit;
 			fit.second = MasterChannelAlert::NO_MC_ALERT;
 
@@ -38,38 +38,41 @@ namespace CCSDSDataLinkLayer {
 				return fit;
 			}
 
-			const etl::imap<uint16_t, uint16_t>::iterator iteratorBegin = usedMemory.begin();
-			const etl::imap<uint16_t, uint16_t>::iterator iteratorEnd = --usedMemory.end();
-
-			// Check whether list is empty or the packet can fit in the beginning
-			if (usedMemory.empty() || (iteratorBegin->first >= packetLength)) {
+			if (usedMemory.empty()) {
 				fit.first = 0;
 				return fit;
 			}
 
-			uint16_t gapSize;
-
-			etl::imap<uint16_t, uint16_t>::iterator mapIterator = iteratorBegin;
-
-			for (mapIterator; mapIterator != iteratorEnd; ++mapIterator) {
-				gapSize = etl::next(mapIterator)->first - (mapIterator->first + mapIterator->second);
-				if (gapSize >= packetLength) {
-					fit.first = mapIterator->first + mapIterator->second;
-					return fit;
-				}
+			auto it = usedMemory.begin();
+			// Check gap before the first block
+			if (it->first >= packetLength) {
+				fit.first = 0;
+				return fit;
 			}
 
-			gapSize = memorySize - (iteratorEnd->first + iteratorEnd->second);
+			// Check gaps between blocks
+			auto prevIt = it;
+			++it;
+			for (; it != usedMemory.end(); ++it) {
+				uint16_t gapSize = it->first - (prevIt->first + prevIt->second);
+				if (gapSize >= packetLength) {
+					fit.first = prevIt->first + prevIt->second;
+					return fit;
+				}
+				prevIt = it;
+			}
 
-			// Check whether list is empty or the packet can fit in the end
+			// Check gap after last block
+			uint16_t gapSize = memorySize - (prevIt->first + prevIt->second);
 			if (gapSize >= packetLength) {
-				fit.first = iteratorEnd->first + iteratorEnd->second;
+				fit.first = prevIt->first + prevIt->second;
 				return fit;
 			}
 
 			fit.second = MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL;
 			return fit;
 		}
+
 
         /**
          * @brief Method that allocates the first contiguous block of memory of the memory pool and optionally
@@ -80,7 +83,7 @@ namespace CCSDSDataLinkLayer {
          * @return A `uint8_t` pointer to the block start in the memory pool or `nullptr` if no such block could be
          *          allocated.
          */
-		uint8_t* allocateBlock(const uint16_t blockLength, const uint8_t *packetSource) {
+		[[nodiscard]] uint8_t* allocateBlock(const uint16_t blockLength, const uint8_t *packetSource) {
 			std::pair<uint16_t, MasterChannelAlert> index = findFit(blockLength);
 			uint16_t start = index.first;
 			if (index.second == MasterChannelAlert::NOT_ENOUGH_SPACE_IN_MEMORY_POOL) {
@@ -100,30 +103,30 @@ namespace CCSDSDataLinkLayer {
         /**
          * @brief This method is called when we want to deallocate a block and delete the data of a packet.
          * @param blockStart pointer to the packet data in the pool.
-         * @param blockLength length of the data.
          * @return true if the deletion was successful and false if the block was not found.
          */
-		bool deleteBlock(const uint8_t *blockStart, uint16_t blockLength) {
+		bool deleteBlock(const uint8_t *blockStart) {
 			int32_t indexInMemory = blockStart - &memory[0];
-			if (indexInMemory >= 0 && indexInMemory + blockLength < memorySize) {
-				usedMemory.erase(indexInMemory);
-				return true;
+			auto it = usedMemory.find(indexInMemory);
+			if (it == usedMemory.end()) {
+				LOG<Logger::error>() << "Did not find allocated packet in this address";
+				return false;
 			}
-			LOG<Logger::error>() << "Packet not found, index is out of bounds";
-			return false;
+			usedMemory.erase(it);
+			return true;
 		}
 
         /**
          * @return Pointer to the array that stores the data.
          */
-		uint8_t* getMemory() {
+		[[nodiscard]] uint8_t* getMemory() {
 			return &memory[0];
 		}
 
         /**
          * @return The map that shows the allocated memory block positions and their lengths.
          */
-        etl::map<uint16_t, uint16_t, MaxAllocatedBlocks> &getUsedMemory() {
+        [[nodiscard]] etl::map<uint16_t, uint16_t, MaxAllocatedBlocks> &getUsedMemory() {
             return usedMemory;
         }
 

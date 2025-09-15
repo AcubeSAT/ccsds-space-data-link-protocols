@@ -16,7 +16,7 @@ namespace CCSDSDataLinkLayer {
              const bool wait, const bool retransmit, const uint8_t farmBCounter, bool spare2, uint8_t reportValue)
                 : clcw(
                 controlWordType << 31U | clcwVersion << 29U | statusField << 26U | copInEffect << 24U | vcid << 18U |
-                noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U | retransmit << 11U |
+                spare << 16U | noRfAvailable << 15U | noBitLock << 14U | lockout << 13U | wait << 12U | retransmit << 11U |
                 farmBCounter << 9U | reportValue) {};
 
     public:
