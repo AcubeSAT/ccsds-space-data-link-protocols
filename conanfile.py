@@ -46,8 +46,8 @@ class CCSDSDataLinkLayer(ConanFile):
     def requirements(self):
         self.requires("etl/20.37.2", transitive_headers=True)
         self.requires("logger/1.1", transitive_headers=True)
-        if self.settings.arch != "armv7":
-            self.test_requires("catch2/3.9.0")
+        if self.settings.arch in ["x86", "x86_64"]:
+            self.test_requires("catch2/3.3.1")
 
     def layout(self):
         cmake_layout(self)
