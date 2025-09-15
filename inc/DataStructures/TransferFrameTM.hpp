@@ -236,8 +236,6 @@ namespace CCSDSDataLinkLayer {
             return (transferFrameData[Defs::TmPrimaryHeaderSize] & 0x3F) + Defs::TmSecondaryHeaderIdLength;
         }
 
-        [[nodiscard]] uint16_t getFirstEmptyOctet() const {}
-
         /**
          * @details Contains the 	a)Transfer Frame Secondary Header Flag (1 bit)
          *							b) Synchronization Flag (1 bit)

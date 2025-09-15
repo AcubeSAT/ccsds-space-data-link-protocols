@@ -627,7 +627,7 @@ namespace CCSDSDataLinkLayer {
     				vcChan.channelMutex.unlock();
     				break;
     				case TransferNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU:
-    					[[fallthrough]]
+    					[[fallthrough]];
 					case TransferNotificationType::NEGATIVE_CONFIRM_RESPONSE_TO_TRANSFER_FDU:
 						if (!mcChan.channelMutex.tryLockFor(Defs::MutexDelayMs)) {
 							fop.signalQueueMutex.unlock();
@@ -760,7 +760,7 @@ namespace CCSDSDataLinkLayer {
     					mcChan.channelMutex.unlock();
     					break;
     				case DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE:
-    					[[fallthrough]]
+    					[[fallthrough]];
 					case DirectiveNotificationType::REJECT_RESPONSE_TO_DIRECTIVE:
 						fop.directiveNotificationSignalQueue.pop();
     			}

@@ -401,7 +401,7 @@ namespace CCSDSDataLinkLayer::Defs {
         /**
          * @brief Used to reset buffer in case of fault
          */
-        bool resetPacket() {
+        void resetPacket() {
             currentLength = 0;
         }
 

@@ -71,7 +71,7 @@ clang-analyzer:
     - conan profile detect --force
     - conan remote add conan https://artifactory.spacedot.gr/artifactory/api/conan/conan
     - conan install . --build=missing -s build_type=Release
-    - scan-build -o ./scan-build-html-report cmake -B build/Release -S . -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
+    - scan-build -o ./scan-build-html-report cmake -B build/Release -S . DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
     - scan-build -o ./scan-build-html-report cmake --build build/Release
   artifacts:
     paths:
@@ -98,7 +98,7 @@ tests:
     - conan profile detect --force
     - conan remote add conan https://artifactory.spacedot.gr/artifactory/api/conan/conan
     - conan install . --build=missing -s build_type=Debug
-    - cmake -B build/Debug -S . -DCMAKE_CXX_FLAGS="-g -O0 --coverage" -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
+    - cmake -B build/Debug -S . -DCMAKE_CXX_FLAGS="-g -O0 --coverage" -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
     - cmake --build build/Debug
     - lcov -q --capture --initial --directory . -o coverage_base
     - ./build/Debug/catch2_unit_testing --colour-mode ansi
