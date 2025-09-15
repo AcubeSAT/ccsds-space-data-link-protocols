@@ -52,7 +52,7 @@ clang-tidy:
     - conan install . --build=missing -s build_type=Release
     - cmake -B build/Release -S . -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_UNIT_TESTS=ON -DBUILD_x86=ON
     - cmake --build build/Release
-    - clang-tidy -p $CI_PROJECT_DIR/build/Release --checks=* `find $CI_PROJECT_DIR/src -type f -regextype posix-egrep -regex '.*\.(cpp|hpp|c|h)'` >> clang-tidy-output.log
+    - clang-tidy -p $CI_PROJECT_DIR/build/Release `find $CI_PROJECT_DIR/src -type f -regextype posix-egrep -regex '.*\.(cpp|hpp|c|h)'` >> clang-tidy-output.log
   after_script:
     - mkdir clang-tidy-html-report
     - clang-tidy-html clang-tidy-output.log
