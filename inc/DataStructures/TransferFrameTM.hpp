@@ -53,66 +53,12 @@ namespace CCSDSDataLinkLayer {
         }
 
         /**
-         * @brief Constructor for frame creation within the data link (operational control field is initialized).
-         */
-        TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const Defs::Vcid vcid, const Defs::Scid scid,
-                        const uint32_t operationalControlField,
-                        const uint8_t virtualChannelFrameCount, const bool transferFrameSecondaryHeaderPresent,
-                        const uint8_t transferFrameSecondaryHeaderLength,
-                        Defs::SynchronizationFlag syncFlag, const bool packetOrder,
-                        const uint8_t segmentationLengthId,
-                        const uint16_t firstHeaderPointer, const bool eccFieldExists,
-                        const uint16_t firstEmptyOctet = 0)
-            : TransferFrame(Defs::FrameType::TM, frameLength, frameData, firstEmptyOctet),
-              eccFieldPresent(eccFieldExists) {
-            // Transfer Frame Version Number + Spacecraft Id
-            frameData[0] = (static_cast<uint8_t>(
-                                Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
-                            << 6U) |
-                           static_cast<uint8_t>((scid & 0x3F0) >> 4U);
-            // Spacecraft  Id + Virtual Channel ID + Operational Control Field
-            frameData[1] = static_cast<uint8_t>((scid & 0x0F) << 4U) | ((vcid & 0x7) << 1U) | 0x1;
-            // Master Channel Frame Count is set by the MC Generation Service
-            frameData[2] = 0;
-            frameData[3] = virtualChannelFrameCount;
-            // Data field status
-            frameData[4] = (transferFrameSecondaryHeaderPresent << 7U) | (static_cast<uint8_t>(syncFlag) << 6U) |
-                           ((packetOrder & 0x1) << 5U) |
-                           ((segmentationLengthId & 0x3) << 3U) |
-                           static_cast<uint8_t>((firstHeaderPointer & 0x700) >> 8U);
-            frameData[5] = static_cast<uint8_t>(firstHeaderPointer & 0xFF);
-
-            if (transferFrameSecondaryHeaderPresent) {
-                // Note: The secondary header length must store the actual length, reduced my one
-                frameData[6] = (static_cast<uint8_t>(Defs::SecondaryHeaderVersionNumber::VERSION_1) << 6U) |
-                    (transferFrameSecondaryHeaderLength - Defs::TmSecondaryHeaderIdLength);
-            }
-
-            uint8_t *ocfPointer = frameData + transferFrameLength -
-                                  Defs::TmOperationalControlFieldSize
-                                  - Defs::ErrorControlFieldSize * eccFieldExists;
-            ocfPointer[0] = static_cast<uint8_t>(operationalControlField >> 24U);
-            ocfPointer[1] = static_cast<uint8_t>((operationalControlField >> 16U) & 0xFF);
-            ocfPointer[2] = static_cast<uint8_t>((operationalControlField >> 8U) & 0xFF);
-            ocfPointer[3] = static_cast<uint8_t>(operationalControlField & 0xFF);
-        }
-
-        /**
          * @brief Constructor for frame creation from received octets.
          */
         TransferFrameTM(uint8_t *frameData, const uint16_t frameLength, const bool eccFieldExists,
                         const uint16_t firstEmptyOctet = 0)
             : TransferFrame(Defs::FrameType::TM, frameLength, frameData, firstEmptyOctet),
               eccFieldPresent(eccFieldExists) {}
-
-        /**
-         * @brief Transfer frame version number.
-         * @details Bits 0-1 of the Transfer Frame Primary Header
-         * @see p. 4.1.2.2.2 from TM SPACE DATA LINK PROTOCOL
-         */
-        [[nodiscard]] uint8_t getTransferFrameVersionNumber() const {
-            return (transferFrameData[0] & 0xC0) >> 6U;
-        }
 
         /**
          * @brief The ID of the spacecraft.

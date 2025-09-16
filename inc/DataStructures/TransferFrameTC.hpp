@@ -32,11 +32,7 @@ namespace CCSDSDataLinkLayer {
                                          (serviceType == Defs::ServiceType::TYPE_RESERVED))
                                             ? 1
                                             : 0;
-            frameData[0] = (static_cast<uint8_t>(
-                                Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1)
-                            << 6U) |
-                           (bypassFlag << 5U) | (ctrlCmdFlag << 4U) | 0 |
-                           static_cast<uint8_t>((scid & 0x300) >> 8U);
+            frameData[0] = (bypassFlag << 5U) | (ctrlCmdFlag << 4U) | 0 | static_cast<uint8_t>((scid & 0x300) >> 8U);
             frameData[1] = static_cast<uint8_t>(scid & 0xFF);
             frameData[2] = ((vcid & 0x3F) << 2U) | static_cast<uint8_t>((frameLength & 0x300) >> 8U);
             frameData[3] = static_cast<uint8_t>(frameLength & 0xFF);
@@ -51,7 +47,7 @@ namespace CCSDSDataLinkLayer {
          */
         TransferFrameTC(uint8_t *frameData, const uint16_t frameLength, const uint16_t firstEmptyOctet = 0)
             : TransferFrame(Defs::FrameType::TC, frameLength, frameData, firstEmptyOctet) {
-        };
+        }
 
         /**
          * @brief Compares two frames.
@@ -69,15 +65,6 @@ namespace CCSDSDataLinkLayer {
         }
 
         /** === PRIMARY HEADER === **/
-
-        /**
-         *  @brief Transfer frame version number.
-         * @details Bits 0-1 of the Transfer Frame Primary Header
-         * @see p. 4.1.2.2 from TC SPACE DATA LINK PROTOCOL
-         */
-        [[nodiscard]] uint8_t getTransferFrameVersionNumber() const {
-            return (transferFrameData[0] & 0xC0) >> 6U;
-        }
 
         /**
          * @brief The bypass Flag determines whether the transferFrameData will bypass FARM checks.

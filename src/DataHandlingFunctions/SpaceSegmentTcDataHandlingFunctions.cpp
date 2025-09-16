@@ -114,7 +114,7 @@ namespace CCSDSDataLinkLayer {
     	}
 
 	    // Check for valid TFVN
-	    if (frameTc.getTransferFrameVersionNumber() != static_cast<uint8_t>(phyChan.getTFVN())) {
+	    if (frameTc.getTransferFrameVersionNumber() != phyChan.getTFVN()) {
 		    return etl::unexpected(ServiceChannelNotification::INVALID_TFVN);
 	    }
 

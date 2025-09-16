@@ -3,8 +3,9 @@
  */
 
 #pragma once
-#include "CcsdsDefinitions.hpp"
 #include <tuple>
+#include "etl/optional.h"
+#include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
     inline Defs::VcidScidKey constructVcidScidKey(const Defs::Vcid vcid, const Defs::Scid scid) {
@@ -51,8 +52,8 @@ namespace CCSDSDataLinkLayer {
      */
     inline uint16_t getSpacePacketLength(const etl::span<uint8_t>& packetSource) {
         // plus one is added because the field actually contains the data field length, reduced by one
-        return (static_cast<uint16_t>(packetSource[Defs::SpacePacketDataLengthFieldPosition - 1]) << 8) |
-               (static_cast<uint16_t>(packetSource[Defs::SpacePacketDataLengthFieldPosition])) + Defs:: SpacePacketPrimaryHeaderLength + 1;
+        return ((static_cast<uint16_t>(packetSource[Defs::SpacePacketDataLengthFieldPosition - 1]) << 8) |
+               (static_cast<uint16_t>(packetSource[Defs::SpacePacketDataLengthFieldPosition]))) + Defs:: SpacePacketPrimaryHeaderLength + 1;
     }
 
 

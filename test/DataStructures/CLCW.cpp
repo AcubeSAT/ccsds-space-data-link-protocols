@@ -1,7 +1,5 @@
 #include "CLCW.hpp"
-
 #include "catch2/catch_all.hpp"
-#include "ExternalContainers.hpp"
 
 using namespace CCSDSDataLinkLayer;
 
@@ -27,34 +25,34 @@ TEST_CASE("CLCW", "[External Containers]") {
     SECTION("Ensuring all fields are placed in the correct positions") {
         uint32_t rawClcw = clcw.getRawBytes();
 
-        REQUIRE(((rawClcw >> 31U) & 0x01) == controlWordType);
-        REQUIRE(((rawClcw >> 29U) & 0x03) == clcwVersion);
-        REQUIRE(((rawClcw >> 26U) & 0x07) == statusField);
-        REQUIRE(((rawClcw >> 24U) & 0x03) == copInEffect);
-        REQUIRE(((rawClcw >> 18U) & 0x3F) == vcid);
-        REQUIRE(((rawClcw >> 16U) & 0x03) == spare);
-        REQUIRE(((rawClcw >> 15U) & 0x01) == noRfAvailable);
-        REQUIRE(((rawClcw >> 14U) & 0x01) == noBitLock);
-        REQUIRE(((rawClcw >> 13U) & 0x01) == lockout);
-        REQUIRE(((rawClcw >> 12U) & 0x01) == wait);
-        REQUIRE(((rawClcw >> 11U) & 0x01) == retransmit);
-        REQUIRE(((rawClcw >> 9U) & 0x03) == farmBCounter);
-        REQUIRE(((rawClcw >> 8U) & 0x01) == spare2);
-        REQUIRE((rawClcw & 0xFF) == reportValue);
+        CHECK(((rawClcw >> 31U) & 0x01) == controlWordType);
+        CHECK(((rawClcw >> 29U) & 0x03) == clcwVersion);
+        CHECK(((rawClcw >> 26U) & 0x07) == statusField);
+        CHECK(((rawClcw >> 24U) & 0x03) == copInEffect);
+        CHECK(((rawClcw >> 18U) & 0x3F) == vcid);
+        CHECK(((rawClcw >> 16U) & 0x03) == spare);
+        CHECK(((rawClcw >> 15U) & 0x01) == noRfAvailable);
+        CHECK(((rawClcw >> 14U) & 0x01) == noBitLock);
+        CHECK(((rawClcw >> 13U) & 0x01) == lockout);
+        CHECK(((rawClcw >> 12U) & 0x01) == wait);
+        CHECK(((rawClcw >> 11U) & 0x01) == retransmit);
+        CHECK(((rawClcw >> 9U) & 0x03) == farmBCounter);
+        CHECK(((rawClcw >> 8U) & 0x01) == spare2);
+        CHECK((rawClcw & 0xFF) == reportValue);
     }
 
     SECTION("Getters") {
-        REQUIRE(clcw.getControlWordType() == controlWordType);
-        REQUIRE(clcw.getClcwVersion() == clcwVersion);
-        REQUIRE(clcw.getStatusField() == statusField);
-        REQUIRE(clcw.getCopInEffect() == copInEffect);
-        REQUIRE(clcw.getVcId() == vcid);
-        REQUIRE(clcw.getNoRfAvailable() == noRfAvailable);
-        REQUIRE(clcw.getNoBitLock() == noBitLock);
-        REQUIRE(clcw.getLockout() == lockout);
-        REQUIRE(clcw.getWait() == wait);
-        REQUIRE(clcw.getRetransmit() == retransmit);
-        REQUIRE(clcw.getFarmBCounter() == farmBCounter);
-        REQUIRE(clcw.getReportValue() == reportValue);
+        CHECK(clcw.getControlWordType() == controlWordType);
+        CHECK(clcw.getClcwVersion() == clcwVersion);
+        CHECK(clcw.getStatusField() == statusField);
+        CHECK(clcw.getCopInEffect() == copInEffect);
+        CHECK(clcw.getVcId() == vcid);
+        CHECK(clcw.getNoRfAvailable() == noRfAvailable);
+        CHECK(clcw.getNoBitLock() == noBitLock);
+        CHECK(clcw.getLockout() == lockout);
+        CHECK(clcw.getWait() == wait);
+        CHECK(clcw.getRetransmit() == retransmit);
+        CHECK(clcw.getFarmBCounter() == farmBCounter);
+        CHECK(clcw.getReportValue() == reportValue);
     }
 }

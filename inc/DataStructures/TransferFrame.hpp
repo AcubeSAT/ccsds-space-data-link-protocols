@@ -16,7 +16,18 @@ namespace CCSDSDataLinkLayer {
 
         TransferFrame(Defs::FrameType t, uint16_t transferFrameLength, uint8_t *frameData, uint16_t firstEmptyOctet = 0)
                 : type(t), transferFrameLength(transferFrameLength), transferFrameData(frameData),
-                  timesSequentiallyTransmitted(0), firstDataFieldEmptyOctet(firstEmptyOctet), nextPacketIndex(0) {}
+                  timesSequentiallyTransmitted(0), firstDataFieldEmptyOctet(firstEmptyOctet), nextPacketIndex(0) {
+            frameData[0] = static_cast<uint8_t>(Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1);
+        }
+
+        /**
+         * @brief Transfer frame version number.
+         * @details Bits 0-1 of the Transfer Frame Primary Header
+         * @see p. 4.1.2.2.2 from TM SPACE DATA LINK PROTOCOL
+         */
+        [[nodiscard]] Defs::TransferFrameVersionNumber getTransferFrameVersionNumber() const {
+            return static_cast<Defs::TransferFrameVersionNumber>((transferFrameData[0] & 0xC0) >> 6U);
+        }
 
         [[nodiscard]] uint16_t getFrameLength() const {
             return transferFrameLength;
