@@ -216,6 +216,32 @@ namespace CCSDSDataLinkLayer {
             }
             const VirtualChannelGsTc& vcChan = vcIt->second;
 
+            DirectiveRequestType directiveType = directive.directiveType;
+            etl::optional<uint16_t> directiveQualifier = directive.directiveQualifier;
+            if (directiveType == DirectiveRequestType::SET_NEW_VS ||
+                directiveType == DirectiveRequestType::SET_FOP_SLIDING_WINDOW_WIDTH ||
+                directiveType == DirectiveRequestType::SET_T1_INITIAL ||
+                directiveType == DirectiveRequestType::SET_TRANSMISSION_LIMIT ||
+                directiveType == DirectiveRequestType::SET_TIMEOUT_TYPE) {
+
+                if (!directiveQualifier.has_value()) {
+                    return etl::unexpected(ServiceChannelNotification::INVALID_DIRECTIVE_REQUEST);
+                }
+
+                if ((directiveType == DirectiveRequestType::SET_NEW_VS ||
+                    directiveType == DirectiveRequestType::SET_FOP_SLIDING_WINDOW_WIDTH ||
+                    directiveType == DirectiveRequestType::SET_TRANSMISSION_LIMIT) &&
+                    directiveQualifier.value() > 255
+                    ) {
+                    return etl::unexpected(ServiceChannelNotification::INVALID_DIRECTIVE_REQUEST);
+                }
+
+                if (directiveType == DirectiveRequestType::SET_TIMEOUT_TYPE &&
+                    directiveQualifier.value() > 1) {
+                    return etl::unexpected(ServiceChannelNotification::INVALID_DIRECTIVE_REQUEST);
+                }
+            }
+
             const auto fopIt = Objects::fopMap.find(key);
             if (!vcChan.getCopInEffect() || fopIt == Objects::fopMap.end()) {
                 return etl::unexpected(ServiceChannelNotification::COP_INACTIVE);

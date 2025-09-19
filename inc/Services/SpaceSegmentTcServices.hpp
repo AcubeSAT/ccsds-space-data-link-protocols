@@ -21,7 +21,7 @@ namespace CCSDSDataLinkLayer {
     class SpaceSegmentTcServices {
     public:
         /**
-         * @details Insert a received frame from the channel codeing and synchronization sublayer
+         * @brief Insert a received frame from the channel coding and synchronization sublayer
          *
          * @param physicalChannelName  Master Channel Name, as defined in CCSDSDataLink.def
          * @param frameSource Frame to be inserted. Note that the length of the frame is determined by its

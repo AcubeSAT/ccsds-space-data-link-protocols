@@ -64,6 +64,7 @@ namespace CCSDSDataLinkLayer {
         FSH_SDU_QUEUE_FULL = 0x2B,
         SA_ALREADY_PAUSED = 0x2C,
         SA_ALREADY_RUNNING= 0x2D,
+        INVALID_DIRECTIVE_REQUEST = 0x2E,
     };
 
     enum class MapChannelAlert : uint8_t {

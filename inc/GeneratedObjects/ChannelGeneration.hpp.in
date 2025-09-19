@@ -36,7 +36,7 @@ namespace CCSDSDataLinkLayer::Generated {
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 #define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval)
-#define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, encryptionAlgorithm)
+#define SECURITY_ASSOCIATION(spi, pcid, authenticationAlgorithm, encryptionAlgorithm)
 
 /** Calculate channel counts
  *  Note: Each "channel" is constituted of a space and ground segment, except the physical channel.
@@ -87,10 +87,10 @@ namespace CCSDSDataLinkLayer::Generated {
 #define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval)
 
     inline constexpr uint8_t saCount = (0
-#define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, encryptionAlgorithm) +1
+#define SECURITY_ASSOCIATION(spi, pcid, authenticationAlgorithm, encryptionAlgorithm) +1
 #include "@CHANNEL_CONFIG@"
     );
-#define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, encryptionAlgorithm)
+#define SECURITY_ASSOCIATION(spi, pcid, authenticationAlgorithm, encryptionAlgorithm)
 
 /** Construct Physical channel objects **/
     enum class PhysicalChannelName : Defs::Pcid {
@@ -362,11 +362,12 @@ namespace CCSDSDataLinkLayer::Generated {
 #define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval)
 
 /** Construct Security Association Objects **/
-#define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, encryptionAlgorithm) \
+#define SECURITY_ASSOCIATION(spi, pcid, authenticationAlgorithm, encryptionAlgorithm) \
     {                           \
     spi,                        \
     SecurityAssociation(        \
     spi,                        \
+    pcid,                       \
     authenticationAlgorithm,    \
     encryptionAlgorithm         \
     )                           \
@@ -385,7 +386,7 @@ namespace CCSDSDataLinkLayer::Generated {
 #include "@CHANNEL_CONFIG@"
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
-#define SECURITY_ASSOCIATION(spi, authenticationAlgorithm, encryptionAlgorithm)
+#define SECURITY_ASSOCIATION(spi, pcid, authenticationAlgorithm, encryptionAlgorithm)
 
 /** Memory allocation for containers and Memory pool creation for frame octets  **/
 #ifdef INCLUDE_GROUND_SEGMENT_CODE

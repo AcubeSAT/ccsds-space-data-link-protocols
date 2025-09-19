@@ -255,10 +255,12 @@
 // =====================================================================================================================
 //
 // - SECURITY_ASSOCIATION(spi,
+//                        pcid
 //                        authenticationAlgorithm,
 //                        encryptionAlgorithm)
 //   -- spi: Security parameter index. Virtual and MAP channels can be associated with this security association, by
 //           using this index.
+//   -- pcid: The physical channel id. Only virtual/MAP channels that belong to this physical channel may be associated
 //   -- authenticationAlgorithm: Currently, only "Defs::AuthenticationAlgorithm::HMAC_SHA256_40_BIT" is supported. If no
 //                               authentication is required, use "Defs::AuthenticationAlgorithm::NO_AUTHENTICATION".
 //   -- encryptionAlgorithm: No encryption algorithms are implemented. Enter "Defs::EncryptionAlgorithm::NO_ENCRYPTION"
@@ -280,4 +282,4 @@ PHYSICAL_CHANNEL(TEST_PHY, 0, Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOU
         VIRTUAL_CHANNEL_TC(PACKETS_AND_COP, 3, 456, false, false, true, 0, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 4)
             COP1(456, 3, 500, 2, 128, Defs::TimeoutType::ALERT, 128, 1000)
 
-SECURITY_ASSOCIATION(1, Defs::AuthenticationAlgorithm::HMAC_SHA256_40_BIT, Defs::EncryptionAlgorithm::NO_ENCRYPTION)
+SECURITY_ASSOCIATION(1, 0, Defs::AuthenticationAlgorithm::HMAC_SHA256_40_BIT, Defs::EncryptionAlgorithm::NO_ENCRYPTION)

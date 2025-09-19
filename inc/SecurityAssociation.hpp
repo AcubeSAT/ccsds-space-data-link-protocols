@@ -43,10 +43,12 @@ namespace CCSDSDataLinkLayer {
     class SecurityAssociation {
     public:
         SecurityAssociation(const Defs::Spi securityParameterIndex,
+                            const Defs::Pcid pcid,
                             Defs::AuthenticationAlgorithm authenticationAlgorithm,
                             Defs::EncryptionAlgorithm encryptionAlgorithm)
             : saStatus(Defs::SecurityAssociationStatus::RUNNING),
               securityParameterIndex(securityParameterIndex),
+              pcid(pcid),
               authenticationAlgorithm(authenticationAlgorithm),
               encryptionAlgorithm(encryptionAlgorithm) {
 
@@ -112,6 +114,8 @@ namespace CCSDSDataLinkLayer {
         [[nodiscard]] uint8_t getSecurityTrailerLength() const;
 
         [[nodiscard]] Defs::Spi getSecurityParameterIndex() const;
+
+        [[nodiscard]] Defs::Pcid getPcid() const;
 
         [[nodiscard]] Defs::AuthenticationAlgorithm getAuthenticationAlgorithm() const {
             return authenticationAlgorithm;
@@ -183,6 +187,12 @@ namespace CCSDSDataLinkLayer {
          * @see p. 4.1.1.2
          */
         Defs::Spi securityParameterIndex;
+
+        /**
+         * A physical channel id. Only virtual/MAP channels that belong to this specific physical channel may be
+         * associated with it
+         */
+        Defs::Pcid pcid;
 
         /**
          * @}

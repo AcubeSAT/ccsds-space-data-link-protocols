@@ -79,6 +79,7 @@ namespace CCSDSDataLinkLayer {
         INSERT_ELEMENT(ServiceChannelNotification::FSH_SDU_QUEUE_FULL);
         INSERT_ELEMENT(ServiceChannelNotification::SA_ALREADY_PAUSED);
         INSERT_ELEMENT(ServiceChannelNotification::SA_ALREADY_RUNNING);
+        INSERT_ELEMENT(ServiceChannelNotification::INVALID_DIRECTIVE_REQUEST);
 #undef INSERT_ELEMENT
         }
         return out << strings[value];

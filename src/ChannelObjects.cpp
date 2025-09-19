@@ -424,6 +424,45 @@ namespace CCSDSDataLinkLayer::Objects {
         }
 #endif
 
+        // Check 16: All channels that are associated with a specific sa must belong on the same physical channel
+
+        auto checkAssociatedChannelPcid = [](auto &channelMap, Defs::Pcid saPcid, Defs::Spi saSpi) -> bool{
+            for (auto &vcPair : channelMap) {
+                if (vcPair.second.getAssociatedSdlsSPI().has_value()) {
+                    if (vcPair.second.getAssociatedSdlsSPI().value() == saPcid) {
+                        MasterChannelSsTc& mcChan = masterChannelSsTcMap.at(vcPair.second.getParentScid());
+                        if (mcChan.getParentPcid() != saPcid) {
+                            LOG_ERROR << "Ground Segment Security Association with SPI: " << saSpi <<
+                            " is associated with virtual/MAP channels from different physical channels";
+                            return false;
+                        }
+                    }
+                }
+            }
+        };
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
+        for (auto &saPair : saSpaceSegmentMap) {
+            SecurityAssociation& sa = saPair.second;
+            Defs::Pcid saPcid = sa.getPcid();
+            Defs::Spi saSpi = sa.getSecurityParameterIndex();
+
+            checkAssociatedChannelPcid(virtualChannelSsTcMap, saPcid, saSpi);
+            checkAssociatedChannelPcid(mapChannelSsMap, saPcid, saSpi);
+            checkAssociatedChannelPcid(virtualChannelSsTmMap, saPcid, saSpi);
+        }
+#endif
+
+#ifdef INCLUDE_GROUND_SEGMENT_CODE
+        for (auto &saPair : saGroundSegmentMap) {
+            SecurityAssociation& sa = saPair.second;
+            Defs::Pcid saPcid = sa.getPcid();
+            Defs::Spi saSpi = sa.getSecurityParameterIndex();
+
+            checkAssociatedChannelPcid(virtualChannelGsTcMap, saPcid, saSpi);
+            checkAssociatedChannelPcid(mapChannelGsMap, saPcid, saSpi);
+        }
+#endif
+
         // All checks passed
         return true;
     }

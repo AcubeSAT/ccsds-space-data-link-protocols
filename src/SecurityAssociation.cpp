@@ -16,6 +16,10 @@ namespace CCSDSDataLinkLayer {
         return securityParameterIndex;
     }
 
+    Defs::Pcid SecurityAssociation::getPcid() const {
+        return pcid;
+    }
+
     void SecurityAssociation::resetSequenceNumber() {
         sequenceNumber = 0;
     }
