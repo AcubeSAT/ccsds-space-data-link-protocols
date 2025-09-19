@@ -13,7 +13,6 @@ namespace CCSDSDataLinkLayer {
       retransmit(false),
       farmBCount(0),
       receiverFrameSeqNumber(0),
-      farmSlidingWinWidth(farmSlidingWinWidth),
       farmPositiveWinWidth(fopTransmissionLimit > 1 ? farmSlidingWinWidth / 2 : farmSlidingWinWidth),
       farmNegativeWidth(fopTransmissionLimit > 1 ? farmSlidingWinWidth / 2 : 0),
       clcwReportInterval(clcwReportInterval),

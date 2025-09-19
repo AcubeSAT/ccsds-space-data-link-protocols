@@ -96,7 +96,6 @@ namespace CCSDSDataLinkLayer::Objects {
             if (vcChanPair.second.getSegmentHeaderPresent()) {
                 Defs::Vcid vcid = vcChanPair.second.getVcid();
                 Defs::Scid scid = vcChanPair.second.getParentScid();
-                Defs::VcidScidKey key = constructVcidScidKey(vcid, scid);
                 if (!etl::any_of(mapChannelGsMap.begin(), mapChannelGsMap.end(),
                      [vcid, scid](const auto &pair) -> bool { return (pair.second.getParentVcid() == vcid) && (pair.second.getParentScid() == scid);})) {
                     LOG_ERROR << "Ground segment TC Virtual Channel with VCID-SCID " << vcid << "-" << scid <<

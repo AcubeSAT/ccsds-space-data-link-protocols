@@ -13,6 +13,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # Uncomment to throw error instead
     # add_compile_options(-Werror=vla)
 endif()
+add_compile_options(-fno-exceptions)
 
 # ======================================== Build options ========================================
 option(BUILD_SPACE_SEGMENT  "Build the space segment library" OFF)
@@ -93,7 +94,8 @@ file(GLOB COMMON_SOURCES
 # Unit test sources
 file(GLOB UNIT_TESTS
         "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test/DataStructures/*.cpp")
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/DataStructures/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test/DataHandlingFunctions/*.cpp")
 
 # Platform directories and sources
 if(BUILD_x86)

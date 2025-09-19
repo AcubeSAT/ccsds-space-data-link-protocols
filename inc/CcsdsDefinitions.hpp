@@ -319,6 +319,21 @@ namespace CCSDSDataLinkLayer::Defs {
     };
 
     /**
+     * Defines the behavior of FOP-1 when the countdown timer expires and the maximum number of retransmissions has been reached.
+     *
+     * - ALERT: Triggers an 'Alert' notification, indicating an unrecoverable condition and the termination of the Sequence-Controlled Service guarantee.
+     * - SUSPEND: Suspends FOP-1 operation, allowing it to resume later when conditions permit (e.g., upon receiving a CLCW).
+     *
+     * The SUSPEND option is recommended for:
+     * - High-error-rate links: Prevents premature termination during transient issues.
+     * - Deep-space links: Accommodates high latency by allowing a 'send and suspend' approach.
+     */
+    enum class TimeoutType : bool {
+        ALERT = 0,
+        SUSPEND = 1,
+    };
+
+    /**
      * @}
      */
 

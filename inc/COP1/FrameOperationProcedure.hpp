@@ -52,8 +52,8 @@ namespace CCSDSDataLinkLayer {
     class FrameOperationProcedure {
     public:
         FrameOperationProcedure(const Defs::Scid scid, const Defs::Vcid vcid, const uint16_t tiInitial,
-                        const uint16_t transmissionLimit,
-                        const uint8_t fopSlidingWindowWidth);
+                        const uint16_t transmissionLimit, const uint8_t fopSlidingWindowWidth,
+                        const Defs::TimeoutType timeoutType);
 
         /**
          * This is the core process of FOP-1. By examining incoming signals, CLCWs and internal variables,
@@ -185,7 +185,7 @@ namespace CCSDSDataLinkLayer {
          * Count (see 5.1.10.4) has reached the Transmission_Limit.
          * @see p. 5.1.10.3 from COP-1 CCSDS
          */
-        bool timeoutType;
+        Defs::TimeoutType timeoutType;
 
         /**
          * It records the state that FOP-1 was in when the AD Service was suspended (as described in 5.1.10).

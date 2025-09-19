@@ -16,6 +16,10 @@ namespace CCSDSDataLinkLayer {
     public:
         Mutex() = default;
 
+        // We have to define a copy constructor, so that classes which contain a Mutex are copyable. However,
+        // std::timed_mutex is not copyable by design, so initialize a new one
+        Mutex(const Mutex& other) : mutex() {}
+
         /**
          * @brief Attempt to lock the mutex for timeMs milliseconds. The process is blocked during that time
          * @param timeMs Maximum time to wait for the lock, in milliseconds

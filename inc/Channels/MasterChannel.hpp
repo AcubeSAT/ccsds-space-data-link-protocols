@@ -4,6 +4,8 @@
 
 #pragma once
 #include <cstdint>
+#include <etl/flat_map.h>
+
 #include "ExternalContainers.hpp"
 #include "TransferFrameTM.hpp"
 #include "TransferFrameTC.hpp"
@@ -68,8 +70,8 @@ namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     class MasterChannelSsTm : public MasterChannelBase {
     public:
-        explicit  MasterChannelSsTm(const uint16_t mcid, const Defs::Pcid parentPcid, const uint16_t ocfSduCapacity)
-            : MasterChannelBase(mcid, parentPcid),
+        explicit  MasterChannelSsTm(const Defs::Scid scid, const Defs::Pcid parentPcid, const uint16_t ocfSduCapacity)
+            : MasterChannelBase(scid, parentPcid),
               masterChannelFrameCount(0), ocfSduCapacity(ocfSduCapacity) {}
 
         void initializeContainers(

@@ -6,13 +6,12 @@
 
 namespace CCSDSDataLinkLayer {
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
-    FrameOperationProcedure::FrameOperationProcedure(const Defs::Scid scid, const Defs::Vcid vcid, const uint16_t tiInitial,
-                        const uint16_t transmissionLimit,
-                        const uint8_t fopSlidingWindowWidth)
+    FrameOperationProcedure::FrameOperationProcedure(const Defs::Scid scid, const Defs::Vcid vcid, const uint16_t tiInitial, const uint16_t transmissionLimit, const uint8_t fopSlidingWindowWidth,
+     const Defs::TimeoutType timeoutType)
     : state(Defs::FOPState::INITIAL), transmitterFrameSeqNumber(0), adOut(true),
       bdOut(true), bcOut(true), expectedAcknowledgementSeqNumber(0),
       tiInitial(tiInitial), transmissionLimit(transmissionLimit), transmissionCount(1),
-      fopSlidingWindowWidth(fopSlidingWindowWidth), timeoutType(false),
+      fopSlidingWindowWidth(fopSlidingWindowWidth), timeoutType(timeoutType),
       suspendState(Defs::SuspendVariableState::NOT_SUSPENDED),
       signalQueueMutex(Mutex()), vcChan(Objects::virtualChannelGsTcMap.at(constructVcidScidKey(vcid, scid))),
       mcChan(Objects::masterChannelGsTcMap.at(scid)),

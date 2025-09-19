@@ -108,7 +108,6 @@ namespace CCSDSDataLinkLayer {
          * mode
          * @see p. 6.1.8 of COP-1 CCSDS
          */
-        const uint8_t farmSlidingWinWidth;
         const uint8_t farmPositiveWinWidth;
         const uint8_t farmNegativeWidth;
 

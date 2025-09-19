@@ -8,11 +8,11 @@
 #include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
-    inline Defs::VcidScidKey constructVcidScidKey(const Defs::Vcid vcid, const Defs::Scid scid) {
+    constexpr Defs::VcidScidKey constructVcidScidKey(const Defs::Vcid vcid, const Defs::Scid scid) {
         return static_cast<Defs::VcidScidKey>(vcid) << 10 | scid;
     }
 
-    inline Defs::MapidVcidScidKey constructMapidVcidScidKey(const Defs::Mapid mapid,
+    constexpr  Defs::MapidVcidScidKey constructMapidVcidScidKey(const Defs::Mapid mapid,
                                                       const Defs::Vcid vcid,
                                                       const Defs::Scid scid) {
         return (static_cast<Defs::MapidVcidScidKey>(mapid) << (6 + 10))
@@ -20,13 +20,13 @@ namespace CCSDSDataLinkLayer {
              | scid;
     }
 
-    inline std::tuple<Defs::Vcid, Defs::Scid> extractVcidScid(Defs::VcidScidKey key) {
+    constexpr  std::tuple<Defs::Vcid, Defs::Scid> extractVcidScid(Defs::VcidScidKey key) {
         Defs::Vcid vcid = static_cast<uint8_t>(key >> 10);   // top 6 bits
         Defs::Scid scid = static_cast<uint16_t>(key & 0x03FFU);
         return {vcid, scid};
     }
 
-    inline std::tuple<Defs::Mapid, Defs::Vcid, Defs::Scid> extractMapidVcidScidKey(Defs::MapidVcidScidKey key) {
+    constexpr  std::tuple<Defs::Mapid, Defs::Vcid, Defs::Scid> extractMapidVcidScidKey(Defs::MapidVcidScidKey key) {
         Defs::Mapid mapid = static_cast<uint8_t>(key >> (6 + 10));
         Defs::Vcid vcid  = static_cast<uint8_t>((key >> 10) & 0x3FU);
         Defs::Scid scid = static_cast<uint16_t>(key & 0x03FFU);

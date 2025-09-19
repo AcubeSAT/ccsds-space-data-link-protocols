@@ -7,6 +7,7 @@
 #include <etl/expected.h>
 #include "DataLinkNotifications.hpp"
 #include "CcsdsDefinitions.hpp"
+#include "ChannelObjects.hpp"
 
 namespace CCSDSDataLinkLayer {
     class SecurityAssociationServices {

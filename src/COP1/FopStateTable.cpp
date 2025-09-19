@@ -447,7 +447,7 @@ namespace CCSDSDataLinkLayer {
         /** Timer expiration **/
         if (timer.getRunning() && (timer.getRemainingTime() == 0)) {
             if (transmissionCount < transmissionLimit) {
-                if (timeoutType == 0) {
+                if (timeoutType == Defs::TimeoutType::ALERT) {
                     // E16 rev. B
                     eventCode = 16;
                     switch (state) {
@@ -499,7 +499,7 @@ namespace CCSDSDataLinkLayer {
                 }
             } else {
                 // transmission count >= transmission limit
-                if (timeoutType == 0) {
+                if (timeoutType == Defs::TimeoutType::ALERT) {
                     // E17 rev. B
                     eventCode = 17;
                     switch (state) {
@@ -947,7 +947,7 @@ namespace CCSDSDataLinkLayer {
                     directiveNotificationSignalQueueUser.push(
                                         DirectiveNotificationSignalUser(directiveRequestSignal.requestIdentifier,
                                                                     DirectiveNotificationType::ACCEPT_RESPONSE_TO_DIRECTIVE));
-                    timeoutType = static_cast<bool>(directiveRequestSignal.directiveQualifier.value());
+                    timeoutType = static_cast<Defs::TimeoutType>(directiveRequestSignal.directiveQualifier.value());
                     directiveNotificationSignalQueue.push(
                         DirectiveNotificationSignal(directiveRequestSignal.requestIdentifier,
                                                     DirectiveNotificationType::POSITIVE_CONFIRM_RESPONSE_TO_DIRECTIVE));
