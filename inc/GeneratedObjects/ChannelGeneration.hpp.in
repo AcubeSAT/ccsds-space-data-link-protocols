@@ -389,7 +389,7 @@ namespace CCSDSDataLinkLayer::Generated {
 #define SECURITY_ASSOCIATION(spi, pcid, authenticationAlgorithm, encryptionAlgorithm)
 
 /** Memory allocation for containers and Memory pool creation for frame octets  **/
-#ifdef INCLUDE_GROUND_SEGMENT_CODE
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
     inline constexpr bool IncludeSpaceCode = true;
 #else
     inline constexpr bool IncludeSpaceCode = false;
@@ -402,65 +402,65 @@ namespace CCSDSDataLinkLayer::Generated {
 #endif
 
 // Calculate total frame capacity for virtual and map channels
-    inline constexpr uint16_t TotalVirtualChannelTcFrameCapacity = (0
+    inline constexpr uint32_t TotalVirtualChannelTcFrameCapacity = (0
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +frameCapacity
 #include "@CHANNEL_CONFIG@"
 );
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 
-    inline constexpr uint16_t TotalVirtualChannelTmFrameCapacity = (0
+    inline constexpr uint32_t TotalVirtualChannelTmFrameCapacity = (0
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) +frameCapacity
 #include "@CHANNEL_CONFIG@"
 );
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
 
-    inline constexpr uint16_t TotalMapChannelFrameCapacity = (0
+    inline constexpr uint32_t TotalMapChannelFrameCapacity = (0
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +frameCapacity
 #include "@CHANNEL_CONFIG@"
 );
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 
 // Calculate total packet capacity for TM channels:
-    inline constexpr uint16_t TotalTmPacketCapacity = (0
+    inline constexpr uint32_t TotalTmPacketCapacity = (0
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) +packetCapacity
 #include "@CHANNEL_CONFIG@"
     );
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
 
 // Calculate total ocf sdu capacity needed for master channels
-    inline constexpr uint16_t TotalOcfSduCapacity = (0
+    inline constexpr uint32_t TotalOcfSduCapacity = (0
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity) + ocfSduCapacity
     #include "@CHANNEL_CONFIG@"
         );
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity)
 
 // Calculate total packet capacity for TC channels:
-    inline constexpr uint16_t TotalMapChannelTypeAdPacketCapacity = (0
+    inline constexpr uint32_t TotalMapChannelTypeAdPacketCapacity = (0
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeAdPacketCapacity
 #include "@CHANNEL_CONFIG@"
 );
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 
-    inline constexpr uint16_t TotalVirtualChannelTypeAdCapacity = (0
+    inline constexpr uint32_t TotalVirtualChannelTypeAdCapacity = (0
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeAdPacketCapacity
 #include "@CHANNEL_CONFIG@"
     );
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 
-    inline constexpr uint16_t TotalMapChannelTypeBdPacketCapacity = (0
+    inline constexpr uint32_t TotalMapChannelTypeBdPacketCapacity = (0
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeBdPacketCapacity
 #include "@CHANNEL_CONFIG@"
 );
 #define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 
-    inline constexpr uint16_t TotalVirtualChannelTypeBdCapacity = (0
+    inline constexpr uint32_t TotalVirtualChannelTypeBdCapacity = (0
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeBdPacketCapacity
 #include "@CHANNEL_CONFIG@"
     );
 #define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
 
 // Calculate total capacity for secondary header octets (sum of queue capacity * {length of secondary header-1}, for all ss tm channels)
-    inline constexpr uint16_t TotalSecondaryHeaderOctetCapacity = (0
+    inline constexpr uint32_t TotalSecondaryHeaderOctetCapacity = (0
 #define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) + (secondaryHeaderLength - Defs::TmSecondaryHeaderIdLength)
 #include "@CHANNEL_CONFIG@"
     ) * Defs::SecondaryHeaderFieldCapacity * IncludeSpaceCode;
@@ -482,7 +482,7 @@ namespace CCSDSDataLinkLayer::Generated {
     //       variable actually contains capacities of virtual channels that DO NOT contain map channels. The total capacity
     //       required for virtual channel WITH map channels is the TotalMapChannelFrameCapacity
 
-    inline constexpr uint16_t TotalTransferFrameTcSlots = (IncludeGroundCode + IncludeSpaceCode) *
+    inline constexpr uint32_t TotalTransferFrameTcSlots = (IncludeGroundCode + IncludeSpaceCode) *
         (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity);
 
     // MapChannelSs: 2 queues -> 2 * TotalMapChannelFrameCapacity
@@ -491,7 +491,7 @@ namespace CCSDSDataLinkLayer::Generated {
     // MapChannelGsTc: No queues
     // VirtualChannelGsTc: 2 queues -> 2 * (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity)
     // MasterChannelGsTc: 1 queue -> TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity
-    inline constexpr uint16_t TotalTransferFrameTcPtrSlots =
+    inline constexpr uint32_t TotalTransferFrameTcPtrSlots =
         IncludeSpaceCode * (
             5 * (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity) +
             2 * TotalMapChannelFrameCapacity
@@ -500,19 +500,19 @@ namespace CCSDSDataLinkLayer::Generated {
             3 * (TotalMapChannelFrameCapacity + TotalVirtualChannelTcFrameCapacity)
         );
 
-    inline constexpr uint16_t TotalTransferFrameTmSlots = IncludeSpaceCode *
+    inline constexpr uint32_t TotalTransferFrameTmSlots = IncludeSpaceCode *
         TotalVirtualChannelTmFrameCapacity;
 
     // VirtualChannelSsTm: 2 queues
     // MasterChannelSsTm: 2 queues, 1 circular buffer
     // VirtualChannelGsTm: Unimplemented
     // MasterChannelGsTm: Unimplemented
-    inline constexpr uint16_t TotalTransferFrameTmPtrSlots = IncludeSpaceCode *
+    inline constexpr uint32_t TotalTransferFrameTmPtrSlots = IncludeSpaceCode *
         5 * TotalVirtualChannelTmFrameCapacity;
 
-    inline constexpr uint16_t TotalTypeAdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeAdCapacity + TotalMapChannelTypeAdPacketCapacity);
-    inline constexpr uint16_t TotalTypeBdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeBdCapacity + TotalMapChannelTypeBdPacketCapacity);
-    inline constexpr uint16_t TotalTmPacketSlots = TotalTmPacketCapacity; // We add the secondary header octets here as well
+    inline constexpr uint32_t TotalTypeAdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeAdCapacity + TotalMapChannelTypeAdPacketCapacity);
+    inline constexpr uint32_t TotalTypeBdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeBdCapacity + TotalMapChannelTypeBdPacketCapacity);
+    inline constexpr uint32_t TotalTmPacketSlots = IncludeSpaceCode * TotalTmPacketCapacity;
 
     inline TransferFrameTC transferFrameTcArray[TotalTransferFrameTcSlots];
     inline TransferFrameTC* transferFrameTcPtrArray[TotalTransferFrameTcPtrSlots];

@@ -275,11 +275,11 @@ PHYSICAL_CHANNEL(TEST_PHY, 0, Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOU
     MASTER_CHANNEL_TC(TEST_MC, 456, 0)
         VIRTUAL_CHANNEL_TC(VCA_SDU_AND_SA, 0, 456, false, false, false, 1, 2, 2, Defs::DataFieldContent::VCA_SDU, 4, 4, 4, 1)
         VIRTUAL_CHANNEL_TC(PACKETS_AND_SA_AND_BLOCKING, 1, 456, false, true, false, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 2)
-        VIRTUAL_CHANNEL_TC(PACKETS_AND_MAP_CHANS_AND_SA, 2, 456, true, false, false, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 3)
+        VIRTUAL_CHANNEL_TC(PACKETS_AND_MAP_CHANS_AND_SA, 2, 456, true, false, false, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 0, 0, 3)
             MAP_CHANNEL(BLOCKING, 0, 2, 456, true, false, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 1)
             MAP_CHANNEL(SEGMENTATION, 1, 2, 456, false, true, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 1)
             MAP_CHANNEL(BLOCKING_AND_SEGMENTATION, 2, 2, 456, true, true, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 1)
-        VIRTUAL_CHANNEL_TC(PACKETS_AND_COP, 3, 456, false, false, true, 0, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 4)
+        VIRTUAL_CHANNEL_TC(PACKETS_AND_COP, 3, 456, false, false, true, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 4)
             COP1(456, 3, 500, 2, 128, Defs::TimeoutType::ALERT, 128, 1000)
 
 SECURITY_ASSOCIATION(1, 0, Defs::AuthenticationAlgorithm::HMAC_SHA256_40_BIT, Defs::EncryptionAlgorithm::NO_ENCRYPTION)

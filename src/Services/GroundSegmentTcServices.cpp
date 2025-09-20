@@ -418,6 +418,8 @@ namespace CCSDSDataLinkLayer {
                     GroundSegmentTcDataHandling::resetMapChannel(mapChan.second);
                 }
             }
+
+            return {};
         }
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // CCSDSDataLinkLayer

@@ -266,6 +266,8 @@ namespace CCSDSDataLinkLayer {
                     SpaceSegmentTcDataHandling::resetMapChannel(mapChan.second);
                 }
             }
+
+            return {};
         }
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // CCSDSDataLinkLayer

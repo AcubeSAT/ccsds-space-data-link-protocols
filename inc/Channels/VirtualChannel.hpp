@@ -279,14 +279,6 @@ namespace CCSDSDataLinkLayer {
             return typeBdPacketCapacity;
         }
 
-        void incrementTypeAdPacketCapacity(const uint16_t amount) {
-            this->typeAdPacketCapacity += amount;
-        }
-
-        void incrementTypeBdPacketCapacity(const uint16_t amount) {
-            this->typeBdPacketCapacity += amount;
-        }
-
         [[nodiscard]] bool getSegmentHeaderPresent() const {
             return segmentHeaderPresent;
         }
@@ -430,14 +422,6 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] uint16_t getTypeBdPacketCapacity() const {
             return typeBdPacketCapacity;
-        }
-
-        void incrementTypeAdPacketCapacity(const uint16_t amount) {
-            this->typeAdPacketCapacity += amount;
-        }
-
-        void incrementTypeBdPacketCapacity(const uint16_t amount) {
-            this->typeBdPacketCapacity += amount;
         }
 
         [[nodiscard]] uint8_t getVcRepetitionsTypeAD() const {

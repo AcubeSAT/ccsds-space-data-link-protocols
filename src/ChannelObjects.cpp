@@ -345,7 +345,7 @@ namespace CCSDSDataLinkLayer::Objects {
             if (!vcChanPair.second.getSecondaryHeaderPresent()) {
                 if (vcChanPair.second.getSecondaryHeaderLength() != 0) {
                     LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
-                        " does not have a secondary header, but the specified length is non zero";
+                        " does not have a secondary header. The specified length should be zero";
                     return false;
                 }
             } else {
@@ -366,14 +366,14 @@ namespace CCSDSDataLinkLayer::Objects {
 
             if (vcChanPair.second.getSegmentHeaderPresent()) {
                 if ((vcChanPair.second.getTypeAdPacketCapacity() != 0) || (vcChanPair.second.getTypeBdPacketCapacity() != 0)) {
-                    LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
-                        " has MAP channels and one or both of the specified packets lengths are non zero";
+                    LOG_ERROR << "Space Segment TC Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " has MAP channels. The specified packet lengths should be zero";
                     return false;
                 }
             } else {
                 if ((vcChanPair.second.getTypeAdPacketCapacity() == 0) && (vcChanPair.second.getTypeBdPacketCapacity() == 0)) {
-                    LOG_ERROR << "Space Segment TM Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
-                        " does not have MAP channels, and both of the specified lengths are zero";
+                    LOG_ERROR << "Space Segment TC Virtual Channel with VCID-SCID: " << vcid << "-" << scid <<
+                        " does not have MAP channels. At least one of the specified packet lengths should be zero";
                     return false;
                 }
             }
@@ -427,10 +427,10 @@ namespace CCSDSDataLinkLayer::Objects {
         // Check 16: All channels that are associated with a specific sa must belong on the same physical channel
 
         auto checkAssociatedChannelPcid = [](auto &channelMap, Defs::Pcid saPcid, Defs::Spi saSpi) -> bool{
-            for (auto &vcPair : channelMap) {
-                if (vcPair.second.getAssociatedSdlsSPI().has_value()) {
-                    if (vcPair.second.getAssociatedSdlsSPI().value() == saPcid) {
-                        MasterChannelSsTc& mcChan = masterChannelSsTcMap.at(vcPair.second.getParentScid());
+            for (auto &chanPair : channelMap) {
+                if (chanPair.second.getAssociatedSdlsSPI().has_value()) {
+                    if (chanPair.second.getAssociatedSdlsSPI().value() == saPcid) {
+                        MasterChannelSsTc& mcChan = masterChannelSsTcMap.at(chanPair.second.getParentScid());
                         if (mcChan.getParentPcid() != saPcid) {
                             LOG_ERROR << "Ground Segment Security Association with SPI: " << saSpi <<
                             " is associated with virtual/MAP channels from different physical channels";
@@ -439,6 +439,7 @@ namespace CCSDSDataLinkLayer::Objects {
                     }
                 }
             }
+            return true;
         };
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
         for (auto &saPair : saSpaceSegmentMap) {
@@ -446,9 +447,11 @@ namespace CCSDSDataLinkLayer::Objects {
             Defs::Pcid saPcid = sa.getPcid();
             Defs::Spi saSpi = sa.getSecurityParameterIndex();
 
-            checkAssociatedChannelPcid(virtualChannelSsTcMap, saPcid, saSpi);
-            checkAssociatedChannelPcid(mapChannelSsMap, saPcid, saSpi);
-            checkAssociatedChannelPcid(virtualChannelSsTmMap, saPcid, saSpi);
+            if (!checkAssociatedChannelPcid(virtualChannelSsTcMap, saPcid, saSpi) ||
+                !checkAssociatedChannelPcid(mapChannelSsMap, saPcid, saSpi) ||
+                !checkAssociatedChannelPcid(virtualChannelSsTmMap, saPcid, saSpi)) {
+                return false;
+            }
         }
 #endif
 
@@ -486,10 +489,10 @@ namespace CCSDSDataLinkLayer::Objects {
         uint32_t packetOctetsArrayIndex = 0;
         const uint32_t packetOctetsArrayMaxSize =
                 (TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots) *
-                Defs::MaxExpectedPacketSize;
+                    Defs::MaxExpectedPacketSize + TotalSecondaryHeaderOctetCapacity ;
 
         uint32_t indicesArrayIndex = 0;
-        const uint32_t indicesArrayMaxSize = TotalTransferFrameTcSlots + TotalTransferFrameTmSlots;
+        const uint32_t indicesArrayMaxSize = TotalTransferFrameTcSlots + TotalTransferFrameTmSlots + TotalOcfSduCapacity;
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
         // VirtualChannelSsTm
@@ -573,14 +576,12 @@ namespace CCSDSDataLinkLayer::Objects {
                 etl::span{transferFrameTcPtrArray + transferFrameTcPtrArrayIndex + pair.second.getFrameCapacity(), pair.second.getFrameCapacity()});
             transferFrameTcPtrArrayIndex += 2 * pair.second.getFrameCapacity();
 
-            // increment frame and packet capacities of the relevant virtual channel, so at the end of the for
+            // increment frame capacity of the relevant virtual channel, so at the end of the for
             // loop, we know how much space it requires
             const Defs::VcidScidKey key = constructVcidScidKey(pair.second.getParentVcid(), pair.second.getParentScid());
             if (!virtualChannelSsTcMap.contains(key)) {
                 return false;
             }
-            virtualChannelSsTcMap.at(key).incrementTypeAdPacketCapacity(pair.second.getTypeAdPacketCapacity());
-            virtualChannelSsTcMap.at(key).incrementTypeBdPacketCapacity(pair.second.getTypeBdPacketCapacity());
             virtualChannelSsTcMap.at(key).incrementFrameCapacity(pair.second.getFrameCapacity());
         }
 
@@ -668,11 +669,11 @@ namespace CCSDSDataLinkLayer::Objects {
                                                                 Defs::MaxExpectedPacketSize
                 },
                 etl::span{
-                    packetLengthsArray + packetLengthsArrayIndex + pair.second.getTypeAdPacketCapacity(),
+                    packetLengthsArray + packetLengthsArrayIndex + pair.second.getTypeBdPacketCapacity(),
                     pair.second.getTypeBdPacketCapacity()
                 },
                 etl::span{
-                    packetOctetsArray + packetOctetsArrayIndex + pair.second.getTypeAdPacketCapacity() *
+                    packetOctetsArray + packetOctetsArrayIndex + pair.second.getTypeBdPacketCapacity() *
                     Defs::MaxExpectedPacketSize,
                     pair.second.getTypeBdPacketCapacity() * Defs::MaxExpectedPacketSize
                 }
@@ -682,14 +683,12 @@ namespace CCSDSDataLinkLayer::Objects {
             packetOctetsArrayIndex += (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity()) *
                     Defs::MaxExpectedPacketSize;
 
-            // increment frame and packet capacities of the relevant virtual channel, so at the end of the for
+            // increment frame capacity of the relevant virtual channel, so at the end of the for
             // loop, we know how much space it requires
             const Defs::VcidScidKey key = constructVcidScidKey(pair.second.getParentVcid(), pair.second.getParentScid());
             if (!virtualChannelGsTcMap.contains(key)) {
                 return false;
-            }
-            virtualChannelGsTcMap.at(key).incrementTypeAdPacketCapacity(pair.second.getTypeAdPacketCapacity());
-            virtualChannelGsTcMap.at(key).incrementTypeBdPacketCapacity(pair.second.getTypeBdPacketCapacity());
+            };
             virtualChannelGsTcMap.at(key).incrementFrameCapacity(pair.second.getFrameCapacity());
         }
 
@@ -701,10 +700,10 @@ namespace CCSDSDataLinkLayer::Objects {
             // packetOctetsTypeBD queue (uint8_t)
             // framesAfterPacketProcessing queue (TransferFrameTC*)
             // framesAfterApplySDLSSecurity queue (TransferFrameTC*)
-            if (packetLengthsArrayIndex + (pair.second.getTypeAdPacketCapacity() + pair.second.
-                                           getTypeBdPacketCapacity()) > packetLengthsArrayMaxSize ||
-                packetOctetsArrayIndex + (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity())
-                *
+
+            if (packetLengthsArrayIndex + (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity())
+                    > packetLengthsArrayMaxSize ||
+                packetOctetsArrayIndex + (pair.second.getTypeAdPacketCapacity() + pair.second.getTypeBdPacketCapacity()) *
                 Defs::MaxExpectedPacketSize > packetOctetsArrayMaxSize ||
                 transferFrameTcPtrArrayIndex + 2 * pair.second.getFrameCapacity() > transferFrameTcPtrArrayMaxSize) {
                 return false;
@@ -717,11 +716,11 @@ namespace CCSDSDataLinkLayer::Objects {
                     pair.second.getTypeAdPacketCapacity() * Defs::MaxExpectedPacketSize
                 },
                 etl::span{
-                    packetLengthsArray + packetLengthsArrayIndex + pair.second.getTypeAdPacketCapacity(),
+                    packetLengthsArray + packetLengthsArrayIndex + pair.second.getTypeBdPacketCapacity(),
                     pair.second.getTypeBdPacketCapacity()
                 },
                 etl::span{
-                    packetOctetsArray + packetOctetsArrayIndex + pair.second.getTypeAdPacketCapacity() *
+                    packetOctetsArray + packetOctetsArrayIndex + pair.second.getTypeBdPacketCapacity() *
                     Defs::MaxExpectedPacketSize,
                     pair.second.getTypeBdPacketCapacity() * Defs::MaxExpectedPacketSize
                 },

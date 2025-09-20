@@ -227,6 +227,8 @@ namespace CCSDSDataLinkLayer {
                 SpaceSegmentTmDataHandling::resetVirtualChannel(vcChan.second);
             }
         }
+
+        return {};
     }
 #endif // INCLUDE_SPACE_SEGMENT_CODE
 } // CCSDSDataLinkLayer
