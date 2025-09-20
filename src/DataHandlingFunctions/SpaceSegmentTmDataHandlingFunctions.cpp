@@ -66,7 +66,7 @@ namespace CCSDSDataLinkLayer {
     		return etl::unexpected(ServiceChannelNotification::INVALID_LENGTH);
     	}
 
-    	if (length > Defs::MaxExpectedEncapsulationPacketSize) {
+    	if (length > vcChan.getMaxExpectedPacketSize()) {
     		return etl::unexpected(ServiceChannelNotification::PACKET_TOO_LONG);
     	}
 

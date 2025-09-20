@@ -24,9 +24,11 @@ namespace CCSDSDataLinkLayer {
     public:
         explicit VirtualChannelBase(const Defs::Vcid vcid, const Defs::Scid parentScid,
                                     const Defs::Spi associatedSdlsSPI, const uint16_t frameCapacity,
+                                    const uint16_t maxExpectedPacketSize,
                                     const uint8_t priorityWeight)
             : channelMutex(Mutex()), vcid(vcid & 0x3FU), parentScid(parentScid & 0x03FFU),
-              associatedSdlsSPI(associatedSdlsSPI), frameCapacity(frameCapacity), priorityWeight(priorityWeight) {
+              associatedSdlsSPI(associatedSdlsSPI), frameCapacity(frameCapacity),
+              maxExpectedPacketSize(maxExpectedPacketSize), priorityWeight(priorityWeight) {
             if (associatedSdlsSPI != 0) {
                 this->associatedSdlsSPI = etl::optional(associatedSdlsSPI);
             }
@@ -55,6 +57,10 @@ namespace CCSDSDataLinkLayer {
 
         void incrementFrameCapacity(const uint16_t amount) {
             this->frameCapacity += amount;
+        }
+
+        [[nodiscard]] uint16_t getMaxExpectedPacketSize() const {
+            return maxExpectedPacketSize;
         }
 
         [[nodiscard]] uint8_t getPriorityWeight() const {
@@ -90,6 +96,12 @@ namespace CCSDSDataLinkLayer {
         uint16_t frameCapacity;
 
         /**
+         * @brief The maximum packet size this channel can accept. Overriden in the scenario MAP channels exist
+         *        under this virtual channel
+         */
+        uint16_t maxExpectedPacketSize;
+
+        /**
          * @brief In order to decide which virtual channel frames should be transferred to the master channel first,
          *        a weighted priority scheduling policy is used. The higher the weight, the higher the priority of the
          *        respective channel.
@@ -105,8 +117,8 @@ namespace CCSDSDataLinkLayer {
                                      const bool operationalControlFieldPresent,
                                      const Defs::SynchronizationFlag synchronization,
                                      const Defs::Spi associatedSdlsSPI, const uint16_t frameCapacity,
-                                     const uint16_t packetCapacity, const uint8_t priorityWeight)
-            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, priorityWeight),
+                                     const uint16_t packetCapacity, const uint16_t maxExpectedPacketSize, const uint8_t priorityWeight)
+            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, maxExpectedPacketSize, priorityWeight),
               vcRepetitions(vcRepetitions),
               operationalControlFieldPresent(operationalControlFieldPresent),
               secondaryHeaderPresent(secondaryHeaderPresent),
@@ -252,12 +264,12 @@ namespace CCSDSDataLinkLayer {
                                      const uint16_t frameCapacity,
                                      const uint16_t typeAdPacketCapacity,
                                      const uint16_t typeBdPacketCapacity,
+                                     const uint16_t maxExpectedPacketSize,
                                      const uint8_t priorityWeight)
-            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, priorityWeight),
+            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, maxExpectedPacketSize, priorityWeight),
               segmentHeaderPresent(segmentHeaderPresent), blocking(blocking), copInEffect(copInEffect),
               dataFieldContent(dataFieldContent), typeAdPacketCapacity(typeAdPacketCapacity),
-              typeBdPacketCapacity(typeBdPacketCapacity), segmentedPacketConstructor(Defs::SegmentedPacketConstructorTc()),
-              clcwStatusField(0) {}
+              typeBdPacketCapacity(typeBdPacketCapacity), clcwStatusField(0) {}
 
         void initializeContainers(const etl::span<TransferFrameTC *> &framesAfterAllFramesReceptionBuff,
                                   const etl::span<TransferFrameTC *> &framesAfterVcReceptionTypeADBuff,
@@ -336,11 +348,6 @@ namespace CCSDSDataLinkLayer {
         Queue<TransferFrameTC*> framesAfterProcessSDLSSecurityTypeBD;
 
         /**
-         * @brief Used to build segmented packets and contain information about the previous extracted packet/packet piece
-         */
-        Defs::SegmentedPacketConstructorTc segmentedPacketConstructor;
-
-        /**
          * @brief Ued by FARM to fill the status field when generating CLCWs. Updated by the user, using
          *        the respective service.
          */
@@ -394,8 +401,9 @@ namespace CCSDSDataLinkLayer {
                                     const uint16_t frameCapacity,
                                     const uint16_t typeAdPacketCapacity,
                                     const uint16_t typeBdPacketCapacity,
+                                    const uint16_t maxExpectedPacketSize,
                                     const uint16_t priorityWeight)
-            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, priorityWeight),
+            : VirtualChannelBase(vcid, parentScid, associatedSdlsSPI, frameCapacity, maxExpectedPacketSize, priorityWeight),
               vcRepetitionsTypeAD(vcRepetitionsTypeAD),
               vcRepetitionsTypeBC(vcRepetitionsTypeBC),
               segmentHeaderPresent(segmentHeaderPresent),
@@ -533,6 +541,8 @@ namespace CCSDSDataLinkLayer {
          *  @brief States how many Type-AD packets this channel should support (used during the memory pool allocation process).
          */
         uint16_t typeBdPacketCapacity;
+
+
     };
 #endif // INCLUDE_GROUND_SEGMENT_CODE
 } // namespace CCSDSDataLinkLayer

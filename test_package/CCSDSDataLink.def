@@ -89,6 +89,7 @@
 //                      repetitions,
 //                      frameCapacity,
 //                      packetCapacity,
+//                      maxExpectedPacketSize,
 //                      priorityWeight)
 //   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel
 //   -- vcid: A 3 bit id (unique for all TM virtual channels under a specific TM master channel)
@@ -114,6 +115,8 @@
 //   -- frameCapacity: Maximum amount of frames this channel can support (affects memory allocation size).
 //   -- packetCapacity: Maximum amount of packets this channel can support (affects memory allocation size). A packet
 //                      is defined as the data unit carried by the data field of a frame.
+//   -- maxExpectedPacketSize: The maximum size of a Packet a channel can accept. This value is ignored if synchronization
+//                             has the value "Defs::SynchronizationFlag::VCA_SDU".
 //   -- priorityWeight: A non negative integer that indicates the importance of the data in this channel. A higher
 //                      weight means that the channel frames are passed to the respective master channel first (weighted
 //                      priority scheduling). To avoid starvation issues, ensure that channels with higher weights have
@@ -134,6 +137,7 @@
 //                      frameCapacity,
 //                      typeAdPacketCapacity,
 //                      typeBdPacketCapacity
+//                      maxExpectedPacketSize,
 //                      priorityWeight)
 //   -- virtualChannelName: A name that can be used to uniquely identify this virtual channel.
 //   -- vcid: A 6 bit id (unique for all TM virtual channels under a specific TM master channel).
@@ -170,6 +174,8 @@
 //                     TYPE-BD, they can be transmitted multiple times (depending on the repetitionsTypeAD parameter).
 //                     **WARNING**: If map channels exist under this virtual channel those values MUST be set to 0.
 //                                  Otherwise, an excess amount of memory will be allocated.
+//   -- maxExpectedPacketSize: The maximum size of a Packet a channel can accept. This value is ignored if dataFieldContent
+//                             has the value "Defs::DataFieldContent::VCA_SDU".
 //   -- priorityWeight: A non negative integer that indicates the importance of the data in this channel. A higher
 //                      weight means that the channel frames are passed to the respective master channel first (weighted
 //                      priority scheduling). To avoid starvation issues, ensure that channels with higher weights have
@@ -188,6 +194,7 @@
 //               frameCapacity
 //               typeAdPacketCapacity,
 //               typeBdPacketCapacity,
+//               maxExpectedPacketSize,
 //               priorityWeight)
 //   -- mapChannelName: A name that can be used to uniquely identify this map channel.
 //   -- mapid: A 6 bit id (unique for all map channels under a specific TC virtual channel).
@@ -210,6 +217,9 @@
 //                     (an internet protocol analogy is TCP segments vs UDP datagrams). In the scenario that COP-11 is
 //                     not active for this virtual channel, TYPE-AD frames are not subject to checks, but compared to
 //                     TYPE-BD, they can be transmitted multiple times (depending on the repetitionsTypeAD parameter).
+//   -- maxExpectedPacketSize: The maximum size of a Packet a channel can accept. This value is ignored if dataFieldContent
+//                             has the value "Defs::DataFieldContent::VCA_SDU"" or MAP channels exist under this virtual
+//                             channel (segmentationHeaderPresent value is true)
 //   -- priorityWeight: A non negative integer that indicates the importance of the data in this channel. A higher
 //                      weight means that the channel frames are passed to the respective master channel first (weighted
 //                      priority scheduling). To avoid starvation issues, ensure that channels with higher weights have
@@ -269,17 +279,17 @@
 
 PHYSICAL_CHANNEL(TEST_PHY, 0, Defs::TransferFrameVersionNumber::TM_TC_SYNCHRONOUS_TRANSFER_FRAME_V1, 30, 30, 0, 0, 0, true)
     MASTER_CHANNEL_TM(MC, 456, 0, 10)
-        VIRTUAL_CHANNEL_TM(PACKETS_AND_OCF, 0, 456, 0, false, 0, true, Defs::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 2, 4, 4, 1)
-        VIRTUAL_CHANNEL_TM(PACKETS_AND_SEC_HEADER, 1, 456, 0, false, 0, false, Defs::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 2, 4, 4, 2)
-        VIRTUAL_CHANNEL_TM(VCA_SDU_AND_OCF_AND_SEC_HEADER_AND_SA, 2, 456, 1, true, 10, true, Defs::SynchronizationFlag::VCA_SDU, 2, 4, 4, 3)
+        VIRTUAL_CHANNEL_TM(PACKETS_AND_OCF, 0, 456, 0, false, 0, true, Defs::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 2, 4, 4, 128, 1)
+        VIRTUAL_CHANNEL_TM(PACKETS_AND_SEC_HEADER, 1, 456, 0, false, 0, false, Defs::SynchronizationFlag::OCTET_SYNCHRONIZED_FORWARD_ORDERED, 2, 4, 4, 128, 2)
+        VIRTUAL_CHANNEL_TM(VCA_SDU_AND_OCF_AND_SEC_HEADER_AND_SA, 2, 456, 1, true, 10, true, Defs::SynchronizationFlag::VCA_SDU, 2, 4, 4, 128, 3)
     MASTER_CHANNEL_TC(TEST_MC, 456, 0)
-        VIRTUAL_CHANNEL_TC(VCA_SDU_AND_SA, 0, 456, false, false, false, 1, 2, 2, Defs::DataFieldContent::VCA_SDU, 4, 4, 4, 1)
-        VIRTUAL_CHANNEL_TC(PACKETS_AND_SA_AND_BLOCKING, 1, 456, false, true, false, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 2)
-        VIRTUAL_CHANNEL_TC(PACKETS_AND_MAP_CHANS_AND_SA, 2, 456, true, false, false, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 3)
-            MAP_CHANNEL(BLOCKING, 0, 2, 456, true, false, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 1)
-            MAP_CHANNEL(SEGMENTATION, 1, 2, 456, false, true, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 1)
-            MAP_CHANNEL(BLOCKING_AND_SEGMENTATION, 2, 2, 456, true, true, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 1)
-        VIRTUAL_CHANNEL_TC(PACKETS_AND_COP, 3, 456, false, false, true, 0, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 4)
+        VIRTUAL_CHANNEL_TC(VCA_SDU_AND_SA, 0, 456, false, false, false, 1, 2, 2, Defs::DataFieldContent::VCA_SDU, 4, 4, 4, 128, 1)
+        VIRTUAL_CHANNEL_TC(PACKETS_AND_SA_AND_BLOCKING, 1, 456, false, true, false, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 128, 2)
+        VIRTUAL_CHANNEL_TC(PACKETS_AND_MAP_CHANS_AND_SA, 2, 456, true, false, false, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 0, 0, 128, 3)
+            MAP_CHANNEL(BLOCKING, 0, 2, 456, true, false, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 128, 1)
+            MAP_CHANNEL(SEGMENTATION, 1, 2, 456, false, true, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 128, 1)
+            MAP_CHANNEL(BLOCKING_AND_SEGMENTATION, 2, 2, 456, true, true, 1, Defs::DataFieldContent::PACKET, 4, 4, 4, 128, 1)
+        VIRTUAL_CHANNEL_TC(PACKETS_AND_COP, 3, 456, false, false, true, 1, 2, 2, Defs::DataFieldContent::PACKET, 4, 4, 4, 128, 4)
             COP1(456, 3, 500, 2, 128, Defs::TimeoutType::ALERT, 128, 1000)
 
 SECURITY_ASSOCIATION(1, 0, Defs::AuthenticationAlgorithm::HMAC_SHA256_40_BIT, Defs::EncryptionAlgorithm::NO_ENCRYPTION)

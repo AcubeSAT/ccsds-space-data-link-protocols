@@ -32,9 +32,9 @@ namespace CCSDSDataLinkLayer::Generated {
 #define PHYSICAL_CHANNEL(physicalChannelName, pcid, tfvn, maxTcLength, tmLength, maxFramesPdu, maxPduLength, maximumBitRate, fecPresent)
 #define MASTER_CHANNEL_TM(masterChannelName, scid, parentPcid, ocfSduCapacity)
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid)
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight)
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 #define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval)
 #define SECURITY_ASSOCIATION(spi, pcid, authenticationAlgorithm, encryptionAlgorithm)
 
@@ -63,22 +63,22 @@ namespace CCSDSDataLinkLayer::Generated {
 #define MASTER_CHANNEL_TC(masterChannelName, scid, parentPcid)
 
     inline constexpr uint8_t VirtualChannelTmCount = (0
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) +1
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight) +1
 #include "@CHANNEL_CONFIG@"
     );
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint8_t VirtualChannelTcCount = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +1
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +1
 #include "@CHANNEL_CONFIG@"
     );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint8_t MapChannelCount = (0
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +1
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +1
 #include "@CHANNEL_CONFIG@"
     );
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint8_t cop1Count = (0
 #define COP1(scid, vcid, tiInitial, transmissionLimit, fopSlidingWindowWidth, timeoutType, farmSlidingWindowWidth, clcwReportInterval) +1
@@ -176,14 +176,14 @@ namespace CCSDSDataLinkLayer::Generated {
 
 /** Construct Virtual channel TM objects **/
     enum class VirtualChannelTmName : Defs::VcidScidKey {
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) \
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight) \
     virtualChannelName = constructVcidScidKey(vcid, parentScid),
 #include "@CHANNEL_CONFIG@"
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     inline etl::flat_map<Defs::VcidScidKey, VirtualChannelSsTm, VirtualChannelTmCount == 0 ? 1 : VirtualChannelTmCount>  virtualChannelSsTmMap = {
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) \
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight) \
     { \
     constructVcidScidKey(vcid, parentScid), \
     VirtualChannelSsTm(         \
@@ -197,6 +197,7 @@ namespace CCSDSDataLinkLayer::Generated {
     associatedSdlsSPI,          \
     frameCapacity,              \
     packetCapacity,             \
+    maxExpectedPacketSize,      \
     priorityWeight              \
     )                           \
     },
@@ -205,18 +206,18 @@ namespace CCSDSDataLinkLayer::Generated {
 
     inline etl::vector<Defs::VcidScidKey, VirtualChannelTmCount == 0 ? 1 : VirtualChannelTmCount> virtualChannelSsTmPrioritySortedKeys;
 #endif // INCLUDE_SPACE_SEGMENT_CODE
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight)
 
     /** Construct Virtual channel TC Space Segment objects **/
     enum class VirtualChannelTcName : Defs::VcidScidKey {
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) \
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) \
     virtualChannelName = constructVcidScidKey(vcid, parentScid),
 #include "@CHANNEL_CONFIG@"
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     inline etl::flat_map<Defs::VcidScidKey, VirtualChannelSsTc, VirtualChannelTcCount == 0 ? 1 : VirtualChannelTcCount> virtualChannelSsTcMap = {
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) \
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) \
     { \
     constructVcidScidKey(vcid, parentScid), \
     VirtualChannelSsTc(         \
@@ -230,6 +231,7 @@ namespace CCSDSDataLinkLayer::Generated {
     frameCapacity,              \
     typeAdPacketCapacity,       \
     typeBdPacketCapacity,       \
+    maxExpectedPacketSize,      \
     priorityWeight              \
     )                           \
     },
@@ -241,7 +243,7 @@ namespace CCSDSDataLinkLayer::Generated {
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     inline etl::flat_map<Defs::VcidScidKey, VirtualChannelGsTc, VirtualChannelTcCount == 0 ? 1 : VirtualChannelTcCount> virtualChannelGsTcMap = {
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) \
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) \
     { \
     constructVcidScidKey(vcid, parentScid), \
     VirtualChannelGsTc(         \
@@ -257,6 +259,7 @@ namespace CCSDSDataLinkLayer::Generated {
     frameCapacity,              \
     typeAdPacketCapacity,       \
     typeBdPacketCapacity,       \
+    maxExpectedPacketSize,      \
     priorityWeight              \
     )                           \
     },
@@ -265,18 +268,18 @@ namespace CCSDSDataLinkLayer::Generated {
 
     inline etl::vector<Defs::VcidScidKey, VirtualChannelTcCount == 0 ? 1 : VirtualChannelTcCount> virtualChannelGsTcPrioritySortedKeys;
 #endif // INCLUDE_GROUND_SEGMENT_CODE
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
     /** Construct MAP channel objects **/
    enum class MapChannelName : Defs::MapidVcidScidKey {
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) \
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) \
     mapChannelName = constructMapidVcidScidKey(mapid, parentVcid, parentScid),
 #include "@CHANNEL_CONFIG@"
     };
 
 #ifdef INCLUDE_SPACE_SEGMENT_CODE
     inline etl::flat_map<Defs::MapidVcidScidKey, MAPChannelSs, MapChannelCount == 0 ? 1 : MapChannelCount> mapChannelSsMap = {
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) \
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) \
     { \
     constructMapidVcidScidKey(mapid, parentVcid, parentScid), \
     MAPChannelSs(         \
@@ -290,6 +293,7 @@ namespace CCSDSDataLinkLayer::Generated {
     frameCapacity,        \
     typeAdPacketCapacity, \
     typeBdPacketCapacity, \
+    maxExpectedPacketSize,\
     priorityWeight        \
     )                     \
     },
@@ -301,7 +305,7 @@ namespace CCSDSDataLinkLayer::Generated {
 
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
     inline etl::flat_map<Defs::MapidVcidScidKey, MAPChannelGs, MapChannelCount == 0 ? 1 : MapChannelCount> mapChannelGsMap = {
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) \
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) \
     { \
     constructMapidVcidScidKey(mapid, parentVcid, parentScid), \
     MAPChannelGs(                \
@@ -315,6 +319,7 @@ namespace CCSDSDataLinkLayer::Generated {
     frameCapacity,               \
     typeAdPacketCapacity,        \
     typeBdPacketCapacity,        \
+    maxExpectedPacketSize,       \
     priorityWeight               \
     )                            \
     },
@@ -323,7 +328,7 @@ namespace CCSDSDataLinkLayer::Generated {
 
     inline etl::vector<Defs::MapidVcidScidKey, MapChannelCount == 0 ? 1 : MapChannelCount> mapChannelGsPrioritySortedKeys;
 #endif // INCLUDE_GROUND_SEGMENT_CODE
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
 /** Construct FARM and FOP Objects (COP-1) **/
 #ifdef INCLUDE_GROUND_SEGMENT_CODE
@@ -403,29 +408,36 @@ namespace CCSDSDataLinkLayer::Generated {
 
 // Calculate total frame capacity for virtual and map channels
     inline constexpr uint32_t TotalVirtualChannelTcFrameCapacity = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +frameCapacity
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +frameCapacity
 #include "@CHANNEL_CONFIG@"
 );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint32_t TotalVirtualChannelTmFrameCapacity = (0
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) +frameCapacity
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight) +frameCapacity
 #include "@CHANNEL_CONFIG@"
 );
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint32_t TotalMapChannelFrameCapacity = (0
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +frameCapacity
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +frameCapacity
 #include "@CHANNEL_CONFIG@"
 );
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
 // Calculate total packet capacity for TM channels:
     inline constexpr uint32_t TotalTmPacketCapacity = (0
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) +packetCapacity
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight) +packetCapacity
 #include "@CHANNEL_CONFIG@"
     );
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight)
+
+// Calculate total packet capacity for TM channels (octets):
+inline constexpr uint32_t TotalTmPacketOctetCapacity = (0
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight) +packetCapacity*maxExpectedPacketSize
+#include "@CHANNEL_CONFIG@"
+    );
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight)
 
 // Calculate total ocf sdu capacity needed for master channels
     inline constexpr uint32_t TotalOcfSduCapacity = (0
@@ -436,35 +448,67 @@ namespace CCSDSDataLinkLayer::Generated {
 
 // Calculate total packet capacity for TC channels:
     inline constexpr uint32_t TotalMapChannelTypeAdPacketCapacity = (0
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeAdPacketCapacity
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeAdPacketCapacity
 #include "@CHANNEL_CONFIG@"
 );
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint32_t TotalVirtualChannelTypeAdCapacity = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeAdPacketCapacity
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeAdPacketCapacity
 #include "@CHANNEL_CONFIG@"
     );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint32_t TotalMapChannelTypeBdPacketCapacity = (0
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeBdPacketCapacity
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeBdPacketCapacity
 #include "@CHANNEL_CONFIG@"
 );
-#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
     inline constexpr uint32_t TotalVirtualChannelTypeBdCapacity = (0
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) +typeBdPacketCapacity
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeBdPacketCapacity
 #include "@CHANNEL_CONFIG@"
     );
-#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
+
+// Calculate total packet capacity for TC channels (octets):
+    inline constexpr uint32_t TotalMapChannelTypeAdPacketOctetCapacity = (0
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeAdPacketCapacity*maxExpectedPacketSize
+#include "@CHANNEL_CONFIG@"
+);
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
+
+    inline constexpr uint32_t TotalVirtualChannelTypeAdOctetCapacity = (0
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeAdPacketCapacity*maxExpectedPacketSize
+#include "@CHANNEL_CONFIG@"
+    );
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
+
+    inline constexpr uint32_t TotalMapChannelTypeBdPacketOctetCapacity = (0
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeBdPacketCapacity*maxExpectedPacketSize
+#include "@CHANNEL_CONFIG@"
+);
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
+
+    inline constexpr uint32_t TotalVirtualChannelTypeBdOctetCapacity = (0
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +typeBdPacketCapacity*maxExpectedPacketSize
+#include "@CHANNEL_CONFIG@"
+    );
+#define VIRTUAL_CHANNEL_TC(virtualChannelName, vcid, parentScid, segHeaderPresent, blocking, copInEffect, associatedSdlsSPI, repetitionsTypeAD, repetitionsTypeBC, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
+
+// Calculate total capacity (in octets) required for the segmentedPacketConstructor objects in MapChannelSsTc, VirtualChannelSsTc
+    inline constexpr uint32_t TotalMapChannelSegmentedConstructorOctetCapacity = (0
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) +(segmentation ? 1:0)*maxExpectedPacketSize
+#include "@CHANNEL_CONFIG@"
+);
+#define MAP_CHANNEL(mapChannelName, mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight)
 
 // Calculate total capacity for secondary header octets (sum of queue capacity * {length of secondary header-1}, for all ss tm channels)
     inline constexpr uint32_t TotalSecondaryHeaderOctetCapacity = (0
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight) + (secondaryHeaderLength - Defs::TmSecondaryHeaderIdLength)
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight) + (secondaryHeaderLength - Defs::TmSecondaryHeaderIdLength)
 #include "@CHANNEL_CONFIG@"
     ) * Defs::SecondaryHeaderFieldCapacity * IncludeSpaceCode;
-#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, priorityWeight)
+#define VIRTUAL_CHANNEL_TM(virtualChannelName, vcid, parentScid, associatedSdlsSPI, secondaryHeaderPresent, secondaryHeaderLength, ocfFieldPresent, synchronization, repetitions, frameCapacity, packetCapacity, maxExpectedPacketSize, priorityWeight)
 
 #undef PHYSICAL_CHANNEL
 #undef MASTER_CHANNEL_TM
@@ -514,12 +558,17 @@ namespace CCSDSDataLinkLayer::Generated {
     inline constexpr uint32_t TotalTypeBdPacketSlots = IncludeGroundCode * (TotalVirtualChannelTypeBdCapacity + TotalMapChannelTypeBdPacketCapacity);
     inline constexpr uint32_t TotalTmPacketSlots = IncludeSpaceCode * TotalTmPacketCapacity;
 
+    inline constexpr uint32_t TotalTypeAdPacketOctetSlots = IncludeGroundCode * (TotalVirtualChannelTypeAdOctetCapacity + TotalMapChannelTypeAdPacketOctetCapacity);
+    inline constexpr uint32_t TotalTypeBdPacketOctetSlots = IncludeGroundCode * (TotalVirtualChannelTypeBdOctetCapacity + TotalMapChannelTypeBdPacketOctetCapacity);
+    inline constexpr uint32_t TotalTmPacketOctetSlots = IncludeSpaceCode * TotalTmPacketOctetCapacity;
+    inline constexpr uint32_t TotalSegmentedConstructorOctetSlots = IncludeSpaceCode * TotalMapChannelSegmentedConstructorOctetCapacity;
+
     inline TransferFrameTC transferFrameTcArray[TotalTransferFrameTcSlots];
     inline TransferFrameTC* transferFrameTcPtrArray[TotalTransferFrameTcPtrSlots];
     inline TransferFrameTM transferFrameTmArray[TotalTransferFrameTmSlots];
     inline TransferFrameTM* transferFrameTmPtrArray[TotalTransferFrameTmPtrSlots];
     inline uint16_t packetLengthsArray[TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots];
-    inline uint8_t packetOctetsArray[(TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots) * Defs::MaxExpectedSpacePacketSize + TotalSecondaryHeaderOctetCapacity]; // also holds the memory of secondary header octets
+    inline uint8_t packetOctetsArray[TotalTypeAdPacketOctetSlots + TotalTypeBdPacketOctetSlots + TotalTmPacketOctetSlots + TotalSegmentedConstructorOctetSlots + TotalSecondaryHeaderOctetCapacity];
     inline uint32_t indicesArray[TotalTransferFrameTcSlots + TotalTransferFrameTmSlots
         + TotalOcfSduCapacity]; // also holds the memory of the ocfSdu queue in masterChannelSsTm
 

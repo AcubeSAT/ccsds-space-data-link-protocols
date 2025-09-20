@@ -65,10 +65,6 @@ namespace CCSDSDataLinkLayer {
 			mcChan.frameMasterCopies.erase(frameTcPtr);
 		}
 
-		vcChan.segmentedPacketConstructor.resetPacket();
-		vcChan.segmentedPacketConstructor.previousFrameSeqFlag = Defs::SequenceFlag::NO_SEGMENTATION;
-		vcChan.segmentedPacketConstructor.segmentedPacketRejectionMode = false;
-
 		vcChan.setClcwStatusField(0);
 
 		if (vcChan.getCopInEffect()) {
@@ -583,7 +579,6 @@ namespace CCSDSDataLinkLayer {
     		channelMutex = &vcChan.channelMutex;
     		associatedSdlsSpi = vcChan.getAssociatedSdlsSPI();
     		dataFieldContent = vcChan.getDataFieldContent();
-    		segmentedPacketConstructor = &vcChan.segmentedPacketConstructor;
 
     		if (dataFieldContent == Defs::DataFieldContent::PACKET) {
     			blockingAllowed = vcChan.getBlocking();

@@ -83,10 +83,6 @@ namespace CCSDSDataLinkLayer {
     		return etl::unexpected(ServiceChannelNotification::INVALID_LENGTH);
     	}
 
-    	if (length > Defs::MaxExpectedEncapsulationPacketSize) {
-    		return etl::unexpected(ServiceChannelNotification::PACKET_TOO_LONG);
-    	}
-
         Queue<uint8_t>* packetOctets;
         Queue<uint16_t>* packetLengths;
         Mutex* channelMutex;
@@ -97,6 +93,11 @@ namespace CCSDSDataLinkLayer {
 
         if (etl::holds_alternative<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant)) {
             VirtualChannelGsTc& vcChan = etl::get<etl::reference_wrapper<VirtualChannelGsTc>>(chanVariant).get();
+
+        	if (length > vcChan.getMaxExpectedPacketSize()) {
+        		return etl::unexpected(ServiceChannelNotification::PACKET_TOO_LONG);
+        	}
+
             channelMutex = &vcChan.channelMutex;
         	segmentHeaderPresent = false; // frames can only be inserted directly to the virtual channel if no
         	                              // map channels exist (meaning the segment header is not present)
@@ -112,6 +113,11 @@ namespace CCSDSDataLinkLayer {
             }
         } else {
             MAPChannelGs& mapChan = etl::get<etl::reference_wrapper<MAPChannelGs>>(chanVariant).get();
+
+        	if (length > mapChan.getMaxExpectedPacketSize()) {
+        		return etl::unexpected(ServiceChannelNotification::PACKET_TOO_LONG);
+        	}
+
             channelMutex = &mapChan.channelMutex;
         	segmentHeaderPresent = true;
         	segmentationAllowed = mapChan.getSegmentation();

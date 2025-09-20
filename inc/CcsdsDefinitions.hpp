@@ -6,8 +6,9 @@
 #pragma once
 
 #include <cstdint>
-#include <etl/vector.h>
+#include "etl/vector.h"
 #include "etl/span.h"
+#include "ExternalContainers.hpp"
 
 namespace CCSDSDataLinkLayer {
     class TransferFrameTC;
@@ -177,12 +178,12 @@ namespace CCSDSDataLinkLayer::Defs {
      *  Maximum allowed TC transfer frame length.
      *  @see p. 5.2 from TC SPACE DATA LINK PROTOCOL
      */
-    inline constexpr uint16_t MaxTcTransferFrameLength = 1024;
+    inline constexpr uint16_t MaxTcTransferFrameLength = 128;
 
     /**
      * Maximum TM transfer frame length.
      */
-    inline constexpr uint16_t MaxTmTransferFrameLength = 1024;
+    inline constexpr uint16_t MaxTmTransferFrameLength = 128;
 
     /**
      * How many secondary header fields an ss tm virtual channel can store
@@ -213,9 +214,6 @@ namespace CCSDSDataLinkLayer::Defs {
     /**
      * General space packet constants
      */
-    inline constexpr uint16_t MaxExpectedSpacePacketSize = 128;
-    inline constexpr uint16_t MaxExpectedEncapsulationPacketSize = 128;
-    inline constexpr uint16_t MaxExpectedPacketSize = etl::max(MaxExpectedSpacePacketSize, MaxExpectedEncapsulationPacketSize);
     inline constexpr uint8_t SpacePacketPrimaryHeaderLength = 6;
     inline constexpr uint8_t SpacePacketDataLengthFieldPosition = 5; // 5th and 6th bytes constitute the data field length
 
@@ -390,26 +388,41 @@ namespace CCSDSDataLinkLayer::Defs {
     inline constexpr uint8_t MaxNumberOfMasterChannelsUnderVirtualChannel = 2;
 
     /**
-     * Utility struct for constructing segmented packets
+     * Utility struct for re-constructing segmented packets
      */
     struct SegmentedPacketConstructorTc {
-        SegmentedPacketConstructorTc() : previousFrameSeqFlag(SequenceFlag::NO_SEGMENTATION), segmentedPacketRejectionMode(false),
-        currentLength(0) {}
+        SegmentedPacketConstructorTc(uint16_t maxExpectedPacketSize) : previousFrameSeqFlag(SequenceFlag::NO_SEGMENTATION),
+        segmentedPacketRejectionMode(false), maxExpectedPacketSize(maxExpectedPacketSize) {}
+
+        /**
+         * @brief Allocate space for the queue that will hold the reconstructed packet. Do
+         * not use the struct if this function is not called first
+         */
+        void initializeQueue(etl::span<uint8_t> segmentedPacketBuff) {
+           segmentedPacket = Queue(segmentedPacketBuff);
+        }
 
         bool addNextSegementedPacketPiece(etl::span<uint8_t> packetPiece) {
-            if (currentLength > MaxExpectedPacketSize) {
+            if (segmentedPacket.currentSize() > maxExpectedPacketSize ||
+                segmentedPacket.currentSize() + packetPiece.size() > maxExpectedPacketSize) {
                 return false;
             }
-            memcpy(segmentedPacket + currentLength, packetPiece.data(), packetPiece.size());
+
+            for (uint8_t octet : packetPiece) {
+                segmentedPacket.push(octet);
+            }
             return true;
         }
 
         bool extractPacket(uint8_t* destBuffer) {
-            if (currentLength == 0) {
+            if (segmentedPacket.currentSize() == 0) {
                 return false;
             }
-            memcpy(destBuffer, segmentedPacket, currentLength);
-            currentLength = 0;
+
+            for (uint16_t i = 0; i < segmentedPacket.currentSize(); i++) {
+                destBuffer[i] = segmentedPacket.getFront();
+                segmentedPacket.pop();
+            }
             return true;
         }
 
@@ -417,7 +430,7 @@ namespace CCSDSDataLinkLayer::Defs {
          * @brief Used to reset buffer in case of fault
          */
         void resetPacket() {
-            currentLength = 0;
+            segmentedPacket.reset();
         }
 
         SequenceFlag previousFrameSeqFlag;
@@ -430,8 +443,8 @@ namespace CCSDSDataLinkLayer::Defs {
         bool segmentedPacketRejectionMode;
 
     private:
-        uint8_t segmentedPacket[MaxExpectedPacketSize];
-        uint16_t currentLength;
+        Queue<uint8_t> segmentedPacket;
+        const uint16_t maxExpectedPacketSize;
     };
     /**
      * @}

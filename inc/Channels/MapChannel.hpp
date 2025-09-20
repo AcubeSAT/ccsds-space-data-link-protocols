@@ -20,10 +20,10 @@ namespace CCSDSDataLinkLayer {
                        const bool blocking, const bool segmentation, const Defs::Spi associatedSdlsSPI,
                        const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity,
                        const uint16_t typeAdPacketCapacity, const uint16_t typeBdPacketCapacity,
-                       const uint8_t priorityWeight)
+                       const uint16_t maxExpectedPacketSize, const uint8_t priorityWeight)
             : channelMutex(Mutex()), mapid(mapid & 0x3FU), parentVcid(parentVcid & 0x3FU), parentScid(parentScid), blocking(blocking),
               segmentation(segmentation),  dataFieldContent(dataFieldContent), frameCapacity(frameCapacity), typeAdPacketCapacity(typeAdPacketCapacity),
-              typeBdPacketCapacity(typeBdPacketCapacity), priorityWeight(priorityWeight){
+              typeBdPacketCapacity(typeBdPacketCapacity), maxExpectedPacketSize(maxExpectedPacketSize), priorityWeight(priorityWeight){
             if (associatedSdlsSPI != 0) {
                 this->associatedSdlsSPI = etl::optional(associatedSdlsSPI);
             }
@@ -68,6 +68,10 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] uint16_t getTypeBdPacketCapacity() const {
             return typeBdPacketCapacity;
+        }
+
+        [[nodiscard]] uint16_t getMaxExpectedPacketSize() const {
+            return maxExpectedPacketSize;
         }
 
         [[nodiscard]] Defs::DataFieldContent getDataFieldContent() const {
@@ -138,6 +142,12 @@ namespace CCSDSDataLinkLayer {
         const uint16_t typeBdPacketCapacity;
 
         /**
+         * @brief The maximum packet size this channel can accept. Overriden in the scenario MAP channels exist
+         *        under this virtual channel
+         */
+        const uint16_t maxExpectedPacketSize;
+
+        /**
          * @brief In order to decide which virtual channel frames should be transferred to the master channel first,
          *        a weighted priority scheduling policy is used. The higher the weight, the higher the priority of the
          *        respective channel.
@@ -154,16 +164,18 @@ namespace CCSDSDataLinkLayer {
         MAPChannelSs(const Defs::Mapid mapid, const Defs::Vcid parentVcid, const Defs::Scid parentScid,
                      const bool blocking, const bool segmentation, const Defs::Spi associatedSdlsSPI,
                      const Defs::DataFieldContent dataFieldContent, const uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
-                     const uint16_t typeBdPacketCapacity, const uint8_t priorityWeight)
+                     const uint16_t typeBdPacketCapacity, const uint16_t maxExpectedPacketSize, const uint8_t priorityWeight)
             : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent, frameCapacity,
-                typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight),
-        segmentedPacketConstructor(Defs::SegmentedPacketConstructorTc()) {}
+                typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight),
+        segmentedPacketConstructor(Defs::SegmentedPacketConstructorTc(maxExpectedPacketSize)) {}
 
         void initializeContainers(
             const etl::span<TransferFrameTC*>& framesAfterProcessSdlsSecurityTypeADBuff,
-            const etl::span<TransferFrameTC*>& framesAfterProcessSdlsSecurityTypeBDBuff) {
+            const etl::span<TransferFrameTC*>& framesAfterProcessSdlsSecurityTypeBDBuff,
+            const etl::span<uint8_t> &segmentedPacketBuff) {
             framesAfterProcessSDLSSecurityTypeAD = Queue(framesAfterProcessSdlsSecurityTypeADBuff);
             framesAfterProcessSDLSSecurityTypeBD = Queue(framesAfterProcessSdlsSecurityTypeBDBuff);
+            segmentedPacketConstructor.initializeQueue(segmentedPacketBuff);
         }
 
         /**
@@ -191,9 +203,9 @@ namespace CCSDSDataLinkLayer {
     public:
         MAPChannelGs(const Defs::Mapid mapid, const Defs::Vcid parentVcid, const Defs::Scid parentScid, const bool blocking, const bool segmentation,
             const Defs::Spi associatedSdlsSPI, const Defs::DataFieldContent dataFieldContent, uint16_t frameCapacity, const uint16_t typeAdPacketCapacity,
-            const uint16_t typeBdPacketCapacity, const uint8_t priorityWeight)
+            const uint16_t typeBdPacketCapacity, const uint16_t maxExpectedPacketSize, const uint8_t priorityWeight)
             : MAPChannelBase(mapid, parentVcid, parentScid, blocking, segmentation, associatedSdlsSPI, dataFieldContent,
-                frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, priorityWeight) {}
+                frameCapacity, typeAdPacketCapacity, typeBdPacketCapacity, maxExpectedPacketSize, priorityWeight) {}
 
         void initializeContainers(const etl::span<uint16_t>& packetLengthsTypeADBuff,
             const etl::span<uint8_t>& packetOctetsTypeADBuff,
