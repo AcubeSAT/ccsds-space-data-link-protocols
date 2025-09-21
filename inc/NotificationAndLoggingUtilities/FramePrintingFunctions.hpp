@@ -19,6 +19,8 @@ namespace CCSDSDataLinkLayer {
          * @brief Debugging function that prints the fields of a TM frame using the logger
          * @param vcChanName Virtual channel the frame belong in.
          * @param verbosePrimaryHeader Print the names of the primary header fields
+         * @param verboseSecondaryHeader Print the names of the secondary header fields
+         * @param verboseSecurityHeader Print the names of the security header field
          * @param verboseOcfField Print the names of the ocf fields
          * @param ocfAppendFunc Function used to interpret the ocf field. Look  appendClcwField() as an example for
          *                      CLCWs
@@ -28,6 +30,8 @@ namespace CCSDSDataLinkLayer {
         static etl::expected<void, ServiceChannelNotification> printTransferFrameTM(Objects::VirtualChannelTmName vcChanName,
                                                                                     const TransferFrameTM &transferFrameTM,
                                                                                     bool verbosePrimaryHeader,
+                                                                                    bool verboseSecondaryHeader,
+                                                                                    bool verboseSecurityHeader,
                                                                                     bool verboseOcfField,
                                                                                     void (*ocfAppendFunc)(bool, const uint8_t*) = appendClcwField);
 #endif
@@ -36,10 +40,12 @@ namespace CCSDSDataLinkLayer {
         * @brief Debugging function that prints the fields of a TM frame using the logger
         * @param vcChanName Virtual channel the frame belong in
         * @param verbosePrimaryHeader  Print the names of the primary header fields
+        * @param verboseSecurityHeader Print the names of the security header field
         */
         static etl::expected<void, ServiceChannelNotification> printTransferFrameTC(Objects::VirtualChannelTcName vcChanName,
                                   const TransferFrameTC &transferFrameTC,
-                                  bool verbosePrimaryHeader);
+                                  bool verbosePrimaryHeader,
+                                  bool verboseSecurityHeader);
 
         /**
          * Accepts an ocf field and appends them in a string. The field is interpreted as

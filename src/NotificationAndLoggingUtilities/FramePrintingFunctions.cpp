@@ -4,6 +4,7 @@
 #include "VirtualChannel.hpp"
 #include "ChannelObjects.hpp"
 #include "Logger.hpp"
+#include "CcsdsDefinitions.hpp"
 
 namespace CCSDSDataLinkLayer {
 #if defined(INCLUDE_FRAME_PRINTING_FUNCTIONS)
@@ -18,6 +19,8 @@ namespace CCSDSDataLinkLayer {
         Objects::VirtualChannelTmName vcChanName,
         const TransferFrameTM &transferFrameTM,
         bool verbosePrimaryHeader,
+        bool verboseSecondaryHeader,
+        bool verboseSecurityHeader,
         bool verboseOcfField,
         void (*ocfAppendFunc)(bool, const uint8_t*)) {
 
@@ -31,14 +34,29 @@ namespace CCSDSDataLinkLayer {
         MasterChannelSsTm& mcChan = Objects::masterChannelSsTmMap.at(vcChan.getParentScid());
         const PhysicalChannel& phyChan = Objects::physicalChannelMap.at(mcChan.getParentPcid());
 
+        uint16_t securityHeaderLength = 0;
+        uint16_t securityTrailerLength = 0;
+        uint16_t initializationVectorFieldLength = 0;
+        uint16_t sequenceNumberFieldLength = 0;
+        uint16_t padLength = 0;
+        if (vcChan.getAssociatedSdlsSPI().has_value()) {
+            SecurityAssociation &sa = Objects::saSpaceSegmentMap.at(key);
+            securityHeaderLength = sa.getSecurityHeaderLength();
+            securityTrailerLength = sa.getSecurityTrailerLength();
+            initializationVectorFieldLength = sa.getInitializationVectorFieldLength();
+            sequenceNumberFieldLength = sa.getSequenceNumberFieldLength();
+            padLength = sa.getPadLength();
+        }
+
         const bool ocfPresent = vcChan.getOperationalControlFieldPresent();
         const bool eccPresent = phyChan.getFrameErrorControlFieldPresent();
         const uint16_t secHeaderLength = vcChan.getSecondaryHeaderLength();
         const uint16_t transferFrameLength = phyChan.getTMFrameLength();
 
         const uint16_t transferFrameDataFieldLength = transferFrameLength -
-                                                      Defs::TmPrimaryHeaderSize - secHeaderLength - ocfPresent *
-                                                      Defs::TmOperationalControlFieldSize -
+                                                      Defs::TmPrimaryHeaderSize - secHeaderLength -
+                                                      securityHeaderLength - securityTrailerLength -
+                                                      ocfPresent * Defs::TmOperationalControlFieldSize -
                                                       eccPresent * Defs::ErrorControlFieldSize;
         const uint8_t *dataPtr = transferFrameTM.getFrameData();
         tmDebugOutput.clear();
@@ -98,31 +116,130 @@ namespace CCSDSDataLinkLayer {
             tmDebugOutput.append(" | ");
         }
 
-        // Secondary Header (currently unimplemented)
-        // @TODO Modify service accordingly if the secondary header is implemented
+        // Secondary Header
+        if (vcChan.getSecondaryHeaderPresent()) {
+            tmDebugOutput.append("\n- Secondary Header -");
+            if (verboseSecondaryHeader) {
+                tmDebugOutput.append("\nTransfer Frame Sec Header Version Number: ");
+                tmDebugOutput.append(std::to_string((dataPtr[Defs::TmPrimaryHeaderSize] & 0xC0) >> 6).c_str());
+                tmDebugOutput.append("\nTransfer Frame Sec Header Length: ");
+                tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize] & 0x3F).c_str());
+                tmDebugOutput.append("\nSec Header Data Field: \n| ");
+            } else {
+                tmDebugOutput.append("\n | ");
+                tmDebugOutput.append(std::to_string((dataPtr[Defs::TmPrimaryHeaderSize] & 0xC0) >> 6).c_str());
+                tmDebugOutput.append(" | ");
+                tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize] & 0x3F).c_str());
+                tmDebugOutput.append(" | ");
+            }
+
+            for (uint16_t i = 0; i < secHeaderLength - Defs::TmSecondaryHeaderIdLength; i++) {
+                tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + Defs::TmSecondaryHeaderIdLength + i]).c_str());
+                tmDebugOutput.append(" | ");
+            }
+        }
+
+        // Security Header
+        if (vcChan.getAssociatedSdlsSPI().has_value()) {
+            tmDebugOutput.append("\n- Security Header -");
+            if (verboseSecurityHeader) {
+                tmDebugOutput.append("\nSPI: ");
+                tmDebugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength]) << 8U)
+                    | dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength + 1]).c_str());
+
+                if (initializationVectorFieldLength != 0) {
+                    tmDebugOutput.append("\nInitialization Vector: ");
+                    for (uint16_t i = 0; i < initializationVectorFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength +
+                            Defs::SecurityParameterIndexLength + i]).c_str());
+                        tmDebugOutput.append(" | ");
+                    }
+                }
+
+                if (sequenceNumberFieldLength != 0) {
+                    tmDebugOutput.append("\nSequence Number (binary representation): ");
+                    for (uint16_t i = 0; i < sequenceNumberFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength +
+                            Defs::SecurityParameterIndexLength + initializationVectorFieldLength + i]).c_str());
+                        tmDebugOutput.append(" | ");
+                    }
+                }
+
+                if (padLength != 0) {
+                    tmDebugOutput.append("\nPadding: ");
+                    for (uint16_t i = 0; i < padLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength +
+                            Defs::SecurityParameterIndexLength + initializationVectorFieldLength +
+                            sequenceNumberFieldLength + i]).c_str());
+                        tmDebugOutput.append(" | ");
+                    }
+                }
+            } else {
+                tmDebugOutput.append("\n | ");
+                tmDebugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength]) << 8U)
+                    | dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength + 1]).c_str());
+
+                if (initializationVectorFieldLength != 0) {
+                    tmDebugOutput.append(" | ");
+                    for (uint16_t i = 0; i < initializationVectorFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength +
+                            Defs::SecurityParameterIndexLength + i]).c_str());
+
+                        tmDebugOutput.append(" ");
+                    }
+                }
+
+                if (sequenceNumberFieldLength != 0) {
+                    tmDebugOutput.append(" | ");
+                    for (uint16_t i = 0; i < sequenceNumberFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength +
+                            Defs::SecurityParameterIndexLength + initializationVectorFieldLength + i]).c_str());
+                        tmDebugOutput.append(" ");
+                    }
+                }
+
+                if (padLength != 0) {
+                    tmDebugOutput.append(" | ");
+                    for (uint16_t i = 0; i < padLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength +
+                            Defs::SecurityParameterIndexLength + initializationVectorFieldLength +
+                            sequenceNumberFieldLength + i]).c_str());
+                        tmDebugOutput.append(" ");
+                    }
+                }
+            }
+        }
 
         // Data Field
         tmDebugOutput.append("\n- Data Field -\n| ");
-        for (uint16_t i = 0; i < transferFrameDataFieldLength - 1; i++) {
-            tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + i]).c_str());
+        for (uint16_t i = 0; i < transferFrameDataFieldLength; i++) {
+            tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength + securityHeaderLength + i]).c_str());
             tmDebugOutput.append(" | ");
         }
-        tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + transferFrameDataFieldLength]).c_str());
-        tmDebugOutput.append(" | ");
+
+        // Security trailer
+        if (vcChan.getAssociatedSdlsSPI().has_value() && securityTrailerLength != 0) {
+            tmDebugOutput.append("\n- Security Trailer (MAC) -\n| ");
+            for (uint16_t i = 0; i < securityTrailerLength; i++) {
+                tmDebugOutput.append(std::to_string(dataPtr[Defs::TmPrimaryHeaderSize + secHeaderLength +
+                    securityHeaderLength + transferFrameDataFieldLength + i]).c_str());
+                tmDebugOutput.append(" | ");
+            }
+        }
 
         // Operational Control field (It is assumed that the ocf field carries a "CLCW", as defined in the TC Data Link
         // Protocol)
-        tmDebugOutput.append("\n- Operational Control Field -");
+        tmDebugOutput.append("\n- Operational Control Field -\n");
         if (ocfPresent) {
-            const uint8_t* ocfFieldSrc = dataPtr + Defs::TmPrimaryHeaderSize + transferFrameDataFieldLength;
+            const uint8_t* ocfFieldSrc = dataPtr + Defs::TmPrimaryHeaderSize + secHeaderLength + securityHeaderLength + transferFrameDataFieldLength + securityTrailerLength;
             ocfAppendFunc(verboseOcfField, ocfFieldSrc);
         }
 
         // Error Control Field
         tmDebugOutput.append("\n- Error Control Field -\n");
         if (eccPresent) {
-            uint16_t offset = Defs::TmPrimaryHeaderSize + transferFrameDataFieldLength
-                              + ocfPresent * Defs::TmOperationalControlFieldSize;
+            const uint16_t offset = Defs::TmPrimaryHeaderSize + secHeaderLength + securityHeaderLength +
+                transferFrameDataFieldLength + securityTrailerLength + ocfPresent * Defs::TmOperationalControlFieldSize;
             tmDebugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[offset]) << 8) |
                                               static_cast<uint16_t>(dataPtr[offset + 1])).c_str());
         }
@@ -134,13 +251,17 @@ namespace CCSDSDataLinkLayer {
 
     etl::expected<void, ServiceChannelNotification> FramePrintingFunctions::printTransferFrameTC(Objects::VirtualChannelTcName vcChanName,
                                      const TransferFrameTC &transferFrameTC,
-                                     bool verbosePrimaryHeader) {
+                                     bool verbosePrimaryHeader,
+                                     bool verboseSecurityHeader) {
         // TODO also print the security header and trailer
 
         bool eccPresent;
         bool segHeaderPresent;
         uint16_t securityHeaderLength = 0;
         uint16_t securityTrailerLength = 0;
+        uint16_t initializationVectorFieldLength = 0;
+        uint16_t sequenceNumberFieldLength = 0;
+        uint16_t padLength = 0;
 
         // gather information from a channel
 #if defined(INCLUDE_SPACE_SEGMENT_CODE)
@@ -155,10 +276,14 @@ namespace CCSDSDataLinkLayer {
 
         eccPresent = phyChan.getFrameErrorControlFieldPresent();
         segHeaderPresent = vcChan.getSegmentHeaderPresent();
+
         if (vcChan.getAssociatedSdlsSPI().has_value()) {
             SecurityAssociation &sa = Objects::saSpaceSegmentMap.at(key);
             securityHeaderLength = sa.getSecurityHeaderLength();
             securityTrailerLength = sa.getSecurityTrailerLength();
+            initializationVectorFieldLength = sa.getInitializationVectorFieldLength();
+            sequenceNumberFieldLength = sa.getSequenceNumberFieldLength();
+            padLength = sa.getPadLength();
         }
 #elif defined(INCLUDE_GROUND_SEGMENT_CODE)
         const Defs::VcidScidKey key = static_cast<Defs::VcidScidKey>(vcChanName);
@@ -172,10 +297,14 @@ namespace CCSDSDataLinkLayer {
 
         eccPresent = phyChan.getFrameErrorControlFieldPresent();
         segHeaderPresent = vcChan.getSegmentHeaderPresent();
+
         if (vcChan.getAssociatedSdlsSPI().has_value()) {
             SecurityAssociation &sa = Objects::saGroundSegmentMap.at(key);
             securityHeaderLength = sa.getSecurityHeaderLength();
             securityTrailerLength = sa.getSecurityTrailerLength();
+            initializationVectorFieldLength = sa.getInitializationVectorFieldLength();
+            sequenceNumberFieldLength = sa.getSequenceNumberFieldLength();
+            padLength = sa.getPadLength();
         }
 #else
 #error "Neither INCLUDE_SPACE_SEGMENT_CODE nor INCLUDE_GROUND_SEGMENT_CODE macros are defined"
@@ -183,6 +312,7 @@ namespace CCSDSDataLinkLayer {
 
         const uint16_t transferFrameDataFieldLength = transferFrameTC.getTransferFrameLength() -
                                                       Defs::TcPrimaryHeaderSize -
+                                                      segHeaderPresent * Defs::TcSegmentHeaderSize -
                                                       securityHeaderLength -
                                                       securityTrailerLength -
                                                       eccPresent * Defs::ErrorControlFieldSize;
@@ -269,27 +399,116 @@ namespace CCSDSDataLinkLayer {
             tcDebugOutput.append(std::to_string(dataPtr[5] & 0x3F).c_str());
         }
 
+        // Security Header
+        if (vcChan.getAssociatedSdlsSPI().has_value()) {
+            tmDebugOutput.append("\n- Security Header -");
+            if (verboseSecurityHeader) {
+                tmDebugOutput.append("\nSPI: ");
+                tmDebugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[Defs::TcPrimaryHeaderSize +
+                    segHeaderPresent * Defs::TcSegmentHeaderSize]) << 8U)
+                    | dataPtr[Defs::TcPrimaryHeaderSize + segHeaderPresent * Defs::TcSegmentHeaderSize + 1]).c_str());
+
+                if (initializationVectorFieldLength != 0) {
+                    tmDebugOutput.append("\nInitialization Vector: ");
+                    for (uint16_t i = 0; i < initializationVectorFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize +
+                            segHeaderPresent * Defs::TcSegmentHeaderSize +
+                            Defs::SecurityParameterIndexLength + i]).c_str());
+                        tmDebugOutput.append(" | ");
+                    }
+                }
+
+                if (sequenceNumberFieldLength != 0) {
+                    tmDebugOutput.append("\nSequence Number (binary representation): ");
+                    for (uint16_t i = 0; i < sequenceNumberFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize +
+                            segHeaderPresent * Defs::TcSegmentHeaderSize + Defs::SecurityParameterIndexLength +
+                            initializationVectorFieldLength + i]).c_str());
+                        tmDebugOutput.append(" | ");
+                    }
+                }
+
+                if (padLength != 0) {
+                    tmDebugOutput.append("\nPadding: ");
+                    for (uint16_t i = 0; i < padLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize +
+                            segHeaderPresent * Defs::TcSegmentHeaderSize + Defs::SecurityParameterIndexLength +
+                            initializationVectorFieldLength +
+                            sequenceNumberFieldLength + i]).c_str());
+                        tmDebugOutput.append(" | ");
+                    }
+                }
+            } else {
+                tmDebugOutput.append("\n | ");
+                tmDebugOutput.append(std::to_string((static_cast<uint16_t>(dataPtr[Defs::TcPrimaryHeaderSize +
+                    segHeaderPresent * Defs::TcSegmentHeaderSize]) << 8U)
+                    | dataPtr[Defs::TcPrimaryHeaderSize + segHeaderPresent * Defs::TcSegmentHeaderSize + 1]).c_str());
+
+                if (initializationVectorFieldLength != 0) {
+                    tmDebugOutput.append(" | ");
+                    for (uint16_t i = 0; i < initializationVectorFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize +
+                            segHeaderPresent * Defs::TcSegmentHeaderSize +
+                            Defs::SecurityParameterIndexLength + i]).c_str());
+
+                        tmDebugOutput.append(" ");
+                    }
+                }
+
+                if (sequenceNumberFieldLength != 0) {
+                    tmDebugOutput.append(" | ");
+                    for (uint16_t i = 0; i < sequenceNumberFieldLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize +
+                            segHeaderPresent * Defs::TcSegmentHeaderSize + Defs::SecurityParameterIndexLength +
+                            initializationVectorFieldLength + i]).c_str());
+                        tmDebugOutput.append(" ");
+                    }
+                }
+
+                if (padLength != 0) {
+                    tmDebugOutput.append(" | ");
+                    for (uint16_t i = 0; i < padLength; i++) {
+                        tmDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize +
+                            segHeaderPresent * Defs::TcSegmentHeaderSize + Defs::SecurityParameterIndexLength +
+                            initializationVectorFieldLength + sequenceNumberFieldLength + i]).c_str());
+                        tmDebugOutput.append(" ");
+                    }
+                }
+            }
+        }
+
         // Data Field
         tcDebugOutput.append("\n- Data Field -\n| ");
         // The segment header is the conuted as the first byter of the dataField, if it exists
-        for (uint16_t i = segHeaderPresent * Defs::TcSegmentHeaderSize + securityHeaderLength;
-             i < transferFrameDataFieldLength - 1; i++) {
-            tcDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize + i]).c_str());
+        for (uint16_t i = 0; i < transferFrameDataFieldLength; i++) {
+            tcDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize + segHeaderPresent * Defs::TcSegmentHeaderSize +
+                securityHeaderLength + i]).c_str());
             tcDebugOutput.append(" | ");
         }
-        tcDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize + transferFrameDataFieldLength]).c_str());
-        tcDebugOutput.append(" | ");
+
+        // Security trailer
+        if (vcChan.getAssociatedSdlsSPI().has_value() && securityTrailerLength != 0) {
+            tmDebugOutput.append("\n- Security Trailer (MAC) -\n| ");
+            for (uint16_t i = 0; i < securityTrailerLength; i++) {
+                tmDebugOutput.append(std::to_string(dataPtr[Defs::TcPrimaryHeaderSize +
+                    segHeaderPresent * Defs::TcSegmentHeaderSize + securityHeaderLength +
+                    transferFrameDataFieldLength + i]).c_str());
+                tmDebugOutput.append(" | ");
+            }
+        }
 
         // Error Control Field
         tcDebugOutput.append("\n- Error Control Field -\n");
         if (eccPresent) {
             tcDebugOutput.append(std::to_string((static_cast<uint16_t >(dataPtr[Defs::TcPrimaryHeaderSize +
-                                                                              transferFrameDataFieldLength +
+                                                                              segHeaderPresent * Defs::TcSegmentHeaderSize +
                                                                               securityHeaderLength +
+                                                                              transferFrameDataFieldLength +
                                                                               securityTrailerLength]) << 8) |
                                               static_cast<uint16_t>(dataPtr[Defs::TcPrimaryHeaderSize +
-                                                                            transferFrameDataFieldLength +
+                                                                            segHeaderPresent * Defs::TcSegmentHeaderSize +
                                                                             securityHeaderLength +
+                                                                            transferFrameDataFieldLength +
                                                                             securityTrailerLength +
                                                                             1])).c_str());
         }

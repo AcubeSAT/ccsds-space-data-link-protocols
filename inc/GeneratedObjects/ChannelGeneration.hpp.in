@@ -562,15 +562,17 @@ inline constexpr uint32_t TotalTmPacketOctetCapacity = (0
     inline constexpr uint32_t TotalTypeBdPacketOctetSlots = IncludeGroundCode * (TotalVirtualChannelTypeBdOctetCapacity + TotalMapChannelTypeBdPacketOctetCapacity);
     inline constexpr uint32_t TotalTmPacketOctetSlots = IncludeSpaceCode * TotalTmPacketOctetCapacity;
     inline constexpr uint32_t TotalSegmentedConstructorOctetSlots = IncludeSpaceCode * TotalMapChannelSegmentedConstructorOctetCapacity;
+    inline constexpr uint32_t TotalOctetSlots = TotalTypeAdPacketOctetSlots + TotalTypeBdPacketOctetSlots + TotalTmPacketOctetSlots + TotalSegmentedConstructorOctetSlots + TotalSecondaryHeaderOctetCapacity;
 
-    inline TransferFrameTC transferFrameTcArray[TotalTransferFrameTcSlots];
-    inline TransferFrameTC* transferFrameTcPtrArray[TotalTransferFrameTcPtrSlots];
-    inline TransferFrameTM transferFrameTmArray[TotalTransferFrameTmSlots];
-    inline TransferFrameTM* transferFrameTmPtrArray[TotalTransferFrameTmPtrSlots];
-    inline uint16_t packetLengthsArray[TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots];
-    inline uint8_t packetOctetsArray[TotalTypeAdPacketOctetSlots + TotalTypeBdPacketOctetSlots + TotalTmPacketOctetSlots + TotalSegmentedConstructorOctetSlots + TotalSecondaryHeaderOctetCapacity];
-    inline uint32_t indicesArray[TotalTransferFrameTcSlots + TotalTransferFrameTmSlots
-        + TotalOcfSduCapacity]; // also holds the memory of the ocfSdu queue in masterChannelSsTm
+    inline TransferFrameTC transferFrameTcArray[TotalTransferFrameTcSlots == 0 ? 1 : TotalTransferFrameTcSlots];
+    inline TransferFrameTC* transferFrameTcPtrArray[TotalTransferFrameTcPtrSlots == 0 ? 1 : TotalTransferFrameTcPtrSlots];
+    inline TransferFrameTM transferFrameTmArray[TotalTransferFrameTmSlots == 0 ? 1 : TotalTransferFrameTmSlots];
+    inline TransferFrameTM* transferFrameTmPtrArray[TotalTransferFrameTmPtrSlots == 0 ? 1 : TotalTransferFrameTmPtrSlots];
+    inline uint16_t packetLengthsArray[TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots == 0 ? 1 :
+        TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots];
+    inline uint8_t packetOctetsArray[TotalOctetSlots == 0 ? 1 : TotalOctetSlots];
+    inline uint32_t indicesArray[TotalTransferFrameTcSlots + TotalTransferFrameTmSlots + TotalOcfSduCapacity == 0 ? 1 :
+    TotalTransferFrameTcSlots + TotalTransferFrameTmSlots + TotalOcfSduCapacity]; // also holds the memory of the ocfSdu queue in masterChannelSsTm
 
     inline MemoryPool<TotalTransferFrameTcSlots * Defs::MaxTcTransferFrameLength + TotalTransferFrameTmSlots * Defs::MaxTmTransferFrameLength,
     TotalTransferFrameTcSlots + TotalTransferFrameTmSlots> frameOctetPool;

@@ -343,7 +343,7 @@ namespace CCSDSDataLinkLayer::Defs {
 
     using Spi = uint16_t; // The security parameter index is a 2 byte id, uniquely identifying a security association
 
-    inline constexpr uint8_t securityParameterIndexLength = 2;
+    inline constexpr uint8_t SecurityParameterIndexLength = 2;
     inline constexpr uint8_t MaxAuthenticationKeyLength = 64;
     inline constexpr uint8_t MaxInitializationVectorLength = 32;
     inline constexpr uint8_t MaxSequenceNumberLength = 8;

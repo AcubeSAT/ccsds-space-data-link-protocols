@@ -113,6 +113,12 @@ namespace CCSDSDataLinkLayer {
 
         [[nodiscard]] uint8_t getSecurityTrailerLength() const;
 
+        [[nodiscard]] uint16_t getInitializationVectorFieldLength() const;
+
+        [[nodiscard]] uint16_t getSequenceNumberFieldLength() const;
+
+        [[nodiscard]] uint16_t getPadLength() const;
+
         [[nodiscard]] Defs::Spi getSecurityParameterIndex() const;
 
         [[nodiscard]] Defs::Pcid getPcid() const;

@@ -102,9 +102,20 @@ namespace CCSDSDataLinkLayer {
     		return etl::unexpected(ServiceChannelNotification::PACKET_QUEUE_FULL);
     	}
 
+		uint16_t securityHeaderLength = 0;
+		uint16_t securityTrailerLength = 0;
+		if (vcChan.getAssociatedSdlsSPI().has_value()) {
+			SecurityAssociation& sa = Objects::saSpaceSegmentMap.at(vcChan.getAssociatedSdlsSPI().value());
+			securityHeaderLength = sa.getSecurityHeaderLength();
+			securityTrailerLength = sa.getSecurityTrailerLength();
+		}
+
     	const uint16_t transferFrameDataFieldLength =
 				phyChan.getTMFrameLength() -
 				Defs::TmPrimaryHeaderSize -
+				vcChan.getSecondaryHeaderLength() -
+				securityHeaderLength -
+				securityTrailerLength -
 				vcChan.getOperationalControlFieldPresent() * Defs::TmOperationalControlFieldSize -
 				phyChan.getFrameErrorControlFieldPresent() * Defs::ErrorControlFieldSize;
 
@@ -170,10 +181,20 @@ namespace CCSDSDataLinkLayer {
             vcChan.framesAfterVcGeneration.push(frameTmPtr);
         }
 
+		uint16_t securityHeaderLength = 0;
+		uint16_t securityTrailerLength = 0;
+		if (vcChan.getAssociatedSdlsSPI().has_value()) {
+			SecurityAssociation& sa = Objects::saSpaceSegmentMap.at(vcChan.getAssociatedSdlsSPI().value());
+			securityHeaderLength = sa.getSecurityHeaderLength();
+			securityTrailerLength = sa.getSecurityTrailerLength();
+		}
+
         const uint16_t transferFrameDataFieldLength =
                 phyChan.getTMFrameLength() -
                 Defs::TmPrimaryHeaderSize -
                 vcChan.getSecondaryHeaderLength() -
+                securityHeaderLength -
+                securityTrailerLength -
                 vcChan.getOperationalControlFieldPresent() * Defs::TmOperationalControlFieldSize -
                 phyChan.getFrameErrorControlFieldPresent() * Defs::ErrorControlFieldSize;
 
@@ -190,7 +211,7 @@ namespace CCSDSDataLinkLayer {
 
             // Next packet fits. Copy it to the data field and update first data field empty octet
             for (uint16_t i = 0; i < packetLength; i++) {
-                frameTmPtr->getFrameData()[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + frameTmPtr->getFirstDataFieldEmptyOctet()] = vcChan.packetOctets.getFront();
+                frameTmPtr->getFrameData()[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + securityHeaderLength + frameTmPtr->getFirstDataFieldEmptyOctet()] = vcChan.packetOctets.getFront();
                 vcChan.packetOctets.popFront();
             }
             frameTmPtr->setFirstDataFieldEmptyOctet(frameTmPtr->getFirstDataFieldEmptyOctet() + packetLength);
@@ -217,7 +238,7 @@ namespace CCSDSDataLinkLayer {
         if (remainingSpace >= packetLength) {
             // Generated idle packet fits perfectly. Append it to data field, end operations.
             for (uint16_t i = 0; i < packetLength; i++) {
-                frameTmPtr->getFrameData()[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + frameTmPtr->getFirstDataFieldEmptyOctet()] = vcChan.packetOctets.getFront();
+                frameTmPtr->getFrameData()[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + securityHeaderLength + frameTmPtr->getFirstDataFieldEmptyOctet()] = vcChan.packetOctets.getFront();
                 vcChan.packetOctets.popFront();
             }
 
@@ -240,10 +261,20 @@ namespace CCSDSDataLinkLayer {
         const uint16_t packetLength) {
 
 
+		uint16_t securityHeaderLength = 0;
+		uint16_t securityTrailerLength = 0;
+		if (vcChan.getAssociatedSdlsSPI().has_value()) {
+			SecurityAssociation& sa = Objects::saSpaceSegmentMap.at(vcChan.getAssociatedSdlsSPI().value());
+			securityHeaderLength = sa.getSecurityHeaderLength();
+			securityTrailerLength = sa.getSecurityTrailerLength();
+		}
+
         const uint16_t transferFrameDataFieldLength =
                         phyChan.getTMFrameLength() -
                         Defs::TmPrimaryHeaderSize -
                         vcChan.getSecondaryHeaderLength() -
+                        securityHeaderLength -
+                        securityTrailerLength -
                         vcChan.getOperationalControlFieldPresent() * Defs::TmOperationalControlFieldSize -
                         phyChan.getFrameErrorControlFieldPresent() * Defs::ErrorControlFieldSize;
 
@@ -253,14 +284,7 @@ namespace CCSDSDataLinkLayer {
                                                   ((packetLength - prevFrameCapacity) % transferFrameDataFieldLength
                                                        ? 1
                                                        : 0);
-        const uint16_t numberOfNewOctets = numberOfNewTransferFrames * (
-                                               Defs::TmPrimaryHeaderSize +
-                                               transferFrameDataFieldLength +
-                                               vcChan.getSecondaryHeaderLength() +
-                                               vcChan.getOperationalControlFieldPresent() *
-                                               Defs::TmOperationalControlFieldSize +
-                                               phyChan.getFrameErrorControlFieldPresent() *
-                                               Defs::ErrorControlFieldSize);
+        const uint16_t numberOfNewOctets = numberOfNewTransferFrames * phyChan.getTMFrameLength();
 
         // Ensure there is enough space for the new frames. If not, then the operation should be halted, and
         // the packet's length must be returned to the front of the packet length queue (since blockingTM popped it).
@@ -277,7 +301,7 @@ namespace CCSDSDataLinkLayer {
 
         // fill half-full frame
         for (uint16_t i = 0; i < packetLength; i++) {
-            frameTmPtr->getFrameData()[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + frameTmPtr->getFirstDataFieldEmptyOctet()] = vcChan.packetOctets.getFront();
+            frameTmPtr->getFrameData()[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + securityHeaderLength + frameTmPtr->getFirstDataFieldEmptyOctet()] = vcChan.packetOctets.getFront();
             vcChan.packetOctets.popFront();
         }
         frameTmPtr->setFirstDataFieldEmptyOctet(frameTmPtr->getFirstDataFieldEmptyOctet() + packetLength);
@@ -290,7 +314,7 @@ namespace CCSDSDataLinkLayer {
             uint8_t* frameData = Objects::frameOctetPool.allocateBlock(frameLength, nullptr);
 
             for (uint16_t j = 0; j < remainingPacketSegmentLength; ++j) {
-                frameData[j + Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength()] = vcChan.packetOctets.getFront();
+                frameData[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + securityHeaderLength + j] = vcChan.packetOctets.getFront();
                 vcChan.packetOctets.popFront();
             }
 
@@ -397,12 +421,22 @@ namespace CCSDSDataLinkLayer {
 		    return etl::unexpected(ServiceChannelNotification::PACKET_QUEUE_EMPTY);
     	}
 
+		uint16_t securityHeaderLength = 0;
+		uint16_t securityTrailerLength = 0;
+		if (vcChan.getAssociatedSdlsSPI().has_value()) {
+			SecurityAssociation& sa = Objects::saSpaceSegmentMap.at(vcChan.getAssociatedSdlsSPI().value());
+			securityHeaderLength = sa.getSecurityHeaderLength();
+			securityTrailerLength = sa.getSecurityTrailerLength();
+		}
+
     	// Handle simple case, where channel transfers vca sdu instead of packets
     	if (vcChan.getSynchronization() == Defs::SynchronizationFlag::VCA_SDU) {
     		const uint16_t frameLength = phyChan.getTMFrameLength();
     		const uint16_t transferFrameDataFieldLength =
 						frameLength -
 						Defs::TmPrimaryHeaderSize -
+						securityHeaderLength -
+						securityTrailerLength -
 						vcChan.getSecondaryHeaderLength() -
 						vcChan.getOperationalControlFieldPresent() * Defs::TmOperationalControlFieldSize -
 						phyChan.getFrameErrorControlFieldPresent() * Defs::ErrorControlFieldSize;
@@ -431,7 +465,7 @@ namespace CCSDSDataLinkLayer {
     		uint8_t *frameData = Objects::frameOctetPool.allocateBlock(frameLength, nullptr);
 
 			for (uint16_t i = 0; i < transferFrameDataFieldLength; i++) {
-				frameData[i + Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength()] = vcChan.packetOctets.getFront();
+				frameData[Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + securityHeaderLength + i] = vcChan.packetOctets.getFront();
 				vcChan.packetOctets.popFront();
 			}
 
@@ -535,9 +569,19 @@ namespace CCSDSDataLinkLayer {
 		    return etl::unexpected(ServiceChannelNotification::FRAME_QUEUE_FULL);
     	}
 
+		uint16_t securityHeaderLength = 0;
+		uint16_t securityTrailerLength = 0;
+		if (vcChan.getAssociatedSdlsSPI().has_value()) {
+			SecurityAssociation& sa = Objects::saSpaceSegmentMap.at(vcChan.getAssociatedSdlsSPI().value());
+			securityHeaderLength = sa.getSecurityHeaderLength();
+			securityTrailerLength = sa.getSecurityTrailerLength();
+		}
+
         const uint16_t transferFrameDataFieldLength =
                         frameLength -
                         Defs::TmPrimaryHeaderSize -
+                        securityHeaderLength -
+                        securityTrailerLength -
                         vcChan.getSecondaryHeaderLength() -
                         vcChan.getOperationalControlFieldPresent() * Defs::TmOperationalControlFieldSize -
                         phyChan.getFrameErrorControlFieldPresent() * Defs::ErrorControlFieldSize;
@@ -545,7 +589,7 @@ namespace CCSDSDataLinkLayer {
         uint8_t* frameData = Objects::frameOctetPool.allocateBlock(frameLength, nullptr);
 
     	for (uint16_t i = 0; i < transferFrameDataFieldLength; i++) {
-    		frameData[i + Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength()] = getNextOidByte();
+    		frameData[i + Defs::TmPrimaryHeaderSize + vcChan.getSecondaryHeaderLength() + securityHeaderLength] = getNextOidByte();
     	}
 
         TransferFrameTM* oidFramePtr = mcChan.frameMasterCopies.push(TransferFrameTM(frameData,

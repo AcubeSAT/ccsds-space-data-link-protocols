@@ -430,7 +430,11 @@ namespace CCSDSDataLinkLayer::Objects {
             for (auto &chanPair : channelMap) {
                 if (chanPair.second.getAssociatedSdlsSPI().has_value()) {
                     if (chanPair.second.getAssociatedSdlsSPI().value() == saPcid) {
+#ifdef INCLUDE_SPACE_SEGMENT_CODE
                         MasterChannelSsTc& mcChan = masterChannelSsTcMap.at(chanPair.second.getParentScid());
+#else
+                        MasterChannelGsTc& mcChan = masterChannelGsTcMap.at(chanPair.second.getParentScid());
+#endif
                         if (mcChan.getParentPcid() != saPcid) {
                             LOG_ERROR << "Ground Segment Security Association with SPI: " << saSpi <<
                             " is associated with virtual/MAP channels from different physical channels";
@@ -487,10 +491,7 @@ namespace CCSDSDataLinkLayer::Objects {
         const uint32_t packetLengthsArrayMaxSize = TotalTypeAdPacketSlots + TotalTypeBdPacketSlots + TotalTmPacketSlots;
 
         uint32_t packetOctetsArrayIndex = 0;
-        const uint32_t packetOctetsArrayMaxSize =
-                TotalTypeAdPacketOctetSlots + TotalTypeBdPacketOctetSlots + TotalTmPacketOctetSlots +
-                    TotalSegmentedConstructorOctetSlots + TotalSecondaryHeaderOctetCapacity ;
-
+        const uint32_t packetOctetsArrayMaxSize = TotalOctetSlots;
         uint32_t indicesArrayIndex = 0;
         const uint32_t indicesArrayMaxSize = TotalTransferFrameTcSlots + TotalTransferFrameTmSlots + TotalOcfSduCapacity;
 

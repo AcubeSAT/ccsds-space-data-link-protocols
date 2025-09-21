@@ -4,7 +4,7 @@
 
 namespace CCSDSDataLinkLayer {
     uint8_t SecurityAssociation::getSecurityHeaderLength() const {
-        return Defs::securityParameterIndexLength + initializationVectorLength + sequenceNumberFieldLength +
+        return Defs::SecurityParameterIndexLength + initializationVectorLength + sequenceNumberFieldLength +
                padFieldLength;
     }
 
@@ -14,6 +14,18 @@ namespace CCSDSDataLinkLayer {
 
     Defs::Spi SecurityAssociation::getSecurityParameterIndex() const {
         return securityParameterIndex;
+    }
+
+    uint16_t SecurityAssociation::getInitializationVectorFieldLength() const {
+        return  initializationVectorLength;
+    }
+
+    uint16_t SecurityAssociation::getSequenceNumberFieldLength() const {
+        return sequenceNumberFieldLength;
+    }
+
+    uint16_t SecurityAssociation::getPadLength() const {
+        return padFieldLength;
     }
 
     Defs::Pcid SecurityAssociation::getPcid() const {
@@ -79,7 +91,7 @@ namespace CCSDSDataLinkLayer {
 
             // insert sequence number
             for (uint8_t i = 0; i < sequenceNumberFieldLength; i++) {
-                frameData[securityHeaderOffset + Defs::securityParameterIndexLength +
+                frameData[securityHeaderOffset + Defs::SecurityParameterIndexLength +
                           initializationVectorLength + i]
                         =
                         static_cast<uint8_t>(sequenceNumber >> ((sequenceNumberFieldLength - i - 1) * 8));
@@ -224,7 +236,7 @@ namespace CCSDSDataLinkLayer {
             for (uint8_t i = 0; i < sequenceNumberFieldLength; i++) {
                 receivedSeqNumber = receivedSeqNumber |
                                     (static_cast<uint64_t>(frameData[securityHeaderOffset +
-                                                                     Defs::securityParameterIndexLength +
+                                                                     Defs::SecurityParameterIndexLength +
                                                                      initializationVectorLength +
                                                                      sequenceNumberFieldLength - 1 - i]) << 8 * i);}
             if ((receivedSeqNumber <= sequenceNumber) ||
